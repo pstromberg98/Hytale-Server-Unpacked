@@ -142,7 +142,7 @@ public abstract class X448 {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\math\ec\rfc7748\X448.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\math\ec\rfc7748\X448.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

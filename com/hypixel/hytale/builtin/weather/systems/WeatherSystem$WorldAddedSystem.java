@@ -41,24 +41,23 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
 /*    */ public class WorldAddedSystem
 /*    */   extends StoreSystem<EntityStore>
 /*    */ {
 /*    */   @Nonnull
-/* 49 */   private final ResourceType<EntityStore, WeatherResource> weatherResourceType = WeatherResource.getResourceType();
+/* 48 */   private final ResourceType<EntityStore, WeatherResource> weatherResourceType = WeatherResource.getResourceType();
 /*    */ 
 /*    */   
 /*    */   public void onSystemAddedToStore(@Nonnull Store<EntityStore> store) {
-/* 53 */     String forcedWeather = ((EntityStore)store.getExternalData()).getWorld().getWorldConfig().getForcedWeather();
-/* 54 */     ((WeatherResource)store.getResource(this.weatherResourceType)).setForcedWeather(forcedWeather);
+/* 52 */     String forcedWeather = ((EntityStore)store.getExternalData()).getWorld().getWorldConfig().getForcedWeather();
+/* 53 */     ((WeatherResource)store.getResource(this.weatherResourceType)).setForcedWeather(forcedWeather);
 /*    */   }
 /*    */   
 /*    */   public void onSystemRemovedFromStore(@Nonnull Store<EntityStore> store) {}
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\weather\systems\WeatherSystem$WorldAddedSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\weather\systems\WeatherSystem$WorldAddedSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

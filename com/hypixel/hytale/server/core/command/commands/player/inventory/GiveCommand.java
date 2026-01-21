@@ -49,16 +49,22 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  52 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
+/*  52 */   private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  58 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public GiveCommand() {
-/*  58 */     super("give", "server.commands.give.desc");
-/*  59 */     requirePermission(HytalePermissions.fromCommand("give.self"));
-/*  60 */     addUsageVariant((AbstractCommand)new GiveOtherCommand());
-/*  61 */     addSubCommand((AbstractCommand)new GiveArmorCommand());
+/*  64 */     super("give", "server.commands.give.desc");
+/*  65 */     requirePermission(HytalePermissions.fromCommand("give.self"));
+/*  66 */     addUsageVariant((AbstractCommand)new GiveOtherCommand());
+/*  67 */     addSubCommand((AbstractCommand)new GiveArmorCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -67,42 +73,49 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  70 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/*  71 */     assert playerComponent != null;
+/*  76 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/*  77 */     assert playerComponent != null;
 /*     */ 
 /*     */     
-/*  74 */     Item item = (Item)this.itemArg.get(context);
+/*  80 */     Item item = (Item)this.itemArg.get(context);
 /*     */ 
 /*     */     
-/*  77 */     Integer quantity = (Integer)this.quantityArg.get(context);
+/*  83 */     Integer quantity = (Integer)this.quantityArg.get(context);
 /*     */ 
 /*     */     
-/*  80 */     BsonDocument metadata = null;
-/*  81 */     if (this.metadataArg.provided(context)) {
-/*  82 */       String metadataStr = (String)this.metadataArg.get(context);
+/*  86 */     double durability = Double.MAX_VALUE;
+/*  87 */     if (this.durabilityArg.provided(context)) {
+/*  88 */       durability = ((Double)this.durabilityArg.get(context)).doubleValue();
+/*     */     }
+/*     */ 
+/*     */     
+/*  92 */     BsonDocument metadata = null;
+/*  93 */     if (this.metadataArg.provided(context)) {
+/*  94 */       String metadataStr = (String)this.metadataArg.get(context);
 /*     */       try {
-/*  84 */         metadata = BsonDocument.parse(metadataStr);
-/*  85 */       } catch (Exception e) {
-/*  86 */         context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA
-/*  87 */             .param("error", e.getMessage()));
+/*  96 */         metadata = BsonDocument.parse(metadataStr);
+/*  97 */       } catch (Exception e) {
+/*  98 */         context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA
+/*  99 */             .param("error", e.getMessage()));
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     } 
 /*     */     
-/*  93 */     ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(new ItemStack(item.getId(), quantity.intValue(), metadata));
+/* 105 */     ItemStack stack = (new ItemStack(item.getId(), quantity.intValue(), metadata)).withDurability(durability);
+/* 106 */     ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(stack);
 /*     */     
-/*  95 */     ItemStack remainder = transaction.getRemainder();
-/*  96 */     Message itemNameMessage = Message.translation(item.getTranslationKey());
+/* 108 */     ItemStack remainder = transaction.getRemainder();
+/* 109 */     Message itemNameMessage = Message.translation(item.getTranslationKey());
 /*     */     
-/*  98 */     if (remainder == null || remainder.isEmpty()) {
-/*  99 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_RECEIVED
-/* 100 */           .param("quantity", quantity.intValue())
-/* 101 */           .param("item", itemNameMessage));
+/* 111 */     if (remainder == null || remainder.isEmpty()) {
+/* 112 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_RECEIVED
+/* 113 */           .param("quantity", quantity.intValue())
+/* 114 */           .param("item", itemNameMessage));
 /*     */     } else {
-/* 103 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE
-/* 104 */           .param("quantity", quantity.intValue())
-/* 105 */           .param("item", itemNameMessage));
+/* 116 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE
+/* 117 */           .param("quantity", quantity.intValue())
+/* 118 */           .param("item", itemNameMessage));
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -111,60 +124,66 @@
 /*     */     extends CommandBase
 /*     */   {
 /*     */     @Nonnull
-/* 114 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
+/* 127 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*     */     @Nonnull
-/* 116 */     private static final Message MESSAGE_COMMANDS_GIVE_GAVE = Message.translation("server.commands.give.gave");
+/* 129 */     private static final Message MESSAGE_COMMANDS_GIVE_GAVE = Message.translation("server.commands.give.gave");
 /*     */     @Nonnull
-/* 118 */     private static final Message MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE = Message.translation("server.commands.give.insufficientInvSpace");
+/* 131 */     private static final Message MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE = Message.translation("server.commands.give.insufficientInvSpace");
 /*     */     @Nonnull
-/* 120 */     private static final Message MESSAGE_COMMANDS_GIVE_INVALID_METADATA = Message.translation("server.commands.give.invalidMetadata");
+/* 133 */     private static final Message MESSAGE_COMMANDS_GIVE_INVALID_METADATA = Message.translation("server.commands.give.invalidMetadata");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 126 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 139 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 132 */     private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
+/* 145 */     private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 138 */     private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
+/* 151 */     private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 144 */     private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
+/* 157 */     private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/* 163 */     private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     GiveOtherCommand() {
-/* 150 */       super("server.commands.give.other.desc");
-/* 151 */       requirePermission(HytalePermissions.fromCommand("give.other"));
+/* 169 */       super("server.commands.give.other.desc");
+/* 170 */       requirePermission(HytalePermissions.fromCommand("give.other"));
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void executeSync(@Nonnull CommandContext context) {
-/* 156 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
-/* 157 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
+/* 175 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
+/* 176 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
 /*     */       
-/* 159 */       if (ref == null || !ref.isValid()) {
-/* 160 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/* 178 */       if (ref == null || !ref.isValid()) {
+/* 179 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 164 */       Store<EntityStore> store = ref.getStore();
-/* 165 */       World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 183 */       Store<EntityStore> store = ref.getStore();
+/* 184 */       World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */       
-/* 167 */       world.execute(() -> {
+/* 186 */       world.execute(() -> {
 /*     */             Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */             
 /*     */             if (playerComponent == null) {
@@ -181,17 +200,24 @@
 /*     */             
 /*     */             Integer quantity = (Integer)this.quantityArg.get(context);
 /*     */             
+/*     */             double durability = Double.MAX_VALUE;
+/*     */             
+/*     */             if (this.durabilityArg.provided(context)) {
+/*     */               durability = ((Double)this.durabilityArg.get(context)).doubleValue();
+/*     */             }
+/*     */             
 /*     */             BsonDocument metadata = null;
 /*     */             if (this.metadataArg.provided(context)) {
 /*     */               String metadataStr = (String)this.metadataArg.get(context);
 /*     */               try {
 /*     */                 metadata = BsonDocument.parse(metadataStr);
-/* 189 */               } catch (Exception e) {
+/* 214 */               } catch (Exception e) {
 /*     */                 context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA.param("error", e.getMessage()));
 /*     */                 return;
 /*     */               } 
 /*     */             } 
-/*     */             ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(new ItemStack(item.getId(), quantity.intValue(), metadata));
+/*     */             ItemStack stack = (new ItemStack(item.getId(), quantity.intValue(), metadata)).withDurability(durability);
+/*     */             ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(stack);
 /*     */             ItemStack remainder = transaction.getRemainder();
 /*     */             Message itemNameMessage = Message.translation(item.getTranslationKey());
 /*     */             if (remainder == null || remainder.isEmpty()) {
@@ -205,7 +231,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\command\commands\player\inventory\GiveCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\command\commands\player\inventory\GiveCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -14,7 +14,7 @@ public @interface GuardedBy {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\nimbusds\jose\shaded\jcip\GuardedBy.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\nimbusds\jose\shaded\jcip\GuardedBy.class
  * Java compiler version: 5 (49.0)
  * JD-Core Version:       1.1.3
  */

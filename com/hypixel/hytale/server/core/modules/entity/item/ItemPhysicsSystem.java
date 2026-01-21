@@ -113,27 +113,34 @@
 /*     */ 
 /*     */     
 /* 115 */     BlockCollisionData blockCollisionData = collisionResult.getFirstBlockCollision();
-/* 116 */     if (blockCollisionData != null && blockCollisionData.collisionNormal.equals(Vector3d.UP)) {
-/* 117 */       velocityComponent.setZero();
-/* 118 */       position.assign(blockCollisionData.collisionPoint);
+/* 116 */     if (blockCollisionData != null) {
+/* 117 */       if (blockCollisionData.collisionNormal.equals(Vector3d.UP)) {
+/* 118 */         velocityComponent.setZero();
+/* 119 */         position.assign(blockCollisionData.collisionPoint);
+/*     */       } else {
+/* 121 */         Vector3d velocity = velocityComponent.getVelocity();
+/* 122 */         double dot = velocity.dot(blockCollisionData.collisionNormal);
+/* 123 */         Vector3d velocityToCancel = blockCollisionData.collisionNormal.clone().scale(dot);
+/* 124 */         velocity.subtract(velocityToCancel);
+/*     */       } 
 /*     */     } else {
-/* 120 */       velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
-/* 121 */       position.add(scaledVelocity);
+/* 127 */       velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
+/* 128 */       position.add(scaledVelocity);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 125 */     collisionResult.reset();
+/* 132 */     collisionResult.reset();
 /*     */ 
 /*     */     
-/* 128 */     if (position.getY() < -32.0D) {
-/* 129 */       LOGGER.at(Level.WARNING).log("Item fell out of the world %s", archetypeChunk.getReferenceTo(index));
-/* 130 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 135 */     if (position.getY() < -32.0D) {
+/* 136 */       LOGGER.at(Level.WARNING).log("Item fell out of the world %s", archetypeChunk.getReferenceTo(index));
+/* 137 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */     } 
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\ItemPhysicsSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\ItemPhysicsSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

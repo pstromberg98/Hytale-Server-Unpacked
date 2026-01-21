@@ -15,8 +15,7 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -115,39 +114,39 @@
 /*     */ {
 /*     */   private static final String MESSAGE_SUCCESS = "server.commands.camshake.debug.success";
 /*     */   @Nonnull
-/* 118 */   protected final RequiredArg<CameraEffect> effectArg = withRequiredArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
+/* 117 */   protected final RequiredArg<CameraEffect> effectArg = withRequiredArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 124 */   protected final RequiredArg<Float> intensityArg = withRequiredArg("intensity", "server.commands.camshake.debug.intensity.desc", (ArgumentType)ArgTypes.FLOAT);
+/* 123 */   protected final RequiredArg<Float> intensityArg = withRequiredArg("intensity", "server.commands.camshake.debug.intensity.desc", (ArgumentType)ArgTypes.FLOAT);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public DebugCommand() {
-/* 130 */     super("debug", "server.commands.camshake.debug.desc");
+/* 129 */     super("debug", "server.commands.camshake.debug.desc");
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   protected void execute(@NonNullDecl CommandContext context, @NullableDecl Ref<EntityStore> sourceRef, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
-/* 135 */     CameraEffect cameraEffect = (CameraEffect)context.get((Argument)this.effectArg);
-/* 136 */     float intensity = ((Float)context.get((Argument)this.intensityArg)).floatValue();
+/*     */   protected void execute(@Nonnull CommandContext context, @Nullable Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world, @Nonnull Store<EntityStore> store) {
+/* 134 */     CameraEffect cameraEffect = (CameraEffect)context.get((Argument)this.effectArg);
+/* 135 */     float intensity = ((Float)context.get((Argument)this.intensityArg)).floatValue();
 /*     */     
-/* 138 */     PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
-/* 139 */     assert playerRefComponent != null;
+/* 137 */     PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 138 */     assert playerRefComponent != null;
 /*     */     
-/* 141 */     playerRefComponent.getPacketHandler().writeNoCache((Packet)cameraEffect.createCameraShakePacket(intensity));
+/* 140 */     playerRefComponent.getPacketHandler().writeNoCache((Packet)cameraEffect.createCameraShakePacket(intensity));
 /*     */     
-/* 143 */     context.sendMessage(Message.translation("server.commands.camshake.debug.success")
-/* 144 */         .param("effect", cameraEffect.getId())
-/* 145 */         .param("intensity", intensity));
+/* 142 */     context.sendMessage(Message.translation("server.commands.camshake.debug.success")
+/* 143 */         .param("effect", cameraEffect.getId())
+/* 144 */         .param("intensity", intensity));
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\camera\command\CameraEffectCommand$DebugCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\camera\command\CameraEffectCommand$DebugCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 public abstract class LoadFuturePacketDataQuerySystem extends EntityDataSystem<ChunkStore, PlayerRef, CompletableFuture<Packet>> {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore$LoadFuturePacketDataQuerySystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore$LoadFuturePacketDataQuerySystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

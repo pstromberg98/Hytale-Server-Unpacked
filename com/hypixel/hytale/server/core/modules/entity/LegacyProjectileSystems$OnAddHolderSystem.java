@@ -73,42 +73,41 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class OnAddHolderSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/*  81 */   private static final ComponentType<EntityStore, ProjectileComponent> PROJECTILE_COMPONENT_TYPE = ProjectileComponent.getComponentType();
+/*  80 */   private static final ComponentType<EntityStore, ProjectileComponent> PROJECTILE_COMPONENT_TYPE = ProjectileComponent.getComponentType();
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
 /*     */     BoundingBox boundingBox;
-/*  85 */     if (!holder.getArchetype().contains(NetworkId.getComponentType())) {
-/*  86 */       holder.addComponent(NetworkId.getComponentType(), (Component)new NetworkId(((EntityStore)store.getExternalData()).takeNextNetworkId()));
+/*  84 */     if (!holder.getArchetype().contains(NetworkId.getComponentType())) {
+/*  85 */       holder.addComponent(NetworkId.getComponentType(), (Component)new NetworkId(((EntityStore)store.getExternalData()).takeNextNetworkId()));
 /*     */     }
 /*     */     
-/*  89 */     ProjectileComponent projectileComponent = (ProjectileComponent)holder.getComponent(PROJECTILE_COMPONENT_TYPE);
-/*  90 */     assert projectileComponent != null;
+/*  88 */     ProjectileComponent projectileComponent = (ProjectileComponent)holder.getComponent(PROJECTILE_COMPONENT_TYPE);
+/*  89 */     assert projectileComponent != null;
 /*     */     
-/*  92 */     projectileComponent.initialize();
+/*  91 */     projectileComponent.initialize();
 /*     */ 
 /*     */     
-/*  95 */     ModelAsset modelAsset = (ModelAsset)ModelAsset.getAssetMap().getAsset(projectileComponent.getAppearance());
-/*  96 */     if (modelAsset != null) {
-/*  97 */       Model model = Model.createUnitScaleModel(modelAsset);
-/*  98 */       holder.putComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
-/*  99 */       holder.putComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
-/* 100 */       boundingBox = new BoundingBox(model.getBoundingBox());
+/*  94 */     ModelAsset modelAsset = (ModelAsset)ModelAsset.getAssetMap().getAsset(projectileComponent.getAppearance());
+/*  95 */     if (modelAsset != null) {
+/*  96 */       Model model = Model.createUnitScaleModel(modelAsset);
+/*  97 */       holder.putComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
+/*  98 */       holder.putComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
+/*  99 */       boundingBox = new BoundingBox(model.getBoundingBox());
 /*     */     } else {
-/* 102 */       Projectile projectileAsset = projectileComponent.getProjectile();
-/* 103 */       if (projectileAsset != null) {
-/* 104 */         boundingBox = new BoundingBox(Box.horizontallyCentered(projectileAsset.getRadius(), projectileAsset.getHeight(), projectileAsset.getRadius()));
+/* 101 */       Projectile projectileAsset = projectileComponent.getProjectile();
+/* 102 */       if (projectileAsset != null) {
+/* 103 */         boundingBox = new BoundingBox(Box.horizontallyCentered(projectileAsset.getRadius(), projectileAsset.getHeight(), projectileAsset.getRadius()));
 /*     */       } else {
-/* 106 */         boundingBox = new BoundingBox(Box.horizontallyCentered(0.25D, 0.25D, 0.25D));
+/* 105 */         boundingBox = new BoundingBox(Box.horizontallyCentered(0.25D, 0.25D, 0.25D));
 /*     */       } 
 /*     */     } 
-/* 109 */     holder.putComponent(BoundingBox.getComponentType(), (Component)boundingBox);
+/* 108 */     holder.putComponent(BoundingBox.getComponentType(), (Component)boundingBox);
 /*     */     
-/* 111 */     projectileComponent.initializePhysics(boundingBox);
+/* 110 */     projectileComponent.initializePhysics(boundingBox);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -117,12 +116,12 @@
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 120 */     return (Query)PROJECTILE_COMPONENT_TYPE;
+/* 119 */     return (Query)PROJECTILE_COMPONENT_TYPE;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\LegacyProjectileSystems$OnAddHolderSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\LegacyProjectileSystems$OnAddHolderSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

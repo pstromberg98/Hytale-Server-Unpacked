@@ -79,7 +79,7 @@ public abstract class DSTU4145PointEncoder {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn\\ua\DSTU4145PointEncoder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn\\ua\DSTU4145PointEncoder.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

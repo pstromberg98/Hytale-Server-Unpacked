@@ -139,7 +139,7 @@ public class ECGOST2012SignatureSpi512 extends SignatureSpi implements PKCSObjec
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\ecgost12\ECGOST2012SignatureSpi512.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\ecgost12\ECGOST2012SignatureSpi512.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

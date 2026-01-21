@@ -422,24 +422,23 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class EnsureUniqueItemUsagesSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   public Query<EntityStore> getQuery() {
-/* 430 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)PlayerRef.getComponentType(), (Query)Query.not((Query)UniqueItemUsagesComponent.getComponentType()) });
+/* 429 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)PlayerRef.getComponentType(), (Query)Query.not((Query)UniqueItemUsagesComponent.getComponentType()) });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 435 */     holder.ensureComponent(UniqueItemUsagesComponent.getComponentType());
+/* 434 */     holder.ensureComponent(UniqueItemUsagesComponent.getComponentType());
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsureUniqueItemUsagesSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsureUniqueItemUsagesSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

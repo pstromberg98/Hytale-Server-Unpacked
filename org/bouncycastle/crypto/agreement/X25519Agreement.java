@@ -24,7 +24,7 @@ public final class X25519Agreement implements RawAgreement {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\agreement\X25519Agreement.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\agreement\X25519Agreement.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

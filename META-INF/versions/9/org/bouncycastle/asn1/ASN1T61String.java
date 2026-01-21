@@ -90,7 +90,7 @@ public abstract class ASN1T61String extends ASN1Primitive implements ASN1String 
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\ASN1T61String.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\ASN1T61String.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

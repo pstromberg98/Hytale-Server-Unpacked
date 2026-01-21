@@ -698,48 +698,47 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class EntityStatOnHit
 /*     */   implements NetworkSerializable<EntityStatOnHit>
 /*     */ {
 /*     */   public static final BuilderCodec<EntityStatOnHit> CODEC;
 /*     */   
 /*     */   static {
-/* 708 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(EntityStatOnHit.class, EntityStatOnHit::new).appendInherited(new KeyedCodec("EntityStatId", (Codec)Codec.STRING), (entityStatOnHitInteraction, s) -> entityStatOnHitInteraction.entityStatId = s, entityStatOnHitInteraction -> entityStatOnHitInteraction.entityStatId, (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.entityStatId = parent.entityStatId).documentation("The id of the EntityStat that will be affected by the interaction.").addValidator(Validators.nonNull()).addValidator(EntityStatType.VALIDATOR_CACHE.getValidator()).add()).appendInherited(new KeyedCodec("Amount", (Codec)Codec.FLOAT), (entityStatOnHitInteraction, integer) -> entityStatOnHitInteraction.amount = integer.floatValue(), entityStatOnHitInteraction -> Float.valueOf(entityStatOnHitInteraction.amount), (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.amount = parent.amount).documentation("The base amount for a single entity hit.").add()).appendInherited(new KeyedCodec("MultipliersPerEntitiesHit", (Codec)Codec.FLOAT_ARRAY), (entityStatOnHitInteraction, doubles) -> entityStatOnHitInteraction.multipliersPerEntitiesHit = doubles, entityStatOnHitInteraction -> entityStatOnHitInteraction.multipliersPerEntitiesHit, (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.multipliersPerEntitiesHit = parent.multipliersPerEntitiesHit).documentation("An array of multipliers corresponding to how much the amount should be multiplied by for each entity hit.").addValidator(Validators.nonEmptyFloatArray()).add()).appendInherited(new KeyedCodec("MultiplierPerExtraEntityHit", (Codec)Codec.FLOAT), (entityStatOnHitInteraction, aDouble) -> entityStatOnHitInteraction.multiplierPerExtraEntityHit = aDouble.floatValue(), entityStatOnHitInteraction -> Float.valueOf(entityStatOnHitInteraction.multiplierPerExtraEntityHit), (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.multiplierPerExtraEntityHit = parent.multiplierPerExtraEntityHit).documentation("When the number of entity hit is higher than the number of multipliers defined, the amount will be multiplied by this multiplier for each extra entity hit.").add()).afterDecode(entityStatOnHitInteraction -> { if (entityStatOnHitInteraction.entityStatId == null) return;  entityStatOnHitInteraction.entityStatIndex = EntityStatType.getAssetMap().getIndex(entityStatOnHitInteraction.entityStatId); })).build();
+/* 707 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(EntityStatOnHit.class, EntityStatOnHit::new).appendInherited(new KeyedCodec("EntityStatId", (Codec)Codec.STRING), (entityStatOnHitInteraction, s) -> entityStatOnHitInteraction.entityStatId = s, entityStatOnHitInteraction -> entityStatOnHitInteraction.entityStatId, (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.entityStatId = parent.entityStatId).documentation("The id of the EntityStat that will be affected by the interaction.").addValidator(Validators.nonNull()).addValidator(EntityStatType.VALIDATOR_CACHE.getValidator()).add()).appendInherited(new KeyedCodec("Amount", (Codec)Codec.FLOAT), (entityStatOnHitInteraction, integer) -> entityStatOnHitInteraction.amount = integer.floatValue(), entityStatOnHitInteraction -> Float.valueOf(entityStatOnHitInteraction.amount), (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.amount = parent.amount).documentation("The base amount for a single entity hit.").add()).appendInherited(new KeyedCodec("MultipliersPerEntitiesHit", (Codec)Codec.FLOAT_ARRAY), (entityStatOnHitInteraction, doubles) -> entityStatOnHitInteraction.multipliersPerEntitiesHit = doubles, entityStatOnHitInteraction -> entityStatOnHitInteraction.multipliersPerEntitiesHit, (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.multipliersPerEntitiesHit = parent.multipliersPerEntitiesHit).documentation("An array of multipliers corresponding to how much the amount should be multiplied by for each entity hit.").addValidator(Validators.nonEmptyFloatArray()).add()).appendInherited(new KeyedCodec("MultiplierPerExtraEntityHit", (Codec)Codec.FLOAT), (entityStatOnHitInteraction, aDouble) -> entityStatOnHitInteraction.multiplierPerExtraEntityHit = aDouble.floatValue(), entityStatOnHitInteraction -> Float.valueOf(entityStatOnHitInteraction.multiplierPerExtraEntityHit), (entityStatOnHitInteraction, parent) -> entityStatOnHitInteraction.multiplierPerExtraEntityHit = parent.multiplierPerExtraEntityHit).documentation("When the number of entity hit is higher than the number of multipliers defined, the amount will be multiplied by this multiplier for each extra entity hit.").add()).afterDecode(entityStatOnHitInteraction -> { if (entityStatOnHitInteraction.entityStatId == null) return;  entityStatOnHitInteraction.entityStatIndex = EntityStatType.getAssetMap().getIndex(entityStatOnHitInteraction.entityStatId); })).build();
 /*     */   }
 /*     */ 
 /*     */   
-/* 712 */   public static final float[] DEFAULT_MULTIPLIERS_PER_ENTITIES_HIT = new float[] { 1.0F, 0.6F, 0.4F, 0.2F, 0.1F };
+/* 711 */   public static final float[] DEFAULT_MULTIPLIERS_PER_ENTITIES_HIT = new float[] { 1.0F, 0.6F, 0.4F, 0.2F, 0.1F };
 /*     */   
 /*     */   public static final float DEFAULT_MULTIPLIER_PER_EXTRA_ENTITY_HIT = 0.05F;
 /*     */   protected String entityStatId;
 /*     */   protected float amount;
-/* 717 */   protected float[] multipliersPerEntitiesHit = DEFAULT_MULTIPLIERS_PER_ENTITIES_HIT;
-/* 718 */   protected float multiplierPerExtraEntityHit = 0.05F;
+/* 716 */   protected float[] multipliersPerEntitiesHit = DEFAULT_MULTIPLIERS_PER_ENTITIES_HIT;
+/* 717 */   protected float multiplierPerExtraEntityHit = 0.05F;
 /*     */   private int entityStatIndex;
 /*     */   
 /*     */   public void processEntityStatsOnHit(int hits, @Nonnull EntityStatMap statMap) {
 /*     */     float multiplier;
-/* 723 */     if (hits == 0) {
+/* 722 */     if (hits == 0) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 727 */     if (hits <= this.multipliersPerEntitiesHit.length) {
-/* 728 */       multiplier = this.multipliersPerEntitiesHit[hits - 1];
+/* 726 */     if (hits <= this.multipliersPerEntitiesHit.length) {
+/* 727 */       multiplier = this.multipliersPerEntitiesHit[hits - 1];
 /*     */     } else {
-/* 730 */       multiplier = this.multiplierPerExtraEntityHit;
+/* 729 */       multiplier = this.multiplierPerExtraEntityHit;
 /*     */     } 
 /*     */     
-/* 733 */     statMap.addStatValue(EntityStatMap.Predictable.SELF, this.entityStatIndex, multiplier * this.amount);
+/* 732 */     statMap.addStatValue(EntityStatMap.Predictable.SELF, this.entityStatIndex, multiplier * this.amount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 739 */     return "EntityStatOnHit{entityStatId='" + this.entityStatId + "', amount=" + this.amount + ", multipliersPerEntitiesHit=" + 
+/* 738 */     return "EntityStatOnHit{entityStatId='" + this.entityStatId + "', amount=" + this.amount + ", multipliersPerEntitiesHit=" + 
 /*     */ 
 /*     */       
-/* 742 */       Arrays.toString(this.multipliersPerEntitiesHit) + ", multiplierPerExtraEntityHit=" + this.multiplierPerExtraEntityHit + ", entityStatIndex=" + this.entityStatIndex + "}";
+/* 741 */       Arrays.toString(this.multipliersPerEntitiesHit) + ", multiplierPerExtraEntityHit=" + this.multiplierPerExtraEntityHit + ", entityStatIndex=" + this.entityStatIndex + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -748,12 +747,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public EntityStatOnHit toPacket() {
-/* 751 */     return new EntityStatOnHit(this.entityStatIndex, this.amount, this.multipliersPerEntitiesHit, this.multiplierPerExtraEntityHit);
+/* 750 */     return new EntityStatOnHit(this.entityStatIndex, this.amount, this.multipliersPerEntitiesHit, this.multiplierPerExtraEntityHit);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$EntityStatOnHit.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$EntityStatOnHit.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -35,7 +35,9 @@
 /*  35 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */ 
 /*     */   
-/*  38 */   private static final JWSAlgorithm SUPPORTED_ALGORITHM = JWSAlgorithm.EdDSA;
+/*     */   private static final long CLOCK_SKEW_SECONDS = 300L;
+/*     */   
+/*  40 */   private static final JWSAlgorithm SUPPORTED_ALGORITHM = JWSAlgorithm.EdDSA;
 /*     */   
 /*     */   private final SessionServiceClient sessionServiceClient;
 /*     */   
@@ -44,9 +46,9 @@
 /*     */   private final String expectedAudience;
 /*     */   private volatile JWKSet cachedJwkSet;
 /*     */   private volatile long jwksCacheExpiry;
-/*  47 */   private final long jwksCacheDurationMs = TimeUnit.HOURS.toMillis(1L);
-/*  48 */   private final ReentrantLock jwksFetchLock = new ReentrantLock();
-/*  49 */   private volatile CompletableFuture<JWKSet> pendingFetch = null;
+/*  49 */   private final long jwksCacheDurationMs = TimeUnit.HOURS.toMillis(1L);
+/*  50 */   private final ReentrantLock jwksFetchLock = new ReentrantLock();
+/*  51 */   private volatile CompletableFuture<JWKSet> pendingFetch = null;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -60,9 +62,9 @@
 /*     */ 
 /*     */   
 /*     */   public JWTValidator(@Nonnull SessionServiceClient sessionServiceClient, @Nonnull String expectedIssuer, @Nonnull String expectedAudience) {
-/*  63 */     this.sessionServiceClient = sessionServiceClient;
-/*  64 */     this.expectedIssuer = expectedIssuer;
-/*  65 */     this.expectedAudience = expectedAudience;
+/*  65 */     this.sessionServiceClient = sessionServiceClient;
+/*  66 */     this.expectedIssuer = expectedIssuer;
+/*  67 */     this.expectedAudience = expectedAudience;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -74,93 +76,97 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public JWTClaims validateToken(@Nonnull String accessToken, @Nullable X509Certificate clientCert) {
-/*  77 */     if (accessToken.isEmpty()) {
-/*  78 */       LOGGER.at(Level.WARNING).log("Access token is empty");
-/*  79 */       return null;
+/*  79 */     if (accessToken.isEmpty()) {
+/*  80 */       LOGGER.at(Level.WARNING).log("Access token is empty");
+/*  81 */       return null;
 /*     */     } 
 /*     */ 
 /*     */     
 /*     */     try {
-/*  84 */       SignedJWT signedJWT = SignedJWT.parse(accessToken);
+/*  86 */       SignedJWT signedJWT = SignedJWT.parse(accessToken);
 /*     */ 
 /*     */       
-/*  87 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
-/*  88 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
-/*  89 */         LOGGER.at(Level.WARNING).log("Unsupported JWT algorithm: %s (expected EdDSA)", algorithm);
-/*  90 */         return null;
+/*  89 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
+/*  90 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
+/*  91 */         LOGGER.at(Level.WARNING).log("Unsupported JWT algorithm: %s (expected EdDSA)", algorithm);
+/*  92 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/*  94 */       if (!verifySignatureWithRetry(signedJWT)) {
-/*  95 */         LOGGER.at(Level.WARNING).log("JWT signature verification failed");
-/*  96 */         return null;
+/*  96 */       if (!verifySignatureWithRetry(signedJWT)) {
+/*  97 */         LOGGER.at(Level.WARNING).log("JWT signature verification failed");
+/*  98 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 100 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-/* 101 */       JWTClaims claims = new JWTClaims();
-/* 102 */       claims.issuer = claimsSet.getIssuer();
-/* 103 */       claims
-/* 104 */         .audience = (claimsSet.getAudience() != null && !claimsSet.getAudience().isEmpty()) ? claimsSet.getAudience().get(0) : null;
-/* 105 */       claims.subject = claimsSet.getSubject();
+/* 102 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+/* 103 */       JWTClaims claims = new JWTClaims();
+/* 104 */       claims.issuer = claimsSet.getIssuer();
+/* 105 */       claims
+/* 106 */         .audience = (claimsSet.getAudience() != null && !claimsSet.getAudience().isEmpty()) ? claimsSet.getAudience().get(0) : null;
+/* 107 */       claims.subject = claimsSet.getSubject();
 /*     */       
-/* 107 */       claims.username = claimsSet.getStringClaim("username");
+/* 109 */       claims.username = claimsSet.getStringClaim("username");
 /*     */       
-/* 109 */       claims.ipAddress = claimsSet.getStringClaim("ip");
-/* 110 */       claims
-/* 111 */         .issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
+/* 111 */       claims.ipAddress = claimsSet.getStringClaim("ip");
 /* 112 */       claims
-/* 113 */         .expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
+/* 113 */         .issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
 /* 114 */       claims
-/* 115 */         .notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
+/* 115 */         .expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
+/* 116 */       claims
+/* 117 */         .notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
 /*     */ 
 /*     */       
-/* 118 */       Map<String, Object> cnfClaim = claimsSet.getJSONObjectClaim("cnf");
-/* 119 */       if (cnfClaim != null) {
-/* 120 */         claims.certificateFingerprint = (String)cnfClaim.get("x5t#S256");
+/* 120 */       Map<String, Object> cnfClaim = claimsSet.getJSONObjectClaim("cnf");
+/* 121 */       if (cnfClaim != null) {
+/* 122 */         claims.certificateFingerprint = (String)cnfClaim.get("x5t#S256");
 /*     */       }
 /*     */ 
 /*     */       
-/* 124 */       if (!this.expectedIssuer.equals(claims.issuer)) {
-/* 125 */         LOGGER.at(Level.WARNING).log("Invalid issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
-/* 126 */         return null;
+/* 126 */       if (!this.expectedIssuer.equals(claims.issuer)) {
+/* 127 */         LOGGER.at(Level.WARNING).log("Invalid issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
+/* 128 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 130 */       if (!this.expectedAudience.equals(claims.audience)) {
-/* 131 */         LOGGER.at(Level.WARNING).log("Invalid audience: expected %s, got %s", this.expectedAudience, claims.audience);
-/* 132 */         return null;
+/* 132 */       if (!this.expectedAudience.equals(claims.audience)) {
+/* 133 */         LOGGER.at(Level.WARNING).log("Invalid audience: expected %s, got %s", this.expectedAudience, claims.audience);
+/* 134 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 136 */       long nowSeconds = Instant.now().getEpochSecond();
-/* 137 */       long clockSkewSeconds = 60L;
+/* 138 */       long nowSeconds = Instant.now().getEpochSecond();
 /*     */       
-/* 139 */       if (claims.expiresAt != null && nowSeconds >= claims.expiresAt.longValue() + clockSkewSeconds) {
-/* 140 */         LOGGER.at(Level.WARNING).log("Token expired (exp: %d, now: %d)", claims.expiresAt, nowSeconds);
-/* 141 */         return null;
+/* 140 */       if (claims.expiresAt != null && nowSeconds >= claims.expiresAt.longValue() + 300L) {
+/* 141 */         LOGGER.at(Level.WARNING).log("Token expired (exp: %d, now: %d)", claims.expiresAt, nowSeconds);
+/* 142 */         return null;
 /*     */       } 
 /*     */       
-/* 144 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - clockSkewSeconds) {
-/* 145 */         LOGGER.at(Level.WARNING).log("Token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
-/* 146 */         return null;
+/* 145 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - 300L) {
+/* 146 */         LOGGER.at(Level.WARNING).log("Token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
+/* 147 */         return null;
 /*     */       } 
-/*     */ 
 /*     */       
-/* 150 */       if (!CertificateUtil.validateCertificateBinding(claims.certificateFingerprint, clientCert)) {
-/* 151 */         LOGGER.at(Level.WARNING).log("Certificate binding validation failed");
+/* 150 */       if (claims.issuedAt != null && claims.issuedAt.longValue() > nowSeconds + 300L) {
+/* 151 */         LOGGER.at(Level.WARNING).log("Token issued in the future (iat: %d, now: %d)", claims.issuedAt, nowSeconds);
 /* 152 */         return null;
 /*     */       } 
+/*     */ 
 /*     */       
-/* 155 */       LOGGER.at(Level.INFO).log("JWT validated successfully for user %s (UUID: %s)", claims.username, claims.subject);
-/* 156 */       return claims;
+/* 156 */       if (!CertificateUtil.validateCertificateBinding(claims.certificateFingerprint, clientCert)) {
+/* 157 */         LOGGER.at(Level.WARNING).log("Certificate binding validation failed");
+/* 158 */         return null;
+/*     */       } 
+/*     */       
+/* 161 */       LOGGER.at(Level.INFO).log("JWT validated successfully for user %s (UUID: %s)", claims.username, claims.subject);
+/* 162 */       return claims;
 /*     */     }
-/* 158 */     catch (ParseException e) {
-/* 159 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse JWT");
-/* 160 */       return null;
-/* 161 */     } catch (Exception e) {
-/* 162 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("JWT validation error");
-/* 163 */       return null;
+/* 164 */     catch (ParseException e) {
+/* 165 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse JWT");
+/* 166 */       return null;
+/* 167 */     } catch (Exception e) {
+/* 168 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("JWT validation error");
+/* 169 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -169,35 +175,35 @@
 /*     */   
 /*     */   private boolean verifySignature(SignedJWT signedJWT, JWKSet jwkSet) {
 /*     */     try {
-/* 172 */       String keyId = signedJWT.getHeader().getKeyID();
+/* 178 */       String keyId = signedJWT.getHeader().getKeyID();
 /*     */ 
 /*     */       
-/* 175 */       OctetKeyPair ed25519Key = null;
-/* 176 */       for (JWK jwk : jwkSet.getKeys()) {
-/* 177 */         if (jwk instanceof OctetKeyPair) { OctetKeyPair okp = (OctetKeyPair)jwk; if (keyId == null || keyId
-/* 178 */             .equals(jwk.getKeyID())) {
-/* 179 */             ed25519Key = okp;
+/* 181 */       OctetKeyPair ed25519Key = null;
+/* 182 */       for (JWK jwk : jwkSet.getKeys()) {
+/* 183 */         if (jwk instanceof OctetKeyPair) { OctetKeyPair okp = (OctetKeyPair)jwk; if (keyId == null || keyId
+/* 184 */             .equals(jwk.getKeyID())) {
+/* 185 */             ed25519Key = okp;
 /*     */             break;
 /*     */           }  }
 /*     */       
 /*     */       } 
-/* 184 */       if (ed25519Key == null) {
-/* 185 */         LOGGER.at(Level.WARNING).log("No Ed25519 key found for kid=%s", keyId);
-/* 186 */         return false;
+/* 190 */       if (ed25519Key == null) {
+/* 191 */         LOGGER.at(Level.WARNING).log("No Ed25519 key found for kid=%s", keyId);
+/* 192 */         return false;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 190 */       Ed25519Verifier verifier = new Ed25519Verifier(ed25519Key);
-/* 191 */       boolean valid = signedJWT.verify((JWSVerifier)verifier);
+/* 196 */       Ed25519Verifier verifier = new Ed25519Verifier(ed25519Key);
+/* 197 */       boolean valid = signedJWT.verify((JWSVerifier)verifier);
 /*     */       
-/* 193 */       if (valid) {
-/* 194 */         LOGGER.at(Level.FINE).log("JWT signature verified with key kid=%s", keyId);
+/* 199 */       if (valid) {
+/* 200 */         LOGGER.at(Level.FINE).log("JWT signature verified with key kid=%s", keyId);
 /*     */       }
-/* 196 */       return valid;
+/* 202 */       return valid;
 /*     */     }
-/* 198 */     catch (Exception e) {
-/* 199 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("JWT signature verification failed");
-/* 200 */       return false;
+/* 204 */     catch (Exception e) {
+/* 205 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("JWT signature verification failed");
+/* 206 */       return false;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -206,7 +212,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private JWKSet getJwkSet() {
-/* 209 */     return getJwkSet(false);
+/* 215 */     return getJwkSet(false);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -217,47 +223,47 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private JWKSet getJwkSet(boolean forceRefresh) {
-/* 220 */     long now = System.currentTimeMillis();
+/* 226 */     long now = System.currentTimeMillis();
 /*     */ 
 /*     */     
-/* 223 */     if (!forceRefresh && this.cachedJwkSet != null && now < this.jwksCacheExpiry) {
-/* 224 */       return this.cachedJwkSet;
+/* 229 */     if (!forceRefresh && this.cachedJwkSet != null && now < this.jwksCacheExpiry) {
+/* 230 */       return this.cachedJwkSet;
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */     
-/* 229 */     this.jwksFetchLock.lock();
+/* 235 */     this.jwksFetchLock.lock();
 /*     */     
 /*     */     try {
-/* 232 */       if (!forceRefresh && this.cachedJwkSet != null && now < this.jwksCacheExpiry) {
-/* 233 */         return this.cachedJwkSet;
+/* 238 */       if (!forceRefresh && this.cachedJwkSet != null && now < this.jwksCacheExpiry) {
+/* 239 */         return this.cachedJwkSet;
 /*     */       }
 /*     */ 
 /*     */       
-/* 237 */       CompletableFuture<JWKSet> existing = this.pendingFetch;
-/* 238 */       if (existing != null && !existing.isDone()) {
+/* 243 */       CompletableFuture<JWKSet> existing = this.pendingFetch;
+/* 244 */       if (existing != null && !existing.isDone()) {
 /*     */         
-/* 240 */         this.jwksFetchLock.unlock();
+/* 246 */         this.jwksFetchLock.unlock();
 /*     */         try {
-/* 242 */           return existing.join();
+/* 248 */           return existing.join();
 /*     */         } finally {
-/* 244 */           this.jwksFetchLock.lock();
+/* 250 */           this.jwksFetchLock.lock();
 /*     */         } 
 /*     */       } 
 /*     */       
-/* 248 */       if (forceRefresh) {
-/* 249 */         LOGGER.at(Level.INFO).log("Force refreshing JWKS cache (key rotation or verification failure)");
+/* 254 */       if (forceRefresh) {
+/* 255 */         LOGGER.at(Level.INFO).log("Force refreshing JWKS cache (key rotation or verification failure)");
 /*     */       }
 /*     */ 
 /*     */       
-/* 253 */       this.pendingFetch = CompletableFuture.supplyAsync(this::fetchJwksFromService);
+/* 259 */       this.pendingFetch = CompletableFuture.supplyAsync(this::fetchJwksFromService);
 /*     */     } finally {
 /*     */       
-/* 256 */       this.jwksFetchLock.unlock();
+/* 262 */       this.jwksFetchLock.unlock();
 /*     */     } 
 /*     */ 
 /*     */     
-/* 260 */     return this.pendingFetch.join();
+/* 266 */     return this.pendingFetch.join();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -266,37 +272,37 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private JWKSet fetchJwksFromService() {
-/* 269 */     SessionServiceClient.JwksResponse jwksResponse = this.sessionServiceClient.getJwks();
-/* 270 */     if (jwksResponse == null || jwksResponse.keys == null || jwksResponse.keys.length == 0) {
-/* 271 */       LOGGER.at(Level.WARNING).log("Failed to fetch JWKS or no keys available");
-/* 272 */       return this.cachedJwkSet;
+/* 275 */     SessionServiceClient.JwksResponse jwksResponse = this.sessionServiceClient.getJwks();
+/* 276 */     if (jwksResponse == null || jwksResponse.keys == null || jwksResponse.keys.length == 0) {
+/* 277 */       LOGGER.at(Level.WARNING).log("Failed to fetch JWKS or no keys available");
+/* 278 */       return this.cachedJwkSet;
 /*     */     } 
 /*     */ 
 /*     */     
 /*     */     try {
-/* 277 */       ArrayList<JWK> jwkList = new ArrayList<>();
-/* 278 */       for (SessionServiceClient.JwkKey key : jwksResponse.keys) {
-/* 279 */         JWK jwk = convertToJWK(key);
-/* 280 */         if (jwk != null) {
-/* 281 */           jwkList.add(jwk);
+/* 283 */       ArrayList<JWK> jwkList = new ArrayList<>();
+/* 284 */       for (SessionServiceClient.JwkKey key : jwksResponse.keys) {
+/* 285 */         JWK jwk = convertToJWK(key);
+/* 286 */         if (jwk != null) {
+/* 287 */           jwkList.add(jwk);
 /*     */         }
 /*     */       } 
 /*     */       
-/* 285 */       if (jwkList.isEmpty()) {
-/* 286 */         LOGGER.at(Level.WARNING).log("No valid JWKs found in JWKS response");
-/* 287 */         return this.cachedJwkSet;
+/* 291 */       if (jwkList.isEmpty()) {
+/* 292 */         LOGGER.at(Level.WARNING).log("No valid JWKs found in JWKS response");
+/* 293 */         return this.cachedJwkSet;
 /*     */       } 
 /*     */       
-/* 290 */       JWKSet newSet = new JWKSet(jwkList);
-/* 291 */       this.cachedJwkSet = newSet;
-/* 292 */       this.jwksCacheExpiry = System.currentTimeMillis() + this.jwksCacheDurationMs;
+/* 296 */       JWKSet newSet = new JWKSet(jwkList);
+/* 297 */       this.cachedJwkSet = newSet;
+/* 298 */       this.jwksCacheExpiry = System.currentTimeMillis() + this.jwksCacheDurationMs;
 /*     */       
-/* 294 */       LOGGER.at(Level.INFO).log("JWKS loaded with %d keys", jwkList.size());
-/* 295 */       return newSet;
+/* 300 */       LOGGER.at(Level.INFO).log("JWKS loaded with %d keys", jwkList.size());
+/* 301 */       return newSet;
 /*     */     }
-/* 297 */     catch (Exception e) {
-/* 298 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse JWKS");
-/* 299 */       return this.cachedJwkSet;
+/* 303 */     catch (Exception e) {
+/* 304 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse JWKS");
+/* 305 */       return this.cachedJwkSet;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -306,24 +312,24 @@
 /*     */ 
 /*     */   
 /*     */   private boolean verifySignatureWithRetry(SignedJWT signedJWT) {
-/* 309 */     JWKSet jwkSet = getJwkSet();
-/* 310 */     if (jwkSet == null) {
-/* 311 */       return false;
+/* 315 */     JWKSet jwkSet = getJwkSet();
+/* 316 */     if (jwkSet == null) {
+/* 317 */       return false;
 /*     */     }
 /*     */     
-/* 314 */     if (verifySignature(signedJWT, jwkSet)) {
-/* 315 */       return true;
+/* 320 */     if (verifySignature(signedJWT, jwkSet)) {
+/* 321 */       return true;
 /*     */     }
 /*     */ 
 /*     */     
-/* 319 */     LOGGER.at(Level.INFO).log("Signature verification failed with cached JWKS, retrying with fresh keys");
-/* 320 */     JWKSet freshJwkSet = getJwkSet(true);
-/* 321 */     if (freshJwkSet == null || freshJwkSet == jwkSet)
+/* 325 */     LOGGER.at(Level.INFO).log("Signature verification failed with cached JWKS, retrying with fresh keys");
+/* 326 */     JWKSet freshJwkSet = getJwkSet(true);
+/* 327 */     if (freshJwkSet == null || freshJwkSet == jwkSet)
 /*     */     {
-/* 323 */       return false;
+/* 329 */       return false;
 /*     */     }
 /*     */     
-/* 326 */     return verifySignature(signedJWT, freshJwkSet);
+/* 332 */     return verifySignature(signedJWT, freshJwkSet);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -332,21 +338,21 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private JWK convertToJWK(SessionServiceClient.JwkKey key) {
-/* 335 */     if (!"OKP".equals(key.kty)) {
-/* 336 */       LOGGER.at(Level.WARNING).log("Unsupported key type: %s (expected OKP)", key.kty);
-/* 337 */       return null;
+/* 341 */     if (!"OKP".equals(key.kty)) {
+/* 342 */       LOGGER.at(Level.WARNING).log("Unsupported key type: %s (expected OKP)", key.kty);
+/* 343 */       return null;
 /*     */     } 
 /*     */ 
 /*     */     
 /*     */     try {
-/* 342 */       String json = String.format("{\"kty\":\"OKP\",\"crv\":\"%s\",\"x\":\"%s\",\"kid\":\"%s\",\"alg\":\"EdDSA\"}", new Object[] { key.crv, key.x, key.kid });
+/* 348 */       String json = String.format("{\"kty\":\"OKP\",\"crv\":\"%s\",\"x\":\"%s\",\"kid\":\"%s\",\"alg\":\"EdDSA\"}", new Object[] { key.crv, key.x, key.kid });
 /*     */ 
 /*     */ 
 /*     */       
-/* 346 */       return JWK.parse(json);
-/* 347 */     } catch (Exception e) {
-/* 348 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse Ed25519 key");
-/* 349 */       return null;
+/* 352 */       return JWK.parse(json);
+/* 353 */     } catch (Exception e) {
+/* 354 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse Ed25519 key");
+/* 355 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -354,13 +360,13 @@
 /*     */ 
 /*     */   
 /*     */   public void invalidateJwksCache() {
-/* 357 */     this.jwksFetchLock.lock();
+/* 363 */     this.jwksFetchLock.lock();
 /*     */     try {
-/* 359 */       this.cachedJwkSet = null;
-/* 360 */       this.jwksCacheExpiry = 0L;
-/* 361 */       this.pendingFetch = null;
+/* 365 */       this.cachedJwkSet = null;
+/* 366 */       this.jwksCacheExpiry = 0L;
+/* 367 */       this.pendingFetch = null;
 /*     */     } finally {
-/* 363 */       this.jwksFetchLock.unlock();
+/* 369 */       this.jwksFetchLock.unlock();
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -374,87 +380,83 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public IdentityTokenClaims validateIdentityToken(@Nonnull String identityToken) {
-/* 377 */     if (identityToken.isEmpty()) {
-/* 378 */       LOGGER.at(Level.WARNING).log("Identity token is empty");
-/* 379 */       return null;
+/* 383 */     if (identityToken.isEmpty()) {
+/* 384 */       LOGGER.at(Level.WARNING).log("Identity token is empty");
+/* 385 */       return null;
 /*     */     } 
 /*     */ 
 /*     */     
 /*     */     try {
-/* 384 */       SignedJWT signedJWT = SignedJWT.parse(identityToken);
+/* 390 */       SignedJWT signedJWT = SignedJWT.parse(identityToken);
 /*     */ 
 /*     */       
-/* 387 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
-/* 388 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
-/* 389 */         LOGGER.at(Level.WARNING).log("Unsupported identity token algorithm: %s (expected EdDSA)", algorithm);
-/* 390 */         return null;
-/*     */       } 
-/*     */ 
-/*     */       
-/* 394 */       if (!verifySignatureWithRetry(signedJWT)) {
-/* 395 */         LOGGER.at(Level.WARNING).log("Identity token signature verification failed");
+/* 393 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
+/* 394 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
+/* 395 */         LOGGER.at(Level.WARNING).log("Unsupported identity token algorithm: %s (expected EdDSA)", algorithm);
 /* 396 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 400 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-/* 401 */       IdentityTokenClaims claims = new IdentityTokenClaims();
-/* 402 */       claims.issuer = claimsSet.getIssuer();
-/* 403 */       claims.subject = claimsSet.getSubject();
-/* 404 */       claims.username = claimsSet.getStringClaim("username");
-/* 405 */       claims.issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
-/* 406 */       claims.expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
-/* 407 */       claims.notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
-/* 408 */       claims.scope = claimsSet.getStringClaim("scope");
-/*     */ 
-/*     */       
-/* 411 */       if (!this.expectedIssuer.equals(claims.issuer)) {
-/* 412 */         LOGGER.at(Level.WARNING).log("Invalid identity token issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
-/* 413 */         return null;
+/* 400 */       if (!verifySignatureWithRetry(signedJWT)) {
+/* 401 */         LOGGER.at(Level.WARNING).log("Identity token signature verification failed");
+/* 402 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 417 */       long nowSeconds = Instant.now().getEpochSecond();
-/* 418 */       long clockSkewSeconds = 60L;
+/* 406 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+/* 407 */       IdentityTokenClaims claims = new IdentityTokenClaims();
+/* 408 */       claims.issuer = claimsSet.getIssuer();
+/* 409 */       claims.subject = claimsSet.getSubject();
+/* 410 */       claims.username = claimsSet.getStringClaim("username");
+/* 411 */       claims.issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
+/* 412 */       claims.expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
+/* 413 */       claims.notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
+/* 414 */       claims.scope = claimsSet.getStringClaim("scope");
 /*     */ 
 /*     */       
-/* 421 */       if (claims.expiresAt == null) {
-/* 422 */         LOGGER.at(Level.WARNING).log("Identity token missing expiration claim");
-/* 423 */         return null;
-/*     */       } 
-/*     */       
-/* 426 */       if (nowSeconds >= claims.expiresAt.longValue() + clockSkewSeconds) {
-/* 427 */         LOGGER.at(Level.WARNING).log("Identity token expired (exp: %d, now: %d)", claims.expiresAt, nowSeconds);
-/* 428 */         return null;
-/*     */       } 
-/*     */ 
-/*     */       
-/* 432 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - clockSkewSeconds) {
-/* 433 */         LOGGER.at(Level.WARNING).log("Identity token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
-/* 434 */         return null;
+/* 417 */       if (!this.expectedIssuer.equals(claims.issuer)) {
+/* 418 */         LOGGER.at(Level.WARNING).log("Invalid identity token issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
+/* 419 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 438 */       if (claims.issuedAt != null && claims.issuedAt.longValue() > nowSeconds + clockSkewSeconds) {
-/* 439 */         LOGGER.at(Level.WARNING).log("Identity token issued in the future (iat: %d, now: %d)", claims.issuedAt, nowSeconds);
-/* 440 */         return null;
+/* 423 */       long nowSeconds = Instant.now().getEpochSecond();
+/*     */       
+/* 425 */       if (claims.expiresAt == null) {
+/* 426 */         LOGGER.at(Level.WARNING).log("Identity token missing expiration claim");
+/* 427 */         return null;
+/*     */       } 
+/*     */       
+/* 430 */       if (nowSeconds >= claims.expiresAt.longValue() + 300L) {
+/* 431 */         LOGGER.at(Level.WARNING).log("Identity token expired (exp: %d, now: %d)", claims.expiresAt, nowSeconds);
+/* 432 */         return null;
+/*     */       } 
+/*     */       
+/* 435 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - 300L) {
+/* 436 */         LOGGER.at(Level.WARNING).log("Identity token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
+/* 437 */         return null;
+/*     */       } 
+/*     */       
+/* 440 */       if (claims.issuedAt != null && claims.issuedAt.longValue() > nowSeconds + 300L) {
+/* 441 */         LOGGER.at(Level.WARNING).log("Identity token issued in the future (iat: %d, now: %d)", claims.issuedAt, nowSeconds);
+/* 442 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 444 */       if (claims.getSubjectAsUUID() == null) {
-/* 445 */         LOGGER.at(Level.WARNING).log("Identity token has invalid or missing subject UUID");
-/* 446 */         return null;
+/* 446 */       if (claims.getSubjectAsUUID() == null) {
+/* 447 */         LOGGER.at(Level.WARNING).log("Identity token has invalid or missing subject UUID");
+/* 448 */         return null;
 /*     */       } 
 /*     */       
-/* 449 */       LOGGER.at(Level.INFO).log("Identity token validated successfully for user %s (UUID: %s)", claims.username, claims.subject);
-/* 450 */       return claims;
+/* 451 */       LOGGER.at(Level.INFO).log("Identity token validated successfully for user %s (UUID: %s)", claims.username, claims.subject);
+/* 452 */       return claims;
 /*     */     }
-/* 452 */     catch (ParseException e) {
-/* 453 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse identity token");
-/* 454 */       return null;
-/* 455 */     } catch (Exception e) {
-/* 456 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Identity token validation error");
-/* 457 */       return null;
+/* 454 */     catch (ParseException e) {
+/* 455 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse identity token");
+/* 456 */       return null;
+/* 457 */     } catch (Exception e) {
+/* 458 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Identity token validation error");
+/* 459 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -468,73 +470,75 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public SessionTokenClaims validateSessionToken(@Nonnull String sessionToken) {
-/* 471 */     if (sessionToken.isEmpty()) {
-/* 472 */       LOGGER.at(Level.WARNING).log("Session token is empty");
-/* 473 */       return null;
+/* 473 */     if (sessionToken.isEmpty()) {
+/* 474 */       LOGGER.at(Level.WARNING).log("Session token is empty");
+/* 475 */       return null;
 /*     */     } 
 /*     */ 
 /*     */     
 /*     */     try {
-/* 478 */       SignedJWT signedJWT = SignedJWT.parse(sessionToken);
+/* 480 */       SignedJWT signedJWT = SignedJWT.parse(sessionToken);
 /*     */ 
 /*     */       
-/* 481 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
-/* 482 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
-/* 483 */         LOGGER.at(Level.WARNING).log("Unsupported session token algorithm: %s (expected EdDSA)", algorithm);
-/* 484 */         return null;
+/* 483 */       JWSAlgorithm algorithm = signedJWT.getHeader().getAlgorithm();
+/* 484 */       if (!SUPPORTED_ALGORITHM.equals(algorithm)) {
+/* 485 */         LOGGER.at(Level.WARNING).log("Unsupported session token algorithm: %s (expected EdDSA)", algorithm);
+/* 486 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 488 */       if (!verifySignatureWithRetry(signedJWT)) {
-/* 489 */         LOGGER.at(Level.WARNING).log("Session token signature verification failed");
-/* 490 */         return null;
+/* 490 */       if (!verifySignatureWithRetry(signedJWT)) {
+/* 491 */         LOGGER.at(Level.WARNING).log("Session token signature verification failed");
+/* 492 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 494 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-/* 495 */       SessionTokenClaims claims = new SessionTokenClaims();
-/* 496 */       claims.issuer = claimsSet.getIssuer();
-/* 497 */       claims.subject = claimsSet.getSubject();
-/* 498 */       claims.issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
-/* 499 */       claims.expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
-/* 500 */       claims.notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
+/* 496 */       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+/* 497 */       SessionTokenClaims claims = new SessionTokenClaims();
+/* 498 */       claims.issuer = claimsSet.getIssuer();
+/* 499 */       claims.subject = claimsSet.getSubject();
+/* 500 */       claims.issuedAt = (claimsSet.getIssueTime() != null) ? Long.valueOf(claimsSet.getIssueTime().toInstant().getEpochSecond()) : null;
+/* 501 */       claims.expiresAt = (claimsSet.getExpirationTime() != null) ? Long.valueOf(claimsSet.getExpirationTime().toInstant().getEpochSecond()) : null;
+/* 502 */       claims.notBefore = (claimsSet.getNotBeforeTime() != null) ? Long.valueOf(claimsSet.getNotBeforeTime().toInstant().getEpochSecond()) : null;
 /*     */ 
 /*     */       
-/* 503 */       if (!this.expectedIssuer.equals(claims.issuer)) {
-/* 504 */         LOGGER.at(Level.WARNING).log("Invalid session token issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
-/* 505 */         return null;
+/* 505 */       if (!this.expectedIssuer.equals(claims.issuer)) {
+/* 506 */         LOGGER.at(Level.WARNING).log("Invalid session token issuer: expected %s, got %s", this.expectedIssuer, claims.issuer);
+/* 507 */         return null;
 /*     */       } 
 /*     */ 
 /*     */       
-/* 509 */       long nowSeconds = Instant.now().getEpochSecond();
-/* 510 */       long clockSkewSeconds = 60L;
-/*     */ 
+/* 511 */       long nowSeconds = Instant.now().getEpochSecond();
 /*     */       
 /* 513 */       if (claims.expiresAt == null) {
 /* 514 */         LOGGER.at(Level.WARNING).log("Session token missing expiration claim");
 /* 515 */         return null;
 /*     */       } 
 /*     */       
-/* 518 */       if (nowSeconds >= claims.expiresAt.longValue() + clockSkewSeconds) {
+/* 518 */       if (nowSeconds >= claims.expiresAt.longValue() + 300L) {
 /* 519 */         LOGGER.at(Level.WARNING).log("Session token expired (exp: %d, now: %d)", claims.expiresAt, nowSeconds);
 /* 520 */         return null;
 /*     */       } 
-/*     */ 
 /*     */       
-/* 524 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - clockSkewSeconds) {
-/* 525 */         LOGGER.at(Level.WARNING).log("Session token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
-/* 526 */         return null;
+/* 523 */       if (claims.notBefore != null && nowSeconds < claims.notBefore.longValue() - 300L) {
+/* 524 */         LOGGER.at(Level.WARNING).log("Session token not yet valid (nbf: %d, now: %d)", claims.notBefore, nowSeconds);
+/* 525 */         return null;
 /*     */       } 
 /*     */       
-/* 529 */       LOGGER.at(Level.INFO).log("Session token validated successfully");
-/* 530 */       return claims;
+/* 528 */       if (claims.issuedAt != null && claims.issuedAt.longValue() > nowSeconds + 300L) {
+/* 529 */         LOGGER.at(Level.WARNING).log("Session token issued in the future (iat: %d, now: %d)", claims.issuedAt, nowSeconds);
+/* 530 */         return null;
+/*     */       } 
+/*     */       
+/* 533 */       LOGGER.at(Level.INFO).log("Session token validated successfully");
+/* 534 */       return claims;
 /*     */     }
-/* 532 */     catch (ParseException e) {
-/* 533 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse session token");
-/* 534 */       return null;
-/* 535 */     } catch (Exception e) {
-/* 536 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Session token validation error");
-/* 537 */       return null;
+/* 536 */     catch (ParseException e) {
+/* 537 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Failed to parse session token");
+/* 538 */       return null;
+/* 539 */     } catch (Exception e) {
+/* 540 */       ((HytaleLogger.Api)LOGGER.at(Level.WARNING).withCause(e)).log("Session token validation error");
+/* 541 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -568,11 +572,11 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public UUID getSubjectAsUUID() {
-/* 571 */       if (this.subject == null) return null; 
+/* 575 */       if (this.subject == null) return null; 
 /*     */       try {
-/* 573 */         return UUID.fromString(this.subject);
-/* 574 */       } catch (IllegalArgumentException e) {
-/* 575 */         return null;
+/* 577 */         return UUID.fromString(this.subject);
+/* 578 */       } catch (IllegalArgumentException e) {
+/* 579 */         return null;
 /*     */       } 
 /*     */     }
 /*     */ 
@@ -581,18 +585,18 @@
 /*     */     
 /*     */     @Nonnull
 /*     */     public String[] getScopes() {
-/* 584 */       if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
-/* 585 */       return this.scope.split(" ");
+/* 588 */       if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
+/* 589 */       return this.scope.split(" ");
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public boolean hasScope(@Nonnull String targetScope) {
-/* 592 */       for (String s : getScopes()) {
-/* 593 */         if (s.equals(targetScope)) return true; 
+/* 596 */       for (String s : getScopes()) {
+/* 597 */         if (s.equals(targetScope)) return true; 
 /*     */       } 
-/* 595 */       return false;
+/* 599 */       return false;
 /*     */     }
 /*     */   }
 /*     */ 
@@ -615,18 +619,18 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public UUID getSubjectAsUUID() {
-/* 618 */       if (this.subject == null) return null; 
+/* 622 */       if (this.subject == null) return null; 
 /*     */       try {
-/* 620 */         return UUID.fromString(this.subject);
-/* 621 */       } catch (IllegalArgumentException e) {
-/* 622 */         return null;
+/* 624 */         return UUID.fromString(this.subject);
+/* 625 */       } catch (IllegalArgumentException e) {
+/* 626 */         return null;
 /*     */       } 
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

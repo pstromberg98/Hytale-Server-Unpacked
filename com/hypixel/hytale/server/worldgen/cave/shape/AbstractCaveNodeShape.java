@@ -81,7 +81,7 @@
 /*  81 */             boolean isCandidateBlock = (!surfaceLimited || current != 0);
 /*  82 */             if (isCandidateBlock) {
 /*  83 */               BlockFluidEntry blockEntry = CaveNodeShapeUtils.getFillingBlock(caveType, caveNodeType, y, random);
-/*  84 */               if (caveType.getBlockMask().eval(current, currentFluid, blockEntry)) {
+/*  84 */               if (caveType.getBlockMask().eval(current, currentFluid, blockEntry.blockId(), blockEntry.fluidId())) {
 /*  85 */                 if (execution.setBlock(cx, y, cz, (byte)6, blockEntry, environment)) {
 /*  86 */                   if (y < lowest) lowest = y; 
 /*  87 */                   if (y > highest) highest = y;
@@ -129,7 +129,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\cave\shape\AbstractCaveNodeShape.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\cave\shape\AbstractCaveNodeShape.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

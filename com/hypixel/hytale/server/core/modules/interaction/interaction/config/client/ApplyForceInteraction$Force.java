@@ -541,19 +541,18 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class Force
 /*     */   implements NetworkSerializable<AppliedForce>
 /*     */ {
 /*     */   public static final BuilderCodec<Force> CODEC;
 /*     */   
 /*     */   static {
-/* 551 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Force.class, Force::new).appendInherited(new KeyedCodec("Direction", (Codec)Vector3d.CODEC), (o, i) -> o.direction = i, o -> o.direction, (o, p) -> o.direction = p.direction).documentation("The direction of the force to apply.").addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("AdjustVertical", (Codec)Codec.BOOLEAN), (o, i) -> o.adjustVertical = i.booleanValue(), o -> Boolean.valueOf(o.adjustVertical), (o, p) -> o.adjustVertical = p.adjustVertical).documentation("Whether the force should be adjusted based on the vertical look of the user.").add()).appendInherited(new KeyedCodec("Force", (Codec)Codec.DOUBLE), (o, i) -> o.force = i.doubleValue(), o -> Double.valueOf(o.force), (o, p) -> o.force = p.force).documentation("The size of the force to apply.").add()).afterDecode(o -> o.direction.normalize())).build();
+/* 550 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Force.class, Force::new).appendInherited(new KeyedCodec("Direction", (Codec)Vector3d.CODEC), (o, i) -> o.direction = i, o -> o.direction, (o, p) -> o.direction = p.direction).documentation("The direction of the force to apply.").addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("AdjustVertical", (Codec)Codec.BOOLEAN), (o, i) -> o.adjustVertical = i.booleanValue(), o -> Boolean.valueOf(o.adjustVertical), (o, p) -> o.adjustVertical = p.adjustVertical).documentation("Whether the force should be adjusted based on the vertical look of the user.").add()).appendInherited(new KeyedCodec("Force", (Codec)Codec.DOUBLE), (o, i) -> o.force = i.doubleValue(), o -> Double.valueOf(o.force), (o, p) -> o.force = p.force).documentation("The size of the force to apply.").add()).afterDecode(o -> o.direction.normalize())).build();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 556 */   private Vector3d direction = Vector3d.UP;
+/* 555 */   private Vector3d direction = Vector3d.UP;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -564,17 +563,17 @@
 /*     */ 
 /*     */ 
 /*     */   
-/* 567 */   private double force = 1.0D;
+/* 566 */   private double force = 1.0D;
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public AppliedForce toPacket() {
-/* 572 */     return new AppliedForce(new Vector3f((float)this.direction.x, (float)this.direction.y, (float)this.direction.z), this.adjustVertical, (float)this.force);
+/* 571 */     return new AppliedForce(new Vector3f((float)this.direction.x, (float)this.direction.y, (float)this.direction.z), this.adjustVertical, (float)this.force);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\ApplyForceInteraction$Force.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\ApplyForceInteraction$Force.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

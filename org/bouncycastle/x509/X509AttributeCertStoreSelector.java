@@ -205,7 +205,7 @@ public class X509AttributeCertStoreSelector implements Selector {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\x509\X509AttributeCertStoreSelector.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\x509\X509AttributeCertStoreSelector.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -39,14 +39,14 @@
 /*    */         if (options.contains(ValidationOption.BLOCK_STATES) && holder != null) {
 /*    */           UnknownComponents<ChunkStore> unknownComponents = (UnknownComponents<ChunkStore>)holder.getComponent(ChunkStore.REGISTRY.getUnknownComponentType());
 /*    */           if (unknownComponents != null && !unknownComponents.getUnknownComponents().isEmpty())
-/*    */             sb.append("\tUnknown Components: ").append(holder).append("\n"); 
+/*    */             sb.append("\tUnknown Components at (").append(x + offsetX).append(',').append(y + offsetY).append(',').append(z + offsetZ).append("): ").append(unknownComponents.getUnknownComponents().keySet()).append("\n"); 
 /*    */         } 
 /*    */       };
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\blockphysics\WorldValidationUtil.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\blockphysics\WorldValidationUtil.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

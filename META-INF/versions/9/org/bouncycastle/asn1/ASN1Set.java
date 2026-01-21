@@ -243,7 +243,7 @@ public abstract class ASN1Set extends ASN1Primitive implements Iterable<ASN1Enco
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\ASN1Set.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\ASN1Set.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

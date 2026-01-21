@@ -601,6 +601,10 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class JWTClaims
 /*     */ {
 /*     */   public String issuer;
@@ -615,17 +619,17 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public UUID getSubjectAsUUID() {
-/* 618 */     if (this.subject == null) return null; 
+/* 622 */     if (this.subject == null) return null; 
 /*     */     try {
-/* 620 */       return UUID.fromString(this.subject);
-/* 621 */     } catch (IllegalArgumentException e) {
-/* 622 */       return null;
+/* 624 */       return UUID.fromString(this.subject);
+/* 625 */     } catch (IllegalArgumentException e) {
+/* 626 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator$JWTClaims.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator$JWTClaims.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

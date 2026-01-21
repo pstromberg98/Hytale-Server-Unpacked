@@ -63,13 +63,13 @@
 /* 63 */     int height = worldChunk.getHeight(MathUtil.floor(position.getX()), MathUtil.floor(position.getZ()));
 /* 64 */     ((TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType())).append(world, position.clone(), headRotation.clone(), "Underground");
 /*    */     
-/* 66 */     store.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(new Vector3d(position.getX(), (height + 2), position.getZ()), Vector3f.NaN));
+/* 66 */     store.addComponent(ref, Teleport.getComponentType(), (Component)Teleport.createForPlayer(new Vector3d(position.getX(), (height + 2), position.getZ()), Vector3f.NaN));
 /* 67 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_TOP);
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportTopCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportTopCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

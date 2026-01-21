@@ -26,67 +26,70 @@
 /*    */ 
 /*    */ public class TeleportWorldCommand
 /*    */   extends AbstractPlayerCommand {
-/* 29 */   private static final Message MESSAGE_WORLD_NOT_FOUND = Message.translation("server.world.notFound");
-/* 30 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/* 31 */   private static final Message MESSAGE_WORLD_SPAWN_NOT_SET = Message.translation("server.world.spawn.notSet");
-/* 32 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD = Message.translation("server.commands.teleport.teleportedToWorld");
+/*    */   @Nonnull
+/* 30 */   private static final Message MESSAGE_WORLD_NOT_FOUND = Message.translation("server.world.notFound");
+/*    */   @Nonnull
+/* 32 */   private static final Message MESSAGE_WORLD_SPAWN_NOT_SET = Message.translation("server.world.spawn.notSet");
+/*    */   @Nonnull
+/* 34 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD = Message.translation("server.commands.teleport.teleportedToWorld");
 /*    */   
 /*    */   @Nonnull
-/* 35 */   private final RequiredArg<String> worldNameArg = withRequiredArg("worldName", "server.commands.worldport.worldName.desc", (ArgumentType)ArgTypes.STRING);
+/* 37 */   private final RequiredArg<String> worldNameArg = withRequiredArg("worldName", "server.commands.worldport.worldName.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public TeleportWorldCommand() {
-/* 41 */     super("world", "server.commands.worldport.desc");
-/* 42 */     setPermissionGroup(null);
-/* 43 */     requirePermission(HytalePermissions.fromCommand("teleport.world"));
+/* 43 */     super("world", "server.commands.worldport.desc");
+/* 44 */     setPermissionGroup(null);
+/* 45 */     requirePermission(HytalePermissions.fromCommand("teleport.world"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 48 */     String worldName = (String)this.worldNameArg.get(context);
+/* 50 */     String worldName = (String)this.worldNameArg.get(context);
 /*    */ 
 /*    */     
-/* 51 */     World targetWorld = Universe.get().getWorld(worldName);
-/* 52 */     if (targetWorld == null) {
-/* 53 */       context.sendMessage(MESSAGE_WORLD_NOT_FOUND.param("worldName", worldName));
+/* 53 */     World targetWorld = Universe.get().getWorld(worldName);
+/* 54 */     if (targetWorld == null) {
+/* 55 */       context.sendMessage(MESSAGE_WORLD_NOT_FOUND.param("worldName", worldName));
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 58 */     Transform spawnPoint = targetWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, (ComponentAccessor)store);
-/* 59 */     if (spawnPoint == null) {
-/* 60 */       context.sendMessage(MESSAGE_WORLD_SPAWN_NOT_SET.param("worldName", worldName));
+/* 60 */     Transform spawnPoint = targetWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, (ComponentAccessor)store);
+/* 61 */     if (spawnPoint == null) {
+/* 62 */       context.sendMessage(MESSAGE_WORLD_SPAWN_NOT_SET.param("worldName", worldName));
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 65 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 66 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
+/* 67 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 68 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
 /*    */     
-/* 68 */     if (transformComponent != null && headRotationComponent != null) {
-/* 69 */       Vector3d previousPos = transformComponent.getPosition().clone();
-/* 70 */       Vector3f previousRotation = headRotationComponent.getRotation().clone();
+/* 70 */     if (transformComponent != null && headRotationComponent != null) {
+/* 71 */       Vector3d previousPos = transformComponent.getPosition().clone();
+/* 72 */       Vector3f previousRotation = headRotationComponent.getRotation().clone();
 /*    */       
-/* 72 */       TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
-/* 73 */       teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + targetWorld
-/* 74 */           .getName());
+/* 74 */       TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
+/* 75 */       teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + targetWorld
+/* 76 */           .getName());
 /*    */     } 
 /*    */     
-/* 77 */     store.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(targetWorld, spawnPoint));
+/* 79 */     Teleport teleportComponent = Teleport.createForPlayer(targetWorld, spawnPoint);
+/* 80 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*    */     
-/* 79 */     Vector3d spawnPos = spawnPoint.getPosition();
-/* 80 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD
-/* 81 */         .param("worldName", worldName)
-/* 82 */         .param("x", spawnPos.getX())
-/* 83 */         .param("y", spawnPos.getY())
-/* 84 */         .param("z", spawnPos.getZ()));
+/* 82 */     Vector3d spawnPos = spawnPoint.getPosition();
+/* 83 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD
+/* 84 */         .param("worldName", worldName)
+/* 85 */         .param("x", spawnPos.getX())
+/* 86 */         .param("y", spawnPos.getY())
+/* 87 */         .param("z", spawnPos.getZ()));
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportWorldCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportWorldCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

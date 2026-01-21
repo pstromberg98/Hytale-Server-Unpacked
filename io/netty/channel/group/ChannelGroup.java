@@ -51,7 +51,7 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\io\netty\channel\group\ChannelGroup.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\io\netty\channel\group\ChannelGroup.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

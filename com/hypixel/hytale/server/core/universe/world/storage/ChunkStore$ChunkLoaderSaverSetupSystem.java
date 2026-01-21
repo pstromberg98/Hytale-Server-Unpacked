@@ -991,12 +991,46 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class ChunkLoaderSaverSetupSystem
 /*      */   extends StoreSystem<ChunkStore>
 /*      */ {
 /*      */   @Nullable
 /*      */   public SystemGroup<ChunkStore> getGroup() {
-/*  999 */     return ChunkStore.INIT_GROUP;
+/* 1033 */     return ChunkStore.INIT_GROUP;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1006,39 +1040,39 @@
 /*      */ 
 /*      */   
 /*      */   public void onSystemAddedToStore(@Nonnull Store<ChunkStore> store) {
-/* 1009 */     ChunkStore data = (ChunkStore)store.getExternalData();
-/* 1010 */     World world = data.getWorld();
-/* 1011 */     IChunkStorageProvider chunkStorageProvider = world.getWorldConfig().getChunkStorageProvider();
+/* 1043 */     ChunkStore data = (ChunkStore)store.getExternalData();
+/* 1044 */     World world = data.getWorld();
+/* 1045 */     IChunkStorageProvider chunkStorageProvider = world.getWorldConfig().getChunkStorageProvider();
 /*      */     try {
-/* 1013 */       data.loader = chunkStorageProvider.getLoader(store);
-/* 1014 */       data.saver = chunkStorageProvider.getSaver(store);
-/* 1015 */     } catch (IOException e) {
-/* 1016 */       throw SneakyThrow.sneakyThrow(e);
+/* 1047 */       data.loader = chunkStorageProvider.getLoader(store);
+/* 1048 */       data.saver = chunkStorageProvider.getSaver(store);
+/* 1049 */     } catch (IOException e) {
+/* 1050 */       throw SneakyThrow.sneakyThrow(e);
 /*      */     } 
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onSystemRemovedFromStore(@Nonnull Store<ChunkStore> store) {
-/* 1022 */     ChunkStore data = (ChunkStore)store.getExternalData();
+/* 1056 */     ChunkStore data = (ChunkStore)store.getExternalData();
 /*      */     try {
-/* 1024 */       if (data.loader != null) {
-/* 1025 */         IChunkLoader oldLoader = data.loader;
-/* 1026 */         data.loader = null;
-/* 1027 */         oldLoader.close();
+/* 1058 */       if (data.loader != null) {
+/* 1059 */         IChunkLoader oldLoader = data.loader;
+/* 1060 */         data.loader = null;
+/* 1061 */         oldLoader.close();
 /*      */       } 
-/* 1029 */       if (data.saver != null) {
-/* 1030 */         IChunkSaver oldSaver = data.saver;
-/* 1031 */         data.saver = null;
-/* 1032 */         oldSaver.close();
+/* 1063 */       if (data.saver != null) {
+/* 1064 */         IChunkSaver oldSaver = data.saver;
+/* 1065 */         data.saver = null;
+/* 1066 */         oldSaver.close();
 /*      */       } 
-/* 1034 */     } catch (IOException e) {
-/* 1035 */       ((HytaleLogger.Api)ChunkStore.LOGGER.at(Level.SEVERE).withCause(e)).log("Failed to close storage!");
+/* 1068 */     } catch (IOException e) {
+/* 1069 */       ((HytaleLogger.Api)ChunkStore.LOGGER.at(Level.SEVERE).withCause(e)).log("Failed to close storage!");
 /*      */     } 
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore$ChunkLoaderSaverSetupSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore$ChunkLoaderSaverSetupSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

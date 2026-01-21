@@ -133,7 +133,7 @@ public class X9ECParameters extends ASN1Object implements X9ObjectIdentifiers {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x9\X9ECParameters.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x9\X9ECParameters.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

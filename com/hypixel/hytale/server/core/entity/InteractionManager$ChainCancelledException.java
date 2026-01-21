@@ -2096,6 +2096,15 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class ChainCancelledException
 /*      */   extends RuntimeException
 /*      */ {
@@ -2103,12 +2112,12 @@
 /*      */   private final InteractionState state;
 /*      */   
 /*      */   public ChainCancelledException(@Nonnull InteractionState state) {
-/* 2106 */     this.state = state;
+/* 2115 */     this.state = state;
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\InteractionManager$ChainCancelledException.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\InteractionManager$ChainCancelledException.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

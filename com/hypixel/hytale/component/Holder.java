@@ -439,179 +439,201 @@
 /*     */     } 
 /*     */   }
 /*     */   
-/*     */   void loadComponentsMap(@Nonnull ComponentRegistry.Data<ECS_TYPE> data, @Nonnull Map<String, Component<ECS_TYPE>> map) {
-/* 443 */     assert this.components != null;
+/*     */   public Holder<ECS_TYPE> cloneSerializable(@Nonnull ComponentRegistry.Data<ECS_TYPE> data) {
+/* 443 */     assert this.archetype != null;
+/* 444 */     assert this.components != null;
+/* 445 */     assert this.registry != null;
 /*     */     
-/* 445 */     long stamp = this.lock.writeLock();
+/* 447 */     long stamp = this.lock.readLock();
+/*     */     try {
+/* 449 */       Archetype<ECS_TYPE> serializableArchetype = this.archetype.getSerializableArchetype(data);
+/*     */ 
+/*     */       
+/* 452 */       Component[] arrayOfComponent = new Component[serializableArchetype.length()];
+/* 453 */       for (int i = serializableArchetype.getMinIndex(); i < serializableArchetype.length(); i++) {
+/* 454 */         ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = (ComponentType)serializableArchetype.get(i);
+/* 455 */         if (componentType != null)
+/* 456 */           arrayOfComponent[i] = this.components[i].cloneSerializable(); 
+/*     */       } 
+/* 458 */       return this.registry.newHolder(serializableArchetype, (Component<ECS_TYPE>[])arrayOfComponent);
+/*     */     } finally {
+/* 460 */       this.lock.unlockRead(stamp);
+/*     */     } 
+/*     */   }
+/*     */   
+/*     */   void loadComponentsMap(@Nonnull ComponentRegistry.Data<ECS_TYPE> data, @Nonnull Map<String, Component<ECS_TYPE>> map) {
+/* 465 */     assert this.components != null;
+/*     */     
+/* 467 */     long stamp = this.lock.writeLock();
 /*     */     
 /*     */     try {
-/* 448 */       ComponentType[] arrayOfComponentType = new ComponentType[map.size()];
-/* 449 */       int i = 0;
+/* 470 */       ComponentType[] arrayOfComponentType = new ComponentType[map.size()];
+/* 471 */       int i = 0;
 /*     */       
-/* 451 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = data.getRegistry().getUnknownComponentType();
-/* 452 */       UnknownComponents<ECS_TYPE> unknownComponents = (UnknownComponents<ECS_TYPE>)map.remove("Unknown");
-/* 453 */       if (unknownComponents != null) {
+/* 473 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = data.getRegistry().getUnknownComponentType();
+/* 474 */       UnknownComponents<ECS_TYPE> unknownComponents = (UnknownComponents<ECS_TYPE>)map.remove("Unknown");
+/* 475 */       if (unknownComponents != null) {
 /*     */         
-/* 455 */         for (Map.Entry<String, BsonDocument> e : (Iterable<Map.Entry<String, BsonDocument>>)unknownComponents.getUnknownComponents().entrySet()) {
-/* 456 */           ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> type = (ComponentType)data.getComponentType(e.getKey());
-/* 457 */           if (type == null) {
+/* 477 */         for (Map.Entry<String, BsonDocument> e : (Iterable<Map.Entry<String, BsonDocument>>)unknownComponents.getUnknownComponents().entrySet()) {
+/* 478 */           ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> type = (ComponentType)data.getComponentType(e.getKey());
+/* 479 */           if (type == null) {
 /*     */             continue;
 /*     */           }
-/* 460 */           if (map.containsKey(e.getKey())) {
+/* 482 */           if (map.containsKey(e.getKey())) {
 /*     */             continue;
 /*     */           }
-/* 463 */           Codec<Component<ECS_TYPE>> codec = data.getComponentCodec((ComponentType)type);
+/* 485 */           Codec<Component<ECS_TYPE>> codec = data.getComponentCodec((ComponentType)type);
 /*     */           
-/* 465 */           ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
-/* 466 */           Component<ECS_TYPE> decodedComponent = (Component<ECS_TYPE>)codec.decode((BsonValue)e.getValue(), extraInfo);
-/* 467 */           extraInfo.getValidationResults().logOrThrowValidatorExceptions(UnknownComponents.LOGGER);
+/* 487 */           ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
+/* 488 */           Component<ECS_TYPE> decodedComponent = (Component<ECS_TYPE>)codec.decode((BsonValue)e.getValue(), extraInfo);
+/* 489 */           extraInfo.getValidationResults().logOrThrowValidatorExceptions(UnknownComponents.LOGGER);
 /*     */           
-/* 469 */           if (arrayOfComponentType.length <= i) {
-/* 470 */             arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
+/* 491 */           if (arrayOfComponentType.length <= i) {
+/* 492 */             arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
 /*     */           }
 /*     */           
-/* 473 */           arrayOfComponentType[i++] = type;
-/* 474 */           int j = type.getIndex();
-/* 475 */           if (this.components.length <= j) {
-/* 476 */             this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, j + 1);
+/* 495 */           arrayOfComponentType[i++] = type;
+/* 496 */           int j = type.getIndex();
+/* 497 */           if (this.components.length <= j) {
+/* 498 */             this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, j + 1);
 /*     */           }
-/* 478 */           this.components[j] = decodedComponent;
+/* 500 */           this.components[j] = decodedComponent;
 /*     */         } 
 /*     */         
-/* 481 */         if (arrayOfComponentType.length <= i) {
-/* 482 */           arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
+/* 503 */         if (arrayOfComponentType.length <= i) {
+/* 504 */           arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
 /*     */         }
 /*     */         
-/* 485 */         arrayOfComponentType[i++] = unknownComponentType;
-/* 486 */         int index = unknownComponentType.getIndex();
-/* 487 */         if (this.components.length <= index) {
-/* 488 */           this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, index + 1);
+/* 507 */         arrayOfComponentType[i++] = unknownComponentType;
+/* 508 */         int index = unknownComponentType.getIndex();
+/* 509 */         if (this.components.length <= index) {
+/* 510 */           this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, index + 1);
 /*     */         }
-/* 490 */         this.components[index] = (Component<ECS_TYPE>)unknownComponents;
+/* 512 */         this.components[index] = (Component<ECS_TYPE>)unknownComponents;
 /*     */       } 
 /*     */       
-/* 493 */       for (Map.Entry<String, Component<ECS_TYPE>> entry : map.entrySet()) {
-/* 494 */         Component<ECS_TYPE> component = entry.getValue();
+/* 515 */       for (Map.Entry<String, Component<ECS_TYPE>> entry : map.entrySet()) {
+/* 516 */         Component<ECS_TYPE> component = entry.getValue();
 /*     */ 
 /*     */         
-/* 497 */         if (component instanceof TempUnknownComponent) { TempUnknownComponent tempUnknownComponent = (TempUnknownComponent)component;
-/* 498 */           if (unknownComponents == null) {
-/* 499 */             unknownComponents = new UnknownComponents();
-/* 500 */             if (arrayOfComponentType.length <= i) {
-/* 501 */               arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
+/* 519 */         if (component instanceof TempUnknownComponent) { TempUnknownComponent tempUnknownComponent = (TempUnknownComponent)component;
+/* 520 */           if (unknownComponents == null) {
+/* 521 */             unknownComponents = new UnknownComponents();
+/* 522 */             if (arrayOfComponentType.length <= i) {
+/* 523 */               arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
 /*     */             }
-/* 503 */             arrayOfComponentType[i++] = unknownComponentType;
-/* 504 */             int j = unknownComponentType.getIndex();
-/* 505 */             if (this.components.length <= j) {
-/* 506 */               this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, j + 1);
+/* 525 */             arrayOfComponentType[i++] = unknownComponentType;
+/* 526 */             int j = unknownComponentType.getIndex();
+/* 527 */             if (this.components.length <= j) {
+/* 528 */               this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, j + 1);
 /*     */             }
-/* 508 */             this.components[j] = (Component<ECS_TYPE>)unknownComponents;
+/* 530 */             this.components[j] = (Component<ECS_TYPE>)unknownComponents;
 /*     */           } 
 /*     */           
-/* 511 */           unknownComponents.addComponent(entry.getKey(), tempUnknownComponent);
+/* 533 */           unknownComponents.addComponent(entry.getKey(), tempUnknownComponent);
 /*     */           
 /*     */           continue; }
 /*     */         
-/* 515 */         ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = (ComponentType)data.getComponentType(entry.getKey());
-/* 516 */         if (arrayOfComponentType.length <= i) {
-/* 517 */           arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
+/* 537 */         ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = (ComponentType)data.getComponentType(entry.getKey());
+/* 538 */         if (arrayOfComponentType.length <= i) {
+/* 539 */           arrayOfComponentType = Arrays.<ComponentType>copyOf(arrayOfComponentType, i + 1);
 /*     */         }
-/* 519 */         arrayOfComponentType[i++] = componentType;
-/* 520 */         int index = componentType.getIndex();
-/* 521 */         if (this.components.length <= index) {
-/* 522 */           this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, index + 1);
+/* 541 */         arrayOfComponentType[i++] = componentType;
+/* 542 */         int index = componentType.getIndex();
+/* 543 */         if (this.components.length <= index) {
+/* 544 */           this.components = Arrays.<Component<ECS_TYPE>>copyOf(this.components, index + 1);
 /*     */         }
-/* 524 */         this.components[index] = component;
+/* 546 */         this.components[index] = component;
 /*     */       } 
-/* 526 */       this.archetype = Archetype.of((arrayOfComponentType.length == i) ? (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType : Arrays.<ComponentType<ECS_TYPE, ?>>copyOf((ComponentType<ECS_TYPE, ?>[])arrayOfComponentType, i));
+/* 548 */       this.archetype = Archetype.of((arrayOfComponentType.length == i) ? (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType : Arrays.<ComponentType<ECS_TYPE, ?>>copyOf((ComponentType<ECS_TYPE, ?>[])arrayOfComponentType, i));
 /*     */     } finally {
-/* 528 */       this.lock.unlockWrite(stamp);
+/* 550 */       this.lock.unlockWrite(stamp);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   Map<String, Component<ECS_TYPE>> createComponentsMap(@Nonnull ComponentRegistry.Data<ECS_TYPE> data) {
-/* 534 */     assert this.archetype != null;
-/* 535 */     assert this.components != null;
+/* 556 */     assert this.archetype != null;
+/* 557 */     assert this.components != null;
 /*     */     
-/* 537 */     long stamp = this.lock.readLock();
+/* 559 */     long stamp = this.lock.readLock();
 /*     */     try {
-/* 539 */       if (this.archetype.isEmpty()) return (Map)Collections.emptyMap();
+/* 561 */       if (this.archetype.isEmpty()) return (Map)Collections.emptyMap();
 /*     */       
-/* 541 */       ComponentRegistry<ECS_TYPE> registry = data.getRegistry();
-/* 542 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = registry.getUnknownComponentType();
+/* 563 */       ComponentRegistry<ECS_TYPE> registry = data.getRegistry();
+/* 564 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = registry.getUnknownComponentType();
 /*     */       
-/* 544 */       Object2ObjectOpenHashMap<String, TempUnknownComponent> object2ObjectOpenHashMap = new Object2ObjectOpenHashMap(this.archetype.length());
-/* 545 */       for (int i = this.archetype.getMinIndex(); i < this.archetype.length(); i++) {
-/* 546 */         ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = (ComponentType)this.archetype.get(i);
-/* 547 */         if (componentType != null && 
-/* 548 */           data.getComponentCodec(componentType) != null)
+/* 566 */       Object2ObjectOpenHashMap<String, TempUnknownComponent> object2ObjectOpenHashMap = new Object2ObjectOpenHashMap(this.archetype.length());
+/* 567 */       for (int i = this.archetype.getMinIndex(); i < this.archetype.length(); i++) {
+/* 568 */         ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = (ComponentType)this.archetype.get(i);
+/* 569 */         if (componentType != null && 
+/* 570 */           data.getComponentCodec(componentType) != null)
 /*     */         {
 /*     */           
-/* 551 */           if (componentType == unknownComponentType) {
-/* 552 */             UnknownComponents<ECS_TYPE> unknownComponents = (UnknownComponents<ECS_TYPE>)this.components[componentType.getIndex()];
-/* 553 */             for (Map.Entry<String, BsonDocument> entry : (Iterable<Map.Entry<String, BsonDocument>>)unknownComponents.getUnknownComponents().entrySet()) {
-/* 554 */               object2ObjectOpenHashMap.putIfAbsent(entry.getKey(), new TempUnknownComponent(entry.getValue()));
+/* 573 */           if (componentType == unknownComponentType) {
+/* 574 */             UnknownComponents<ECS_TYPE> unknownComponents = (UnknownComponents<ECS_TYPE>)this.components[componentType.getIndex()];
+/* 575 */             for (Map.Entry<String, BsonDocument> entry : (Iterable<Map.Entry<String, BsonDocument>>)unknownComponents.getUnknownComponents().entrySet()) {
+/* 576 */               object2ObjectOpenHashMap.putIfAbsent(entry.getKey(), new TempUnknownComponent(entry.getValue()));
 /*     */             }
 /*     */           }
 /*     */           else {
 /*     */             
-/* 559 */             object2ObjectOpenHashMap.put(data.getComponentId(componentType), this.components[componentType.getIndex()]);
+/* 581 */             object2ObjectOpenHashMap.put(data.getComponentId(componentType), this.components[componentType.getIndex()]);
 /*     */           }  } 
-/* 561 */       }  return (Map)object2ObjectOpenHashMap;
+/* 583 */       }  return (Map)object2ObjectOpenHashMap;
 /*     */     } finally {
-/* 563 */       this.lock.unlockRead(stamp);
+/* 585 */       this.lock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean equals(@Nullable Object o) {
-/* 569 */     if (this == o) return true; 
-/* 570 */     if (o == null || getClass() != o.getClass()) return false;
+/* 591 */     if (this == o) return true; 
+/* 592 */     if (o == null || getClass() != o.getClass()) return false;
 /*     */     
-/* 572 */     Holder<?> that = (Holder)o;
+/* 594 */     Holder<?> that = (Holder)o;
 /*     */     
-/* 574 */     long stamp = this.lock.readLock();
-/* 575 */     long thatStamp = that.lock.readLock();
+/* 596 */     long stamp = this.lock.readLock();
+/* 597 */     long thatStamp = that.lock.readLock();
 /*     */     try {
-/* 577 */       if (!Objects.equals(this.archetype, that.archetype)) return false;
+/* 599 */       if (!Objects.equals(this.archetype, that.archetype)) return false;
 /*     */       
-/* 579 */       return Arrays.equals((Object[])this.components, (Object[])that.components);
+/* 601 */       return Arrays.equals((Object[])this.components, (Object[])that.components);
 /*     */     } finally {
-/* 581 */       that.lock.unlockRead(thatStamp);
-/* 582 */       this.lock.unlockRead(stamp);
+/* 603 */       that.lock.unlockRead(thatStamp);
+/* 604 */       this.lock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 588 */     long stamp = this.lock.readLock();
+/* 610 */     long stamp = this.lock.readLock();
 /*     */     try {
-/* 590 */       int result = (this.archetype != null) ? this.archetype.hashCode() : 0;
-/* 591 */       result = 31 * result + Arrays.hashCode((Object[])this.components);
-/* 592 */       return result;
+/* 612 */       int result = (this.archetype != null) ? this.archetype.hashCode() : 0;
+/* 613 */       result = 31 * result + Arrays.hashCode((Object[])this.components);
+/* 614 */       return result;
 /*     */     } finally {
-/* 594 */       this.lock.unlockRead(stamp);
+/* 616 */       this.lock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 601 */     long stamp = this.lock.readLock();
+/* 623 */     long stamp = this.lock.readLock();
 /*     */     try {
-/* 603 */       return "EntityHolder{archetype=" + String.valueOf(this.archetype) + ", components=" + 
+/* 625 */       return "EntityHolder{archetype=" + String.valueOf(this.archetype) + ", components=" + 
 /*     */         
-/* 605 */         Arrays.toString((Object[])this.components) + "}";
+/* 627 */         Arrays.toString((Object[])this.components) + "}";
 /*     */     } finally {
 /*     */       
-/* 608 */       this.lock.unlockRead(stamp);
+/* 630 */       this.lock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\component\Holder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\component\Holder.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -1640,6 +1640,36 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public final class FluidHolder
 /*      */   extends Record
 /*      */ {
@@ -1653,7 +1683,7 @@
 /*      */     //   6: areturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1662	-> 0
+/*      */     //   #1692	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$FluidHolder;
@@ -1666,7 +1696,7 @@
 /*      */     //   6: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1662	-> 0
+/*      */     //   #1692	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$FluidHolder;
@@ -1680,7 +1710,7 @@
 /*      */     //   7: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1662	-> 0
+/*      */     //   #1692	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$FluidHolder;
@@ -1688,12 +1718,12 @@
 /*      */   }
 /*      */   
 /*      */   public FluidHolder(int fluidId, byte fluidLevel) {
-/* 1662 */     this.fluidId = fluidId; this.fluidLevel = fluidLevel; } public int fluidId() { return this.fluidId; } public byte fluidLevel() { return this.fluidLevel; }
+/* 1692 */     this.fluidId = fluidId; this.fluidLevel = fluidLevel; } public int fluidId() { return this.fluidId; } public byte fluidLevel() { return this.fluidLevel; }
 /*      */ 
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\prefab\selection\standard\BlockSelection$FluidHolder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\prefab\selection\standard\BlockSelection$FluidHolder.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

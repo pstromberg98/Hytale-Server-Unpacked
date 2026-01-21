@@ -59,7 +59,7 @@ public class JcaPKIXIdentity extends PKIXIdentity {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\pkix\jcajce\JcaPKIXIdentity.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\pkix\jcajce\JcaPKIXIdentity.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

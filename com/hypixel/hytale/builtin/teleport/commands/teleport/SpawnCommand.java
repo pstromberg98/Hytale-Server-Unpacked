@@ -30,22 +30,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class SpawnCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/*  38 */   private final OptionalArg<Integer> spawnIndexArg = withOptionalArg("spawnIndex", "server.commands.spawn.index.desc", (ArgumentType)ArgTypes.INTEGER);
+/*  37 */   private final OptionalArg<Integer> spawnIndexArg = withOptionalArg("spawnIndex", "server.commands.spawn.index.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public SpawnCommand() {
-/*  44 */     super("spawn", "server.commands.spawn.desc");
-/*  45 */     requirePermission(HytalePermissions.fromCommand("spawn.self"));
-/*  46 */     addUsageVariant((AbstractCommand)new SpawnOtherCommand());
-/*  47 */     addSubCommand((AbstractCommand)new SpawnSetCommand());
-/*  48 */     addSubCommand((AbstractCommand)new SpawnSetDefaultCommand());
+/*  43 */     super("spawn", "server.commands.spawn.desc");
+/*  44 */     requirePermission(HytalePermissions.fromCommand("spawn.self"));
+/*  45 */     addUsageVariant((AbstractCommand)new SpawnOtherCommand());
+/*  46 */     addSubCommand((AbstractCommand)new SpawnSetCommand());
+/*  47 */     addSubCommand((AbstractCommand)new SpawnSetDefaultCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -54,34 +53,29 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  57 */     Transform spawn = resolveSpawn(context, world, playerRef, this.spawnIndexArg);
+/*  56 */     Transform spawnTransform = resolveSpawn(context, world, playerRef, this.spawnIndexArg);
 /*     */     
-/*  59 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/*  60 */     assert transformComponent != null;
+/*  58 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/*  59 */     assert transformComponent != null;
 /*     */     
-/*  62 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
-/*  63 */     assert headRotationComponent != null;
+/*  61 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
+/*  62 */     assert headRotationComponent != null;
 /*     */     
-/*  65 */     Vector3f previousBodyRotation = transformComponent.getRotation().clone();
-/*  66 */     Vector3d previousPos = transformComponent.getPosition().clone();
-/*  67 */     Vector3f previousRotation = headRotationComponent.getRotation().clone();
+/*  64 */     Vector3d previousPos = transformComponent.getPosition().clone();
+/*  65 */     Vector3f previousRotation = headRotationComponent.getRotation().clone();
 /*     */     
-/*  69 */     TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
-/*  70 */     teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + world
-/*  71 */         .getName() + "'s spawn");
-/*     */ 
+/*  67 */     TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
+/*  68 */     teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + world
+/*  69 */         .getName() + "'s spawn");
 /*     */     
-/*  74 */     Vector3f spawnRotation = spawn.getRotation().clone();
-/*  75 */     spawn.setRotation(new Vector3f(previousBodyRotation.getPitch(), spawnRotation.getYaw(), previousBodyRotation.getRoll()));
+/*  71 */     Teleport teleportComponent = Teleport.createForPlayer(world, spawnTransform);
+/*  72 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */     
-/*  77 */     Teleport teleport = (new Teleport(world, spawn)).withHeadRotation(spawnRotation);
-/*  78 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleport);
-/*     */     
-/*  80 */     Vector3d position = spawn.getPosition();
-/*  81 */     context.sendMessage(Message.translation("server.commands.spawn.teleported")
-/*  82 */         .param("x", position.getX())
-/*  83 */         .param("y", position.getY())
-/*  84 */         .param("z", position.getZ()));
+/*  74 */     Vector3d position = spawnTransform.getPosition();
+/*  75 */     context.sendMessage(Message.translation("server.commands.spawn.teleported")
+/*  76 */         .param("x", position.getX())
+/*  77 */         .param("y", position.getY())
+/*  78 */         .param("z", position.getZ()));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -91,22 +85,22 @@
 /*     */ 
 /*     */   
 /*     */   private static Transform resolveSpawn(@Nonnull CommandContext context, @Nonnull World world, @Nonnull PlayerRef playerRef, @Nonnull OptionalArg<Integer> spawnIndexArg) {
-/*  94 */     ISpawnProvider spawnProvider = world.getWorldConfig().getSpawnProvider();
+/*  88 */     ISpawnProvider spawnProvider = world.getWorldConfig().getSpawnProvider();
 /*     */     
-/*  96 */     if (spawnIndexArg.provided(context)) {
-/*  97 */       int spawnIndex = ((Integer)spawnIndexArg.get(context)).intValue();
-/*  98 */       Transform[] spawnPoints = spawnProvider.getSpawnPoints();
-/*  99 */       if (spawnIndex < 0 || spawnIndex >= spawnPoints.length) {
-/* 100 */         int maxIndex = spawnPoints.length - 1;
-/* 101 */         context.sendMessage(Message.translation("server.commands.spawn.indexNotFound")
-/* 102 */             .param("maxIndex", maxIndex));
-/* 103 */         throw new GeneralCommandException(Message.translation("server.commands.errors.spawnIndexOutOfRange")
-/* 104 */             .param("index", spawnIndex)
-/* 105 */             .param("maxIndex", maxIndex));
+/*  90 */     if (spawnIndexArg.provided(context)) {
+/*  91 */       int spawnIndex = ((Integer)spawnIndexArg.get(context)).intValue();
+/*  92 */       Transform[] spawnPoints = spawnProvider.getSpawnPoints();
+/*  93 */       if (spawnIndex < 0 || spawnIndex >= spawnPoints.length) {
+/*  94 */         int maxIndex = spawnPoints.length - 1;
+/*  95 */         context.sendMessage(Message.translation("server.commands.spawn.indexNotFound")
+/*  96 */             .param("maxIndex", maxIndex));
+/*  97 */         throw new GeneralCommandException(Message.translation("server.commands.errors.spawnIndexOutOfRange")
+/*  98 */             .param("index", spawnIndex)
+/*  99 */             .param("maxIndex", maxIndex));
 /*     */       } 
-/* 107 */       return spawnPoints[spawnIndex];
+/* 101 */       return spawnPoints[spawnIndex];
 /*     */     } 
-/* 109 */     return spawnProvider.getSpawnPoint(world, playerRef.getUuid());
+/* 103 */     return spawnProvider.getSpawnPoint(world, playerRef.getUuid());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -115,42 +109,42 @@
 /*     */   private static class SpawnOtherCommand
 /*     */     extends CommandBase
 /*     */   {
-/* 118 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
+/* 112 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 124 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 118 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 130 */     private final OptionalArg<Integer> spawnIndexArg = withOptionalArg("spawnIndex", "server.commands.spawn.index.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 124 */     private final OptionalArg<Integer> spawnIndexArg = withOptionalArg("spawnIndex", "server.commands.spawn.index.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     SpawnOtherCommand() {
-/* 136 */       super("server.commands.spawn.other.desc");
-/* 137 */       requirePermission(HytalePermissions.fromCommand("spawn.other"));
+/* 130 */       super("server.commands.spawn.other.desc");
+/* 131 */       requirePermission(HytalePermissions.fromCommand("spawn.other"));
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void executeSync(@Nonnull CommandContext context) {
-/* 142 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
-/* 143 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
+/* 136 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
+/* 137 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
 /*     */       
-/* 145 */       if (ref == null || !ref.isValid()) {
-/* 146 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/* 139 */       if (ref == null || !ref.isValid()) {
+/* 140 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 150 */       Store<EntityStore> store = ref.getStore();
-/* 151 */       World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 144 */       Store<EntityStore> store = ref.getStore();
+/* 145 */       World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */       
-/* 153 */       world.execute(() -> {
+/* 147 */       world.execute(() -> {
 /*     */             Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */             if (playerComponent == null) {
 /*     */               context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
@@ -163,15 +157,12 @@
 /*     */             assert transformComponent != null;
 /*     */             HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
 /*     */             assert headRotationComponent != null;
-/*     */             Vector3f previousBodyRotation = transformComponent.getRotation().clone();
 /*     */             Vector3d previousPos = transformComponent.getPosition().clone();
 /*     */             Vector3f previousRotation = headRotationComponent.getRotation().clone();
 /*     */             TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
 /*     */             teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + world.getName() + "'s spawn");
-/*     */             Vector3f spawnRotation = spawn.getRotation().clone();
-/*     */             spawn.setRotation(new Vector3f(previousBodyRotation.getPitch(), spawnRotation.getYaw(), previousBodyRotation.getRoll()));
-/*     */             Teleport teleport = (new Teleport(world, spawn)).withHeadRotation(spawnRotation);
-/*     */             store.addComponent(ref, Teleport.getComponentType(), (Component)teleport);
+/*     */             Teleport teleportComponent = Teleport.createForPlayer(world, spawn);
+/*     */             store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */             Vector3d position = spawn.getPosition();
 /*     */             context.sendMessage(Message.translation("server.commands.spawn.teleportedOther").param("username", targetPlayerRef.getUsername()).param("x", position.getX()).param("y", position.getY()).param("z", position.getZ()));
 /*     */           });
@@ -180,7 +171,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\SpawnCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\SpawnCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

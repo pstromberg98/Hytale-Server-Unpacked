@@ -13,55 +13,54 @@
 /*    */ import java.util.List;
 /*    */ import java.util.Map;
 /*    */ import javax.annotation.Nonnull;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*    */ 
 /*    */ public class DroplistCommand extends CommandBase {
 /*    */   @Nonnull
-/* 20 */   private final RequiredArg<String> itemDroplistArg = withRequiredArg("droplist", "server.commands.droplist.set.droplist.desc", (ArgumentType)ArgTypes.STRING);
+/* 19 */   private final RequiredArg<String> itemDroplistArg = withRequiredArg("droplist", "server.commands.droplist.set.droplist.desc", (ArgumentType)ArgTypes.STRING);
 /*    */   
-/* 22 */   private final OptionalArg<Integer> countArg = (OptionalArg<Integer>)withOptionalArg("count", "server.commands.droplist.set.count.desc", (ArgumentType)ArgTypes.INTEGER)
-/* 23 */     .addValidator(Validators.greaterThan(Integer.valueOf(0)));
+/* 21 */   private final OptionalArg<Integer> countArg = (OptionalArg<Integer>)withOptionalArg("count", "server.commands.droplist.set.count.desc", (ArgumentType)ArgTypes.INTEGER)
+/* 22 */     .addValidator(Validators.greaterThan(Integer.valueOf(0)));
 /*    */   
 /*    */   public DroplistCommand() {
-/* 26 */     super("droplist", "server.commands.droplist.desc");
+/* 25 */     super("droplist", "server.commands.droplist.desc");
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   protected void executeSync(@NonNullDecl CommandContext context) {
-/* 31 */     String droplistId = (String)this.itemDroplistArg.get(context);
-/* 32 */     ItemDropList itemDropList = (ItemDropList)ItemDropList.getAssetMap().getAsset(droplistId);
-/* 33 */     if (itemDropList == null) {
-/* 34 */       context.sendMessage(Message.translation("server.commands.droplist.notFound").param("droplistId", droplistId));
+/*    */   protected void executeSync(@Nonnull CommandContext context) {
+/* 30 */     String droplistId = (String)this.itemDroplistArg.get(context);
+/* 31 */     ItemDropList itemDropList = (ItemDropList)ItemDropList.getAssetMap().getAsset(droplistId);
+/* 32 */     if (itemDropList == null) {
+/* 33 */       context.sendMessage(Message.translation("server.commands.droplist.notFound").param("droplistId", droplistId));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 38 */     int count = this.countArg.provided(context) ? ((Integer)this.countArg.get(context)).intValue() : 1;
-/* 39 */     LinkedHashMap<String, Integer> accumulatedDrops = new LinkedHashMap<>();
+/* 37 */     int count = this.countArg.provided(context) ? ((Integer)this.countArg.get(context)).intValue() : 1;
+/* 38 */     LinkedHashMap<String, Integer> accumulatedDrops = new LinkedHashMap<>();
 /*    */     
-/* 41 */     for (int i = 0; i < count; i++) {
-/* 42 */       List<ItemStack> randomItemsToDrop = ItemModule.get().getRandomItemDrops(droplistId);
-/* 43 */       for (ItemStack itemStack : randomItemsToDrop) {
-/* 44 */         accumulatedDrops.merge(itemStack.getItemId(), Integer.valueOf(itemStack.getQuantity()), Integer::sum);
+/* 40 */     for (int i = 0; i < count; i++) {
+/* 41 */       List<ItemStack> randomItemsToDrop = ItemModule.get().getRandomItemDrops(droplistId);
+/* 42 */       for (ItemStack itemStack : randomItemsToDrop) {
+/* 43 */         accumulatedDrops.merge(itemStack.getItemId(), Integer.valueOf(itemStack.getQuantity()), Integer::sum);
 /*    */       }
 /*    */     } 
 /*    */     
-/* 48 */     if (accumulatedDrops.isEmpty()) {
-/* 49 */       context.sendMessage(Message.translation("server.commands.droplist.empty").param("droplistId", droplistId));
+/* 47 */     if (accumulatedDrops.isEmpty()) {
+/* 48 */       context.sendMessage(Message.translation("server.commands.droplist.empty").param("droplistId", droplistId));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 53 */     context.sendMessage(Message.translation("server.commands.droplist.result").param("droplistId", droplistId));
-/* 54 */     for (Map.Entry<String, Integer> entry : accumulatedDrops.entrySet()) {
+/* 52 */     context.sendMessage(Message.translation("server.commands.droplist.result").param("droplistId", droplistId));
+/* 53 */     for (Map.Entry<String, Integer> entry : accumulatedDrops.entrySet()) {
 /*    */ 
 /*    */       
-/* 57 */       Message message = Message.translation("server.commands.droplist.result.item").param("itemName", entry.getKey()).param("itemQuantity", ((Integer)entry.getValue()).intValue());
-/* 58 */       context.sendMessage(message);
+/* 56 */       Message message = Message.translation("server.commands.droplist.result.item").param("itemName", entry.getKey()).param("itemQuantity", ((Integer)entry.getValue()).intValue());
+/* 57 */       context.sendMessage(message);
 /*    */     } 
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\item\DroplistCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\item\DroplistCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -50,7 +50,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class AddedSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
@@ -58,62 +57,62 @@
 /*     */   private final ComponentType<EntityStore, NPCEntity> npcComponentType;
 /*     */   
 /*     */   public AddedSystem(@Nonnull ComponentType<EntityStore, NPCEntity> npcComponentType) {
-/*  61 */     this.npcComponentType = npcComponentType;
+/*  60 */     this.npcComponentType = npcComponentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  66 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
-/*  67 */     assert npcComponent != null;
+/*  65 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
+/*  66 */     assert npcComponent != null;
 /*     */     
-/*  69 */     Role role = npcComponent.getRole();
+/*  68 */     Role role = npcComponent.getRole();
 /*     */ 
 /*     */     
-/*  72 */     if (role == null) {
-/*  73 */       ((HytaleLogger.Api)((HytaleLogger.Api)NPCPlugin.get().getLogger().atSevere()).withCause(new IllegalStateException("NPC has no role or role index in onLoad!"))).log();
-/*  74 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
+/*  71 */     if (role == null) {
+/*  72 */       ((HytaleLogger.Api)((HytaleLogger.Api)NPCPlugin.get().getLogger().atSevere()).withCause(new IllegalStateException("NPC has no role or role index in onLoad!"))).log();
+/*  73 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  78 */     npcComponent.initBlockChangeBlackboardView(ref, (ComponentAccessor)commandBuffer);
-/*  79 */     role.loaded();
+/*  77 */     npcComponent.initBlockChangeBlackboardView(ref, (ComponentAccessor)commandBuffer);
+/*  78 */     role.loaded();
 /*     */     
-/*  81 */     commandBuffer.ensureComponent(ref, PrefabCopyableComponent.getComponentType());
+/*  80 */     commandBuffer.ensureComponent(ref, PrefabCopyableComponent.getComponentType());
 /*     */     
-/*  83 */     commandBuffer.ensureComponent(ref, PositionDataComponent.getComponentType());
-/*  84 */     commandBuffer.ensureComponent(ref, MovementAudioComponent.getComponentType());
+/*  82 */     commandBuffer.ensureComponent(ref, PositionDataComponent.getComponentType());
+/*  83 */     commandBuffer.ensureComponent(ref, MovementAudioComponent.getComponentType());
 /*     */     
-/*  86 */     if (reason == AddReason.SPAWN) {
-/*  87 */       NewSpawnComponent newSpawnComponent = new NewSpawnComponent(role.getSpawnLockTime());
-/*  88 */       commandBuffer.addComponent(ref, NewSpawnComponent.getComponentType(), (Component)newSpawnComponent);
+/*  85 */     if (reason == AddReason.SPAWN) {
+/*  86 */       NewSpawnComponent newSpawnComponent = new NewSpawnComponent(role.getSpawnLockTime());
+/*  87 */       commandBuffer.addComponent(ref, NewSpawnComponent.getComponentType(), (Component)newSpawnComponent);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  94 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
-/*  95 */     assert npcComponent != null;
+/*  93 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
+/*  94 */     assert npcComponent != null;
 /*     */     
-/*  97 */     BlockTypeView blockTypeView = npcComponent.removeBlockTypeBlackboardView();
-/*  98 */     if (blockTypeView != null) {
-/*  99 */       blockTypeView.removeSearchedBlockSets(ref, npcComponent, npcComponent.getBlackboardBlockTypeSets());
+/*  96 */     BlockTypeView blockTypeView = npcComponent.removeBlockTypeBlackboardView();
+/*  97 */     if (blockTypeView != null) {
+/*  98 */       blockTypeView.removeSearchedBlockSets(ref, npcComponent, npcComponent.getBlackboardBlockTypeSets());
 /*     */     }
 /*     */     
-/* 102 */     switch (NPCSystems.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) { case 1:
-/* 103 */         npcComponent.getRole().removed(); break;
-/* 104 */       case 2: npcComponent.getRole().unloaded();
+/* 101 */     switch (NPCSystems.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) { case 1:
+/* 102 */         npcComponent.getRole().removed(); break;
+/* 103 */       case 2: npcComponent.getRole().unloaded();
 /*     */         break; }
 /*     */   
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 111 */     return (Query)this.npcComponentType;
+/* 110 */     return (Query)this.npcComponentType;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

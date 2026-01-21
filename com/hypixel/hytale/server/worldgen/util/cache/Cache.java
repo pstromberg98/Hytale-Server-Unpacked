@@ -12,7 +12,7 @@ public interface Cache<K, V> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldge\\util\cache\Cache.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldge\\util\cache\Cache.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

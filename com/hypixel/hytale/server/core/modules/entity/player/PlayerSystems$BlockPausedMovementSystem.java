@@ -304,27 +304,23 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class BlockPausedMovementSystem
 /*     */   implements RunWhenPausedSystem<EntityStore>, QuerySystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 317 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
-/* 318 */         (Query)Player.getComponentType(), 
-/* 319 */         (Query)PlayerInput.getComponentType(), 
-/* 320 */         (Query)TransformComponent.getComponentType(), 
-/* 321 */         (Query)HeadRotation.getComponentType()
+/* 311 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
+/* 312 */         (Query)Player.getComponentType(), 
+/* 313 */         (Query)PlayerInput.getComponentType(), 
+/* 314 */         (Query)TransformComponent.getComponentType(), 
+/* 315 */         (Query)HeadRotation.getComponentType()
 /*     */       });
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
-/* 326 */     store.forEachChunk(systemIndex, BlockPausedMovementSystem::onTick);
+/* 320 */     store.forEachChunk(systemIndex, BlockPausedMovementSystem::onTick);
 /*     */   }
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -355,7 +351,7 @@
 /*     */     //   2: iload_2
 /*     */     //   3: aload_0
 /*     */     //   4: invokevirtual size : ()I
-/*     */     //   7: if_icmpge -> 427
+/*     */     //   7: if_icmpge -> 428
 /*     */     //   10: aload_0
 /*     */     //   11: iload_2
 /*     */     //   12: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
@@ -503,59 +499,63 @@
 /*     */     //   369: aload #7
 /*     */     //   371: invokeinterface clear : ()V
 /*     */     //   376: iload #4
-/*     */     //   378: ifeq -> 421
-/*     */     //   381: aload_1
-/*     */     //   382: aload_0
-/*     */     //   383: iload_2
-/*     */     //   384: invokevirtual getReferenceTo : (I)Lcom/hypixel/hytale/component/Ref;
-/*     */     //   387: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */     //   390: new com/hypixel/hytale/server/core/modules/entity/teleport/Teleport
-/*     */     //   393: dup
-/*     */     //   394: aload #5
-/*     */     //   396: invokevirtual getPosition : ()Lcom/hypixel/hytale/math/vector/Vector3d;
-/*     */     //   399: aload #5
-/*     */     //   401: invokevirtual getRotation : ()Lcom/hypixel/hytale/math/vector/Vector3f;
-/*     */     //   404: invokespecial <init> : (Lcom/hypixel/hytale/math/vector/Vector3d;Lcom/hypixel/hytale/math/vector/Vector3f;)V
-/*     */     //   407: aload #6
-/*     */     //   409: invokevirtual getRotation : ()Lcom/hypixel/hytale/math/vector/Vector3f;
-/*     */     //   412: invokevirtual withHeadRotation : (Lcom/hypixel/hytale/math/vector/Vector3f;)Lcom/hypixel/hytale/server/core/modules/entity/teleport/Teleport;
-/*     */     //   415: invokevirtual withoutVelocityReset : ()Lcom/hypixel/hytale/server/core/modules/entity/teleport/Teleport;
-/*     */     //   418: invokevirtual addComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;Lcom/hypixel/hytale/component/Component;)V
-/*     */     //   421: iinc #2, 1
-/*     */     //   424: goto -> 2
-/*     */     //   427: return
+/*     */     //   378: ifeq -> 422
+/*     */     //   381: aload #5
+/*     */     //   383: invokevirtual getPosition : ()Lcom/hypixel/hytale/math/vector/Vector3d;
+/*     */     //   386: aload #5
+/*     */     //   388: invokevirtual getRotation : ()Lcom/hypixel/hytale/math/vector/Vector3f;
+/*     */     //   391: aload #6
+/*     */     //   393: invokevirtual getRotation : ()Lcom/hypixel/hytale/math/vector/Vector3f;
+/*     */     //   396: invokestatic createExact : (Lcom/hypixel/hytale/math/vector/Vector3d;Lcom/hypixel/hytale/math/vector/Vector3f;Lcom/hypixel/hytale/math/vector/Vector3f;)Lcom/hypixel/hytale/server/core/modules/entity/teleport/Teleport;
+/*     */     //   399: invokevirtual withoutVelocityReset : ()Lcom/hypixel/hytale/server/core/modules/entity/teleport/Teleport;
+/*     */     //   402: astore #8
+/*     */     //   404: aload_0
+/*     */     //   405: iload_2
+/*     */     //   406: invokevirtual getReferenceTo : (I)Lcom/hypixel/hytale/component/Ref;
+/*     */     //   409: astore #9
+/*     */     //   411: aload_1
+/*     */     //   412: aload #9
+/*     */     //   414: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */     //   417: aload #8
+/*     */     //   419: invokevirtual addComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;Lcom/hypixel/hytale/component/Component;)V
+/*     */     //   422: iinc #2, 1
+/*     */     //   425: goto -> 2
+/*     */     //   428: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #336	-> 0
-/*     */     //   #337	-> 10
-/*     */     //   #338	-> 22
-/*     */     //   #340	-> 40
-/*     */     //   #341	-> 43
-/*     */     //   #342	-> 56
-/*     */     //   #344	-> 75
-/*     */     //   #345	-> 88
-/*     */     //   #347	-> 107
-/*     */     //   #348	-> 113
-/*     */     //   #349	-> 144
-/*     */     //   #350	-> 192
-/*     */     //   #351	-> 199
-/*     */     //   #352	-> 239
-/*     */     //   #353	-> 246
-/*     */     //   #354	-> 253
-/*     */     //   #355	-> 308
-/*     */     //   #357	-> 311
-/*     */     //   #358	-> 320
-/*     */     //   #357	-> 363
-/*     */     //   #362	-> 366
-/*     */     //   #364	-> 369
-/*     */     //   #366	-> 376
-/*     */     //   #367	-> 381
-/*     */     //   #368	-> 396
-/*     */     //   #369	-> 401
-/*     */     //   #370	-> 409
-/*     */     //   #367	-> 418
-/*     */     //   #336	-> 421
-/*     */     //   #373	-> 427
+/*     */     //   #331	-> 0
+/*     */     //   #332	-> 10
+/*     */     //   #333	-> 22
+/*     */     //   #335	-> 40
+/*     */     //   #336	-> 43
+/*     */     //   #337	-> 56
+/*     */     //   #339	-> 75
+/*     */     //   #340	-> 88
+/*     */     //   #342	-> 107
+/*     */     //   #343	-> 113
+/*     */     //   #344	-> 144
+/*     */     //   #345	-> 192
+/*     */     //   #346	-> 199
+/*     */     //   #347	-> 239
+/*     */     //   #348	-> 246
+/*     */     //   #349	-> 253
+/*     */     //   #350	-> 308
+/*     */     //   #352	-> 311
+/*     */     //   #353	-> 320
+/*     */     //   #352	-> 363
+/*     */     //   #357	-> 366
+/*     */     //   #359	-> 369
+/*     */     //   #361	-> 376
+/*     */     //   #362	-> 381
+/*     */     //   #363	-> 383
+/*     */     //   #364	-> 388
+/*     */     //   #365	-> 393
+/*     */     //   #362	-> 396
+/*     */     //   #366	-> 399
+/*     */     //   #368	-> 404
+/*     */     //   #369	-> 411
+/*     */     //   #331	-> 422
+/*     */     //   #372	-> 428
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   199	40	12	abs	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$AbsoluteMovement;
@@ -563,20 +563,26 @@
 /*     */     //   246	65	13	rel	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$RelativeMovement;
 /*     */     //   318	48	14	head	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$SetHead;
 /*     */     //   144	222	9	entry	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$InputUpdate;
-/*     */     //   22	399	3	playerInputComponent	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput;
-/*     */     //   43	378	4	shouldTeleport	Z
-/*     */     //   56	365	5	transformComponent	Lcom/hypixel/hytale/server/core/modules/entity/component/TransformComponent;
-/*     */     //   88	333	6	headRotationComponent	Lcom/hypixel/hytale/server/core/modules/entity/component/HeadRotation;
-/*     */     //   113	308	7	movementUpdateQueue	Ljava/util/List;
-/*     */     //   2	425	2	index	I
-/*     */     //   0	428	0	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk;
-/*     */     //   0	428	1	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer;
+/*     */     //   404	18	8	teleport	Lcom/hypixel/hytale/server/core/modules/entity/teleport/Teleport;
+/*     */     //   411	11	9	ref	Lcom/hypixel/hytale/component/Ref;
+/*     */     //   22	400	3	playerInputComponent	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput;
+/*     */     //   43	379	4	shouldTeleport	Z
+/*     */     //   56	366	5	transformComponent	Lcom/hypixel/hytale/server/core/modules/entity/component/TransformComponent;
+/*     */     //   88	334	6	headRotationComponent	Lcom/hypixel/hytale/server/core/modules/entity/component/HeadRotation;
+/*     */     //   113	309	7	movementUpdateQueue	Ljava/util/List;
+/*     */     //   2	426	2	index	I
+/*     */     //   0	429	0	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk;
+/*     */     //   0	429	1	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer;
 /*     */     // Local variable type table:
 /*     */     //   start	length	slot	name	signature
-/*     */     //   113	308	7	movementUpdateQueue	Ljava/util/List<Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$InputUpdate;>;
-/*     */     //   0	428	0	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
-/*     */     //   0	428	1	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   411	11	9	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   113	309	7	movementUpdateQueue	Ljava/util/List<Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$InputUpdate;>;
+/*     */     //   0	429	0	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   0	429	1	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -601,12 +607,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 378 */     return this.query;
+/* 377 */     return this.query;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$BlockPausedMovementSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$BlockPausedMovementSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

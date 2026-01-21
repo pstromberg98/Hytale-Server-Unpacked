@@ -54,7 +54,7 @@ class LimitedSSLSocketSource implements Source<SSLSession>, TLSUniqueProvider, L
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\est\jcajce\LimitedSSLSocketSource.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\est\jcajce\LimitedSSLSocketSource.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -633,7 +633,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class AngledDamage
 /*     */   extends DamageEntityInteraction.TargetedDamage
 /*     */ {
@@ -642,29 +641,29 @@
 /*     */   protected float angleDistanceRad;
 /*     */   
 /*     */   static {
-/* 645 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(AngledDamage.class, AngledDamage::new, DamageEntityInteraction.TargetedDamage.CODEC).appendInherited(new KeyedCodec("Angle", (Codec)Codec.FLOAT), (o, i) -> o.angleRad = i.floatValue() * 0.017453292F, o -> Float.valueOf(o.angleRad * 57.295776F), (o, p) -> o.angleRad = p.angleRad).add()).appendInherited(new KeyedCodec("AngleDistance", (Codec)Codec.FLOAT), (o, i) -> o.angleDistanceRad = i.floatValue() * 0.017453292F, o -> Float.valueOf(o.angleDistanceRad * 57.295776F), (o, p) -> o.angleDistanceRad = p.angleDistanceRad).add()).build();
+/* 644 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(AngledDamage.class, AngledDamage::new, DamageEntityInteraction.TargetedDamage.CODEC).appendInherited(new KeyedCodec("Angle", (Codec)Codec.FLOAT), (o, i) -> o.angleRad = i.floatValue() * 0.017453292F, o -> Float.valueOf(o.angleRad * 57.295776F), (o, p) -> o.angleRad = p.angleRad).add()).appendInherited(new KeyedCodec("AngleDistance", (Codec)Codec.FLOAT), (o, i) -> o.angleDistanceRad = i.floatValue() * 0.017453292F, o -> Float.valueOf(o.angleDistanceRad * 57.295776F), (o, p) -> o.angleDistanceRad = p.angleDistanceRad).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public com.hypixel.hytale.protocol.AngledDamage toAngledDamagePacket() {
-/* 652 */     DamageEffects damageEffectsPacket = (this.damageEffects == null) ? null : this.damageEffects.toPacket();
-/* 653 */     return new com.hypixel.hytale.protocol.AngledDamage(this.angleRad, this.angleDistanceRad, damageEffectsPacket, Interaction.getInteractionIdOrUnknown(this.next));
+/* 651 */     DamageEffects damageEffectsPacket = (this.damageEffects == null) ? null : this.damageEffects.toPacket();
+/* 652 */     return new com.hypixel.hytale.protocol.AngledDamage(this.angleRad, this.angleDistanceRad, damageEffectsPacket, Interaction.getInteractionIdOrUnknown(this.next));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 659 */     return "AngledDamage{angleRad=" + this.angleRad + ", angleDistanceRad=" + this.angleDistanceRad + "} " + super
+/* 658 */     return "AngledDamage{angleRad=" + this.angleRad + ", angleDistanceRad=" + this.angleDistanceRad + "} " + super
 /*     */ 
 /*     */       
-/* 662 */       .toString();
+/* 661 */       .toString();
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$AngledDamage.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$AngledDamage.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

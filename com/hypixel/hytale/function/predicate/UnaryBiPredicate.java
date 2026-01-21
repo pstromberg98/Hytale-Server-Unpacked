@@ -6,7 +6,7 @@ import java.util.function.BiPredicate;
 public interface UnaryBiPredicate<J> extends BiPredicate<J, J> {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\function\predicate\UnaryBiPredicate.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\function\predicate\UnaryBiPredicate.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -50,41 +50,46 @@
 /*    */ 
 /*    */   
 /* 52 */   public static final ShutdownReason VALIDATE_ERROR = new ShutdownReason(6);
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */   
+/* 57 */   public static final ShutdownReason MISSING_ASSETS = new ShutdownReason(7);
 /*    */   
 /*    */   private final int exitCode;
 /*    */   private final String message;
 /*    */   
 /*    */   public ShutdownReason(int exitCode) {
-/* 58 */     this(exitCode, null);
+/* 63 */     this(exitCode, null);
 /*    */   }
 /*    */   
 /*    */   public ShutdownReason(int exitCode, String message) {
-/* 62 */     this.exitCode = exitCode;
-/* 63 */     this.message = message;
+/* 67 */     this.exitCode = exitCode;
+/* 68 */     this.message = message;
 /*    */   }
 /*    */   
 /*    */   public int getExitCode() {
-/* 67 */     return this.exitCode;
+/* 72 */     return this.exitCode;
 /*    */   }
 /*    */   
 /*    */   public String getMessage() {
-/* 71 */     return this.message;
+/* 76 */     return this.message;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public ShutdownReason withMessage(String message) {
-/* 76 */     return new ShutdownReason(this.exitCode, message);
+/* 81 */     return new ShutdownReason(this.exitCode, message);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 82 */     return "ShutdownReason{exitCode=" + this.exitCode + ", message='" + this.message + "'}";
+/* 87 */     return "ShutdownReason{exitCode=" + this.exitCode + ", message='" + this.message + "'}";
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\ShutdownReason.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\ShutdownReason.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

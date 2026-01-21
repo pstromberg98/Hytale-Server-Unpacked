@@ -556,6 +556,10 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class IdentityTokenClaims
 /*     */ {
 /*     */   public String issuer;
@@ -568,11 +572,11 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public UUID getSubjectAsUUID() {
-/* 571 */     if (this.subject == null) return null; 
+/* 575 */     if (this.subject == null) return null; 
 /*     */     try {
-/* 573 */       return UUID.fromString(this.subject);
-/* 574 */     } catch (IllegalArgumentException e) {
-/* 575 */       return null;
+/* 577 */       return UUID.fromString(this.subject);
+/* 578 */     } catch (IllegalArgumentException e) {
+/* 579 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -581,23 +585,23 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public String[] getScopes() {
-/* 584 */     if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
-/* 585 */     return this.scope.split(" ");
+/* 588 */     if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
+/* 589 */     return this.scope.split(" ");
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean hasScope(@Nonnull String targetScope) {
-/* 592 */     for (String s : getScopes()) {
-/* 593 */       if (s.equals(targetScope)) return true; 
+/* 596 */     for (String s : getScopes()) {
+/* 597 */       if (s.equals(targetScope)) return true; 
 /*     */     } 
-/* 595 */     return false;
+/* 599 */     return false;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator$IdentityTokenClaims.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\JWTValidator$IdentityTokenClaims.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

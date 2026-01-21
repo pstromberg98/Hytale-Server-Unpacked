@@ -486,34 +486,33 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ @Deprecated(forRemoval = true)
 /*     */ public class LegacyWorldGenId
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 495 */   private final ComponentType<EntityStore, NPCEntity> npcComponentType = NPCEntity.getComponentType();
+/* 494 */   private final ComponentType<EntityStore, NPCEntity> npcComponentType = NPCEntity.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 501 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
+/* 500 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 507 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)Query.not((Query)this.worldGenIdComponentType), (Query)Query.not((Query)FromWorldGen.getComponentType()) });
+/* 506 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)Query.not((Query)this.worldGenIdComponentType), (Query)Query.not((Query)FromWorldGen.getComponentType()) });
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 511 */     NPCEntity npcComponent = (NPCEntity)holder.getComponent(this.npcComponentType);
-/* 512 */     assert npcComponent != null;
+/* 510 */     NPCEntity npcComponent = (NPCEntity)holder.getComponent(this.npcComponentType);
+/* 511 */     assert npcComponent != null;
 /*     */     
-/* 514 */     int worldGenId = npcComponent.getLegacyWorldgenId();
-/* 515 */     if (worldGenId != 0) {
-/* 516 */       holder.addComponent(this.worldGenIdComponentType, (Component)new WorldGenId(worldGenId));
+/* 513 */     int worldGenId = npcComponent.getLegacyWorldgenId();
+/* 514 */     if (worldGenId != 0) {
+/* 515 */       holder.addComponent(this.worldGenIdComponentType, (Component)new WorldGenId(worldGenId));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -524,12 +523,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 527 */     return this.query;
+/* 526 */     return this.query;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$LegacyWorldGenId.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$LegacyWorldGenId.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

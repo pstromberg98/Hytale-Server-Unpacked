@@ -20,86 +20,87 @@
 /*     */ import java.time.ZoneOffset;
 /*     */ import java.util.Collection;
 /*     */ import java.util.concurrent.TimeUnit;
+/*     */ import javax.annotation.Nonnull;
 /*     */ 
 /*     */ public class StartSlumberSystem extends DelayedSystem<EntityStore> {
-/*  25 */   public static final Duration NODDING_OFF_DURATION = Duration.ofMillis(3200L);
-/*  26 */   public static final Duration WAKE_UP_AUTOSLEEP_DELAY = Duration.ofHours(1L);
+/*  26 */   public static final Duration NODDING_OFF_DURATION = Duration.ofMillis(3200L);
+/*  27 */   public static final Duration WAKE_UP_AUTOSLEEP_DELAY = Duration.ofHours(1L);
 /*     */   
 /*     */   public StartSlumberSystem() {
-/*  29 */     super(0.3F);
+/*  30 */     super(0.3F);
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void delayedTick(float dt, int systemIndex, @NonNullDecl Store<EntityStore> store) {
-/*  34 */     checkIfEveryoneIsReadyToSleep(store);
+/*     */   public void delayedTick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
+/*  35 */     checkIfEveryoneIsReadyToSleep(store);
 /*     */   }
 /*     */   
 /*     */   private void checkIfEveryoneIsReadyToSleep(Store<EntityStore> store) {
-/*  38 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/*  39 */     Collection<PlayerRef> playerRefs = world.getPlayerRefs();
-/*  40 */     if (playerRefs.isEmpty())
+/*  39 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  40 */     Collection<PlayerRef> playerRefs = world.getPlayerRefs();
+/*  41 */     if (playerRefs.isEmpty())
 /*     */       return; 
-/*  42 */     if (CanSleepInWorld.check(world).isNegative()) {
+/*  43 */     if (CanSleepInWorld.check(world).isNegative()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/*  46 */     float wakeUpHour = world.getGameplayConfig().getWorldConfig().getSleepConfig().getWakeUpHour();
+/*  47 */     float wakeUpHour = world.getGameplayConfig().getWorldConfig().getSleepConfig().getWakeUpHour();
 /*     */     
-/*  48 */     WorldSomnolence worldSomnolence = (WorldSomnolence)store.getResource(WorldSomnolence.getResourceType());
+/*  49 */     WorldSomnolence worldSomnolenceResource = (WorldSomnolence)store.getResource(WorldSomnolence.getResourceType());
 /*     */     
-/*  50 */     WorldSleep worldState = worldSomnolence.getState();
-/*  51 */     if (worldState != WorldSleep.Awake.INSTANCE) {
+/*  51 */     WorldSleep worldState = worldSomnolenceResource.getState();
+/*  52 */     if (worldState != WorldSleep.Awake.INSTANCE) {
 /*     */       return;
 /*     */     }
 /*     */     
-/*  55 */     if (isEveryoneReadyToSleep((ComponentAccessor<EntityStore>)store)) {
-/*  56 */       WorldTimeResource timeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
+/*  56 */     if (isEveryoneReadyToSleep((ComponentAccessor<EntityStore>)store)) {
+/*  57 */       WorldTimeResource timeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
 /*     */       
-/*  58 */       Instant now = timeResource.getGameTime();
-/*  59 */       Instant target = computeWakeupInstant(now, wakeUpHour);
-/*  60 */       float irlSeconds = computeIrlSeconds(now, target);
+/*  59 */       Instant now = timeResource.getGameTime();
+/*  60 */       Instant target = computeWakeupInstant(now, wakeUpHour);
+/*  61 */       float irlSeconds = computeIrlSeconds(now, target);
 /*     */       
-/*  62 */       worldSomnolence.setState((WorldSleep)new WorldSlumber(now, target, irlSeconds));
+/*  63 */       worldSomnolenceResource.setState((WorldSleep)new WorldSlumber(now, target, irlSeconds));
 /*     */       
-/*  64 */       store.forEachEntityParallel((Query)PlayerSomnolence.getComponentType(), (index, archetypeChunk, commandBuffer) -> {
+/*  65 */       store.forEachEntityParallel((Query)PlayerSomnolence.getComponentType(), (index, archetypeChunk, commandBuffer) -> {
 /*     */             Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 /*     */             commandBuffer.putComponent(ref, PlayerSomnolence.getComponentType(), (Component)PlayerSleep.Slumber.createComponent(timeResource));
 /*     */           });
 /*     */     } 
 /*     */   }
 /*     */   
-/*     */   private Instant computeWakeupInstant(Instant now, float wakeUpHour) {
-/*  72 */     LocalDateTime ldt = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+/*     */   private Instant computeWakeupInstant(@Nonnull Instant now, float wakeUpHour) {
+/*  73 */     LocalDateTime ldt = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 /*     */     
-/*  74 */     int hours = (int)wakeUpHour;
-/*  75 */     float fractionalHour = wakeUpHour - hours;
-/*  76 */     LocalDateTime wakeUpTime = ldt.toLocalDate().atTime(hours, (int)(fractionalHour * 60.0F));
+/*  75 */     int hours = (int)wakeUpHour;
+/*  76 */     float fractionalHour = wakeUpHour - hours;
+/*  77 */     LocalDateTime wakeUpTime = ldt.toLocalDate().atTime(hours, (int)(fractionalHour * 60.0F));
 /*     */     
-/*  78 */     if (!ldt.isBefore(wakeUpTime)) {
-/*  79 */       wakeUpTime = wakeUpTime.plusDays(1L);
+/*  79 */     if (!ldt.isBefore(wakeUpTime)) {
+/*  80 */       wakeUpTime = wakeUpTime.plusDays(1L);
 /*     */     }
 /*     */     
-/*  82 */     return wakeUpTime.toInstant(ZoneOffset.UTC);
+/*  83 */     return wakeUpTime.toInstant(ZoneOffset.UTC);
 /*     */   }
 /*     */   
 /*     */   private static float computeIrlSeconds(Instant startInstant, Instant targetInstant) {
-/*  86 */     long ms = Duration.between(startInstant, targetInstant).toMillis();
-/*  87 */     long hours = TimeUnit.MILLISECONDS.toHours(ms);
-/*  88 */     double seconds = Math.max(3.0D, hours / 6.0D);
-/*  89 */     return (float)Math.ceil(seconds);
+/*  87 */     long ms = Duration.between(startInstant, targetInstant).toMillis();
+/*  88 */     long hours = TimeUnit.MILLISECONDS.toHours(ms);
+/*  89 */     double seconds = Math.max(3.0D, hours / 6.0D);
+/*  90 */     return (float)Math.ceil(seconds);
 /*     */   }
 /*     */   
 /*     */   private boolean isEveryoneReadyToSleep(ComponentAccessor<EntityStore> store) {
-/*  93 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/*  94 */     Collection<PlayerRef> playerRefs = world.getPlayerRefs();
-/*  95 */     if (playerRefs.isEmpty()) return false;
+/*  94 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  95 */     Collection<PlayerRef> playerRefs = world.getPlayerRefs();
+/*  96 */     if (playerRefs.isEmpty()) return false;
 /*     */     
-/*  97 */     for (PlayerRef playerRef : playerRefs) {
-/*  98 */       if (!isReadyToSleep(store, playerRef.getReference())) {
-/*  99 */         return false;
+/*  98 */     for (PlayerRef playerRef : playerRefs) {
+/*  99 */       if (!isReadyToSleep(store, playerRef.getReference())) {
+/* 100 */         return false;
 /*     */       }
 /*     */     } 
-/* 102 */     return true;
+/* 103 */     return true;
 /*     */   }
 /*     */   
 /*     */   public static boolean isReadyToSleep(ComponentAccessor<EntityStore> store, Ref<EntityStore> ref) {
@@ -176,20 +177,20 @@
 /*     */     //   183: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #106	-> 0
-/*     */     //   #107	-> 14
-/*     */     //   #108	-> 20
-/*     */     //   #110	-> 25
-/*     */     //   #111	-> 86
-/*     */     //   #112	-> 97
-/*     */     //   #113	-> 104
-/*     */     //   #114	-> 118
-/*     */     //   #115	-> 131
-/*     */     //   #117	-> 144
-/*     */     //   #118	-> 151
-/*     */     //   #119	-> 164
-/*     */     //   #121	-> 175
-/*     */     //   #110	-> 183
+/*     */     //   #107	-> 0
+/*     */     //   #108	-> 14
+/*     */     //   #109	-> 20
+/*     */     //   #111	-> 25
+/*     */     //   #112	-> 86
+/*     */     //   #113	-> 97
+/*     */     //   #114	-> 104
+/*     */     //   #115	-> 118
+/*     */     //   #116	-> 131
+/*     */     //   #118	-> 144
+/*     */     //   #119	-> 151
+/*     */     //   #120	-> 164
+/*     */     //   #122	-> 175
+/*     */     //   #111	-> 183
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   93	4	6	fullyAwake	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$FullyAwake;
@@ -211,7 +212,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\world\StartSlumberSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\world\StartSlumberSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

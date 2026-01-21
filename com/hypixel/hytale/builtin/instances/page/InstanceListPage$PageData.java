@@ -158,8 +158,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class PageData
 /*     */ {
 /*     */   public static final String KEY_INSTANCE = "Instance";
@@ -169,7 +167,7 @@
 /*     */   private InstanceListPage.Action action;
 /*     */   
 /*     */   static {
-/* 172 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).addField(new KeyedCodec("Instance", (Codec)BuilderCodec.STRING), (o, i) -> o.instance = i, o -> o.instance)).addField(new KeyedCodec("Action", (Codec)new EnumCodec(InstanceListPage.Action.class)), (o, i) -> o.action = i, o -> o.action)).build();
+/* 170 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).addField(new KeyedCodec("Instance", (Codec)BuilderCodec.STRING), (o, i) -> o.instance = i, o -> o.instance)).addField(new KeyedCodec("Action", (Codec)new EnumCodec(InstanceListPage.Action.class)), (o, i) -> o.action = i, o -> o.action)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -178,16 +176,16 @@
 /*     */ 
 /*     */   
 /*     */   public String getInstance() {
-/* 181 */     return this.instance;
+/* 179 */     return this.instance;
 /*     */   }
 /*     */   
 /*     */   public InstanceListPage.Action getAction() {
-/* 185 */     return this.action;
+/* 183 */     return this.action;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\instances\page\InstanceListPage$PageData.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\instances\page\InstanceListPage$PageData.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

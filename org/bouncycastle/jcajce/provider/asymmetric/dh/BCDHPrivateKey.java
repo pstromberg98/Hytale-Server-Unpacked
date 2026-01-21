@@ -178,7 +178,7 @@ public class BCDHPrivateKey implements DHPrivateKey, PKCS12BagAttributeCarrier {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\dh\BCDHPrivateKey.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\dh\BCDHPrivateKey.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

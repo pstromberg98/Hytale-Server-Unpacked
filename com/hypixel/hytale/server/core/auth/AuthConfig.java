@@ -39,7 +39,7 @@
 /*    */   
 /*    */   public static final int HTTP_TIMEOUT_SECONDS = 10;
 /*    */   
-/*    */   public static final int DEVICE_POLL_INTERVAL_SECONDS = 5;
+/*    */   public static final int DEVICE_POLL_INTERVAL_SECONDS = 15;
 /*    */   
 /*    */   public static final String ENV_SERVER_AUDIENCE = "HYTALE_SERVER_AUDIENCE";
 /*    */   
@@ -62,7 +62,7 @@
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\AuthConfig.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\AuthConfig.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

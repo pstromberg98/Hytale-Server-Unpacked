@@ -19,17 +19,24 @@
 /*     */ import com.hypixel.hytale.component.Store;
 /*     */ import com.hypixel.hytale.component.query.Query;
 /*     */ import com.hypixel.hytale.component.spatial.SpatialResource;
+/*     */ import com.hypixel.hytale.component.spatial.SpatialStructure;
 /*     */ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 /*     */ import com.hypixel.hytale.math.util.MathUtil;
 /*     */ import com.hypixel.hytale.math.vector.Vector3d;
 /*     */ import com.hypixel.hytale.protocol.GameMode;
+/*     */ import com.hypixel.hytale.protocol.ModelParticle;
+/*     */ import com.hypixel.hytale.protocol.Packet;
+/*     */ import com.hypixel.hytale.protocol.packets.entities.SpawnModelParticles;
 /*     */ import com.hypixel.hytale.server.core.Message;
+/*     */ import com.hypixel.hytale.server.core.asset.type.model.config.ModelParticle;
 /*     */ import com.hypixel.hytale.server.core.entity.entities.Player;
 /*     */ import com.hypixel.hytale.server.core.inventory.ItemStack;
+/*     */ import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.item.PickupItemComponent;
+/*     */ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 /*     */ import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 /*     */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
@@ -63,12 +70,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class NPCMemory
 /*     */   extends Memory
 /*     */ {
@@ -84,7 +85,7 @@
 /*     */   private String memoryTitleKey;
 /*     */   
 /*     */   static {
-/*  87 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(NPCMemory.class, NPCMemory::new).append(new KeyedCodec("NPCRole", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.npcRole = s, npcMemory -> npcMemory.npcRole).addValidator(Validators.nonNull()).add()).append(new KeyedCodec("TranslationKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.memoryTitleKey = s, npcMemory -> npcMemory.memoryTitleKey).add()).append(new KeyedCodec("IsMemoriesNameOverridden", (Codec)Codec.BOOLEAN), (npcMemory, aBoolean) -> npcMemory.isMemoriesNameOverridden = aBoolean.booleanValue(), npcMemory -> Boolean.valueOf(npcMemory.isMemoriesNameOverridden)).add()).append(new KeyedCodec("CapturedTimestamp", (Codec)Codec.LONG), (npcMemory, aDouble) -> npcMemory.capturedTimestamp = aDouble.longValue(), npcMemory -> Long.valueOf(npcMemory.capturedTimestamp)).add()).append(new KeyedCodec("FoundLocationZoneNameKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.foundLocationZoneNameKey = s, npcMemory -> npcMemory.foundLocationZoneNameKey).add()).append(new KeyedCodec("FoundLocationNameKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.foundLocationGeneralNameKey = s, npcMemory -> npcMemory.foundLocationGeneralNameKey).add()).afterDecode(NPCMemory::processConfig)).build();
+/*  88 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(NPCMemory.class, NPCMemory::new).append(new KeyedCodec("NPCRole", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.npcRole = s, npcMemory -> npcMemory.npcRole).addValidator(Validators.nonNull()).add()).append(new KeyedCodec("TranslationKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.memoryTitleKey = s, npcMemory -> npcMemory.memoryTitleKey).add()).append(new KeyedCodec("IsMemoriesNameOverridden", (Codec)Codec.BOOLEAN), (npcMemory, aBoolean) -> npcMemory.isMemoriesNameOverridden = aBoolean.booleanValue(), npcMemory -> Boolean.valueOf(npcMemory.isMemoriesNameOverridden)).add()).append(new KeyedCodec("CapturedTimestamp", (Codec)Codec.LONG), (npcMemory, aDouble) -> npcMemory.capturedTimestamp = aDouble.longValue(), npcMemory -> Long.valueOf(npcMemory.capturedTimestamp)).add()).append(new KeyedCodec("FoundLocationZoneNameKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.foundLocationZoneNameKey = s, npcMemory -> npcMemory.foundLocationZoneNameKey).add()).append(new KeyedCodec("FoundLocationNameKey", (Codec)Codec.STRING), (npcMemory, s) -> npcMemory.foundLocationGeneralNameKey = s, npcMemory -> npcMemory.foundLocationGeneralNameKey).add()).afterDecode(NPCMemory::processConfig)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -97,102 +98,102 @@
 /*     */ 
 /*     */   
 /*     */   public NPCMemory(@Nonnull String npcRole, @Nonnull String nameTranslationKey, boolean isMemoriesNameOverridden) {
-/* 100 */     this.npcRole = npcRole;
-/* 101 */     this.memoryTitleKey = nameTranslationKey;
-/* 102 */     this.isMemoriesNameOverridden = isMemoriesNameOverridden;
-/* 103 */     processConfig();
+/* 101 */     this.npcRole = npcRole;
+/* 102 */     this.memoryTitleKey = nameTranslationKey;
+/* 103 */     this.isMemoriesNameOverridden = isMemoriesNameOverridden;
+/* 104 */     processConfig();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public String getId() {
-/* 108 */     return this.npcRole;
+/* 109 */     return this.npcRole;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String getTitle() {
-/* 114 */     return this.memoryTitleKey;
+/* 115 */     return this.memoryTitleKey;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Message getTooltipText() {
-/* 120 */     return Message.translation("server.memories.general.discovered.tooltipText");
+/* 121 */     return Message.translation("server.memories.general.discovered.tooltipText");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public String getIconPath() {
-/* 126 */     return "UI/Custom/Pages/Memories/npcs/" + this.npcRole + ".png";
+/* 127 */     return "UI/Custom/Pages/Memories/npcs/" + this.npcRole + ".png";
 /*     */   }
 /*     */   
 /*     */   public void processConfig() {
-/* 130 */     if (this.isMemoriesNameOverridden) {
+/* 131 */     if (this.isMemoriesNameOverridden) {
 /*     */ 
 /*     */       
-/* 133 */       this.memoryTitleKey = "server.npcRoles." + this.npcRole + ".name";
+/* 134 */       this.memoryTitleKey = "server.npcRoles." + this.npcRole + ".name";
 /*     */ 
 /*     */       
-/* 136 */       if (I18nModule.get().getMessage("en-US", this.memoryTitleKey) == null) {
-/* 137 */         this.memoryTitleKey = "server.memories.names." + this.npcRole;
+/* 137 */       if (I18nModule.get().getMessage("en-US", this.memoryTitleKey) == null) {
+/* 138 */         this.memoryTitleKey = "server.memories.names." + this.npcRole;
 /*     */       }
 /*     */     } 
 /*     */ 
 /*     */     
-/* 142 */     if (this.memoryTitleKey == null || this.memoryTitleKey.isEmpty()) {
-/* 143 */       this.memoryTitleKey = "server.npcRoles." + this.npcRole + ".name";
+/* 143 */     if (this.memoryTitleKey == null || this.memoryTitleKey.isEmpty()) {
+/* 144 */       this.memoryTitleKey = "server.npcRoles." + this.npcRole + ".name";
 /*     */     }
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Message getUndiscoveredTooltipText() {
-/* 150 */     return Message.translation("server.memories.general.undiscovered.tooltipText");
+/* 151 */     return Message.translation("server.memories.general.undiscovered.tooltipText");
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public String getNpcRole() {
-/* 155 */     return this.npcRole;
+/* 156 */     return this.npcRole;
 /*     */   }
 /*     */   
 /*     */   public long getCapturedTimestamp() {
-/* 159 */     return this.capturedTimestamp;
+/* 160 */     return this.capturedTimestamp;
 /*     */   }
 /*     */   
 /*     */   public String getFoundLocationZoneNameKey() {
-/* 163 */     return this.foundLocationZoneNameKey;
+/* 164 */     return this.foundLocationZoneNameKey;
 /*     */   }
 /*     */   
 /*     */   public Message getLocationMessage() {
-/* 167 */     if (this.foundLocationGeneralNameKey != null) {
-/* 168 */       return Message.translation(this.foundLocationGeneralNameKey);
+/* 168 */     if (this.foundLocationGeneralNameKey != null) {
+/* 169 */       return Message.translation(this.foundLocationGeneralNameKey);
 /*     */     }
-/* 170 */     if (this.foundLocationZoneNameKey != null) {
-/* 171 */       return Message.translation("server.map.region." + this.foundLocationZoneNameKey);
+/* 171 */     if (this.foundLocationZoneNameKey != null) {
+/* 172 */       return Message.translation("server.map.region." + this.foundLocationZoneNameKey);
 /*     */     }
-/* 173 */     return Message.raw("???");
+/* 174 */     return Message.raw("???");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean equals(Object o) {
-/* 178 */     if (o == null || getClass() != o.getClass()) return false; 
-/* 179 */     if (!super.equals(o)) return false;
+/* 179 */     if (o == null || getClass() != o.getClass()) return false; 
+/* 180 */     if (!super.equals(o)) return false;
 /*     */     
-/* 181 */     NPCMemory npcMemory = (NPCMemory)o;
-/* 182 */     return (this.isMemoriesNameOverridden == npcMemory.isMemoriesNameOverridden && Objects.equals(this.npcRole, npcMemory.npcRole));
+/* 182 */     NPCMemory npcMemory = (NPCMemory)o;
+/* 183 */     return (this.isMemoriesNameOverridden == npcMemory.isMemoriesNameOverridden && Objects.equals(this.npcRole, npcMemory.npcRole));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 187 */     int result = super.hashCode();
-/* 188 */     result = 31 * result + Objects.hashCode(this.npcRole);
-/* 189 */     result = 31 * result + Boolean.hashCode(this.isMemoriesNameOverridden);
-/* 190 */     return result;
+/* 188 */     int result = super.hashCode();
+/* 189 */     result = 31 * result + Objects.hashCode(this.npcRole);
+/* 190 */     result = 31 * result + Boolean.hashCode(this.isMemoriesNameOverridden);
+/* 191 */     return result;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public String toString() {
-/* 195 */     return "NPCMemory{npcRole='" + this.npcRole + "', isMemoriesNameOverride=" + this.isMemoriesNameOverridden + "', capturedTimestamp=" + this.capturedTimestamp + "', foundLocationZoneNameKey='" + this.foundLocationZoneNameKey + "}";
+/* 196 */     return "NPCMemory{npcRole='" + this.npcRole + "', isMemoriesNameOverride=" + this.isMemoriesNameOverridden + "', capturedTimestamp=" + this.capturedTimestamp + "', foundLocationZoneNameKey='" + this.foundLocationZoneNameKey + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -209,10 +210,10 @@
 /*     */     extends EntityTickingSystem<EntityStore>
 /*     */   {
 /*     */     @Nonnull
-/* 212 */     public static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
-/* 213 */           (Query)TransformComponent.getComponentType(), 
-/* 214 */           (Query)Player.getComponentType(), 
-/* 215 */           (Query)PlayerMemories.getComponentType()
+/* 213 */     public static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
+/* 214 */           (Query)TransformComponent.getComponentType(), 
+/* 215 */           (Query)Player.getComponentType(), 
+/* 216 */           (Query)PlayerMemories.getComponentType()
 /*     */         });
 /*     */ 
 /*     */ 
@@ -226,115 +227,140 @@
 /*     */ 
 /*     */     
 /*     */     public GatherMemoriesSystem(double radius) {
-/* 229 */       this.radius = radius;
+/* 230 */       this.radius = radius;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 234 */       Player playerComponent = (Player)archetypeChunk.getComponent(index, Player.getComponentType());
-/* 235 */       assert playerComponent != null;
-/* 236 */       if (playerComponent.getGameMode() != GameMode.Adventure)
+/* 235 */       Player playerComponent = (Player)archetypeChunk.getComponent(index, Player.getComponentType());
+/* 236 */       assert playerComponent != null;
+/* 237 */       if (playerComponent.getGameMode() != GameMode.Adventure)
 /*     */         return; 
-/* 238 */       TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/* 239 */       assert transformComponent != null;
-/* 240 */       Vector3d position = transformComponent.getPosition();
+/* 239 */       TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/* 240 */       assert transformComponent != null;
+/* 241 */       Vector3d position = transformComponent.getPosition();
 /*     */       
-/* 242 */       SpatialResource<Ref<EntityStore>, EntityStore> npcSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(NPCPlugin.get().getNpcSpatialResource());
-/* 243 */       ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
-/* 244 */       npcSpatialResource.getSpatialStructure().collect(position, this.radius, (List)results);
-/* 245 */       if (results.isEmpty())
+/* 243 */       SpatialResource<Ref<EntityStore>, EntityStore> npcSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(NPCPlugin.get().getNpcSpatialResource());
+/* 244 */       ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
+/* 245 */       npcSpatialResource.getSpatialStructure().collect(position, this.radius, (List)results);
+/* 246 */       if (results.isEmpty())
 /*     */         return; 
-/* 247 */       PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
-/* 248 */       assert playerRefComponent != null;
+/* 248 */       PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
+/* 249 */       assert playerRefComponent != null;
 /*     */       
-/* 250 */       MemoriesPlugin memoriesPlugin = MemoriesPlugin.get();
-/* 251 */       PlayerMemories playerMemoriesComponent = (PlayerMemories)archetypeChunk.getComponent(index, PlayerMemories.getComponentType());
-/* 252 */       assert playerMemoriesComponent != null;
+/* 251 */       MemoriesPlugin memoriesPlugin = MemoriesPlugin.get();
+/* 252 */       PlayerMemories playerMemoriesComponent = (PlayerMemories)archetypeChunk.getComponent(index, PlayerMemories.getComponentType());
+/* 253 */       assert playerMemoriesComponent != null;
 /*     */       
-/* 254 */       NPCMemory temp = new NPCMemory();
+/* 255 */       NPCMemory temp = new NPCMemory();
 /*     */       
-/* 256 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/* 257 */       String foundLocationZoneNameKey = findLocationZoneName(world, position);
+/* 257 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 258 */       String foundLocationZoneNameKey = findLocationZoneName(world, position);
 /*     */       
-/* 259 */       for (ObjectListIterator<Ref<EntityStore>> objectListIterator = results.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> npcRef = objectListIterator.next();
-/* 260 */         NPCEntity npcComponent = (NPCEntity)commandBuffer.getComponent(npcRef, NPCEntity.getComponentType());
-/* 261 */         if (npcComponent == null)
+/* 260 */       for (ObjectListIterator<Ref<EntityStore>> objectListIterator = results.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> npcRef = objectListIterator.next();
+/* 261 */         NPCEntity npcComponent = (NPCEntity)commandBuffer.getComponent(npcRef, NPCEntity.getComponentType());
+/* 262 */         if (npcComponent == null)
 /*     */           continue; 
-/* 263 */         Role role = npcComponent.getRole();
-/* 264 */         assert role != null;
-/* 265 */         if (!role.isMemory()) {
+/* 264 */         Role role = npcComponent.getRole();
+/* 265 */         assert role != null;
+/* 266 */         if (!role.isMemory()) {
 /*     */           continue;
 /*     */         }
 /*     */         
-/* 269 */         temp.isMemoriesNameOverridden = role.isMemoriesNameOverriden();
-/* 270 */         temp.npcRole = temp.isMemoriesNameOverridden ? role.getMemoriesNameOverride() : npcComponent.getRoleName();
-/* 271 */         temp.memoryTitleKey = role.getNameTranslationKey();
-/* 272 */         temp.capturedTimestamp = System.currentTimeMillis();
-/* 273 */         temp.foundLocationGeneralNameKey = foundLocationZoneNameKey;
+/* 270 */         temp.isMemoriesNameOverridden = role.isMemoriesNameOverriden();
+/* 271 */         temp.npcRole = temp.isMemoriesNameOverridden ? role.getMemoriesNameOverride() : npcComponent.getRoleName();
+/* 272 */         temp.memoryTitleKey = role.getNameTranslationKey();
+/* 273 */         temp.capturedTimestamp = System.currentTimeMillis();
+/* 274 */         temp.foundLocationGeneralNameKey = foundLocationZoneNameKey;
 /*     */         
-/* 275 */         if (memoriesPlugin.hasRecordedMemory(temp)) {
+/* 276 */         if (memoriesPlugin.hasRecordedMemory(temp)) {
 /*     */           continue;
 /*     */         }
-/* 278 */         temp.processConfig();
+/* 279 */         temp.processConfig();
 /*     */ 
 /*     */ 
 /*     */         
-/* 282 */         if (playerMemoriesComponent.recordMemory(temp)) {
-/* 283 */           NotificationUtil.sendNotification(playerRefComponent.getPacketHandler(), Message.translation("server.memories.general.collected").param("memoryTitle", Message.translation(temp.getTitle())), null, "NotificationIcons/MemoriesIcon.png");
+/* 283 */         if (playerMemoriesComponent.recordMemory(temp)) {
+/* 284 */           NotificationUtil.sendNotification(playerRefComponent.getPacketHandler(), Message.translation("server.memories.general.collected").param("memoryTitle", Message.translation(temp.getTitle())), null, "NotificationIcons/MemoriesIcon.png");
 /*     */           
-/* 285 */           temp = new NPCMemory();
+/* 286 */           temp = new NPCMemory();
 /*     */           
-/* 287 */           TransformComponent npcTransformComponent = (TransformComponent)commandBuffer.getComponent(npcRef, TransformComponent.getComponentType());
-/* 288 */           assert npcTransformComponent != null;
+/* 288 */           TransformComponent npcTransformComponent = (TransformComponent)commandBuffer.getComponent(npcRef, TransformComponent.getComponentType());
+/* 289 */           assert npcTransformComponent != null;
 /*     */           
-/* 290 */           MemoriesGameplayConfig memoriesGameplayConfig = MemoriesGameplayConfig.get(((EntityStore)store.getExternalData()).getWorld().getGameplayConfig());
-/* 291 */           if (memoriesGameplayConfig != null) {
-/* 292 */             ItemStack memoryItemStack = new ItemStack(memoriesGameplayConfig.getMemoriesCatchItemId());
-/* 293 */             Vector3d memoryItemHolderPosition = npcTransformComponent.getPosition().clone();
+/* 291 */           MemoriesGameplayConfig memoriesGameplayConfig = MemoriesGameplayConfig.get(((EntityStore)store.getExternalData()).getWorld().getGameplayConfig());
+/* 292 */           if (memoriesGameplayConfig != null) {
+/* 293 */             ItemStack memoryItemStack = new ItemStack(memoriesGameplayConfig.getMemoriesCatchItemId());
+/* 294 */             Vector3d memoryItemHolderPosition = npcTransformComponent.getPosition().clone();
 /*     */             
-/* 295 */             BoundingBox boundingBox = (BoundingBox)commandBuffer.getComponent(npcRef, BoundingBox.getComponentType());
-/* 296 */             if (boundingBox != null) {
-/* 297 */               memoryItemHolderPosition.y += boundingBox.getBoundingBox().middleY();
+/* 296 */             BoundingBox boundingBox = (BoundingBox)commandBuffer.getComponent(npcRef, BoundingBox.getComponentType());
+/* 297 */             if (boundingBox != null) {
+/* 298 */               memoryItemHolderPosition.y += boundingBox.getBoundingBox().middleY();
 /*     */             }
 /*     */             
-/* 300 */             Holder<EntityStore> memoryItemHolder = ItemComponent.generatePickedUpItem(memoryItemStack, memoryItemHolderPosition, (ComponentAccessor)commandBuffer, playerRefComponent.getReference());
-/* 301 */             float memoryCatchItemLifetimeS = 0.62F;
-/* 302 */             ((PickupItemComponent)memoryItemHolder.getComponent(PickupItemComponent.getComponentType())).setInitialLifeTime(memoryCatchItemLifetimeS);
-/* 303 */             commandBuffer.addEntity(memoryItemHolder, AddReason.SPAWN);
+/* 301 */             Holder<EntityStore> memoryItemHolder = ItemComponent.generatePickedUpItem(memoryItemStack, memoryItemHolderPosition, (ComponentAccessor)commandBuffer, playerRefComponent.getReference());
+/* 302 */             float memoryCatchItemLifetimeS = 0.62F;
+/* 303 */             ((PickupItemComponent)memoryItemHolder.getComponent(PickupItemComponent.getComponentType())).setInitialLifeTime(memoryCatchItemLifetimeS);
+/* 304 */             commandBuffer.addEntity(memoryItemHolder, AddReason.SPAWN);
+/*     */             
+/* 306 */             displayCatchEntityParticles(memoriesGameplayConfig, memoryItemHolderPosition, npcRef, commandBuffer);
 /*     */           } 
 /*     */         }  }
 /*     */     
 /*     */     }
 /*     */     
 /*     */     private static String findLocationZoneName(World world, Vector3d position) {
-/* 310 */       IWorldGen worldGen = world.getChunkStore().getGenerator();
-/* 311 */       if (worldGen instanceof ChunkGenerator) { ChunkGenerator generator = (ChunkGenerator)worldGen;
-/* 312 */         int seed = (int)world.getWorldConfig().getSeed();
-/* 313 */         ZoneBiomeResult result = generator.getZoneBiomeResultAt(seed, MathUtil.floor(position.x), MathUtil.floor(position.z));
-/* 314 */         return "server.map.region." + result.getZoneResult().getZone().name(); }
+/* 313 */       IWorldGen worldGen = world.getChunkStore().getGenerator();
+/* 314 */       if (worldGen instanceof ChunkGenerator) { ChunkGenerator generator = (ChunkGenerator)worldGen;
+/* 315 */         int seed = (int)world.getWorldConfig().getSeed();
+/* 316 */         ZoneBiomeResult result = generator.getZoneBiomeResultAt(seed, MathUtil.floor(position.x), MathUtil.floor(position.z));
+/* 317 */         return "server.map.region." + result.getZoneResult().getZone().name(); }
 /*     */ 
 /*     */       
-/* 317 */       InstanceWorldConfig instanceConfig = (InstanceWorldConfig)world.getWorldConfig().getPluginConfig().get(InstanceWorldConfig.class);
-/* 318 */       if (instanceConfig != null) {
-/* 319 */         InstanceDiscoveryConfig discovery = instanceConfig.getDiscovery();
-/* 320 */         if (discovery != null && discovery.getTitleKey() != null) {
-/* 321 */           return discovery.getTitleKey();
+/* 320 */       InstanceWorldConfig instanceConfig = (InstanceWorldConfig)world.getWorldConfig().getPluginConfig().get(InstanceWorldConfig.class);
+/* 321 */       if (instanceConfig != null) {
+/* 322 */         InstanceDiscoveryConfig discovery = instanceConfig.getDiscovery();
+/* 323 */         if (discovery != null && discovery.getTitleKey() != null) {
+/* 324 */           return discovery.getTitleKey();
 /*     */         }
 /*     */       } 
 /*     */       
-/* 325 */       return "???";
+/* 328 */       return "???";
+/*     */     }
+/*     */     
+/*     */     private static void displayCatchEntityParticles(MemoriesGameplayConfig memoriesGameplayConfig, Vector3d targetPosition, Ref<EntityStore> targetRef, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 332 */       ModelParticle particle = memoriesGameplayConfig.getMemoriesCatchEntityParticle();
+/* 333 */       if (particle == null)
+/*     */         return; 
+/* 335 */       NetworkId networkIdComponent = (NetworkId)commandBuffer.getComponent(targetRef, NetworkId.getComponentType());
+/* 336 */       if (networkIdComponent == null)
+/*     */         return; 
+/* 338 */       ModelParticle[] modelParticlesProtocol = { particle.toPacket() };
+/* 339 */       SpawnModelParticles packet = new SpawnModelParticles(networkIdComponent.getId(), modelParticlesProtocol);
+/*     */       
+/* 341 */       SpatialResource<Ref<EntityStore>, EntityStore> spatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)commandBuffer.getResource(EntityModule.get().getPlayerSpatialResourceType());
+/* 342 */       SpatialStructure<Ref<EntityStore>> spatialStructure = spatialResource.getSpatialStructure();
+/* 343 */       ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
+/* 344 */       spatialStructure.ordered(targetPosition, memoriesGameplayConfig.getMemoriesCatchParticleViewDistance(), (List)results);
+/*     */       
+/* 346 */       for (ObjectListIterator<Ref<EntityStore>> objectListIterator = results.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> ref = objectListIterator.next();
+/* 347 */         PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+/* 348 */         assert playerRefComponent != null;
+/*     */         
+/* 350 */         playerRefComponent.getPacketHandler().write((Packet)packet); }
+/*     */     
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public Query<EntityStore> getQuery() {
-/* 331 */       return QUERY;
+/* 357 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\memories\npc\NPCMemory.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\memories\npc\NPCMemory.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

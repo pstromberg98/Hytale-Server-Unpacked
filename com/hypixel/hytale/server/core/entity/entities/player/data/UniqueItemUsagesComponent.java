@@ -12,7 +12,12 @@
 /*    */ import java.util.HashSet;
 /*    */ import java.util.Set;
 /*    */ import java.util.function.Supplier;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nonnull;
+/*    */ import javax.annotation.Nullable;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -22,36 +27,37 @@
 /*    */ public class UniqueItemUsagesComponent
 /*    */   implements Component<EntityStore>
 /*    */ {
+/*    */   @Nonnull
 /*    */   public static final BuilderCodec<UniqueItemUsagesComponent> CODEC;
 /*    */   
 /*    */   static {
-/* 28 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(UniqueItemUsagesComponent.class, UniqueItemUsagesComponent::new).append(new KeyedCodec("UniqueItemUsed", (Codec)new ArrayCodec((Codec)Codec.STRING, x$0 -> new String[x$0])), (playerMemories, usages) -> { if (usages == null) return;  Collections.addAll(playerMemories.usedUniqueItems, usages); }playerMemories -> (String[])playerMemories.usedUniqueItems.toArray(())).add()).build();
+/* 34 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(UniqueItemUsagesComponent.class, UniqueItemUsagesComponent::new).append(new KeyedCodec("UniqueItemUsed", (Codec)new ArrayCodec((Codec)Codec.STRING, x$0 -> new String[x$0])), (playerMemories, usages) -> { if (usages == null) return;  Collections.addAll(playerMemories.usedUniqueItems, usages); }playerMemories -> (String[])playerMemories.usedUniqueItems.toArray(())).add()).build();
 /*    */   }
-/* 30 */   private final Set<String> usedUniqueItems = new HashSet<>();
+/* 36 */   private final Set<String> usedUniqueItems = new HashSet<>();
 /*    */   
 /*    */   public static ComponentType<EntityStore, UniqueItemUsagesComponent> getComponentType() {
-/* 33 */     return EntityModule.get().getUniqueItemUsagesComponentType();
+/* 39 */     return EntityModule.get().getUniqueItemUsagesComponentType();
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   @NullableDecl
+/*    */   @Nullable
 /*    */   public Component<EntityStore> clone() {
-/* 39 */     UniqueItemUsagesComponent component = new UniqueItemUsagesComponent();
-/* 40 */     component.usedUniqueItems.addAll(this.usedUniqueItems);
-/* 41 */     return component;
+/* 45 */     UniqueItemUsagesComponent component = new UniqueItemUsagesComponent();
+/* 46 */     component.usedUniqueItems.addAll(this.usedUniqueItems);
+/* 47 */     return component;
 /*    */   }
 /*    */   
 /*    */   public boolean hasUsedUniqueItem(String itemId) {
-/* 45 */     return this.usedUniqueItems.contains(itemId);
+/* 51 */     return this.usedUniqueItems.contains(itemId);
 /*    */   }
 /*    */   
 /*    */   public void recordUniqueItemUsage(String itemId) {
-/* 49 */     this.usedUniqueItems.add(itemId);
+/* 55 */     this.usedUniqueItems.add(itemId);
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\entities\player\data\UniqueItemUsagesComponent.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\entities\player\data\UniqueItemUsagesComponent.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

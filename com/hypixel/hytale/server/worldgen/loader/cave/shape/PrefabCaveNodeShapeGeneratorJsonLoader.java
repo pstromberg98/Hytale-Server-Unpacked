@@ -8,9 +8,7 @@
 /*    */ import com.hypixel.hytale.server.worldgen.loader.WorldGenPrefabLoader;
 /*    */ import com.hypixel.hytale.server.worldgen.loader.WorldGenPrefabSupplier;
 /*    */ import com.hypixel.hytale.server.worldgen.loader.prefab.BlockPlacementMaskJsonLoader;
-/*    */ import com.hypixel.hytale.server.worldgen.prefab.BlockPlacementMask;
 /*    */ import com.hypixel.hytale.server.worldgen.util.condition.BlockMaskCondition;
-/*    */ import com.hypixel.hytale.server.worldgen.util.condition.DefaultBlockMaskCondition;
 /*    */ import java.nio.file.Path;
 /*    */ import java.util.ArrayList;
 /*    */ import java.util.Collections;
@@ -24,49 +22,50 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
 /*    */ public class PrefabCaveNodeShapeGeneratorJsonLoader
 /*    */   extends CaveNodeShapeGeneratorJsonLoader
 /*    */ {
 /*    */   public PrefabCaveNodeShapeGeneratorJsonLoader(@Nonnull SeedString<SeedStringResource> seed, Path dataFolder, JsonElement json) {
-/* 31 */     super(seed.append(".PrefabCaveNodeShapeGenerator"), dataFolder, json);
+/* 30 */     super(seed.append(".PrefabCaveNodeShapeGenerator"), dataFolder, json);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public PrefabCaveNodeShape.PrefabCaveNodeShapeGenerator load() {
-/* 37 */     return new PrefabCaveNodeShape.PrefabCaveNodeShapeGenerator(
-/* 38 */         loadPrefabs(), 
-/* 39 */         loadMask());
+/* 36 */     return new PrefabCaveNodeShape.PrefabCaveNodeShapeGenerator(
+/* 37 */         loadPrefabs(), 
+/* 38 */         loadMask());
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   protected List<WorldGenPrefabSupplier> loadPrefabs() {
-/* 45 */     WorldGenPrefabLoader loader = ((SeedStringResource)this.seed.get()).getLoader();
-/* 46 */     List<WorldGenPrefabSupplier> prefabs = new ArrayList<>();
-/* 47 */     JsonElement prefabElement = get("Prefab");
-/* 48 */     if (prefabElement.isJsonArray()) {
-/* 49 */       JsonArray prefabArray = prefabElement.getAsJsonArray();
-/* 50 */       for (JsonElement prefabArrayElement : prefabArray) {
-/* 51 */         String prefabString = prefabArrayElement.getAsString();
-/* 52 */         Collections.addAll(prefabs, loader.get(prefabString));
+/* 44 */     WorldGenPrefabLoader loader = ((SeedStringResource)this.seed.get()).getLoader();
+/* 45 */     List<WorldGenPrefabSupplier> prefabs = new ArrayList<>();
+/* 46 */     JsonElement prefabElement = get("Prefab");
+/* 47 */     if (prefabElement.isJsonArray()) {
+/* 48 */       JsonArray prefabArray = prefabElement.getAsJsonArray();
+/* 49 */       for (JsonElement prefabArrayElement : prefabArray) {
+/* 50 */         String prefabString = prefabArrayElement.getAsString();
+/* 51 */         Collections.addAll(prefabs, loader.get(prefabString));
 /*    */       } 
 /*    */     } else {
-/* 55 */       String prefabString = prefabElement.getAsString();
-/* 56 */       Collections.addAll(prefabs, loader.get(prefabString));
+/* 54 */       String prefabString = prefabElement.getAsString();
+/* 55 */       Collections.addAll(prefabs, loader.get(prefabString));
 /*    */     } 
-/* 58 */     if (prefabs.isEmpty()) throw new IllegalArgumentException("Prefabs are empty! Key: Prefab"); 
-/* 59 */     return prefabs;
+/* 57 */     if (prefabs.isEmpty()) throw new IllegalArgumentException("Prefabs are empty! Key: Prefab"); 
+/* 58 */     return prefabs;
 /*    */   }
+/*    */   
 /*    */   @Nullable
 /*    */   protected BlockMaskCondition loadMask() {
-/*    */     BlockPlacementMask blockPlacementMask;
-/* 64 */     DefaultBlockMaskCondition defaultBlockMaskCondition = DefaultBlockMaskCondition.DEFAULT_TRUE;
-/* 65 */     if (has("Mask"))
+/* 63 */     BlockMaskCondition configuration = BlockMaskCondition.DEFAULT_TRUE;
+/* 64 */     if (has("Mask"))
 /*    */     {
-/* 67 */       blockPlacementMask = (new BlockPlacementMaskJsonLoader(this.seed, this.dataFolder, getRaw("Mask"))).load();
+/* 66 */       configuration = (new BlockPlacementMaskJsonLoader(this.seed, this.dataFolder, getRaw("Mask"))).load();
 /*    */     }
-/* 69 */     return (BlockMaskCondition)blockPlacementMask;
+/* 68 */     return configuration;
 /*    */   }
 /*    */   
 /*    */   public static interface Constants {
@@ -76,7 +75,7 @@
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\cave\shape\PrefabCaveNodeShapeGeneratorJsonLoader.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\cave\shape\PrefabCaveNodeShapeGeneratorJsonLoader.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

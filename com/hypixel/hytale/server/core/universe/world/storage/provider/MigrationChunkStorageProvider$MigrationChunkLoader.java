@@ -116,7 +116,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class MigrationChunkLoader
 /*     */   implements IChunkLoader
 /*     */ {
@@ -124,31 +123,31 @@
 /*     */   private final IChunkLoader[] loaders;
 /*     */   
 /*     */   public MigrationChunkLoader(@Nonnull IChunkLoader... loaders) {
-/* 127 */     this.loaders = loaders;
+/* 126 */     this.loaders = loaders;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void close() throws IOException {
-/* 132 */     IOException exception = null;
-/* 133 */     for (IChunkLoader loader : this.loaders) {
+/* 131 */     IOException exception = null;
+/* 132 */     for (IChunkLoader loader : this.loaders) {
 /*     */       try {
-/* 135 */         loader.close();
-/* 136 */       } catch (Exception e) {
-/* 137 */         if (exception == null) exception = new IOException("Failed to close one or more loaders!"); 
-/* 138 */         exception.addSuppressed(e);
+/* 134 */         loader.close();
+/* 135 */       } catch (Exception e) {
+/* 136 */         if (exception == null) exception = new IOException("Failed to close one or more loaders!"); 
+/* 137 */         exception.addSuppressed(e);
 /*     */       } 
 /*     */     } 
-/* 141 */     if (exception != null) throw exception;
+/* 140 */     if (exception != null) throw exception;
 /*     */   
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<Holder<ChunkStore>> loadHolder(int x, int z) {
-/* 147 */     CompletableFuture<Holder<ChunkStore>> future = this.loaders[0].loadHolder(x, z);
-/* 148 */     for (int i = 1; i < this.loaders.length; i++) {
+/* 146 */     CompletableFuture<Holder<ChunkStore>> future = this.loaders[0].loadHolder(x, z);
+/* 147 */     for (int i = 1; i < this.loaders.length; i++) {
 /*     */       
-/* 150 */       IChunkLoader loader = this.loaders[i];
-/* 151 */       CompletableFuture<Holder<ChunkStore>> previous = future;
+/* 149 */       IChunkLoader loader = this.loaders[i];
+/* 150 */       CompletableFuture<Holder<ChunkStore>> previous = future;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -164,24 +163,24 @@
 /*     */ 
 /*     */ 
 /*     */       
-/* 167 */       future = previous.handle((worldChunk, throwable) -> (throwable != null) ? loader.loadHolder(x, z).exceptionally(()) : ((worldChunk == null) ? loader.loadHolder(x, z) : previous)).thenCompose(Function.identity());
+/* 166 */       future = previous.handle((worldChunk, throwable) -> (throwable != null) ? loader.loadHolder(x, z).exceptionally(()) : ((worldChunk == null) ? loader.loadHolder(x, z) : previous)).thenCompose(Function.identity());
 /*     */     } 
-/* 169 */     return future;
+/* 168 */     return future;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public LongSet getIndexes() throws IOException {
-/* 175 */     LongOpenHashSet indexes = new LongOpenHashSet();
-/* 176 */     for (IChunkLoader loader : this.loaders) {
-/* 177 */       indexes.addAll((LongCollection)loader.getIndexes());
+/* 174 */     LongOpenHashSet indexes = new LongOpenHashSet();
+/* 175 */     for (IChunkLoader loader : this.loaders) {
+/* 176 */       indexes.addAll((LongCollection)loader.getIndexes());
 /*     */     }
-/* 179 */     return (LongSet)indexes;
+/* 178 */     return (LongSet)indexes;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\MigrationChunkStorageProvider$MigrationChunkLoader.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\MigrationChunkStorageProvider$MigrationChunkLoader.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

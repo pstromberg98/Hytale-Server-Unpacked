@@ -442,12 +442,11 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class PlayerRemovedSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   public Query<EntityStore> getQuery() {
-/* 450 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 449 */     return (Query<EntityStore>)PlayerRef.getComponentType();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -457,46 +456,46 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 460 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 459 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 462 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
-/* 463 */     assert playerRefComponent != null;
+/* 461 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 462 */     assert playerRefComponent != null;
 /*     */     
-/* 465 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
-/* 466 */     assert playerComponent != null;
+/* 464 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
+/* 465 */     assert playerComponent != null;
 /*     */     
-/* 468 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
-/* 469 */     assert transformComponent != null;
+/* 467 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
+/* 468 */     assert transformComponent != null;
 /*     */     
-/* 471 */     HeadRotation headRotationComponent = (HeadRotation)holder.getComponent(HeadRotation.getComponentType());
-/* 472 */     assert headRotationComponent != null;
+/* 470 */     HeadRotation headRotationComponent = (HeadRotation)holder.getComponent(HeadRotation.getComponentType());
+/* 471 */     assert headRotationComponent != null;
 /*     */     
-/* 474 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)holder.getComponent(DisplayNameComponent.getComponentType());
-/* 475 */     assert displayNameComponent != null;
+/* 473 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)holder.getComponent(DisplayNameComponent.getComponentType());
+/* 474 */     assert displayNameComponent != null;
 /*     */     
-/* 477 */     Message displayName = displayNameComponent.getDisplayName();
+/* 476 */     Message displayName = displayNameComponent.getDisplayName();
 /*     */     
-/* 479 */     PlayerSystems.LOGGER.at(Level.INFO).log("Removing player '%s%s' from world '%s' (%s)", playerRefComponent.getUsername(), (displayName != null) ? (" (" + displayName.getAnsiMessage() + ")") : "", world.getName(), playerRefComponent.getUuid());
+/* 478 */     PlayerSystems.LOGGER.at(Level.INFO).log("Removing player '%s%s' from world '%s' (%s)", playerRefComponent.getUsername(), (displayName != null) ? (" (" + displayName.getAnsiMessage() + ")") : "", world.getName(), playerRefComponent.getUuid());
 /*     */ 
 /*     */ 
 /*     */     
-/* 483 */     playerComponent.getPlayerConfigData()
-/* 484 */       .getPerWorldData(world.getName())
-/* 485 */       .setLastPosition(new Transform(transformComponent.getPosition().clone(), headRotationComponent.getRotation().clone()));
+/* 482 */     playerComponent.getPlayerConfigData()
+/* 483 */       .getPerWorldData(world.getName())
+/* 484 */       .setLastPosition(new Transform(transformComponent.getPosition().clone(), headRotationComponent.getRotation().clone()));
 /*     */     
-/* 487 */     playerRefComponent.getPacketHandler().setQueuePackets(false);
-/* 488 */     playerRefComponent.getPacketHandler().tryFlush();
+/* 486 */     playerRefComponent.getPacketHandler().setQueuePackets(false);
+/* 487 */     playerRefComponent.getPacketHandler().tryFlush();
 /*     */ 
 /*     */     
-/* 491 */     WorldConfig worldConfig = world.getWorldConfig();
-/* 492 */     PlayerUtil.broadcastMessageToPlayers(playerRefComponent.getUuid(), Message.translation("server.general.playerLeftWorld")
-/* 493 */         .param("username", playerRefComponent.getUsername())
-/* 494 */         .param("world", (worldConfig.getDisplayName() != null) ? worldConfig.getDisplayName() : WorldConfig.formatDisplayName(world.getName())), store);
+/* 490 */     WorldConfig worldConfig = world.getWorldConfig();
+/* 491 */     PlayerUtil.broadcastMessageToPlayers(playerRefComponent.getUuid(), Message.translation("server.general.playerLeftWorld")
+/* 492 */         .param("username", playerRefComponent.getUsername())
+/* 493 */         .param("world", (worldConfig.getDisplayName() != null) ? worldConfig.getDisplayName() : WorldConfig.formatDisplayName(world.getName())), store);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$PlayerRemovedSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$PlayerRemovedSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

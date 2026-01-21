@@ -97,9 +97,9 @@
 /*     */     } 
 /*     */ 
 /*     */     
-/* 100 */     Transform transform = new Transform(position, rotation);
+/* 100 */     Transform spawnTransform = new Transform(position.clone(), rotation.clone());
 /* 101 */     WorldConfig worldConfig = world.getWorldConfig();
-/* 102 */     worldConfig.setSpawnProvider((ISpawnProvider)new GlobalSpawnProvider(transform));
+/* 102 */     worldConfig.setSpawnProvider((ISpawnProvider)new GlobalSpawnProvider(spawnTransform));
 /* 103 */     worldConfig.markChanged();
 /* 104 */     world.getLogger().at(Level.INFO).log("Set spawn provider to: %s", worldConfig.getSpawnProvider());
 /*     */     
@@ -115,7 +115,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\SpawnSetCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\SpawnSetCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

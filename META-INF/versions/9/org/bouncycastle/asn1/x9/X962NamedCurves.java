@@ -145,7 +145,7 @@ public class X962NamedCurves {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x9\X962NamedCurves.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x9\X962NamedCurves.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

@@ -253,8 +253,10 @@
 /* 253 */       PlayerRef playerRefComponent = (PlayerRef)entityComponentAccessor.getComponent(ref, PlayerRef.getComponentType());
 /* 254 */       assert playerRefComponent != null;
 /*     */       
-/* 256 */       entityComponentAccessor.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(targetPosition, bodyRotation));
-/* 257 */       playerRefComponent.sendMessage(MESSAGE_GENERAL_PLAYER_IN_INVALID_CHUNK);
+/* 256 */       Teleport teleportComponent = Teleport.createForPlayer(targetPosition, bodyRotation);
+/*     */       
+/* 258 */       entityComponentAccessor.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 259 */       playerRefComponent.sendMessage(MESSAGE_GENERAL_PLAYER_IN_INVALID_CHUNK);
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -276,30 +278,30 @@
 /*     */ 
 /*     */   
 /*     */   private static void updateEntityInChunk(@Nonnull Ref<EntityStore> ref, @Nullable Ref<ChunkStore> oldChunkRef, @Nonnull Ref<ChunkStore> newChunkRef, @Nonnull WorldChunk newWorldChunk, @Nonnull ComponentAccessor<ChunkStore> chunkComponentStore, @Nonnull ComponentAccessor<EntityStore> entityComponentAccessor) {
-/* 279 */     if (oldChunkRef != null && oldChunkRef.isValid()) {
-/* 280 */       EntityChunk oldEntityChunkComponent = (EntityChunk)chunkComponentStore.getComponent(oldChunkRef, EntityChunk.getComponentType());
-/* 281 */       assert oldEntityChunkComponent != null;
+/* 281 */     if (oldChunkRef != null && oldChunkRef.isValid()) {
+/* 282 */       EntityChunk oldEntityChunkComponent = (EntityChunk)chunkComponentStore.getComponent(oldChunkRef, EntityChunk.getComponentType());
+/* 283 */       assert oldEntityChunkComponent != null;
 /*     */       
-/* 283 */       oldEntityChunkComponent.removeEntityReference(ref);
+/* 285 */       oldEntityChunkComponent.removeEntityReference(ref);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 287 */     EntityChunk newEntityChunkComponent = (EntityChunk)chunkComponentStore.getComponent(newChunkRef, EntityChunk.getComponentType());
-/* 288 */     assert newEntityChunkComponent != null;
+/* 289 */     EntityChunk newEntityChunkComponent = (EntityChunk)chunkComponentStore.getComponent(newChunkRef, EntityChunk.getComponentType());
+/* 290 */     assert newEntityChunkComponent != null;
 /*     */ 
 /*     */     
-/* 291 */     if (newWorldChunk.not(ChunkFlag.TICKING)) {
-/* 292 */       Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-/* 293 */       entityComponentAccessor.removeEntity(ref, holder, RemoveReason.UNLOAD);
-/* 294 */       newEntityChunkComponent.addEntityHolder(holder);
+/* 293 */     if (newWorldChunk.not(ChunkFlag.TICKING)) {
+/* 294 */       Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+/* 295 */       entityComponentAccessor.removeEntity(ref, holder, RemoveReason.UNLOAD);
+/* 296 */       newEntityChunkComponent.addEntityHolder(holder);
 /*     */     } else {
-/* 296 */       newEntityChunkComponent.addEntityReference(ref);
+/* 298 */       newEntityChunkComponent.addEntityReference(ref);
 /*     */     } 
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\system\UpdateLocationSystems.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\system\UpdateLocationSystems.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

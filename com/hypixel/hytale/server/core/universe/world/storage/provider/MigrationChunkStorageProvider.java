@@ -19,7 +19,6 @@
 /*     */ import java.util.function.Function;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -52,7 +51,7 @@
 /*     */   private IChunkStorageProvider to;
 /*     */   
 /*     */   static {
-/*  55 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(MigrationChunkStorageProvider.class, MigrationChunkStorageProvider::new).documentation("A provider that combines multiple storage providers in a chain to assist with migrating worlds between storage formats.\n\nCan also be used to set storage to load chunks but block saving them if combined with the **Empty** storage provider")).append(new KeyedCodec("Loaders", (Codec)new ArrayCodec((Codec)IChunkStorageProvider.CODEC, x$0 -> new IChunkStorageProvider[x$0])), (migration, o) -> migration.from = o, migration -> migration.from).documentation("A list of storage providers to use as chunk loaders.\n\nEach loader will be tried in order to load a chunk, returning the chunk if found otherwise trying the next loaded until found or none are left.").add()).append(new KeyedCodec("Saver", (Codec)IChunkStorageProvider.CODEC), (migration, o) -> migration.to = o, migration -> migration.to).documentation("The storage provider to use to save chunks.").add()).build();
+/*  54 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(MigrationChunkStorageProvider.class, MigrationChunkStorageProvider::new).documentation("A provider that combines multiple storage providers in a chain to assist with migrating worlds between storage formats.\n\nCan also be used to set storage to load chunks but block saving them if combined with the **Empty** storage provider")).append(new KeyedCodec("Loaders", (Codec)new ArrayCodec((Codec)IChunkStorageProvider.CODEC, x$0 -> new IChunkStorageProvider[x$0])), (migration, o) -> migration.from = o, migration -> migration.from).documentation("A list of storage providers to use as chunk loaders.\n\nEach loader will be tried in order to load a chunk, returning the chunk if found otherwise trying the next loaded until found or none are left.").add()).append(new KeyedCodec("Saver", (Codec)IChunkStorageProvider.CODEC), (migration, o) -> migration.to = o, migration -> migration.to).documentation("The storage provider to use to save chunks.").add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -79,30 +78,30 @@
 /*     */ 
 /*     */   
 /*     */   public MigrationChunkStorageProvider(@Nonnull IChunkStorageProvider[] from, @Nonnull IChunkStorageProvider to) {
-/*  82 */     this.from = from;
-/*  83 */     this.to = to;
+/*  81 */     this.from = from;
+/*  82 */     this.to = to;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*     */   public IChunkLoader getLoader(@NonNullDecl Store<ChunkStore> store) throws IOException {
-/*  89 */     IChunkLoader[] loaders = new IChunkLoader[this.from.length];
-/*  90 */     for (int i = 0; i < this.from.length; i++) {
-/*  91 */       loaders[i] = this.from[i].getLoader(store);
+/*     */   public IChunkLoader getLoader(@Nonnull Store<ChunkStore> store) throws IOException {
+/*  88 */     IChunkLoader[] loaders = new IChunkLoader[this.from.length];
+/*  89 */     for (int i = 0; i < this.from.length; i++) {
+/*  90 */       loaders[i] = this.from[i].getLoader(store);
 /*     */     }
-/*  93 */     return new MigrationChunkLoader(loaders);
+/*  92 */     return new MigrationChunkLoader(loaders);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
-/*     */   public IChunkSaver getSaver(@NonNullDecl Store<ChunkStore> store) throws IOException {
-/*  98 */     return this.to.getSaver(store);
+/*     */   public IChunkSaver getSaver(@Nonnull Store<ChunkStore> store) throws IOException {
+/*  97 */     return this.to.getSaver(store);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 105 */     return "MigrationChunkStorageProvider{from=" + Arrays.toString((Object[])this.from) + ", to=" + String.valueOf(this.to) + "}";
+/* 104 */     return "MigrationChunkStorageProvider{from=" + Arrays.toString((Object[])this.from) + ", to=" + String.valueOf(this.to) + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -124,31 +123,31 @@
 /*     */ 
 /*     */     
 /*     */     public MigrationChunkLoader(@Nonnull IChunkLoader... loaders) {
-/* 127 */       this.loaders = loaders;
+/* 126 */       this.loaders = loaders;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void close() throws IOException {
-/* 132 */       IOException exception = null;
-/* 133 */       for (IChunkLoader loader : this.loaders) {
+/* 131 */       IOException exception = null;
+/* 132 */       for (IChunkLoader loader : this.loaders) {
 /*     */         try {
-/* 135 */           loader.close();
-/* 136 */         } catch (Exception e) {
-/* 137 */           if (exception == null) exception = new IOException("Failed to close one or more loaders!"); 
-/* 138 */           exception.addSuppressed(e);
+/* 134 */           loader.close();
+/* 135 */         } catch (Exception e) {
+/* 136 */           if (exception == null) exception = new IOException("Failed to close one or more loaders!"); 
+/* 137 */           exception.addSuppressed(e);
 /*     */         } 
 /*     */       } 
-/* 141 */       if (exception != null) throw exception;
+/* 140 */       if (exception != null) throw exception;
 /*     */     
 /*     */     }
 /*     */     
 /*     */     @Nonnull
 /*     */     public CompletableFuture<Holder<ChunkStore>> loadHolder(int x, int z) {
-/* 147 */       CompletableFuture<Holder<ChunkStore>> future = this.loaders[0].loadHolder(x, z);
-/* 148 */       for (int i = 1; i < this.loaders.length; i++) {
+/* 146 */       CompletableFuture<Holder<ChunkStore>> future = this.loaders[0].loadHolder(x, z);
+/* 147 */       for (int i = 1; i < this.loaders.length; i++) {
 /*     */         
-/* 150 */         IChunkLoader loader = this.loaders[i];
-/* 151 */         CompletableFuture<Holder<ChunkStore>> previous = future;
+/* 149 */         IChunkLoader loader = this.loaders[i];
+/* 150 */         CompletableFuture<Holder<ChunkStore>> previous = future;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -164,25 +163,25 @@
 /*     */ 
 /*     */ 
 /*     */         
-/* 167 */         future = previous.handle((worldChunk, throwable) -> (throwable != null) ? loader.loadHolder(x, z).exceptionally(()) : ((worldChunk == null) ? loader.loadHolder(x, z) : previous)).thenCompose(Function.identity());
+/* 166 */         future = previous.handle((worldChunk, throwable) -> (throwable != null) ? loader.loadHolder(x, z).exceptionally(()) : ((worldChunk == null) ? loader.loadHolder(x, z) : previous)).thenCompose(Function.identity());
 /*     */       } 
-/* 169 */       return future;
+/* 168 */       return future;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public LongSet getIndexes() throws IOException {
-/* 175 */       LongOpenHashSet indexes = new LongOpenHashSet();
-/* 176 */       for (IChunkLoader loader : this.loaders) {
-/* 177 */         indexes.addAll((LongCollection)loader.getIndexes());
+/* 174 */       LongOpenHashSet indexes = new LongOpenHashSet();
+/* 175 */       for (IChunkLoader loader : this.loaders) {
+/* 176 */         indexes.addAll((LongCollection)loader.getIndexes());
 /*     */       }
-/* 179 */       return (LongSet)indexes;
+/* 178 */       return (LongSet)indexes;
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\MigrationChunkStorageProvider.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\MigrationChunkStorageProvider.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

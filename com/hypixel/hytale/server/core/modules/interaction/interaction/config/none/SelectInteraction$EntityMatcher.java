@@ -427,11 +427,10 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public abstract class EntityMatcher
 /*     */   implements NetworkSerializable<EntityMatcher>
 /*     */ {
-/* 434 */   public static final CodecMapCodec<EntityMatcher> CODEC = new CodecMapCodec("Type");
+/* 433 */   public static final CodecMapCodec<EntityMatcher> CODEC = new CodecMapCodec("Type");
 /*     */ 
 /*     */   
 /*     */   public static final BuilderCodec<EntityMatcher> BASE_CODEC;
@@ -442,12 +441,12 @@
 /*     */ 
 /*     */   
 /*     */   static {
-/* 445 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(EntityMatcher.class).appendInherited(new KeyedCodec("Invert", (Codec)Codec.BOOLEAN), (o, i) -> o.invert = i.booleanValue(), o -> Boolean.valueOf(o.invert), (o, p) -> o.invert = p.invert).documentation("Inverts the result of the matcher").add()).build();
+/* 444 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(EntityMatcher.class).appendInherited(new KeyedCodec("Invert", (Codec)Codec.BOOLEAN), (o, i) -> o.invert = i.booleanValue(), o -> Boolean.valueOf(o.invert), (o, p) -> o.invert = p.invert).documentation("Inverts the result of the matcher").add()).build();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public final boolean test(Ref<EntityStore> attacker, Ref<EntityStore> target, CommandBuffer<EntityStore> commandBuffer) {
-/* 450 */     return test0(attacker, target, commandBuffer) ^ this.invert;
+/* 449 */     return test0(attacker, target, commandBuffer) ^ this.invert;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -455,18 +454,18 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public EntityMatcher toPacket() {
-/* 458 */     EntityMatcher packet = new EntityMatcher();
+/* 457 */     EntityMatcher packet = new EntityMatcher();
 /*     */     
-/* 460 */     packet.type = EntityMatcherType.Server;
-/* 461 */     packet.invert = this.invert;
-/* 462 */     return packet;
+/* 459 */     packet.type = EntityMatcherType.Server;
+/* 460 */     packet.invert = this.invert;
+/* 461 */     return packet;
 /*     */   }
 /*     */   
 /*     */   public abstract boolean test0(Ref<EntityStore> paramRef1, Ref<EntityStore> paramRef2, CommandBuffer<EntityStore> paramCommandBuffer);
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\SelectInteraction$EntityMatcher.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\SelectInteraction$EntityMatcher.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

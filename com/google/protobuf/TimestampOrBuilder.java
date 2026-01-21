@@ -7,7 +7,7 @@ public interface TimestampOrBuilder extends MessageOrBuilder {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\google\protobuf\TimestampOrBuilder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\google\protobuf\TimestampOrBuilder.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -578,6 +578,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ public interface Accessor
 /*     */ {
 /*     */   @Nullable
@@ -585,10 +587,10 @@
 /*     */   
 /*     */   @Nullable
 /*     */   default FluidSection getFluidSectionByBlock(int bx, int by, int bz) {
-/* 588 */     return getFluidSection(
-/* 589 */         ChunkUtil.chunkCoordinate(bx), 
-/* 590 */         ChunkUtil.chunkCoordinate(by), 
-/* 591 */         ChunkUtil.chunkCoordinate(bz));
+/* 590 */     return getFluidSection(
+/* 591 */         ChunkUtil.chunkCoordinate(bx), 
+/* 592 */         ChunkUtil.chunkCoordinate(by), 
+/* 593 */         ChunkUtil.chunkCoordinate(bz));
 /*     */   }
 /*     */ 
 /*     */   
@@ -597,10 +599,10 @@
 /*     */   
 /*     */   @Nullable
 /*     */   default BlockSection getBlockSectionByBlock(int bx, int by, int bz) {
-/* 600 */     return getBlockSection(
-/* 601 */         ChunkUtil.chunkCoordinate(bx), 
-/* 602 */         ChunkUtil.chunkCoordinate(by), 
-/* 603 */         ChunkUtil.chunkCoordinate(bz));
+/* 602 */     return getBlockSection(
+/* 603 */         ChunkUtil.chunkCoordinate(bx), 
+/* 604 */         ChunkUtil.chunkCoordinate(by), 
+/* 605 */         ChunkUtil.chunkCoordinate(bz));
 /*     */   }
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
@@ -608,7 +610,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\FluidTicker$Accessor.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\FluidTicker$Accessor.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -11,7 +11,6 @@
 /*    */ import java.util.function.Supplier;
 /*    */ import javax.annotation.Nonnull;
 /*    */ import javax.annotation.Nullable;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 /*    */ 
 /*    */ 
 /*    */ public class DisplayNameComponent
@@ -24,7 +23,7 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public static ComponentType<EntityStore, DisplayNameComponent> getComponentType() {
-/* 27 */     return EntityModule.get().getDisplayNameComponentType();
+/* 26 */     return EntityModule.get().getDisplayNameComponentType();
 /*    */   }
 /*    */ 
 /*    */ 
@@ -40,7 +39,7 @@
 /*    */ 
 /*    */   
 /*    */   static {
-/* 43 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(DisplayNameComponent.class, DisplayNameComponent::new).appendInherited(new KeyedCodec("DisplayName", (Codec)Message.CODEC), (e, s) -> e.displayName = s, e -> e.displayName, (e, p) -> e.displayName = p.displayName).documentation("The value of the display name.").add()).build();
+/* 42 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(DisplayNameComponent.class, DisplayNameComponent::new).appendInherited(new KeyedCodec("DisplayName", (Codec)Message.CODEC), (e, s) -> e.displayName = s, e -> e.displayName, (e, p) -> e.displayName = p.displayName).documentation("The value of the display name.").add()).build();
 /*    */   }
 /*    */ 
 /*    */ 
@@ -63,7 +62,7 @@
 /*    */ 
 /*    */   
 /*    */   public DisplayNameComponent(@Nullable Message displayName) {
-/* 66 */     this.displayName = displayName;
+/* 65 */     this.displayName = displayName;
 /*    */   }
 /*    */ 
 /*    */ 
@@ -71,18 +70,18 @@
 /*    */   
 /*    */   @Nullable
 /*    */   public Message getDisplayName() {
-/* 74 */     return this.displayName;
+/* 73 */     return this.displayName;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   @NullableDecl
+/*    */   @Nullable
 /*    */   public Component<EntityStore> clone() {
-/* 80 */     return new DisplayNameComponent(this.displayName);
+/* 79 */     return new DisplayNameComponent(this.displayName);
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\component\DisplayNameComponent.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\component\DisplayNameComponent.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

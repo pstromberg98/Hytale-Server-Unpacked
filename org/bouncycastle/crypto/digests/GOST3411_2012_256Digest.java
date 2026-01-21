@@ -47,7 +47,7 @@ public final class GOST3411_2012_256Digest extends GOST3411_2012Digest {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\digests\GOST3411_2012_256Digest.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\digests\GOST3411_2012_256Digest.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

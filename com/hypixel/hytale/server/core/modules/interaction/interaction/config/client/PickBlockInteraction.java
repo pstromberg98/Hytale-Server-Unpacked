@@ -13,8 +13,7 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import java.util.function.Supplier;
 /*    */ import javax.annotation.Nonnull;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nullable;
 /*    */ 
 /*    */ 
 /*    */ 
@@ -22,47 +21,47 @@
 /*    */   extends SimpleBlockInteraction
 /*    */ {
 /*    */   @Nonnull
-/* 25 */   public static final BuilderCodec<PickBlockInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(PickBlockInteraction.class, PickBlockInteraction::new, SimpleBlockInteraction.CODEC)
-/* 26 */     .documentation("Performs a 'block pick', moving a the target block to the user's hand if they have it in their inventory or are in creative."))
+/* 24 */   public static final BuilderCodec<PickBlockInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(PickBlockInteraction.class, PickBlockInteraction::new, SimpleBlockInteraction.CODEC)
+/* 25 */     .documentation("Performs a 'block pick', moving a the target block to the user's hand if they have it in their inventory or are in creative."))
 /*    */     
-/* 28 */     .build();
+/* 27 */     .build();
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public WaitForDataFrom getWaitForDataFrom() {
-/* 33 */     return WaitForDataFrom.Client;
+/* 32 */     return WaitForDataFrom.Client;
 /*    */   }
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   protected void interactWithBlock(@NonNullDecl World world, @NonNullDecl CommandBuffer<EntityStore> commandBuffer, @NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NullableDecl ItemStack itemInHand, @NonNullDecl Vector3i targetBlock, @NonNullDecl CooldownHandler cooldownHandler) {}
+/*    */   protected void interactWithBlock(@Nonnull World world, @Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull Vector3i targetBlock, @Nonnull CooldownHandler cooldownHandler) {}
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   protected void simulateInteractWithBlock(@NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NullableDecl ItemStack itemInHand, @NonNullDecl World world, @NonNullDecl Vector3i targetBlock) {}
+/*    */   protected void simulateInteractWithBlock(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull World world, @Nonnull Vector3i targetBlock) {}
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   protected Interaction generatePacket() {
-/* 49 */     return (Interaction)new com.hypixel.hytale.protocol.PickBlockInteraction();
+/* 48 */     return (Interaction)new com.hypixel.hytale.protocol.PickBlockInteraction();
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public boolean needsRemoteSync() {
-/* 54 */     return true;
+/* 53 */     return true;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 60 */     return "PickBlockInteraction{} " + super.toString();
+/* 59 */     return "PickBlockInteraction{} " + super.toString();
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\PickBlockInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\PickBlockInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

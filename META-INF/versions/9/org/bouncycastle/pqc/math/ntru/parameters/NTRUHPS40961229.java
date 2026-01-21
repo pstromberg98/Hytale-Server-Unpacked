@@ -15,7 +15,7 @@ public class NTRUHPS40961229 extends NTRUHPSParameterSet {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\pqc\math\ntru\parameters\NTRUHPS40961229.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\pqc\math\ntru\parameters\NTRUHPS40961229.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

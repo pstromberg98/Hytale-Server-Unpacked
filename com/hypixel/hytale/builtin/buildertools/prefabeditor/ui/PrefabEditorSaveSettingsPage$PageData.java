@@ -587,6 +587,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class PageData
 /*     */ {
 /*     */   public static final String PREFABS_TO_SAVE = "@PrefabsToSave";
@@ -600,7 +615,7 @@
 /*     */   public String prefabsToSave;
 /*     */   
 /*     */   static {
-/* 603 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).append(new KeyedCodec("Action", (Codec)new EnumCodec(PrefabEditorSaveSettingsPage.Action.class, EnumCodec.EnumStyle.LEGACY)), (o, action) -> o.action = action, o -> o.action).add()).append(new KeyedCodec("@PrefabsToSave", (Codec)Codec.STRING), (o, prefabsToSave) -> o.prefabsToSave = prefabsToSave, o -> o.prefabsToSave).add()).append(new KeyedCodec("@Entities", (Codec)Codec.BOOLEAN), (o, entities) -> o.entities = entities.booleanValue(), o -> Boolean.valueOf(o.entities)).add()).append(new KeyedCodec("@Empty", (Codec)Codec.BOOLEAN), (o, empty) -> o.empty = empty.booleanValue(), o -> Boolean.valueOf(o.empty)).add()).append(new KeyedCodec("@Overwrite", (Codec)Codec.BOOLEAN), (o, overwrite) -> o.overwrite = overwrite.booleanValue(), o -> Boolean.valueOf(o.overwrite)).add()).append(new KeyedCodec("@BrowserSearch", (Codec)Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr).add()).append(new KeyedCodec("PrefabUuid", (Codec)Codec.STRING), (o, prefabUuid) -> o.prefabUuid = prefabUuid, o -> o.prefabUuid).add()).build();
+/* 618 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).append(new KeyedCodec("Action", (Codec)new EnumCodec(PrefabEditorSaveSettingsPage.Action.class, EnumCodec.EnumStyle.LEGACY)), (o, action) -> o.action = action, o -> o.action).add()).append(new KeyedCodec("@PrefabsToSave", (Codec)Codec.STRING), (o, prefabsToSave) -> o.prefabsToSave = prefabsToSave, o -> o.prefabsToSave).add()).append(new KeyedCodec("@Entities", (Codec)Codec.BOOLEAN), (o, entities) -> o.entities = entities.booleanValue(), o -> Boolean.valueOf(o.entities)).add()).append(new KeyedCodec("@Empty", (Codec)Codec.BOOLEAN), (o, empty) -> o.empty = empty.booleanValue(), o -> Boolean.valueOf(o.empty)).add()).append(new KeyedCodec("@Overwrite", (Codec)Codec.BOOLEAN), (o, overwrite) -> o.overwrite = overwrite.booleanValue(), o -> Boolean.valueOf(o.overwrite)).add()).append(new KeyedCodec("@BrowserSearch", (Codec)Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr).add()).append(new KeyedCodec("PrefabUuid", (Codec)Codec.STRING), (o, prefabUuid) -> o.prefabUuid = prefabUuid, o -> o.prefabUuid).add()).build();
 /*     */   }
 /*     */   
 /*     */   public boolean entities = true;
@@ -611,7 +626,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\prefabedito\\ui\PrefabEditorSaveSettingsPage$PageData.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\prefabedito\\ui\PrefabEditorSaveSettingsPage$PageData.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

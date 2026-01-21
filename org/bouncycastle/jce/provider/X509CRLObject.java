@@ -395,7 +395,7 @@ public class X509CRLObject extends X509CRL {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jce\provider\X509CRLObject.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jce\provider\X509CRLObject.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -1900,36 +1900,6 @@
 /*      */ 
 /*      */ 
 /*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
 /*      */ public class AssetToDiscard
 /*      */ {
 /*      */   public final AssetPath path;
@@ -1937,18 +1907,18 @@
 /*      */   public final Instant lastModificationDate;
 /*      */   
 /*      */   public AssetToDiscard(AssetPath path, @Nullable String lastModificationDate) {
-/* 1940 */     this.path = path;
+/* 1910 */     this.path = path;
 /*      */     
-/* 1942 */     if (lastModificationDate != null) {
-/* 1943 */       this.lastModificationDate = Instant.parse(lastModificationDate);
+/* 1912 */     if (lastModificationDate != null) {
+/* 1913 */       this.lastModificationDate = Instant.parse(lastModificationDate);
 /*      */     } else {
-/* 1945 */       this.lastModificationDate = null;
+/* 1915 */       this.lastModificationDate = null;
 /*      */     } 
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\asseteditor\AssetEditorPlugin$AssetToDiscard.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\asseteditor\AssetEditorPlugin$AssetToDiscard.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

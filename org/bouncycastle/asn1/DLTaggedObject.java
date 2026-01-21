@@ -65,7 +65,7 @@ public class DLTaggedObject extends ASN1TaggedObject {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn1\DLTaggedObject.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn1\DLTaggedObject.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

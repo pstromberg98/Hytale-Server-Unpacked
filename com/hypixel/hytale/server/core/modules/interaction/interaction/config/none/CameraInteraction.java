@@ -15,7 +15,6 @@
 /*     */ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInteraction;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -55,7 +54,7 @@
 /*     */   protected float cameraInteractionTime;
 /*     */   
 /*     */   static {
-/*  58 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CameraInteraction.class, CameraInteraction::new, SimpleInteraction.CODEC).documentation("Adjusts the camera of the user.")).appendInherited(new KeyedCodec("PersistCameraState", (Codec)Codec.BOOLEAN), (i, s) -> i.persistCameraState = s.booleanValue(), i -> Boolean.valueOf(i.persistCameraState), (i, parent) -> i.persistCameraState = parent.persistCameraState).documentation("Should the camera state from this interaction persist to the next camera interaction. If the next interaction is null or not a camera interaction then this field does nothing.").add()).appendInherited(new KeyedCodec("Action", (Codec)new EnumCodec(CameraActionType.class)), (i, s) -> i.action = s, i -> i.action, (i, parent) -> i.action = parent.action).documentation("What kind of camera action should we take").add()).appendInherited(new KeyedCodec("Perspective", (Codec)new EnumCodec(CameraPerspectiveType.class)), (i, s) -> i.perspective = s, i -> i.perspective, (i, parent) -> i.perspective = parent.perspective).documentation("What camera perspective we want this interaction to take place in").add()).appendInherited(new KeyedCodec("CameraInteractionTime", (Codec)Codec.FLOAT), (i, s) -> i.cameraInteractionTime = s.floatValue(), i -> Float.valueOf(i.cameraInteractionTime), (i, parent) -> i.cameraInteractionTime = parent.cameraInteractionTime).documentation("How long this camera action lasts for").add()).build();
+/*  57 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CameraInteraction.class, CameraInteraction::new, SimpleInteraction.CODEC).documentation("Adjusts the camera of the user.")).appendInherited(new KeyedCodec("PersistCameraState", (Codec)Codec.BOOLEAN), (i, s) -> i.persistCameraState = s.booleanValue(), i -> Boolean.valueOf(i.persistCameraState), (i, parent) -> i.persistCameraState = parent.persistCameraState).documentation("Should the camera state from this interaction persist to the next camera interaction. If the next interaction is null or not a camera interaction then this field does nothing.").add()).appendInherited(new KeyedCodec("Action", (Codec)new EnumCodec(CameraActionType.class)), (i, s) -> i.action = s, i -> i.action, (i, parent) -> i.action = parent.action).documentation("What kind of camera action should we take").add()).appendInherited(new KeyedCodec("Perspective", (Codec)new EnumCodec(CameraPerspectiveType.class)), (i, s) -> i.perspective = s, i -> i.perspective, (i, parent) -> i.perspective = parent.perspective).documentation("What camera perspective we want this interaction to take place in").add()).appendInherited(new KeyedCodec("CameraInteractionTime", (Codec)Codec.FLOAT), (i, s) -> i.cameraInteractionTime = s.floatValue(), i -> Float.valueOf(i.cameraInteractionTime), (i, parent) -> i.cameraInteractionTime = parent.cameraInteractionTime).documentation("How long this camera action lasts for").add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -77,54 +76,54 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   protected Interaction generatePacket() {
-/*  80 */     return (Interaction)new com.hypixel.hytale.protocol.CameraInteraction();
+/*  79 */     return (Interaction)new com.hypixel.hytale.protocol.CameraInteraction();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void configurePacket(Interaction packet) {
-/*  85 */     super.configurePacket(packet);
-/*  86 */     com.hypixel.hytale.protocol.CameraInteraction p = (com.hypixel.hytale.protocol.CameraInteraction)packet;
-/*  87 */     p.cameraAction = this.action;
-/*  88 */     p.cameraPerspective = this.perspective;
-/*  89 */     p.cameraPersist = this.persistCameraState;
-/*  90 */     p.cameraInteractionTime = this.cameraInteractionTime;
+/*  84 */     super.configurePacket(packet);
+/*  85 */     com.hypixel.hytale.protocol.CameraInteraction p = (com.hypixel.hytale.protocol.CameraInteraction)packet;
+/*  86 */     p.cameraAction = this.action;
+/*  87 */     p.cameraPerspective = this.perspective;
+/*  88 */     p.cameraPersist = this.persistCameraState;
+/*  89 */     p.cameraInteractionTime = this.cameraInteractionTime;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/*  96 */     return "CameraInteraction{action=" + String.valueOf(this.action) + ", perspective='" + String.valueOf(this.perspective) + "', persistCameraState='" + this.persistCameraState + "', cameraInteractionTime='" + this.cameraInteractionTime + "'} " + super
+/*  95 */     return "CameraInteraction{action=" + String.valueOf(this.action) + ", perspective='" + String.valueOf(this.perspective) + "', persistCameraState='" + this.persistCameraState + "', cameraInteractionTime='" + this.cameraInteractionTime + "'} " + super
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */       
-/* 101 */       .toString();
+/* 100 */       .toString();
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   protected void tick0(boolean firstRun, float time, @NonNullDecl InteractionType type, @Nonnull InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
-/* 106 */     super.tick0(firstRun, time, type, context, cooldownHandler);
+/*     */   protected void tick0(boolean firstRun, float time, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/* 105 */     super.tick0(firstRun, time, type, context, cooldownHandler);
 /*     */     
-/* 108 */     InteractionSyncData clientState = context.getClientState();
-/* 109 */     assert clientState != null;
+/* 107 */     InteractionSyncData clientState = context.getClientState();
+/* 108 */     assert clientState != null;
 /*     */     
-/* 111 */     (context.getState()).state = clientState.state;
+/* 110 */     (context.getState()).state = clientState.state;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public WaitForDataFrom getWaitForDataFrom() {
-/* 117 */     return WaitForDataFrom.Client;
+/* 116 */     return WaitForDataFrom.Client;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean needsRemoteSync() {
-/* 122 */     return true;
+/* 121 */     return true;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\CameraInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\CameraInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

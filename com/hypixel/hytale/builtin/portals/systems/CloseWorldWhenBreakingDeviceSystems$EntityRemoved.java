@@ -9,8 +9,7 @@
 /*    */ import com.hypixel.hytale.component.query.Query;
 /*    */ import com.hypixel.hytale.component.system.RefSystem;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*    */ 
+/*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
 /*    */ 
@@ -47,21 +46,21 @@
 /*    */ public class EntityRemoved
 /*    */   extends RefSystem<ChunkStore>
 /*    */ {
-/*    */   public void onEntityAdded(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl AddReason reason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {}
+/*    */   public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {}
 /*    */   
-/*    */   public void onEntityRemove(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl RemoveReason reason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
-/* 53 */     PortalDevice device = (PortalDevice)store.getComponent(ref, PortalDevice.getComponentType());
-/* 54 */     CloseWorldWhenBreakingDeviceSystems.maybeCloseFragmentWorld(device);
+/*    */   public void onEntityRemove(@Nonnull Ref<ChunkStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
+/* 52 */     PortalDevice device = (PortalDevice)store.getComponent(ref, PortalDevice.getComponentType());
+/* 53 */     CloseWorldWhenBreakingDeviceSystems.maybeCloseFragmentWorld(device);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public Query<ChunkStore> getQuery() {
-/* 59 */     return (Query<ChunkStore>)PortalDevice.getComponentType();
+/* 58 */     return (Query<ChunkStore>)PortalDevice.getComponentType();
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\portals\systems\CloseWorldWhenBreakingDeviceSystems$EntityRemoved.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\portals\systems\CloseWorldWhenBreakingDeviceSystems$EntityRemoved.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

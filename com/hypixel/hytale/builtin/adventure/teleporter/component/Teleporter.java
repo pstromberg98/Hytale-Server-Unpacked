@@ -187,39 +187,40 @@
 /* 187 */     return teleporter;
 /*     */   }
 /*     */ 
+/*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public Teleport toTeleport(@Nonnull Vector3d currentPosition, @Nonnull Vector3f currentRotation, @Nonnull Vector3i blockPosition) {
-/* 193 */     if (this.warp != null && !this.warp.isEmpty()) {
-/* 194 */       Warp targetWarp = (Warp)TeleportPlugin.get().getWarps().get(this.warp.toLowerCase());
-/* 195 */       return (targetWarp != null) ? targetWarp.toTeleport() : null;
+/* 194 */     if (this.warp != null && !this.warp.isEmpty()) {
+/* 195 */       Warp targetWarp = (Warp)TeleportPlugin.get().getWarps().get(this.warp.toLowerCase());
+/* 196 */       return (targetWarp != null) ? targetWarp.toTeleport() : null;
 /*     */     } 
 /*     */     
-/* 198 */     if (this.transform != null) {
-/* 199 */       if (this.worldUuid != null) {
-/* 200 */         World world = Universe.get().getWorld(this.worldUuid);
-/* 201 */         if (world != null) {
-/* 202 */           if (this.relativeMask != 0) {
-/* 203 */             Transform teleportTransform = this.transform.clone();
-/* 204 */             Transform.applyMaskedRelativeTransform(teleportTransform, this.relativeMask, currentPosition, currentRotation, blockPosition);
-/* 205 */             return new Teleport(world, teleportTransform);
+/* 199 */     if (this.transform != null) {
+/* 200 */       if (this.worldUuid != null) {
+/* 201 */         World world = Universe.get().getWorld(this.worldUuid);
+/* 202 */         if (world != null) {
+/* 203 */           if (this.relativeMask != 0) {
+/* 204 */             Transform teleportTransform = this.transform.clone();
+/* 205 */             Transform.applyMaskedRelativeTransform(teleportTransform, this.relativeMask, currentPosition, currentRotation, blockPosition);
+/* 206 */             return Teleport.createForPlayer(world, teleportTransform);
 /*     */           } 
-/* 207 */           return new Teleport(world, this.transform);
+/* 208 */           return Teleport.createForPlayer(world, this.transform);
 /*     */         } 
 /*     */       } 
-/* 210 */       if (this.relativeMask != 0) {
-/* 211 */         Transform teleportTransform = this.transform.clone();
-/* 212 */         Transform.applyMaskedRelativeTransform(teleportTransform, this.relativeMask, currentPosition, currentRotation, blockPosition);
-/* 213 */         return new Teleport(teleportTransform);
+/* 211 */       if (this.relativeMask != 0) {
+/* 212 */         Transform teleportTransform = this.transform.clone();
+/* 213 */         Transform.applyMaskedRelativeTransform(teleportTransform, this.relativeMask, currentPosition, currentRotation, blockPosition);
+/* 214 */         return Teleport.createForPlayer(teleportTransform);
 /*     */       } 
-/* 215 */       return new Teleport(this.transform);
+/* 216 */       return Teleport.createForPlayer(this.transform);
 /*     */     } 
-/* 217 */     return null;
+/* 218 */     return null;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\teleporter\component\Teleporter.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\teleporter\component\Teleporter.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

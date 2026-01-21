@@ -13,7 +13,7 @@ public class DERUTF8String extends ASN1UTF8String {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\DERUTF8String.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\DERUTF8String.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

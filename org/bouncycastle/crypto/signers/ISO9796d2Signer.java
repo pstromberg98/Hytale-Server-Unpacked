@@ -326,7 +326,7 @@ public class ISO9796d2Signer implements SignerWithRecovery {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\signers\ISO9796d2Signer.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\signers\ISO9796d2Signer.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

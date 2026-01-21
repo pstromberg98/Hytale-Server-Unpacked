@@ -185,14 +185,21 @@
 /*      */ 
 /*      */ 
 /*      */   
-/*  188 */   private final AtomicInteger totalGeneratedChunksCount = new AtomicInteger();
+/*  188 */   private final StampedLock generatorLock = new StampedLock();
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
-/*  195 */   private final AtomicInteger totalLoadedChunksCount = new AtomicInteger();
+/*  195 */   private final AtomicInteger totalGeneratedChunksCount = new AtomicInteger();
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */   
+/*  202 */   private final AtomicInteger totalLoadedChunksCount = new AtomicInteger();
 /*      */ 
 /*      */ 
 /*      */ 
@@ -200,13 +207,13 @@
 /*      */ 
 /*      */   
 /*      */   public ChunkStore(@Nonnull World world) {
-/*  203 */     this.world = world;
+/*  210 */     this.world = world;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public World getWorld() {
-/*  209 */     return this.world;
+/*  216 */     return this.world;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -214,7 +221,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Store<ChunkStore> getStore() {
-/*  217 */     return this.store;
+/*  224 */     return this.store;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -222,7 +229,7 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public IChunkLoader getLoader() {
-/*  225 */     return this.loader;
+/*  232 */     return this.loader;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -230,7 +237,7 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public IChunkSaver getSaver() {
-/*  233 */     return this.saver;
+/*  240 */     return this.saver;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -238,7 +245,19 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public IWorldGen getGenerator() {
-/*  241 */     return this.generator;
+/*  248 */     long readStamp = this.generatorLock.readLock();
+/*      */     try {
+/*  250 */       return this.generator;
+/*      */     } finally {
+/*  252 */       this.generatorLock.unlockRead(readStamp);
+/*      */     } 
+/*      */   }
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */   
+/*      */   public void shutdownGenerator() {
+/*  260 */     setGenerator(null);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -247,17 +266,22 @@
 /*      */ 
 /*      */   
 /*      */   public void setGenerator(@Nullable IWorldGen generator) {
-/*  250 */     if (this.generator != null) {
-/*  251 */       this.generator.shutdown();
-/*      */     }
-/*      */     
-/*  254 */     this.totalGeneratedChunksCount.set(0);
-/*  255 */     this.generator = generator;
-/*      */     
-/*  257 */     if (generator != null) {
+/*  269 */     long writeStamp = this.generatorLock.writeLock();
+/*      */     try {
+/*  271 */       if (this.generator != null) {
+/*  272 */         this.generator.shutdown();
+/*      */       }
 /*      */       
-/*  259 */       this.generatorLoaded.complete(null);
-/*  260 */       this.generatorLoaded = new CompletableFuture<>();
+/*  275 */       this.totalGeneratedChunksCount.set(0);
+/*  276 */       this.generator = generator;
+/*      */       
+/*  278 */       if (generator != null) {
+/*      */         
+/*  280 */         this.generatorLoaded.complete(null);
+/*  281 */         this.generatorLoaded = new CompletableFuture<>();
+/*      */       } 
+/*      */     } finally {
+/*  284 */       this.generatorLock.unlockWrite(writeStamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -266,28 +290,28 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public LongSet getChunkIndexes() {
-/*  269 */     return LongSets.unmodifiable((LongSet)this.chunks.keySet());
+/*  293 */     return LongSets.unmodifiable((LongSet)this.chunks.keySet());
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public int getLoadedChunksCount() {
-/*  276 */     return this.chunks.size();
+/*  300 */     return this.chunks.size();
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public int getTotalGeneratedChunksCount() {
-/*  283 */     return this.totalGeneratedChunksCount.get();
+/*  307 */     return this.totalGeneratedChunksCount.get();
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public int getTotalLoadedChunksCount() {
-/*  290 */     return this.totalLoadedChunksCount.get();
+/*  314 */     return this.totalLoadedChunksCount.get();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -296,7 +320,7 @@
 /*      */ 
 /*      */   
 /*      */   public void start(@Nonnull IResourceStorage resourceStorage) {
-/*  299 */     this.store = REGISTRY.addStore(this, resourceStorage, store -> this.store = store);
+/*  323 */     this.store = REGISTRY.addStore(this, resourceStorage, store -> this.store = store);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -304,41 +328,41 @@
 /*      */ 
 /*      */   
 /*      */   public void waitForLoadingChunks() {
-/*  307 */     long start = System.nanoTime();
+/*  331 */     long start = System.nanoTime();
 /*      */     do {
-/*  309 */       this.world.consumeTaskQueue();
+/*  333 */       this.world.consumeTaskQueue();
 /*      */       
-/*  311 */       Thread.yield();
+/*  335 */       Thread.yield();
 /*      */       
-/*  313 */       boolean hasLoadingChunks = false;
-/*  314 */       for (ObjectIterator<Long2ObjectMap.Entry<ChunkLoadState>> objectIterator = this.chunks.long2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Long2ObjectMap.Entry<ChunkLoadState> entry = objectIterator.next();
-/*  315 */         ChunkLoadState chunkState = (ChunkLoadState)entry.getValue();
-/*  316 */         long stamp = chunkState.lock.readLock();
+/*  337 */       boolean hasLoadingChunks = false;
+/*  338 */       for (ObjectIterator<Long2ObjectMap.Entry<ChunkLoadState>> objectIterator = this.chunks.long2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Long2ObjectMap.Entry<ChunkLoadState> entry = objectIterator.next();
+/*  339 */         ChunkLoadState chunkState = (ChunkLoadState)entry.getValue();
+/*  340 */         long stamp = chunkState.lock.readLock();
 /*      */         
-/*  318 */         try { CompletableFuture<Ref<ChunkStore>> future = chunkState.future;
-/*  319 */           if (future != null && !future.isDone())
-/*  320 */           { hasLoadingChunks = true;
+/*  342 */         try { CompletableFuture<Ref<ChunkStore>> future = chunkState.future;
+/*  343 */           if (future != null && !future.isDone())
+/*  344 */           { hasLoadingChunks = true;
 /*      */ 
 /*      */ 
 /*      */             
-/*  324 */             chunkState.lock.unlockRead(stamp); break; }  } finally { chunkState.lock.unlockRead(stamp); }
+/*  348 */             chunkState.lock.unlockRead(stamp); break; }  } finally { chunkState.lock.unlockRead(stamp); }
 /*      */          }
 /*      */ 
 /*      */       
-/*  328 */       if (!hasLoadingChunks) {
+/*  352 */       if (!hasLoadingChunks) {
 /*      */         break;
 /*      */       }
-/*  331 */     } while (System.nanoTime() - start <= 5000000000L);
+/*  355 */     } while (System.nanoTime() - start <= 5000000000L);
 /*      */     
-/*  333 */     this.world.consumeTaskQueue();
+/*  357 */     this.world.consumeTaskQueue();
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public void shutdown() {
-/*  340 */     this.store.shutdown();
-/*  341 */     this.chunks.clear();
+/*  364 */     this.store.shutdown();
+/*  365 */     this.chunks.clear();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -352,68 +376,68 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private Ref<ChunkStore> add(@Nonnull Holder<ChunkStore> holder) {
-/*  355 */     this.world.debugAssertInTickingThread();
+/*  379 */     this.world.debugAssertInTickingThread();
 /*      */     
-/*  357 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
-/*  358 */     assert worldChunkComponent != null;
+/*  381 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
+/*  382 */     assert worldChunkComponent != null;
 /*      */     
-/*  360 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(worldChunkComponent.getIndex());
-/*  361 */     if (chunkState == null) {
-/*  362 */       throw new IllegalStateException("Expected the ChunkLoadState to exist!");
+/*  384 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(worldChunkComponent.getIndex());
+/*  385 */     if (chunkState == null) {
+/*  386 */       throw new IllegalStateException("Expected the ChunkLoadState to exist!");
 /*      */     }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */     
-/*  369 */     Ref<ChunkStore> oldReference = null;
-/*  370 */     long stamp = chunkState.lock.writeLock();
+/*  393 */     Ref<ChunkStore> oldReference = null;
+/*  394 */     long stamp = chunkState.lock.writeLock();
 /*      */     try {
-/*  372 */       if (chunkState.future == null) {
-/*  373 */         throw new IllegalStateException("Expected the ChunkLoadState to have a future!");
+/*  396 */       if (chunkState.future == null) {
+/*  397 */         throw new IllegalStateException("Expected the ChunkLoadState to have a future!");
 /*      */       }
 /*      */       
-/*  376 */       if (chunkState.reference != null) {
-/*  377 */         oldReference = chunkState.reference;
-/*  378 */         chunkState.reference = null;
+/*  400 */       if (chunkState.reference != null) {
+/*  401 */         oldReference = chunkState.reference;
+/*  402 */         chunkState.reference = null;
 /*      */       } 
 /*      */     } finally {
-/*  381 */       chunkState.lock.unlockWrite(stamp);
+/*  405 */       chunkState.lock.unlockWrite(stamp);
 /*      */     } 
 /*      */     
-/*  384 */     if (oldReference != null) {
-/*  385 */       WorldChunk oldWorldChunkComponent = (WorldChunk)this.store.getComponent(oldReference, WorldChunk.getComponentType());
-/*  386 */       assert oldWorldChunkComponent != null;
+/*  408 */     if (oldReference != null) {
+/*  409 */       WorldChunk oldWorldChunkComponent = (WorldChunk)this.store.getComponent(oldReference, WorldChunk.getComponentType());
+/*  410 */       assert oldWorldChunkComponent != null;
 /*      */       
-/*  388 */       oldWorldChunkComponent.setFlag(ChunkFlag.TICKING, false);
-/*  389 */       this.store.removeEntity(oldReference, RemoveReason.REMOVE);
+/*  412 */       oldWorldChunkComponent.setFlag(ChunkFlag.TICKING, false);
+/*  413 */       this.store.removeEntity(oldReference, RemoveReason.REMOVE);
 /*      */ 
 /*      */       
-/*  392 */       this.world.getNotificationHandler().updateChunk(worldChunkComponent.getIndex());
+/*  416 */       this.world.getNotificationHandler().updateChunk(worldChunkComponent.getIndex());
 /*      */     } 
 /*      */ 
 /*      */     
-/*  396 */     Ref<ChunkStore> ref = this.store.addEntity(holder, AddReason.SPAWN);
-/*  397 */     if (ref == null) throw new UnsupportedOperationException("Unable to add the chunk to the world!");
+/*  420 */     Ref<ChunkStore> ref = this.store.addEntity(holder, AddReason.SPAWN);
+/*  421 */     if (ref == null) throw new UnsupportedOperationException("Unable to add the chunk to the world!");
 /*      */     
-/*  399 */     worldChunkComponent.setReference(ref);
+/*  423 */     worldChunkComponent.setReference(ref);
 /*      */     
-/*  401 */     stamp = chunkState.lock.writeLock();
+/*  425 */     stamp = chunkState.lock.writeLock();
 /*      */     try {
-/*  403 */       chunkState.reference = ref;
+/*  427 */       chunkState.reference = ref;
 /*      */ 
 /*      */       
-/*  406 */       chunkState.flags = 0;
-/*  407 */       chunkState.future = null;
+/*  430 */       chunkState.flags = 0;
+/*  431 */       chunkState.future = null;
 /*      */ 
 /*      */       
-/*  410 */       chunkState.throwable = null;
-/*  411 */       chunkState.failedWhen = 0L;
-/*  412 */       chunkState.failedCounter = 0;
+/*  434 */       chunkState.throwable = null;
+/*  435 */       chunkState.failedWhen = 0L;
+/*  436 */       chunkState.failedCounter = 0;
 /*      */       
-/*  414 */       return ref;
+/*  438 */       return ref;
 /*      */     } finally {
-/*  416 */       chunkState.lock.unlockWrite(stamp);
+/*  440 */       chunkState.lock.unlockWrite(stamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -424,26 +448,26 @@
 /*      */ 
 /*      */   
 /*      */   public void remove(@Nonnull Ref<ChunkStore> reference, @Nonnull RemoveReason reason) {
-/*  427 */     this.world.debugAssertInTickingThread();
+/*  451 */     this.world.debugAssertInTickingThread();
 /*      */     
-/*  429 */     WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType());
-/*  430 */     assert worldChunkComponent != null;
+/*  453 */     WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType());
+/*  454 */     assert worldChunkComponent != null;
 /*      */     
-/*  432 */     long index = worldChunkComponent.getIndex();
-/*  433 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
-/*  434 */     long stamp = chunkState.lock.readLock();
+/*  456 */     long index = worldChunkComponent.getIndex();
+/*  457 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
+/*  458 */     long stamp = chunkState.lock.readLock();
 /*      */     try {
-/*  436 */       worldChunkComponent.setFlag(ChunkFlag.TICKING, false);
-/*  437 */       this.store.removeEntity(reference, reason);
+/*  460 */       worldChunkComponent.setFlag(ChunkFlag.TICKING, false);
+/*  461 */       this.store.removeEntity(reference, reason);
 /*      */ 
 /*      */       
-/*  440 */       if (chunkState.future != null) {
-/*  441 */         chunkState.reference = null;
+/*  464 */       if (chunkState.future != null) {
+/*  465 */         chunkState.reference = null;
 /*      */       } else {
-/*  443 */         this.chunks.remove(index, chunkState);
+/*  467 */         this.chunks.remove(index, chunkState);
 /*      */       } 
 /*      */     } finally {
-/*  446 */       chunkState.lock.unlockRead(stamp);
+/*  470 */       chunkState.lock.unlockRead(stamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -455,20 +479,20 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public Ref<ChunkStore> getChunkReference(long index) {
-/*  458 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
-/*  459 */     if (chunkState == null) return null;
+/*  482 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
+/*  483 */     if (chunkState == null) return null;
 /*      */     
-/*  461 */     long stamp = chunkState.lock.tryOptimisticRead();
-/*  462 */     Ref<ChunkStore> reference = chunkState.reference;
-/*  463 */     if (chunkState.lock.validate(stamp)) {
-/*  464 */       return reference;
+/*  485 */     long stamp = chunkState.lock.tryOptimisticRead();
+/*  486 */     Ref<ChunkStore> reference = chunkState.reference;
+/*  487 */     if (chunkState.lock.validate(stamp)) {
+/*  488 */       return reference;
 /*      */     }
 /*      */     
-/*  467 */     stamp = chunkState.lock.readLock();
+/*  491 */     stamp = chunkState.lock.readLock();
 /*      */     try {
-/*  469 */       return chunkState.reference;
+/*  493 */       return chunkState.reference;
 /*      */     } finally {
-/*  471 */       chunkState.lock.unlockRead(stamp);
+/*  495 */       chunkState.lock.unlockRead(stamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -483,13 +507,13 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public Ref<ChunkStore> getChunkSectionReference(int x, int y, int z) {
-/*  486 */     Ref<ChunkStore> ref = getChunkReference(ChunkUtil.indexChunk(x, z));
-/*  487 */     if (ref == null) return null;
+/*  510 */     Ref<ChunkStore> ref = getChunkReference(ChunkUtil.indexChunk(x, z));
+/*  511 */     if (ref == null) return null;
 /*      */     
-/*  489 */     ChunkColumn chunkColumnComponent = (ChunkColumn)this.store.getComponent(ref, ChunkColumn.getComponentType());
-/*  490 */     if (chunkColumnComponent == null) return null;
+/*  513 */     ChunkColumn chunkColumnComponent = (ChunkColumn)this.store.getComponent(ref, ChunkColumn.getComponentType());
+/*  514 */     if (chunkColumnComponent == null) return null;
 /*      */     
-/*  492 */     return chunkColumnComponent.getSection(y);
+/*  516 */     return chunkColumnComponent.getSection(y);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -504,13 +528,13 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public Ref<ChunkStore> getChunkSectionReference(@Nonnull ComponentAccessor<ChunkStore> commandBuffer, int x, int y, int z) {
-/*  507 */     Ref<ChunkStore> ref = getChunkReference(ChunkUtil.indexChunk(x, z));
-/*  508 */     if (ref == null) return null;
+/*  531 */     Ref<ChunkStore> ref = getChunkReference(ChunkUtil.indexChunk(x, z));
+/*  532 */     if (ref == null) return null;
 /*      */     
-/*  510 */     ChunkColumn chunkColumnComponent = (ChunkColumn)commandBuffer.getComponent(ref, ChunkColumn.getComponentType());
-/*  511 */     if (chunkColumnComponent == null) return null;
+/*  534 */     ChunkColumn chunkColumnComponent = (ChunkColumn)commandBuffer.getComponent(ref, ChunkColumn.getComponentType());
+/*  535 */     if (chunkColumnComponent == null) return null;
 /*      */     
-/*  513 */     return chunkColumnComponent.getSection(y);
+/*  537 */     return chunkColumnComponent.getSection(y);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -525,16 +549,16 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Ref<ChunkStore>> getChunkSectionReferenceAsync(int x, int y, int z) {
-/*  528 */     if (y < 0 || y >= 10) {
-/*  529 */       return CompletableFuture.failedFuture(new IndexOutOfBoundsException("Invalid y: " + y));
+/*  552 */     if (y < 0 || y >= 10) {
+/*  553 */       return CompletableFuture.failedFuture(new IndexOutOfBoundsException("Invalid y: " + y));
 /*      */     }
 /*      */     
-/*  532 */     return getChunkReferenceAsync(ChunkUtil.indexChunk(x, z))
+/*  556 */     return getChunkReferenceAsync(ChunkUtil.indexChunk(x, z))
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */       
-/*  537 */       .thenApplyAsync(ref -> {
+/*  561 */       .thenApplyAsync(ref -> {
 /*      */           if (ref == null || !ref.isValid()) {
 /*      */             return null;
 /*      */           }
@@ -542,7 +566,7 @@
 /*      */           Store<ChunkStore> store = ref.getStore();
 /*      */           ChunkColumn chunkColumnComponent = (ChunkColumn)store.getComponent(ref, ChunkColumn.getComponentType());
 /*      */           return (chunkColumnComponent == null) ? null : chunkColumnComponent.getSection(y);
-/*  545 */         }(Executor)((ChunkStore)this.store.getExternalData()).getWorld());
+/*  569 */         }(Executor)((ChunkStore)this.store.getExternalData()).getWorld());
 /*      */   }
 /*      */ 
 /*      */ 
@@ -555,8 +579,8 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public <T extends com.hypixel.hytale.component.Component<ChunkStore>> T getChunkComponent(long index, @Nonnull ComponentType<ChunkStore, T> componentType) {
-/*  558 */     Ref<ChunkStore> reference = getChunkReference(index);
-/*  559 */     return (reference == null || !reference.isValid()) ? null : (T)this.store.getComponent(reference, componentType);
+/*  582 */     Ref<ChunkStore> reference = getChunkReference(index);
+/*  583 */     return (reference == null || !reference.isValid()) ? null : (T)this.store.getComponent(reference, componentType);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -570,7 +594,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Ref<ChunkStore>> getChunkReferenceAsync(long index) {
-/*  573 */     return getChunkReferenceAsync(index, 0);
+/*  597 */     return getChunkReferenceAsync(index, 0);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -583,68 +607,68 @@
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Ref<ChunkStore>> getChunkReferenceAsync(long index, int flags) {
 /*      */     ChunkLoadState chunkState;
-/*  586 */     if (this.store.isShutdown()) return CompletableFuture.completedFuture(null);
+/*  610 */     if (this.store.isShutdown()) return CompletableFuture.completedFuture(null);
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */     
-/*  593 */     if ((flags & 0x3) == 3) {
-/*  594 */       chunkState = (ChunkLoadState)this.chunks.get(index);
+/*  617 */     if ((flags & 0x3) == 3) {
+/*  618 */       chunkState = (ChunkLoadState)this.chunks.get(index);
 /*      */ 
 /*      */       
-/*  597 */       if (chunkState == null) return CompletableFuture.completedFuture(null);
+/*  621 */       if (chunkState == null) return CompletableFuture.completedFuture(null);
 /*      */ 
 /*      */       
-/*  600 */       long l = chunkState.lock.readLock();
+/*  624 */       long l = chunkState.lock.readLock();
 /*      */ 
 /*      */       
 /*      */       try {
-/*  604 */         if ((flags & 0x4) == 0 || (chunkState.flags & 0x4) != 0) {
-/*  605 */           if (chunkState.reference != null) return CompletableFuture.completedFuture(chunkState.reference); 
-/*  606 */           if (chunkState.future == null) return (CompletableFuture)CompletableFuture.completedFuture(null); 
-/*  607 */           return chunkState.future;
+/*  628 */         if ((flags & 0x4) == 0 || (chunkState.flags & 0x4) != 0) {
+/*  629 */           if (chunkState.reference != null) return CompletableFuture.completedFuture(chunkState.reference); 
+/*  630 */           if (chunkState.future == null) return (CompletableFuture)CompletableFuture.completedFuture(null); 
+/*  631 */           return chunkState.future;
 /*      */         }
 /*      */       
 /*      */       } finally {
 /*      */         
-/*  612 */         chunkState.lock.unlockRead(l);
+/*  636 */         chunkState.lock.unlockRead(l);
 /*      */       } 
 /*      */     } else {
 /*      */       
-/*  616 */       chunkState = (ChunkLoadState)this.chunks.computeIfAbsent(index, l -> new ChunkLoadState());
+/*  640 */       chunkState = (ChunkLoadState)this.chunks.computeIfAbsent(index, l -> new ChunkLoadState());
 /*      */     } 
 /*      */ 
 /*      */ 
 /*      */     
-/*  621 */     long stamp = chunkState.lock.writeLock();
+/*  645 */     long stamp = chunkState.lock.writeLock();
 /*      */ 
 /*      */     
-/*  624 */     if (chunkState.future == null && chunkState.reference != null && (flags & 0x8) == 0) {
-/*  625 */       Ref<ChunkStore> reference = chunkState.reference;
+/*  648 */     if (chunkState.future == null && chunkState.reference != null && (flags & 0x8) == 0) {
+/*  649 */       Ref<ChunkStore> reference = chunkState.reference;
 /*      */       
-/*  627 */       if ((flags & 0x4) == 0) {
-/*  628 */         chunkState.lock.unlockWrite(stamp);
-/*  629 */         return CompletableFuture.completedFuture(reference);
+/*  651 */       if ((flags & 0x4) == 0) {
+/*  652 */         chunkState.lock.unlockWrite(stamp);
+/*  653 */         return CompletableFuture.completedFuture(reference);
 /*      */       } 
 /*      */ 
 /*      */ 
 /*      */       
-/*  634 */       if (this.world.isInThread() && (flags & Integer.MIN_VALUE) == 0) {
-/*  635 */         chunkState.lock.unlockWrite(stamp);
+/*  658 */       if (this.world.isInThread() && (flags & Integer.MIN_VALUE) == 0) {
+/*  659 */         chunkState.lock.unlockWrite(stamp);
 /*      */ 
 /*      */ 
 /*      */         
-/*  639 */         WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType());
-/*  640 */         assert worldChunkComponent != null;
+/*  663 */         WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType());
+/*  664 */         assert worldChunkComponent != null;
 /*      */         
-/*  642 */         worldChunkComponent.setFlag(ChunkFlag.TICKING, true);
-/*  643 */         return CompletableFuture.completedFuture(reference);
+/*  666 */         worldChunkComponent.setFlag(ChunkFlag.TICKING, true);
+/*  667 */         return CompletableFuture.completedFuture(reference);
 /*      */       } 
 /*      */       
-/*  646 */       chunkState.lock.unlockWrite(stamp);
-/*  647 */       return CompletableFuture.supplyAsync(() -> { WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType()); assert worldChunkComponent != null; worldChunkComponent.setFlag(ChunkFlag.TICKING, true); return reference; }(Executor)this.world);
+/*  670 */       chunkState.lock.unlockWrite(stamp);
+/*  671 */       return CompletableFuture.supplyAsync(() -> { WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType()); assert worldChunkComponent != null; worldChunkComponent.setFlag(ChunkFlag.TICKING, true); return reference; }(Executor)this.world);
 /*      */     } 
 /*      */ 
 /*      */ 
@@ -656,45 +680,45 @@
 /*      */ 
 /*      */     
 /*      */     try {
-/*  659 */       if (chunkState.throwable != null) {
-/*  660 */         long nanosSince = System.nanoTime() - chunkState.failedWhen;
-/*  661 */         int count = chunkState.failedCounter;
-/*  662 */         if (nanosSince < Math.min(MAX_FAILURE_BACKOFF_NANOS, (count * count) * FAILURE_BACKOFF_NANOS)) {
-/*  663 */           return (CompletableFuture)CompletableFuture.failedFuture(new RuntimeException("Chunk failure backoff", chunkState.throwable));
+/*  683 */       if (chunkState.throwable != null) {
+/*  684 */         long nanosSince = System.nanoTime() - chunkState.failedWhen;
+/*  685 */         int count = chunkState.failedCounter;
+/*  686 */         if (nanosSince < Math.min(MAX_FAILURE_BACKOFF_NANOS, (count * count) * FAILURE_BACKOFF_NANOS)) {
+/*  687 */           return (CompletableFuture)CompletableFuture.failedFuture(new RuntimeException("Chunk failure backoff", chunkState.throwable));
 /*      */         }
 /*      */ 
 /*      */         
-/*  667 */         chunkState.throwable = null;
-/*  668 */         chunkState.failedWhen = 0L;
+/*  691 */         chunkState.throwable = null;
+/*  692 */         chunkState.failedWhen = 0L;
 /*      */       } 
 /*      */       
-/*  671 */       boolean isNew = (chunkState.future == null);
-/*  672 */       if (isNew) chunkState.flags = flags;
+/*  695 */       boolean isNew = (chunkState.future == null);
+/*  696 */       if (isNew) chunkState.flags = flags;
 /*      */       
-/*  674 */       int x = ChunkUtil.xOfChunkIndex(index);
-/*  675 */       int z = ChunkUtil.zOfChunkIndex(index);
+/*  698 */       int x = ChunkUtil.xOfChunkIndex(index);
+/*  699 */       int z = ChunkUtil.zOfChunkIndex(index);
 /*      */ 
 /*      */ 
 /*      */       
-/*  679 */       if ((isNew || (chunkState.flags & 0x1) != 0) && (flags & 0x1) == 0)
+/*  703 */       if ((isNew || (chunkState.flags & 0x1) != 0) && (flags & 0x1) == 0)
 /*      */       {
 /*      */         
-/*  682 */         if (chunkState.future == null) {
-/*  683 */           chunkState
+/*  706 */         if (chunkState.future == null) {
+/*  707 */           chunkState
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */             
-/*  690 */             .future = this.loader.loadHolder(x, z).thenApplyAsync(holder -> { if (holder == null || this.store.isShutdown()) return null;  this.totalLoadedChunksCount.getAndIncrement(); return preLoadChunkAsync(index, holder, false); }).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(throwable -> {
+/*  714 */             .future = this.loader.loadHolder(x, z).thenApplyAsync(holder -> { if (holder == null || this.store.isShutdown()) return null;  this.totalLoadedChunksCount.getAndIncrement(); return preLoadChunkAsync(index, holder, false); }).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(throwable -> {
 /*      */                 ((HytaleLogger.Api)LOGGER.at(Level.SEVERE).withCause(throwable)).log("Failed to load chunk! %s, %s", x, z);
 /*      */                 chunkState.fail(throwable);
 /*      */                 throw SneakyThrow.sneakyThrow(throwable);
 /*      */               });
 /*      */         } else {
-/*  696 */           chunkState.flags &= 0xFFFFFFFE;
-/*  697 */           chunkState.future = chunkState.future.thenCompose(reference -> (reference != null) ? CompletableFuture.completedFuture(reference) : this.loader.loadHolder(x, z).thenApplyAsync(()).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(()));
+/*  720 */           chunkState.flags &= 0xFFFFFFFE;
+/*  721 */           chunkState.future = chunkState.future.thenCompose(reference -> (reference != null) ? CompletableFuture.completedFuture(reference) : this.loader.loadHolder(x, z).thenApplyAsync(()).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(()));
 /*      */         } 
 /*      */       }
 /*      */ 
@@ -715,35 +739,40 @@
 /*      */ 
 /*      */ 
 /*      */       
-/*  718 */       if ((isNew || (chunkState.flags & 0x2) != 0) && (flags & 0x2) == 0) {
+/*  742 */       if ((isNew || (chunkState.flags & 0x2) != 0) && (flags & 0x2) == 0) {
 /*      */         
-/*  720 */         int seed = (int)this.world.getWorldConfig().getSeed();
+/*  744 */         int seed = (int)this.world.getWorldConfig().getSeed();
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */         
-/*  725 */         if (chunkState.future == null) {
+/*  749 */         if (chunkState.future == null) {
 /*      */           CompletableFuture<GeneratedChunk> future;
-/*  727 */           if (this.generator == null) {
-/*  728 */             future = this.generatorLoaded.thenCompose(aVoid -> this.generator.generate(seed, index, x, z, ((flags & 0x10) != 0) ? this::isChunkStillNeeded : null));
-/*      */           } else {
-/*  730 */             future = this.generator.generate(seed, index, x, z, ((flags & 0x10) != 0) ? this::isChunkStillNeeded : null);
+/*  751 */           long readStamp = this.generatorLock.readLock();
+/*      */           try {
+/*  753 */             if (this.generator == null) {
+/*  754 */               future = this.generatorLoaded.thenCompose(aVoid -> this.generator.generate(seed, index, x, z, ((flags & 0x10) != 0) ? this::isChunkStillNeeded : null));
+/*      */             } else {
+/*  756 */               future = this.generator.generate(seed, index, x, z, ((flags & 0x10) != 0) ? this::isChunkStillNeeded : null);
+/*      */             } 
+/*      */           } finally {
+/*  759 */             this.generatorLock.unlockRead(readStamp);
 /*      */           } 
-/*  732 */           chunkState
+/*  761 */           chunkState
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */             
-/*  739 */             .future = future.thenApplyAsync(generatedChunk -> { if (generatedChunk == null || this.store.isShutdown()) return null;  this.totalGeneratedChunksCount.getAndIncrement(); return preLoadChunkAsync(index, generatedChunk.toHolder(this.world), true); }).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(throwable -> {
+/*  768 */             .future = future.thenApplyAsync(generatedChunk -> { if (generatedChunk == null || this.store.isShutdown()) return null;  this.totalGeneratedChunksCount.getAndIncrement(); return preLoadChunkAsync(index, generatedChunk.toHolder(this.world), true); }).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(throwable -> {
 /*      */                 ((HytaleLogger.Api)LOGGER.at(Level.SEVERE).withCause(throwable)).log("Failed to generate chunk! %s, %s", x, z);
 /*      */                 chunkState.fail(throwable);
 /*      */                 throw SneakyThrow.sneakyThrow(throwable);
 /*      */               });
 /*      */         } else {
-/*  745 */           chunkState.flags &= 0xFFFFFFFD;
-/*  746 */           chunkState.future = chunkState.future.thenCompose(reference -> {
+/*  774 */           chunkState.flags &= 0xFFFFFFFD;
+/*  775 */           chunkState.future = chunkState.future.thenCompose(reference -> {
 /*      */                 CompletableFuture<GeneratedChunk> future;
 /*      */ 
 /*      */ 
@@ -754,12 +783,18 @@
 /*      */ 
 /*      */ 
 /*      */                 
-/*      */                 if (this.generator == null) {
-/*      */                   future = this.generatorLoaded.thenCompose(());
-/*      */                 } else {
-/*      */                   future = this.generator.generate(seed, index, x, z, null);
-/*      */                 } 
+/*      */                 long readStamp = this.generatorLock.readLock();
 /*      */ 
+/*      */                 
+/*      */                 try {
+/*      */                   if (this.generator == null) {
+/*      */                     future = this.generatorLoaded.thenCompose(());
+/*      */                   } else {
+/*      */                     future = this.generator.generate(seed, index, x, z, null);
+/*      */                   } 
+/*      */                 } finally {
+/*      */                   this.generatorLock.unlockRead(readStamp);
+/*      */                 } 
 /*      */ 
 /*      */                 
 /*      */                 return future.thenApplyAsync(()).thenApplyAsync(this::postLoadChunk, (Executor)this.world).exceptionally(());
@@ -767,13 +802,12 @@
 /*      */         } 
 /*      */       } 
 /*      */ 
-/*      */ 
 /*      */       
-/*  772 */       if ((isNew || (chunkState.flags & 0x4) == 0) && (flags & 0x4) != 0) {
-/*  773 */         chunkState.flags |= 0x4;
+/*  806 */       if ((isNew || (chunkState.flags & 0x4) == 0) && (flags & 0x4) != 0) {
+/*  807 */         chunkState.flags |= 0x4;
 /*      */         
-/*  775 */         if (chunkState.future != null) {
-/*  776 */           chunkState
+/*  809 */         if (chunkState.future != null) {
+/*  810 */           chunkState
 /*      */ 
 /*      */ 
 /*      */ 
@@ -783,7 +817,7 @@
 /*      */ 
 /*      */ 
 /*      */             
-/*  786 */             .future = chunkState.future.<Ref<ChunkStore>>thenApplyAsync(reference -> { if (reference != null) { WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType()); assert worldChunkComponent != null; worldChunkComponent.setFlag(ChunkFlag.TICKING, true); }  return reference; }(Executor)this.world).exceptionally(throwable -> {
+/*  820 */             .future = chunkState.future.<Ref<ChunkStore>>thenApplyAsync(reference -> { if (reference != null) { WorldChunk worldChunkComponent = (WorldChunk)this.store.getComponent(reference, WorldChunk.getComponentType()); assert worldChunkComponent != null; worldChunkComponent.setFlag(ChunkFlag.TICKING, true); }  return reference; }(Executor)this.world).exceptionally(throwable -> {
 /*      */                 ((HytaleLogger.Api)LOGGER.at(Level.SEVERE).withCause(throwable)).log("Failed to set chunk ticking! %s, %s", x, z);
 /*      */                 
 /*      */                 chunkState.fail(throwable);
@@ -791,12 +825,12 @@
 /*      */               });
 /*      */         }
 /*      */       } 
-/*  794 */       if (chunkState.future == null) {
-/*  795 */         return (CompletableFuture)CompletableFuture.completedFuture(null);
+/*  828 */       if (chunkState.future == null) {
+/*  829 */         return (CompletableFuture)CompletableFuture.completedFuture(null);
 /*      */       }
-/*  797 */       return chunkState.future;
+/*  831 */       return chunkState.future;
 /*      */     } finally {
-/*  799 */       chunkState.lock.unlockWrite(stamp);
+/*  833 */       chunkState.lock.unlockWrite(stamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -807,12 +841,12 @@
 /*      */ 
 /*      */   
 /*      */   private boolean isChunkStillNeeded(long index) {
-/*  810 */     for (PlayerRef playerRef : this.world.getPlayerRefs()) {
-/*  811 */       if (playerRef.getChunkTracker().shouldBeVisible(index)) {
-/*  812 */         return true;
+/*  844 */     for (PlayerRef playerRef : this.world.getPlayerRefs()) {
+/*  845 */       if (playerRef.getChunkTracker().shouldBeVisible(index)) {
+/*  846 */         return true;
 /*      */       }
 /*      */     } 
-/*  815 */     return false;
+/*  849 */     return false;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -823,18 +857,18 @@
 /*      */ 
 /*      */   
 /*      */   public boolean isChunkOnBackoff(long index, long maxFailureBackoffNanos) {
-/*  826 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
-/*  827 */     if (chunkState == null) return false;
+/*  860 */     ChunkLoadState chunkState = (ChunkLoadState)this.chunks.get(index);
+/*  861 */     if (chunkState == null) return false;
 /*      */     
-/*  829 */     long stamp = chunkState.lock.readLock();
+/*  863 */     long stamp = chunkState.lock.readLock();
 /*      */     try {
-/*  831 */       if (chunkState.throwable == null) return false;
+/*  865 */       if (chunkState.throwable == null) return false;
 /*      */       
-/*  833 */       long nanosSince = System.nanoTime() - chunkState.failedWhen;
-/*  834 */       int count = chunkState.failedCounter;
-/*  835 */       return (nanosSince < Math.min(maxFailureBackoffNanos, (count * count) * FAILURE_BACKOFF_NANOS));
+/*  867 */       long nanosSince = System.nanoTime() - chunkState.failedWhen;
+/*  868 */       int count = chunkState.failedCounter;
+/*  869 */       return (nanosSince < Math.min(maxFailureBackoffNanos, (count * count) * FAILURE_BACKOFF_NANOS));
 /*      */     } finally {
-/*  837 */       chunkState.lock.unlockRead(stamp);
+/*  871 */       chunkState.lock.unlockRead(stamp);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -848,53 +882,53 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private Holder<ChunkStore> preLoadChunkAsync(long index, @Nonnull Holder<ChunkStore> holder, boolean newlyGenerated) {
-/*  851 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
+/*  885 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
 /*      */     
-/*  853 */     if (worldChunkComponent == null) {
-/*  854 */       throw new IllegalStateException(String.format("Holder missing WorldChunk component! (%d, %d)", new Object[] {
-/*  855 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
+/*  887 */     if (worldChunkComponent == null) {
+/*  888 */       throw new IllegalStateException(String.format("Holder missing WorldChunk component! (%d, %d)", new Object[] {
+/*  889 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
 /*      */             }));
 /*      */     }
-/*  858 */     if (worldChunkComponent.getIndex() != index) {
-/*  859 */       throw new IllegalStateException(String.format("Incorrect chunk index! Got (%d, %d) expected (%d, %d)", new Object[] {
-/*  860 */               Integer.valueOf(worldChunkComponent.getX()), Integer.valueOf(worldChunkComponent.getZ()), 
-/*  861 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
+/*  892 */     if (worldChunkComponent.getIndex() != index) {
+/*  893 */       throw new IllegalStateException(String.format("Incorrect chunk index! Got (%d, %d) expected (%d, %d)", new Object[] {
+/*  894 */               Integer.valueOf(worldChunkComponent.getX()), Integer.valueOf(worldChunkComponent.getZ()), 
+/*  895 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
 /*      */             }));
 /*      */     }
-/*  864 */     BlockChunk blockChunk = (BlockChunk)holder.getComponent(BlockChunk.getComponentType());
-/*  865 */     if (blockChunk == null) {
-/*  866 */       throw new IllegalStateException(String.format("Holder missing BlockChunk component! (%d, %d)", new Object[] {
-/*  867 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
+/*  898 */     BlockChunk blockChunk = (BlockChunk)holder.getComponent(BlockChunk.getComponentType());
+/*  899 */     if (blockChunk == null) {
+/*  900 */       throw new IllegalStateException(String.format("Holder missing BlockChunk component! (%d, %d)", new Object[] {
+/*  901 */               Integer.valueOf(ChunkUtil.xOfChunkIndex(index)), Integer.valueOf(ChunkUtil.zOfChunkIndex(index))
 /*      */             }));
 /*      */     }
-/*  870 */     blockChunk.loadFromHolder(holder);
+/*  904 */     blockChunk.loadFromHolder(holder);
 /*      */     
-/*  872 */     worldChunkComponent.setFlag(ChunkFlag.NEWLY_GENERATED, newlyGenerated);
-/*  873 */     worldChunkComponent.setLightingUpdatesEnabled(false);
+/*  906 */     worldChunkComponent.setFlag(ChunkFlag.NEWLY_GENERATED, newlyGenerated);
+/*  907 */     worldChunkComponent.setLightingUpdatesEnabled(false);
 /*      */     
-/*  875 */     if (newlyGenerated && this.world.getWorldConfig().shouldSaveNewChunks()) {
-/*  876 */       worldChunkComponent.markNeedsSaving();
+/*  909 */     if (newlyGenerated && this.world.getWorldConfig().shouldSaveNewChunks()) {
+/*  910 */       worldChunkComponent.markNeedsSaving();
 /*      */     }
 /*      */     
 /*      */     try {
-/*  880 */       long start = System.nanoTime();
+/*  914 */       long start = System.nanoTime();
 /*      */       
-/*  882 */       IEventDispatcher<ChunkPreLoadProcessEvent, ChunkPreLoadProcessEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(ChunkPreLoadProcessEvent.class, this.world.getName());
-/*  883 */       if (dispatcher.hasListener()) {
-/*  884 */         ChunkPreLoadProcessEvent event = (ChunkPreLoadProcessEvent)dispatcher.dispatch((IBaseEvent)new ChunkPreLoadProcessEvent(holder, worldChunkComponent, newlyGenerated, start));
-/*  885 */         if (!event.didLog()) {
-/*  886 */           long end = System.nanoTime();
-/*  887 */           long diff = end - start;
-/*  888 */           if (diff > this.world.getTickStepNanos()) {
-/*  889 */             LOGGER.at(Level.SEVERE).log("Took too long to pre-load process chunk: %s > TICK_STEP, Has GC Run: %s, %s", FormatUtil.nanosToString(diff), Boolean.valueOf(this.world.consumeGCHasRun()), worldChunkComponent);
+/*  916 */       IEventDispatcher<ChunkPreLoadProcessEvent, ChunkPreLoadProcessEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(ChunkPreLoadProcessEvent.class, this.world.getName());
+/*  917 */       if (dispatcher.hasListener()) {
+/*  918 */         ChunkPreLoadProcessEvent event = (ChunkPreLoadProcessEvent)dispatcher.dispatch((IBaseEvent)new ChunkPreLoadProcessEvent(holder, worldChunkComponent, newlyGenerated, start));
+/*  919 */         if (!event.didLog()) {
+/*  920 */           long end = System.nanoTime();
+/*  921 */           long diff = end - start;
+/*  922 */           if (diff > this.world.getTickStepNanos()) {
+/*  923 */             LOGGER.at(Level.SEVERE).log("Took too long to pre-load process chunk: %s > TICK_STEP, Has GC Run: %s, %s", FormatUtil.nanosToString(diff), Boolean.valueOf(this.world.consumeGCHasRun()), worldChunkComponent);
 /*      */           }
 /*      */         } 
 /*      */       } 
 /*      */     } finally {
-/*  894 */       worldChunkComponent.setLightingUpdatesEnabled(true);
+/*  928 */       worldChunkComponent.setLightingUpdatesEnabled(true);
 /*      */     } 
 /*      */     
-/*  897 */     return holder;
+/*  931 */     return holder;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -905,45 +939,45 @@
 /*      */   
 /*      */   @Nullable
 /*      */   private Ref<ChunkStore> postLoadChunk(@Nullable Holder<ChunkStore> holder) {
-/*  908 */     this.world.debugAssertInTickingThread();
-/*  909 */     if (holder == null || this.store.isShutdown()) return null;
+/*  942 */     this.world.debugAssertInTickingThread();
+/*  943 */     if (holder == null || this.store.isShutdown()) return null;
 /*      */     
-/*  911 */     long start = System.nanoTime();
+/*  945 */     long start = System.nanoTime();
 /*      */     
-/*  913 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
-/*  914 */     assert worldChunkComponent != null;
+/*  947 */     WorldChunk worldChunkComponent = (WorldChunk)holder.getComponent(WorldChunk.getComponentType());
+/*  948 */     assert worldChunkComponent != null;
 /*      */     
-/*  916 */     worldChunkComponent.setFlag(ChunkFlag.START_INIT, true);
+/*  950 */     worldChunkComponent.setFlag(ChunkFlag.START_INIT, true);
 /*      */ 
 /*      */     
-/*  919 */     if (worldChunkComponent.is(ChunkFlag.TICKING)) {
-/*  920 */       holder.tryRemoveComponent(REGISTRY.getNonTickingComponentType());
+/*  953 */     if (worldChunkComponent.is(ChunkFlag.TICKING)) {
+/*  954 */       holder.tryRemoveComponent(REGISTRY.getNonTickingComponentType());
 /*      */     } else {
-/*  922 */       holder.ensureComponent(REGISTRY.getNonTickingComponentType());
+/*  956 */       holder.ensureComponent(REGISTRY.getNonTickingComponentType());
 /*      */     } 
 /*      */     
-/*  925 */     Ref<ChunkStore> reference = add(holder);
+/*  959 */     Ref<ChunkStore> reference = add(holder);
 /*      */     
-/*  927 */     worldChunkComponent.initFlags();
+/*  961 */     worldChunkComponent.initFlags();
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */     
-/*  932 */     this.world.getChunkLighting().init(worldChunkComponent);
+/*  966 */     this.world.getChunkLighting().init(worldChunkComponent);
 /*      */     
-/*  934 */     long end = System.nanoTime();
-/*  935 */     long diff = end - start;
-/*  936 */     if (diff > this.world.getTickStepNanos()) {
-/*  937 */       LOGGER.at(Level.SEVERE).log("Took too long to post-load process chunk: %s > TICK_STEP, Has GC Run: %s, %s", FormatUtil.nanosToString(diff), Boolean.valueOf(this.world.consumeGCHasRun()), worldChunkComponent);
+/*  968 */     long end = System.nanoTime();
+/*  969 */     long diff = end - start;
+/*  970 */     if (diff > this.world.getTickStepNanos()) {
+/*  971 */       LOGGER.at(Level.SEVERE).log("Took too long to post-load process chunk: %s > TICK_STEP, Has GC Run: %s, %s", FormatUtil.nanosToString(diff), Boolean.valueOf(this.world.consumeGCHasRun()), worldChunkComponent);
 /*      */     }
 /*      */     
-/*  940 */     return reference;
+/*  974 */     return reference;
 /*      */   }
 /*      */   
 /*      */   private static class ChunkLoadState {
-/*  944 */     private final StampedLock lock = new StampedLock();
+/*  978 */     private final StampedLock lock = new StampedLock();
 /*      */     
-/*  946 */     private int flags = 0;
+/*  980 */     private int flags = 0;
 /*      */     
 /*      */     @Nullable
 /*      */     private CompletableFuture<Ref<ChunkStore>> future;
@@ -955,17 +989,17 @@
 /*      */     private int failedCounter;
 /*      */     
 /*      */     private void fail(Throwable throwable) {
-/*  958 */       long stamp = this.lock.writeLock();
+/*  992 */       long stamp = this.lock.writeLock();
 /*      */       try {
-/*  960 */         this.flags = 0;
-/*  961 */         this.future = null;
+/*  994 */         this.flags = 0;
+/*  995 */         this.future = null;
 /*      */ 
 /*      */         
-/*  964 */         this.throwable = throwable;
-/*  965 */         this.failedWhen = System.nanoTime();
-/*  966 */         this.failedCounter++;
+/*  998 */         this.throwable = throwable;
+/*  999 */         this.failedWhen = System.nanoTime();
+/* 1000 */         this.failedCounter++;
 /*      */       } finally {
-/*  968 */         this.lock.unlockWrite(stamp);
+/* 1002 */         this.lock.unlockWrite(stamp);
 /*      */       } 
 /*      */     }
 /*      */   }
@@ -996,7 +1030,7 @@
 /*      */   {
 /*      */     @Nullable
 /*      */     public SystemGroup<ChunkStore> getGroup() {
-/*  999 */       return ChunkStore.INIT_GROUP;
+/* 1033 */       return ChunkStore.INIT_GROUP;
 /*      */     }
 /*      */ 
 /*      */ 
@@ -1006,40 +1040,40 @@
 /*      */ 
 /*      */     
 /*      */     public void onSystemAddedToStore(@Nonnull Store<ChunkStore> store) {
-/* 1009 */       ChunkStore data = (ChunkStore)store.getExternalData();
-/* 1010 */       World world = data.getWorld();
-/* 1011 */       IChunkStorageProvider chunkStorageProvider = world.getWorldConfig().getChunkStorageProvider();
+/* 1043 */       ChunkStore data = (ChunkStore)store.getExternalData();
+/* 1044 */       World world = data.getWorld();
+/* 1045 */       IChunkStorageProvider chunkStorageProvider = world.getWorldConfig().getChunkStorageProvider();
 /*      */       try {
-/* 1013 */         data.loader = chunkStorageProvider.getLoader(store);
-/* 1014 */         data.saver = chunkStorageProvider.getSaver(store);
-/* 1015 */       } catch (IOException e) {
-/* 1016 */         throw SneakyThrow.sneakyThrow(e);
+/* 1047 */         data.loader = chunkStorageProvider.getLoader(store);
+/* 1048 */         data.saver = chunkStorageProvider.getSaver(store);
+/* 1049 */       } catch (IOException e) {
+/* 1050 */         throw SneakyThrow.sneakyThrow(e);
 /*      */       } 
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public void onSystemRemovedFromStore(@Nonnull Store<ChunkStore> store) {
-/* 1022 */       ChunkStore data = (ChunkStore)store.getExternalData();
+/* 1056 */       ChunkStore data = (ChunkStore)store.getExternalData();
 /*      */       try {
-/* 1024 */         if (data.loader != null) {
-/* 1025 */           IChunkLoader oldLoader = data.loader;
-/* 1026 */           data.loader = null;
-/* 1027 */           oldLoader.close();
+/* 1058 */         if (data.loader != null) {
+/* 1059 */           IChunkLoader oldLoader = data.loader;
+/* 1060 */           data.loader = null;
+/* 1061 */           oldLoader.close();
 /*      */         } 
-/* 1029 */         if (data.saver != null) {
-/* 1030 */           IChunkSaver oldSaver = data.saver;
-/* 1031 */           data.saver = null;
-/* 1032 */           oldSaver.close();
+/* 1063 */         if (data.saver != null) {
+/* 1064 */           IChunkSaver oldSaver = data.saver;
+/* 1065 */           data.saver = null;
+/* 1066 */           oldSaver.close();
 /*      */         } 
-/* 1034 */       } catch (IOException e) {
-/* 1035 */         ((HytaleLogger.Api)ChunkStore.LOGGER.at(Level.SEVERE).withCause(e)).log("Failed to close storage!");
+/* 1068 */       } catch (IOException e) {
+/* 1069 */         ((HytaleLogger.Api)ChunkStore.LOGGER.at(Level.SEVERE).withCause(e)).log("Failed to close storage!");
 /*      */       } 
 /*      */     }
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\ChunkStore.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

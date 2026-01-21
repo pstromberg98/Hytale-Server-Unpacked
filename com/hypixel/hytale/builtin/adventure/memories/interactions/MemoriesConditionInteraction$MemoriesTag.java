@@ -200,7 +200,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ final class MemoriesTag
 /*     */   extends Record
 /*     */   implements CollectorTag
@@ -208,7 +207,7 @@
 /*     */   private final int memoryLevel;
 /*     */   
 /*     */   private MemoriesTag(int memoryLevel) {
-/* 211 */     this.memoryLevel = memoryLevel; } public int memoryLevel() { return this.memoryLevel; }
+/* 210 */     this.memoryLevel = memoryLevel; } public int memoryLevel() { return this.memoryLevel; }
 /*     */ 
 /*     */   
 /*     */   public final String toString() {
@@ -218,7 +217,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #211	-> 0
+/*     */     //   #210	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/adventure/memories/interactions/MemoriesConditionInteraction$MemoriesTag;
@@ -231,7 +230,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #211	-> 0
+/*     */     //   #210	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/adventure/memories/interactions/MemoriesConditionInteraction$MemoriesTag;
@@ -245,7 +244,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #211	-> 0
+/*     */     //   #210	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/adventure/memories/interactions/MemoriesConditionInteraction$MemoriesTag;
@@ -254,7 +253,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\interactions\MemoriesConditionInteraction$MemoriesTag.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\interactions\MemoriesConditionInteraction$MemoriesTag.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

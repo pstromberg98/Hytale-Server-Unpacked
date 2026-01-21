@@ -36,7 +36,7 @@ public class JcaX509ContentVerifierProviderBuilder implements X509ContentVerifie
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\cert\jcajce\JcaX509ContentVerifierProviderBuilder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\cert\jcajce\JcaX509ContentVerifierProviderBuilder.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

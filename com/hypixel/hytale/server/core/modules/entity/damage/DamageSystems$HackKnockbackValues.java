@@ -1837,55 +1837,53 @@
 /*      */ 
 /*      */ 
 /*      */ 
-/*      */ 
-/*      */ 
 /*      */ @Deprecated
 /*      */ public class HackKnockbackValues
 /*      */   extends EntityTickingSystem<EntityStore>
 /*      */ {
-/* 1846 */   public static float PLAYER_KNOCKBACK_SCALE = 25.0F;
+/* 1844 */   public static float PLAYER_KNOCKBACK_SCALE = 25.0F;
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
-/* 1851 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
+/* 1849 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
 /*      */         
-/* 1853 */         (Query)KnockbackComponent.getComponentType() });
+/* 1851 */         (Query)KnockbackComponent.getComponentType() });
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   @Nullable
 /*      */   public SystemGroup<EntityStore> getGroup() {
-/* 1859 */     return DamageModule.get().getFilterDamageGroup();
+/* 1857 */     return DamageModule.get().getFilterDamageGroup();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1865 */     return QUERY;
+/* 1863 */     return QUERY;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 1870 */     KnockbackComponent knockbackComponent = (KnockbackComponent)archetypeChunk.getComponent(index, KnockbackComponent.getComponentType());
-/* 1871 */     assert knockbackComponent != null;
+/* 1868 */     KnockbackComponent knockbackComponent = (KnockbackComponent)archetypeChunk.getComponent(index, KnockbackComponent.getComponentType());
+/* 1869 */     assert knockbackComponent != null;
 /*      */     
-/* 1873 */     if (knockbackComponent.getVelocityConfig() == null || SplitVelocity.SHOULD_MODIFY_VELOCITY) {
-/* 1874 */       Vector3d vector = knockbackComponent.getVelocity();
-/* 1875 */       vector.x *= PLAYER_KNOCKBACK_SCALE;
-/* 1876 */       vector.z *= PLAYER_KNOCKBACK_SCALE;
-/* 1877 */       knockbackComponent.setVelocity(vector);
+/* 1871 */     if (knockbackComponent.getVelocityConfig() == null || SplitVelocity.SHOULD_MODIFY_VELOCITY) {
+/* 1872 */       Vector3d vector = knockbackComponent.getVelocity();
+/* 1873 */       vector.x *= PLAYER_KNOCKBACK_SCALE;
+/* 1874 */       vector.z *= PLAYER_KNOCKBACK_SCALE;
+/* 1875 */       knockbackComponent.setVelocity(vector);
 /*      */     } 
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 1883 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 1881 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$HackKnockbackValues.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$HackKnockbackValues.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

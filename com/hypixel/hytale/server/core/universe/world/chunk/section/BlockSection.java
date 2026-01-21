@@ -638,16 +638,17 @@
 /*  638 */         if (blockId != 0) {
 /*  639 */           int rotation = this.rotationSection.get(idx);
 /*  640 */           BlockType blockType = (BlockType)blockTypeMap.getAsset(blockId);
-/*  641 */           BlockBoundingBoxes asset = (BlockBoundingBoxes)hitBoxAssetMap.getAsset(blockType.getHitboxTypeIndex());
-/*  642 */           if (asset != BlockBoundingBoxes.UNIT_BOX)
-/*  643 */           { double boxMaximumExtent = asset.get(rotation).getBoundingBox().getMaximumExtent();
-/*  644 */             if (boxMaximumExtent > maximumExtent) maximumExtent = boxMaximumExtent;  } 
+/*  641 */           if (blockType != null && !blockType.isUnknown())
+/*  642 */           { BlockBoundingBoxes asset = (BlockBoundingBoxes)hitBoxAssetMap.getAsset(blockType.getHitboxTypeIndex());
+/*  643 */             if (asset != BlockBoundingBoxes.UNIT_BOX)
+/*  644 */             { double boxMaximumExtent = asset.get(rotation).getBoundingBox().getMaximumExtent();
+/*  645 */               if (boxMaximumExtent > maximumExtent) maximumExtent = boxMaximumExtent;  }  } 
 /*      */         } 
 /*      */       }  }
-/*  647 */     finally { this.chunkSectionLock.unlockRead(lock); }
+/*  648 */     finally { this.chunkSectionLock.unlockRead(lock); }
 /*      */ 
 /*      */     
-/*  650 */     return this.maximumHitboxExtent = maximumExtent;
+/*  651 */     return this.maximumHitboxExtent = maximumExtent;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -656,132 +657,132 @@
 /*      */   
 /*      */   @Deprecated
 /*      */   public void invalidateBlock(int x, int y, int z) {
-/*  659 */     long stamp = this.chunkSectionLock.writeLock();
+/*  660 */     long stamp = this.chunkSectionLock.writeLock();
 /*      */     try {
-/*  661 */       this.changedPositions.add(ChunkUtil.indexBlock(x, y, z));
+/*  662 */       this.changedPositions.add(ChunkUtil.indexBlock(x, y, z));
 /*      */     } finally {
-/*  663 */       this.chunkSectionLock.unlockWrite(stamp);
+/*  664 */       this.chunkSectionLock.unlockWrite(stamp);
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   @Deprecated(forRemoval = true)
 /*      */   public FluidSection takeMigratedFluid() {
-/*  670 */     FluidSection temp = this.migratedFluidSection;
-/*  671 */     this.migratedFluidSection = null;
-/*  672 */     return temp;
+/*  671 */     FluidSection temp = this.migratedFluidSection;
+/*  672 */     this.migratedFluidSection = null;
+/*  673 */     return temp;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   @Deprecated(forRemoval = true)
 /*      */   public BlockPhysics takeMigratedDecoBlocks() {
-/*  678 */     BlockPhysics temp = this.migratedBlockPhysics;
-/*  679 */     this.migratedBlockPhysics = null;
-/*  680 */     return temp;
+/*  679 */     BlockPhysics temp = this.migratedBlockPhysics;
+/*  680 */     this.migratedBlockPhysics = null;
+/*  681 */     return temp;
 /*      */   }
 /*      */   
 /*      */   public void serializeForPacket(@Nonnull ByteBuf buf) {
-/*  684 */     long lock = this.chunkSectionLock.readLock();
+/*  685 */     long lock = this.chunkSectionLock.readLock();
 /*      */     try {
-/*  686 */       PaletteType paletteType = this.chunkSection.getPaletteType();
-/*  687 */       byte paletteTypeId = (byte)paletteType.ordinal();
-/*  688 */       buf.writeByte(paletteTypeId);
-/*  689 */       this.chunkSection.serializeForPacket(buf);
+/*  687 */       PaletteType paletteType = this.chunkSection.getPaletteType();
+/*  688 */       byte paletteTypeId = (byte)paletteType.ordinal();
+/*  689 */       buf.writeByte(paletteTypeId);
+/*  690 */       this.chunkSection.serializeForPacket(buf);
 /*      */       
-/*  691 */       PaletteType fillerType = this.fillerSection.getPaletteType();
-/*  692 */       byte fillerTypeId = (byte)fillerType.ordinal();
-/*  693 */       buf.writeByte(fillerTypeId);
-/*  694 */       this.fillerSection.serializeForPacket(buf);
+/*  692 */       PaletteType fillerType = this.fillerSection.getPaletteType();
+/*  693 */       byte fillerTypeId = (byte)fillerType.ordinal();
+/*  694 */       buf.writeByte(fillerTypeId);
+/*  695 */       this.fillerSection.serializeForPacket(buf);
 /*      */       
-/*  696 */       PaletteType rotationType = this.rotationSection.getPaletteType();
-/*  697 */       byte rotationTypeId = (byte)rotationType.ordinal();
-/*  698 */       buf.writeByte(rotationTypeId);
-/*  699 */       this.rotationSection.serializeForPacket(buf);
+/*  697 */       PaletteType rotationType = this.rotationSection.getPaletteType();
+/*  698 */       byte rotationTypeId = (byte)rotationType.ordinal();
+/*  699 */       buf.writeByte(rotationTypeId);
+/*  700 */       this.rotationSection.serializeForPacket(buf);
 /*      */     } finally {
-/*  701 */       this.chunkSectionLock.unlockRead(lock);
+/*  702 */       this.chunkSectionLock.unlockRead(lock);
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void serialize(ISectionPalette.KeySerializer keySerializer, @Nonnull ByteBuf buf) {
-/*  706 */     long lock = this.chunkSectionLock.readLock();
+/*  707 */     long lock = this.chunkSectionLock.readLock();
 /*      */     try {
-/*  708 */       buf.writeInt(BlockMigration.getAssetMap().getAssetCount());
-/*  709 */       PaletteType paletteType = this.chunkSection.getPaletteType();
-/*  710 */       buf.writeByte(paletteType.ordinal());
-/*  711 */       this.chunkSection.serialize(keySerializer, buf);
+/*  709 */       buf.writeInt(BlockMigration.getAssetMap().getAssetCount());
+/*  710 */       PaletteType paletteType = this.chunkSection.getPaletteType();
+/*  711 */       buf.writeByte(paletteType.ordinal());
+/*  712 */       this.chunkSection.serialize(keySerializer, buf);
 /*      */       
-/*  713 */       if (paletteType != PaletteType.Empty) {
-/*  714 */         BitSet combinedTickingBlock = (BitSet)this.tickingBlocks.clone();
-/*  715 */         combinedTickingBlock.or(this.tickingWaitAdjacentBlocks);
+/*  714 */       if (paletteType != PaletteType.Empty) {
+/*  715 */         BitSet combinedTickingBlock = (BitSet)this.tickingBlocks.clone();
+/*  716 */         combinedTickingBlock.or(this.tickingWaitAdjacentBlocks);
 /*      */         
-/*  717 */         buf.writeShort(combinedTickingBlock.cardinality());
+/*  718 */         buf.writeShort(combinedTickingBlock.cardinality());
 /*      */         
-/*  719 */         long[] data = combinedTickingBlock.toLongArray();
-/*  720 */         buf.writeShort(data.length);
-/*  721 */         for (long l : data) {
-/*  722 */           buf.writeLong(l);
+/*  720 */         long[] data = combinedTickingBlock.toLongArray();
+/*  721 */         buf.writeShort(data.length);
+/*  722 */         for (long l : data) {
+/*  723 */           buf.writeLong(l);
 /*      */         }
 /*      */       } 
 /*      */       
-/*  726 */       buf.writeByte(this.fillerSection.getPaletteType().ordinal());
-/*  727 */       this.fillerSection.serialize(ByteBuf::writeShort, buf);
+/*  727 */       buf.writeByte(this.fillerSection.getPaletteType().ordinal());
+/*  728 */       this.fillerSection.serialize(ByteBuf::writeShort, buf);
 /*      */       
-/*  729 */       buf.writeByte(this.rotationSection.getPaletteType().ordinal());
-/*  730 */       this.rotationSection.serialize(ByteBuf::writeByte, buf);
+/*  730 */       buf.writeByte(this.rotationSection.getPaletteType().ordinal());
+/*  731 */       this.rotationSection.serialize(ByteBuf::writeByte, buf);
 /*      */       
-/*  732 */       this.localLight.serialize(buf);
-/*  733 */       this.globalLight.serialize(buf);
-/*  734 */       buf.writeShort(this.localChangeCounter);
-/*  735 */       buf.writeShort(this.globalChangeCounter);
+/*  733 */       this.localLight.serialize(buf);
+/*  734 */       this.globalLight.serialize(buf);
+/*  735 */       buf.writeShort(this.localChangeCounter);
+/*  736 */       buf.writeShort(this.globalChangeCounter);
 /*      */     } finally {
-/*  737 */       this.chunkSectionLock.unlockRead(lock);
+/*  738 */       this.chunkSectionLock.unlockRead(lock);
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public byte[] serialize(ExtraInfo extraInfo) {
-/*  742 */     ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
+/*  743 */     ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
 /*      */     
 /*      */     try {
-/*  745 */       serialize(BlockType.KEY_SERIALIZER, buf);
-/*  746 */       return ByteBufUtil.getBytesRelease(buf);
-/*  747 */     } catch (Throwable t) {
-/*  748 */       buf.release();
-/*  749 */       throw SneakyThrow.sneakyThrow(t);
+/*  746 */       serialize(BlockType.KEY_SERIALIZER, buf);
+/*  747 */       return ByteBufUtil.getBytesRelease(buf);
+/*  748 */     } catch (Throwable t) {
+/*  749 */       buf.release();
+/*  750 */       throw SneakyThrow.sneakyThrow(t);
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void deserialize(ToIntFunction<ByteBuf> keyDeserializer, @Nonnull ByteBuf buf, int version) {
-/*  754 */     int blockMigrationVersion = 0;
-/*  755 */     if (version >= 6) {
-/*  756 */       blockMigrationVersion = buf.readInt();
+/*  755 */     int blockMigrationVersion = 0;
+/*  756 */     if (version >= 6) {
+/*  757 */       blockMigrationVersion = buf.readInt();
 /*      */     }
 /*      */     
-/*  759 */     Function<String, String> blockMigration = null;
-/*  760 */     Map<Integer, BlockMigration> blockMigrationMap = BlockMigration.getAssetMap().getAssetMap();
-/*  761 */     BlockMigration migration = blockMigrationMap.get(Integer.valueOf(blockMigrationVersion));
-/*  762 */     while (migration != null) {
-/*  763 */       if (blockMigration == null) {
-/*  764 */         Objects.requireNonNull(migration); blockMigration = migration::getMigration;
+/*  760 */     Function<String, String> blockMigration = null;
+/*  761 */     Map<Integer, BlockMigration> blockMigrationMap = BlockMigration.getAssetMap().getAssetMap();
+/*  762 */     BlockMigration migration = blockMigrationMap.get(Integer.valueOf(blockMigrationVersion));
+/*  763 */     while (migration != null) {
+/*  764 */       if (blockMigration == null) {
+/*  765 */         Objects.requireNonNull(migration); blockMigration = migration::getMigration;
 /*      */       } else {
-/*  766 */         Objects.requireNonNull(migration); blockMigration = blockMigration.andThen(migration::getMigration);
+/*  767 */         Objects.requireNonNull(migration); blockMigration = blockMigration.andThen(migration::getMigration);
 /*      */       } 
-/*  768 */       migration = blockMigrationMap.get(Integer.valueOf(++blockMigrationVersion));
+/*  769 */       migration = blockMigrationMap.get(Integer.valueOf(++blockMigrationVersion));
 /*      */     } 
 /*      */     
-/*  771 */     PaletteTypeEnum typeEnum = PaletteTypeEnum.get(buf.readByte());
-/*  772 */     PaletteType paletteType = typeEnum.getPaletteType();
-/*  773 */     this.chunkSection = typeEnum.getConstructor().get();
-/*  774 */     if (version <= 4) {
+/*  772 */     PaletteTypeEnum typeEnum = PaletteTypeEnum.get(buf.readByte());
+/*  773 */     PaletteType paletteType = typeEnum.getPaletteType();
+/*  774 */     this.chunkSection = typeEnum.getConstructor().get();
+/*  775 */     if (version <= 4) {
 /*      */       
-/*  776 */       ISectionPalette tempSection = typeEnum.getConstructor().get();
-/*  777 */       boolean[] foundMigratable = { false };
-/*  778 */       boolean[] needsPhysics = { false };
-/*  779 */       int[] nextTempIndex = { -1 };
-/*  780 */       Int2ObjectOpenHashMap<String> types = new Int2ObjectOpenHashMap();
-/*  781 */       Object2IntOpenHashMap<String> typesRev = new Object2IntOpenHashMap();
-/*  782 */       typesRev.defaultReturnValue(-2147483648);
-/*  783 */       Function<String, String> finalBlockMigration = blockMigration;
-/*  784 */       tempSection.deserialize(bytebuf -> {
+/*  777 */       ISectionPalette tempSection = typeEnum.getConstructor().get();
+/*  778 */       boolean[] foundMigratable = { false };
+/*  779 */       boolean[] needsPhysics = { false };
+/*  780 */       int[] nextTempIndex = { -1 };
+/*  781 */       Int2ObjectOpenHashMap<String> types = new Int2ObjectOpenHashMap();
+/*  782 */       Object2IntOpenHashMap<String> typesRev = new Object2IntOpenHashMap();
+/*  783 */       typesRev.defaultReturnValue(-2147483648);
+/*  784 */       Function<String, String> finalBlockMigration = blockMigration;
+/*  785 */       tempSection.deserialize(bytebuf -> {
 /*      */             String key = ByteBufUtil.readUTF(bytebuf);
 /*      */             if (finalBlockMigration != null) {
 /*      */               key = finalBlockMigration.apply(key);
@@ -789,7 +790,7 @@
 /*      */             int index = typesRev.getInt(key);
 /*      */             if (index != Integer.MIN_VALUE)
 /*      */               return index; 
-/*  792 */             boolean migratable = (key.startsWith("Fluid_") || key.contains("|Fluid=") || key.contains("|Deco") || key.contains("|Support") || key.contains("|Filler") || key.contains("|Yaw=") || key.contains("|Pitch=") || key.contains("|Roll="));
+/*  793 */             boolean migratable = (key.startsWith("Fluid_") || key.contains("|Fluid=") || key.contains("|Deco") || key.contains("|Support") || key.contains("|Filler") || key.contains("|Yaw=") || key.contains("|Pitch=") || key.contains("|Roll="));
 /*      */             
 /*      */             foundMigratable[0] = foundMigratable[0] | migratable;
 /*      */             
@@ -806,174 +807,174 @@
 /*      */             typesRev.put(key, index);
 /*      */             return index;
 /*      */           }buf, version);
-/*  809 */       if (needsPhysics[0]) {
-/*  810 */         this.migratedBlockPhysics = new BlockPhysics();
+/*  810 */       if (needsPhysics[0]) {
+/*  811 */         this.migratedBlockPhysics = new BlockPhysics();
 /*      */       }
 /*      */       
-/*  813 */       if (foundMigratable[0]) {
-/*  814 */         int index = 0; while (true) { if (index < 32768)
-/*  815 */           { int id = tempSection.get(index);
-/*  816 */             if (id >= 0)
-/*  817 */             { this.chunkSection.set(index, id); }
+/*  814 */       if (foundMigratable[0]) {
+/*  815 */         int index = 0; while (true) { if (index < 32768)
+/*  816 */           { int id = tempSection.get(index);
+/*  817 */             if (id >= 0)
+/*  818 */             { this.chunkSection.set(index, id); }
 /*      */             
 /*      */             else
 /*      */             
-/*  821 */             { Rotation rotationYaw = Rotation.None;
-/*  822 */               Rotation rotationPitch = Rotation.None;
-/*  823 */               Rotation rotationRoll = Rotation.None;
+/*  822 */             { Rotation rotationYaw = Rotation.None;
+/*  823 */               Rotation rotationPitch = Rotation.None;
+/*  824 */               Rotation rotationRoll = Rotation.None;
 /*      */               
-/*  825 */               String key = (String)types.get(id);
-/*  826 */               if (key.startsWith("Fluid_") || key.contains("|Fluid=")) {
-/*  827 */                 if (this.migratedFluidSection == null) {
-/*  828 */                   this.migratedFluidSection = new FluidSection();
+/*  826 */               String key = (String)types.get(id);
+/*  827 */               if (key.startsWith("Fluid_") || key.contains("|Fluid=")) {
+/*  828 */                 if (this.migratedFluidSection == null) {
+/*  829 */                   this.migratedFluidSection = new FluidSection();
 /*      */                 }
 /*      */                 
-/*  831 */                 Fluid.ConversionResult result = Fluid.convertBlockToFluid(key);
-/*  832 */                 if (result == null) {
-/*  833 */                   throw new RuntimeException("Invalid Fluid Key " + key);
+/*  832 */                 Fluid.ConversionResult result = Fluid.convertBlockToFluid(key);
+/*  833 */                 if (result == null) {
+/*  834 */                   throw new RuntimeException("Invalid Fluid Key " + key);
 /*      */                 }
 /*      */                 
-/*  836 */                 if (result.blockTypeStr != null) {
-/*  837 */                   key = result.blockTypeStr;
-/*  838 */                   this.migratedFluidSection.setFluid(index, result.fluidId, result.fluidLevel);
+/*  837 */                 if (result.blockTypeStr != null) {
+/*  838 */                   key = result.blockTypeStr;
+/*  839 */                   this.migratedFluidSection.setFluid(index, result.fluidId, result.fluidLevel);
 /*      */                 } else {
-/*  840 */                   this.migratedFluidSection.setFluid(index, result.fluidId, result.fluidLevel);
+/*  841 */                   this.migratedFluidSection.setFluid(index, result.fluidId, result.fluidLevel);
 /*      */                   
 /*      */                   index++;
 /*      */                 } 
 /*      */               } 
-/*  845 */               if (key.contains("|Deco")) {
-/*  846 */                 if (this.migratedBlockPhysics == null) {
-/*  847 */                   this.migratedBlockPhysics = new BlockPhysics();
+/*  846 */               if (key.contains("|Deco")) {
+/*  847 */                 if (this.migratedBlockPhysics == null) {
+/*  848 */                   this.migratedBlockPhysics = new BlockPhysics();
 /*      */                 }
-/*  849 */                 this.migratedBlockPhysics.set(index, 15);
+/*  850 */                 this.migratedBlockPhysics.set(index, 15);
 /*      */               } 
-/*  851 */               if (key.contains("|Support=")) {
-/*  852 */                 if (this.migratedBlockPhysics == null) {
-/*  853 */                   this.migratedBlockPhysics = new BlockPhysics();
+/*  852 */               if (key.contains("|Support=")) {
+/*  853 */                 if (this.migratedBlockPhysics == null) {
+/*  854 */                   this.migratedBlockPhysics = new BlockPhysics();
 /*      */                 }
-/*  855 */                 int start = key.indexOf("|Support=") + "|Support=".length();
-/*  856 */                 int end = key.indexOf('|', start);
-/*  857 */                 if (end == -1) end = key.length(); 
-/*  858 */                 this.migratedBlockPhysics.set(index, Integer.parseInt(key, start, end, 10));
+/*  856 */                 int start = key.indexOf("|Support=") + "|Support=".length();
+/*  857 */                 int end = key.indexOf('|', start);
+/*  858 */                 if (end == -1) end = key.length(); 
+/*  859 */                 this.migratedBlockPhysics.set(index, Integer.parseInt(key, start, end, 10));
 /*      */               } 
-/*  860 */               if (key.contains("|Filler=")) {
-/*  861 */                 int start = key.indexOf("|Filler=") + "|Filler=".length();
-/*  862 */                 int firstComma = key.indexOf(',', start);
-/*  863 */                 if (firstComma == -1) throw new IllegalArgumentException("Invalid filler metadata! Missing comma"); 
-/*  864 */                 int secondComma = key.indexOf(',', firstComma + 1);
-/*  865 */                 if (secondComma == -1) throw new IllegalArgumentException("Invalid filler metadata! Missing second comma");
+/*  861 */               if (key.contains("|Filler=")) {
+/*  862 */                 int start = key.indexOf("|Filler=") + "|Filler=".length();
+/*  863 */                 int firstComma = key.indexOf(',', start);
+/*  864 */                 if (firstComma == -1) throw new IllegalArgumentException("Invalid filler metadata! Missing comma"); 
+/*  865 */                 int secondComma = key.indexOf(',', firstComma + 1);
+/*  866 */                 if (secondComma == -1) throw new IllegalArgumentException("Invalid filler metadata! Missing second comma");
 /*      */                 
-/*  867 */                 int end = key.indexOf('|', start);
-/*  868 */                 if (end == -1) end = key.length();
+/*  868 */                 int end = key.indexOf('|', start);
+/*  869 */                 if (end == -1) end = key.length();
 /*      */                 
-/*  870 */                 int fillerX = Integer.parseInt(key, start, firstComma, 10);
-/*  871 */                 int fillerY = Integer.parseInt(key, firstComma + 1, secondComma, 10);
-/*  872 */                 int fillerZ = Integer.parseInt(key, secondComma + 1, end, 10);
+/*  871 */                 int fillerX = Integer.parseInt(key, start, firstComma, 10);
+/*  872 */                 int fillerY = Integer.parseInt(key, firstComma + 1, secondComma, 10);
+/*  873 */                 int fillerZ = Integer.parseInt(key, secondComma + 1, end, 10);
 /*      */                 
-/*  874 */                 int filler = FillerBlockUtil.pack(fillerX, fillerY, fillerZ);
-/*  875 */                 ISectionPalette.SetResult result = this.fillerSection.set(index, filler);
-/*  876 */                 if (result == ISectionPalette.SetResult.REQUIRES_PROMOTE) {
-/*  877 */                   this.fillerSection = this.fillerSection.promote();
-/*  878 */                   this.fillerSection.set(index, filler);
+/*  875 */                 int filler = FillerBlockUtil.pack(fillerX, fillerY, fillerZ);
+/*  876 */                 ISectionPalette.SetResult result = this.fillerSection.set(index, filler);
+/*  877 */                 if (result == ISectionPalette.SetResult.REQUIRES_PROMOTE) {
+/*  878 */                   this.fillerSection = this.fillerSection.promote();
+/*  879 */                   this.fillerSection.set(index, filler);
 /*      */                 } 
 /*      */               } 
 /*      */ 
 /*      */               
-/*  883 */               if (key.contains("|Yaw=")) {
-/*  884 */                 int start = key.indexOf("|Yaw=") + "|Yaw=".length();
-/*  885 */                 int end = key.indexOf('|', start);
-/*  886 */                 if (end == -1) end = key.length(); 
-/*  887 */                 rotationYaw = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
+/*  884 */               if (key.contains("|Yaw=")) {
+/*  885 */                 int start = key.indexOf("|Yaw=") + "|Yaw=".length();
+/*  886 */                 int end = key.indexOf('|', start);
+/*  887 */                 if (end == -1) end = key.length(); 
+/*  888 */                 rotationYaw = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
 /*      */               } 
-/*  889 */               if (key.contains("|Pitch=")) {
-/*  890 */                 int start = key.indexOf("|Pitch=") + "|Pitch=".length();
-/*  891 */                 int end = key.indexOf('|', start);
-/*  892 */                 if (end == -1) end = key.length(); 
-/*  893 */                 rotationPitch = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
+/*  890 */               if (key.contains("|Pitch=")) {
+/*  891 */                 int start = key.indexOf("|Pitch=") + "|Pitch=".length();
+/*  892 */                 int end = key.indexOf('|', start);
+/*  893 */                 if (end == -1) end = key.length(); 
+/*  894 */                 rotationPitch = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
 /*      */               } 
-/*  895 */               if (key.contains("|Roll=")) {
-/*  896 */                 int start = key.indexOf("|Roll=") + "|Roll=".length();
-/*  897 */                 int end = key.indexOf('|', start);
-/*  898 */                 if (end == -1) end = key.length(); 
-/*  899 */                 rotationRoll = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
+/*  896 */               if (key.contains("|Roll=")) {
+/*  897 */                 int start = key.indexOf("|Roll=") + "|Roll=".length();
+/*  898 */                 int end = key.indexOf('|', start);
+/*  899 */                 if (end == -1) end = key.length(); 
+/*  900 */                 rotationRoll = Rotation.ofDegrees(Integer.parseInt(key, start, end, 10));
 /*      */               } 
 /*      */               
-/*  902 */               if (rotationYaw != Rotation.None || rotationPitch != Rotation.None || rotationRoll != Rotation.None) {
-/*  903 */                 int rotation = RotationTuple.index(rotationYaw, rotationPitch, rotationRoll);
-/*  904 */                 ISectionPalette.SetResult result = this.rotationSection.set(index, rotation);
-/*  905 */                 if (result == ISectionPalette.SetResult.REQUIRES_PROMOTE) {
-/*  906 */                   this.rotationSection = this.rotationSection.promote();
-/*  907 */                   this.rotationSection.set(index, rotation);
+/*  903 */               if (rotationYaw != Rotation.None || rotationPitch != Rotation.None || rotationRoll != Rotation.None) {
+/*  904 */                 int rotation = RotationTuple.index(rotationYaw, rotationPitch, rotationRoll);
+/*  905 */                 ISectionPalette.SetResult result = this.rotationSection.set(index, rotation);
+/*  906 */                 if (result == ISectionPalette.SetResult.REQUIRES_PROMOTE) {
+/*  907 */                   this.rotationSection = this.rotationSection.promote();
+/*  908 */                   this.rotationSection.set(index, rotation);
 /*      */                 } 
 /*      */               } 
 /*      */               
-/*  911 */               int endOfName = key.indexOf('|');
-/*  912 */               if (endOfName != -1) {
-/*  913 */                 key = key.substring(0, endOfName);
+/*  912 */               int endOfName = key.indexOf('|');
+/*  913 */               if (endOfName != -1) {
+/*  914 */                 key = key.substring(0, endOfName);
 /*      */               }
-/*  915 */               this.chunkSection.set(index, BlockType.getBlockIdOrUnknown(key, "Unknown BlockType: %s", new Object[] { key })); }  }
+/*  916 */               this.chunkSection.set(index, BlockType.getBlockIdOrUnknown(key, "Unknown BlockType: %s", new Object[] { key })); }  }
 /*      */           else { break; }
 /*      */            index++; }
-/*  918 */          if (this.chunkSection.shouldDemote()) {
-/*  919 */           this.chunkSection.demote();
+/*  919 */          if (this.chunkSection.shouldDemote()) {
+/*  920 */           this.chunkSection.demote();
 /*      */         }
 /*      */       } else {
 /*      */         
-/*  923 */         this.chunkSection = tempSection;
+/*  924 */         this.chunkSection = tempSection;
 /*      */       }
 /*      */     
-/*  926 */     } else if (blockMigration != null) {
-/*  927 */       Function<String, String> finalBlockMigration1 = blockMigration;
-/*  928 */       this.chunkSection.deserialize(bytebuf -> { String key = ByteBufUtil.readUTF(bytebuf); key = finalBlockMigration1.apply(key); return BlockType.getBlockIdOrUnknown(key, "Unknown BlockType %s", new Object[] { key }); }buf, version);
+/*  927 */     } else if (blockMigration != null) {
+/*  928 */       Function<String, String> finalBlockMigration1 = blockMigration;
+/*  929 */       this.chunkSection.deserialize(bytebuf -> { String key = ByteBufUtil.readUTF(bytebuf); key = finalBlockMigration1.apply(key); return BlockType.getBlockIdOrUnknown(key, "Unknown BlockType %s", new Object[] { key }); }buf, version);
 /*      */     
 /*      */     }
 /*      */     else {
 /*      */ 
 /*      */       
-/*  934 */       this.chunkSection.deserialize(keyDeserializer, buf, version);
+/*  935 */       this.chunkSection.deserialize(keyDeserializer, buf, version);
 /*      */     } 
 /*      */ 
 /*      */     
-/*  938 */     if (paletteType != PaletteType.Empty) {
+/*  939 */     if (paletteType != PaletteType.Empty) {
 /*      */       
-/*  940 */       this.tickingBlocksCount = buf.readUnsignedShort();
-/*  941 */       int len = buf.readUnsignedShort();
-/*  942 */       long[] tickingBlocksData = new long[len];
-/*  943 */       for (int i = 0; i < tickingBlocksData.length; i++) {
-/*  944 */         tickingBlocksData[i] = buf.readLong();
+/*  941 */       this.tickingBlocksCount = buf.readUnsignedShort();
+/*  942 */       int len = buf.readUnsignedShort();
+/*  943 */       long[] tickingBlocksData = new long[len];
+/*  944 */       for (int i = 0; i < tickingBlocksData.length; i++) {
+/*  945 */         tickingBlocksData[i] = buf.readLong();
 /*      */       }
-/*  946 */       this.tickingBlocks = BitSet.valueOf(tickingBlocksData);
-/*  947 */       this.tickingBlocksCount = this.tickingBlocks.cardinality();
+/*  947 */       this.tickingBlocks = BitSet.valueOf(tickingBlocksData);
+/*  948 */       this.tickingBlocksCount = this.tickingBlocks.cardinality();
 /*      */     } 
 /*      */     
-/*  950 */     if (version >= 4) {
-/*  951 */       PaletteTypeEnum fillerTypeEnum = PaletteTypeEnum.get(buf.readByte());
-/*  952 */       this.fillerSection = fillerTypeEnum.getConstructor().get();
-/*  953 */       this.fillerSection.deserialize(ByteBuf::readUnsignedShort, buf, version);
+/*  951 */     if (version >= 4) {
+/*  952 */       PaletteTypeEnum fillerTypeEnum = PaletteTypeEnum.get(buf.readByte());
+/*  953 */       this.fillerSection = fillerTypeEnum.getConstructor().get();
+/*  954 */       this.fillerSection.deserialize(ByteBuf::readUnsignedShort, buf, version);
 /*      */     } 
 /*      */     
-/*  956 */     if (version >= 5) {
-/*  957 */       PaletteTypeEnum rotationTypeEnum = PaletteTypeEnum.get(buf.readByte());
-/*  958 */       this.rotationSection = rotationTypeEnum.getConstructor().get();
-/*  959 */       this.rotationSection.deserialize(ByteBuf::readUnsignedByte, buf, version);
+/*  957 */     if (version >= 5) {
+/*  958 */       PaletteTypeEnum rotationTypeEnum = PaletteTypeEnum.get(buf.readByte());
+/*  959 */       this.rotationSection = rotationTypeEnum.getConstructor().get();
+/*  960 */       this.rotationSection.deserialize(ByteBuf::readUnsignedByte, buf, version);
 /*      */     } 
 /*      */     
-/*  962 */     this.localLight = ChunkLightData.deserialize(buf, version);
-/*  963 */     this.globalLight = ChunkLightData.deserialize(buf, version);
+/*  963 */     this.localLight = ChunkLightData.deserialize(buf, version);
+/*  964 */     this.globalLight = ChunkLightData.deserialize(buf, version);
 /*      */     
-/*  965 */     this.localChangeCounter = buf.readShort();
-/*  966 */     this.globalChangeCounter = buf.readShort();
+/*  966 */     this.localChangeCounter = buf.readShort();
+/*  967 */     this.globalChangeCounter = buf.readShort();
 /*      */   }
 /*      */   
 /*      */   public void deserialize(@Nonnull byte[] bytes, @Nonnull ExtraInfo extraInfo) {
-/*  970 */     ByteBuf buf = Unpooled.wrappedBuffer(bytes);
-/*  971 */     deserialize(BlockType.KEY_DESERIALIZER, buf, extraInfo.getVersion());
+/*  971 */     ByteBuf buf = Unpooled.wrappedBuffer(bytes);
+/*  972 */     deserialize(BlockType.KEY_DESERIALIZER, buf, extraInfo.getVersion());
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public Component<ChunkStore> clone() {
-/*  976 */     throw new UnsupportedOperationException("Not implemented!");
+/*  977 */     throw new UnsupportedOperationException("Not implemented!");
 /*      */   }
 /*      */ 
 /*      */ 
@@ -982,16 +983,16 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Component<ChunkStore> cloneSerializable() {
-/*  985 */     return this;
+/*  986 */     return this;
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<CachedPacket<SetChunk>> getCachedChunkPacket(int x, int y, int z) {
-/*  990 */     SoftReference<CompletableFuture<CachedPacket<SetChunk>>> ref = this.cachedChunkPacket;
-/*  991 */     CompletableFuture<CachedPacket<SetChunk>> future = (ref != null) ? ref.get() : null;
-/*  992 */     if (future != null) return future;
+/*  991 */     SoftReference<CompletableFuture<CachedPacket<SetChunk>>> ref = this.cachedChunkPacket;
+/*  992 */     CompletableFuture<CachedPacket<SetChunk>> future = (ref != null) ? ref.get() : null;
+/*  993 */     if (future != null) return future;
 /*      */     
-/*  994 */     future = CompletableFuture.supplyAsync(() -> {
+/*  995 */     future = CompletableFuture.supplyAsync(() -> {
 /*      */           byte[] localLightArr = null;
 /*      */           
 /*      */           byte[] globalLightArr = null;
@@ -1031,42 +1032,42 @@
 /*      */           SetChunk setChunk = new SetChunk(x, y, z, localLightArr, globalLightArr, data);
 /*      */           return CachedPacket.cache((Packet)setChunk);
 /*      */         });
-/* 1034 */     this.cachedChunkPacket = new SoftReference<>(future);
-/* 1035 */     return future;
+/* 1035 */     this.cachedChunkPacket = new SoftReference<>(future);
+/* 1036 */     return future;
 /*      */   }
 /*      */   
 /*      */   public int get(int x, int y, int z) {
-/* 1039 */     return get(ChunkUtil.indexBlock(x, y, z));
+/* 1040 */     return get(ChunkUtil.indexBlock(x, y, z));
 /*      */   }
 /*      */   
 /*      */   public boolean set(int x, int y, int z, int blockId, int rotation, int filler) {
-/* 1043 */     return set(ChunkUtil.indexBlock(x, y, z), blockId, rotation, filler);
+/* 1044 */     return set(ChunkUtil.indexBlock(x, y, z), blockId, rotation, filler);
 /*      */   }
 /*      */   
 /*      */   public boolean setTicking(int x, int y, int z, boolean ticking) {
-/* 1047 */     return setTicking(ChunkUtil.indexBlock(x, y, z), ticking);
+/* 1048 */     return setTicking(ChunkUtil.indexBlock(x, y, z), ticking);
 /*      */   }
 /*      */   
 /*      */   public boolean isTicking(int x, int y, int z) {
-/* 1051 */     return isTicking(ChunkUtil.indexBlock(x, y, z));
+/* 1052 */     return isTicking(ChunkUtil.indexBlock(x, y, z));
 /*      */   } private static final class TickRequest extends Record { private final int index; @Nonnull
 /*      */     private final Instant requestedGameTime;
-/* 1054 */     private TickRequest(int index, @Nonnull Instant requestedGameTime) { this.index = index; this.requestedGameTime = requestedGameTime; } public final String toString() { // Byte code:
+/* 1055 */     private TickRequest(int index, @Nonnull Instant requestedGameTime) { this.index = index; this.requestedGameTime = requestedGameTime; } public final String toString() { // Byte code:
 /*      */       //   0: aload_0
 /*      */       //   1: <illegal opcode> toString : (Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;)Ljava/lang/String;
 /*      */       //   6: areturn
 /*      */       // Line number table:
 /*      */       //   Java source line number -> byte code offset
-/*      */       //   #1054	-> 0
+/*      */       //   #1055	-> 0
 /*      */       // Local variable table:
 /*      */       //   start	length	slot	name	descriptor
-/* 1054 */       //   0	7	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest; } public int index() { return this.index; } public final int hashCode() { // Byte code:
+/* 1055 */       //   0	7	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest; } public int index() { return this.index; } public final int hashCode() { // Byte code:
 /*      */       //   0: aload_0
 /*      */       //   1: <illegal opcode> hashCode : (Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;)I
 /*      */       //   6: ireturn
 /*      */       // Line number table:
 /*      */       //   Java source line number -> byte code offset
-/*      */       //   #1054	-> 0
+/*      */       //   #1055	-> 0
 /*      */       // Local variable table:
 /*      */       //   start	length	slot	name	descriptor
 /*      */       //   0	7	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest; } public final boolean equals(Object o) { // Byte code:
@@ -1076,20 +1077,20 @@
 /*      */       //   7: ireturn
 /*      */       // Line number table:
 /*      */       //   Java source line number -> byte code offset
-/*      */       //   #1054	-> 0
+/*      */       //   #1055	-> 0
 /*      */       // Local variable table:
 /*      */       //   start	length	slot	name	descriptor
 /*      */       //   0	8	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;
-/* 1054 */       //   0	8	1	o	Ljava/lang/Object; } @Nonnull public Instant requestedGameTime() { return this.requestedGameTime; }
+/* 1055 */       //   0	8	1	o	Ljava/lang/Object; } @Nonnull public Instant requestedGameTime() { return this.requestedGameTime; }
 /*      */      }
 /*      */   
 /*      */   static {
-/* 1058 */     TICK_REQUEST_COMPARATOR = Comparator.comparing(t -> t.requestedGameTime);
+/* 1059 */     TICK_REQUEST_COMPARATOR = Comparator.comparing(t -> t.requestedGameTime);
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\chunk\section\BlockSection.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\chunk\section\BlockSection.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

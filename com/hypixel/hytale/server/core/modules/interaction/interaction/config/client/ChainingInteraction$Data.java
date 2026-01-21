@@ -275,41 +275,40 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class Data
 /*     */   implements Component<EntityStore>
 /*     */ {
 /*     */   public static ComponentType<EntityStore, Data> getComponentType() {
-/* 283 */     return InteractionModule.get().getChainingDataComponent();
+/* 282 */     return InteractionModule.get().getChainingDataComponent();
 /*     */   }
 /*     */   
-/* 286 */   private final Object2IntMap<String> map = (Object2IntMap<String>)new Object2IntOpenHashMap();
-/* 287 */   private final Object2IntMap<String> namedMap = (Object2IntMap<String>)new Object2IntOpenHashMap();
+/* 285 */   private final Object2IntMap<String> map = (Object2IntMap<String>)new Object2IntOpenHashMap();
+/* 286 */   private final Object2IntMap<String> namedMap = (Object2IntMap<String>)new Object2IntOpenHashMap();
 /*     */   private long lastAttack;
 /*     */   
 /*     */   public float getTimeSinceLastAttackInSeconds() {
-/* 291 */     if (this.lastAttack == 0L) return 0.0F; 
-/* 292 */     long diff = System.nanoTime() - this.lastAttack;
-/* 293 */     return (float)diff / 1.0E9F;
+/* 290 */     if (this.lastAttack == 0L) return 0.0F; 
+/* 291 */     long diff = System.nanoTime() - this.lastAttack;
+/* 292 */     return (float)diff / 1.0E9F;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Object2IntMap<String> getNamedMap() {
-/* 298 */     return this.namedMap;
+/* 297 */     return this.namedMap;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<EntityStore> clone() {
-/* 304 */     Data c = new Data();
-/* 305 */     c.map.putAll((Map)this.map);
-/* 306 */     c.lastAttack = this.lastAttack;
-/* 307 */     return c;
+/* 303 */     Data c = new Data();
+/* 304 */     c.map.putAll((Map)this.map);
+/* 305 */     c.lastAttack = this.lastAttack;
+/* 306 */     return c;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\ChainingInteraction$Data.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\client\ChainingInteraction$Data.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

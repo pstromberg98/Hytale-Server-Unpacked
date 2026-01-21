@@ -74,59 +74,60 @@
 /*     */   }
 /*     */   
 /*     */   public float asPercentage() {
-/*  77 */     return (this.value - this.min) / (this.max - this.min);
+/*  77 */     if (this.min == this.max) return 0.0F; 
+/*  78 */     return (this.value - this.min) / (this.max - this.min);
 /*     */   }
 /*     */   
 /*     */   public float getMin() {
-/*  81 */     return this.min;
+/*  82 */     return this.min;
 /*     */   }
 /*     */   
 /*     */   public float getMax() {
-/*  85 */     return this.max;
+/*  86 */     return this.max;
 /*     */   }
 /*     */   
 /*     */   protected float set(float newValue) {
-/*  89 */     return this.value = MathUtil.clamp(newValue, this.min, this.max);
+/*  90 */     return this.value = MathUtil.clamp(newValue, this.min, this.max);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public RegeneratingValue[] getRegeneratingValues() {
-/*  94 */     return this.regeneratingValues;
+/*  95 */     return this.regeneratingValues;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public Modifier getModifier(String key) {
-/*  99 */     if (this.modifiers == null) return null; 
-/* 100 */     return this.modifiers.get(key);
+/* 100 */     if (this.modifiers == null) return null; 
+/* 101 */     return this.modifiers.get(key);
 /*     */   }
 /*     */   
 /*     */   public boolean getIgnoreInvulnerability() {
-/* 104 */     return this.ignoreInvulnerability;
+/* 105 */     return this.ignoreInvulnerability;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public Map<String, Modifier> getModifiers() {
-/* 109 */     return this.modifiers;
+/* 110 */     return this.modifiers;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected Modifier putModifier(String key, Modifier modifier) {
-/* 114 */     if (this.modifiers == null) this.modifiers = (Map<String, Modifier>)new Object2ObjectOpenHashMap();
+/* 115 */     if (this.modifiers == null) this.modifiers = (Map<String, Modifier>)new Object2ObjectOpenHashMap();
 /*     */     
-/* 116 */     Modifier oldModifier = this.modifiers.put(key, modifier);
+/* 117 */     Modifier oldModifier = this.modifiers.put(key, modifier);
 /*     */     
-/* 118 */     computeModifiers((EntityStatType)EntityStatType.getAssetMap().getAsset(this.index));
-/* 119 */     return oldModifier;
+/* 119 */     computeModifiers((EntityStatType)EntityStatType.getAssetMap().getAsset(this.index));
+/* 120 */     return oldModifier;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected Modifier removeModifier(String key) {
-/* 124 */     if (this.modifiers == null) return null;
+/* 125 */     if (this.modifiers == null) return null;
 /*     */     
-/* 126 */     Modifier modifier = this.modifiers.remove(key);
+/* 127 */     Modifier modifier = this.modifiers.remove(key);
 /*     */     
-/* 128 */     if (modifier != null) computeModifiers((EntityStatType)EntityStatType.getAssetMap().getAsset(this.index)); 
-/* 129 */     return modifier;
+/* 129 */     if (modifier != null) computeModifiers((EntityStatType)EntityStatType.getAssetMap().getAsset(this.index)); 
+/* 130 */     return modifier;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -136,110 +137,110 @@
 /*     */ 
 /*     */   
 /*     */   public boolean synchronizeAsset(int index, @Nonnull EntityStatType asset) {
-/* 139 */     this.id = asset.getId();
-/* 140 */     this.index = index;
+/* 140 */     this.id = asset.getId();
+/* 141 */     this.index = index;
 /*     */     
-/* 142 */     initializeRegenerating(asset);
+/* 143 */     initializeRegenerating(asset);
 /*     */     
-/* 144 */     boolean minMaxChanged = (this.min != asset.getMin() || this.max != asset.getMax());
+/* 145 */     boolean minMaxChanged = (this.min != asset.getMin() || this.max != asset.getMax());
 /*     */     
-/* 146 */     this.ignoreInvulnerability = asset.getIgnoreInvulnerability();
+/* 147 */     this.ignoreInvulnerability = asset.getIgnoreInvulnerability();
 /*     */     
-/* 148 */     float oldValue = this.value;
-/* 149 */     computeModifiers(asset);
+/* 149 */     float oldValue = this.value;
+/* 150 */     computeModifiers(asset);
 /*     */     
-/* 151 */     return (minMaxChanged || this.value != oldValue);
+/* 152 */     return (minMaxChanged || this.value != oldValue);
 /*     */   }
 /*     */   
 /*     */   private void initializeRegenerating(@Nonnull EntityStatType entityStatType) {
-/* 155 */     EntityStatType.Regenerating[] regeneratingTypes = entityStatType.getRegenerating();
-/* 156 */     if (regeneratingTypes == null)
+/* 156 */     EntityStatType.Regenerating[] regeneratingTypes = entityStatType.getRegenerating();
+/* 157 */     if (regeneratingTypes == null)
 /*     */       return; 
-/* 158 */     this.regeneratingValues = new RegeneratingValue[regeneratingTypes.length];
-/* 159 */     for (int i = 0; i < regeneratingTypes.length; i++) {
-/* 160 */       this.regeneratingValues[i] = new RegeneratingValue(regeneratingTypes[i]);
+/* 159 */     this.regeneratingValues = new RegeneratingValue[regeneratingTypes.length];
+/* 160 */     for (int i = 0; i < regeneratingTypes.length; i++) {
+/* 161 */       this.regeneratingValues[i] = new RegeneratingValue(regeneratingTypes[i]);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   protected void computeModifiers(@Nonnull EntityStatType asset) {
-/* 165 */     this.min = asset.getMin();
-/* 166 */     this.max = asset.getMax();
+/* 166 */     this.min = asset.getMin();
+/* 167 */     this.max = asset.getMax();
 /*     */     
-/* 168 */     if (this.modifiers != null) {
+/* 169 */     if (this.modifiers != null) {
 /*     */ 
 /*     */ 
 /*     */       
-/* 172 */       for (Modifier.ModifierTarget target : Modifier.ModifierTarget.VALUES) {
+/* 173 */       for (Modifier.ModifierTarget target : Modifier.ModifierTarget.VALUES) {
 /*     */         
-/* 174 */         boolean hasAdditive = false;
-/* 175 */         float additive = 0.0F;
-/* 176 */         boolean hasMultiplicative = false;
-/* 177 */         float multiplicative = 0.0F;
-/* 178 */         for (Modifier modifier : this.modifiers.values()) {
-/* 179 */           if (modifier instanceof StaticModifier) { StaticModifier staticModifier = (StaticModifier)modifier;
-/* 180 */             if (staticModifier.getTarget() != target)
+/* 175 */         boolean hasAdditive = false;
+/* 176 */         float additive = 0.0F;
+/* 177 */         boolean hasMultiplicative = false;
+/* 178 */         float multiplicative = 0.0F;
+/* 179 */         for (Modifier modifier : this.modifiers.values()) {
+/* 180 */           if (modifier instanceof StaticModifier) { StaticModifier staticModifier = (StaticModifier)modifier;
+/* 181 */             if (staticModifier.getTarget() != target)
 /*     */               continue; 
-/* 182 */             switch (staticModifier.getCalculationType()) {
+/* 183 */             switch (staticModifier.getCalculationType()) {
 /*     */               case MIN:
-/* 184 */                 hasAdditive = true;
-/* 185 */                 additive += staticModifier.getAmount();
+/* 185 */                 hasAdditive = true;
+/* 186 */                 additive += staticModifier.getAmount();
 /*     */               
 /*     */               case MAX:
-/* 188 */                 hasMultiplicative = true;
-/* 189 */                 multiplicative += staticModifier.getAmount();
+/* 189 */                 hasMultiplicative = true;
+/* 190 */                 multiplicative += staticModifier.getAmount();
 /*     */             } 
 /*     */             
 /*     */              }
 /*     */         
 /*     */         } 
-/* 195 */         switch (target) {
+/* 196 */         switch (target) {
 /*     */           case MIN:
-/* 197 */             if (hasAdditive) this.min = StaticModifier.CalculationType.ADDITIVE.compute(this.min, additive); 
-/* 198 */             if (hasMultiplicative) this.min = StaticModifier.CalculationType.MULTIPLICATIVE.compute(this.min, multiplicative); 
+/* 198 */             if (hasAdditive) this.min = StaticModifier.CalculationType.ADDITIVE.compute(this.min, additive); 
+/* 199 */             if (hasMultiplicative) this.min = StaticModifier.CalculationType.MULTIPLICATIVE.compute(this.min, multiplicative); 
 /*     */             break;
 /*     */           case MAX:
-/* 201 */             if (hasAdditive) this.max = StaticModifier.CalculationType.ADDITIVE.compute(this.max, additive); 
-/* 202 */             if (hasMultiplicative) this.max = StaticModifier.CalculationType.MULTIPLICATIVE.compute(this.max, multiplicative);
+/* 202 */             if (hasAdditive) this.max = StaticModifier.CalculationType.ADDITIVE.compute(this.max, additive); 
+/* 203 */             if (hasMultiplicative) this.max = StaticModifier.CalculationType.MULTIPLICATIVE.compute(this.max, multiplicative);
 /*     */             
 /*     */             break;
 /*     */         } 
 /*     */       
 /*     */       } 
-/* 208 */       for (Modifier modifier : this.modifiers.values()) {
-/* 209 */         if (!(modifier instanceof StaticModifier)) {
-/* 210 */           applyModifier(modifier);
+/* 209 */       for (Modifier modifier : this.modifiers.values()) {
+/* 210 */         if (!(modifier instanceof StaticModifier)) {
+/* 211 */           applyModifier(modifier);
 /*     */         }
 /*     */       } 
 /*     */     } 
 /*     */ 
 /*     */     
-/* 216 */     this.value = MathUtil.clamp(this.value, this.min, this.max);
+/* 217 */     this.value = MathUtil.clamp(this.value, this.min, this.max);
 /*     */   }
 /*     */   
 /*     */   private void applyModifier(@Nonnull Modifier modifier) {
-/* 220 */     switch (modifier.getTarget()) { case MIN:
-/* 221 */         this.min = modifier.apply(this.min); break;
-/* 222 */       case MAX: this.max = modifier.apply(this.max);
+/* 221 */     switch (modifier.getTarget()) { case MIN:
+/* 222 */         this.min = modifier.apply(this.min); break;
+/* 223 */       case MAX: this.max = modifier.apply(this.max);
 /*     */         break; }
 /*     */   
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 229 */     return "EntityStatValue{id='" + this.id + "', index=" + this.index + ", value=" + this.value + ", min=" + this.min + ", max=" + this.max + ", regeneratingValues=" + 
+/* 230 */     return "EntityStatValue{id='" + this.id + "', index=" + this.index + ", value=" + this.value + ", min=" + this.min + ", max=" + this.max + ", regeneratingValues=" + 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */       
-/* 235 */       Arrays.toString((Object[])this.regeneratingValues) + ", modifiers=" + String.valueOf(this.modifiers) + "}";
+/* 236 */       Arrays.toString((Object[])this.regeneratingValues) + ", modifiers=" + String.valueOf(this.modifiers) + "}";
 /*     */   }
 /*     */   
 /*     */   protected EntityStatValue() {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entitystats\EntityStatValue.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entitystats\EntityStatValue.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

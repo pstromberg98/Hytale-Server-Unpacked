@@ -695,60 +695,58 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class OutOfWorldDamage
 /*     */   extends DelayedEntitySystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 704 */   private static final ComponentType<EntityStore, TransformComponent> TRANSFORM_COMPONENT_TYPE = TransformComponent.getComponentType();
+/* 702 */   private static final ComponentType<EntityStore, TransformComponent> TRANSFORM_COMPONENT_TYPE = TransformComponent.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public OutOfWorldDamage() {
-/* 710 */     super(1.0F);
+/* 708 */     super(1.0F);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 716 */     return DamageModule.get().getGatherDamageGroup();
+/* 714 */     return DamageModule.get().getGatherDamageGroup();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 721 */     return (Query)TRANSFORM_COMPONENT_TYPE;
+/* 719 */     return (Query)TRANSFORM_COMPONENT_TYPE;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 726 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TRANSFORM_COMPONENT_TYPE);
-/* 727 */     assert transformComponent != null;
+/* 724 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TRANSFORM_COMPONENT_TYPE);
+/* 725 */     assert transformComponent != null;
 /*     */     
-/* 729 */     double posY = transformComponent.getPosition().getY();
-/* 730 */     if (posY >= 0.0D)
+/* 727 */     double posY = transformComponent.getPosition().getY();
+/* 728 */     if (posY >= 0.0D)
 /*     */       return; 
-/* 732 */     boolean belowMinimum = (posY < -32.0D);
-/* 733 */     Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.OUT_OF_WORLD, belowMinimum ? 2.1474836E9F : 50.0F);
+/* 730 */     boolean belowMinimum = (posY < -32.0D);
+/* 731 */     Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.OUT_OF_WORLD, belowMinimum ? 2.1474836E9F : 50.0F);
 /*     */ 
 /*     */     
-/* 736 */     if (belowMinimum) {
-/* 737 */       DeathComponent.tryAddComponent(commandBuffer, archetypeChunk.getReferenceTo(index), damage);
+/* 734 */     if (belowMinimum) {
+/* 735 */       DeathComponent.tryAddComponent(commandBuffer, archetypeChunk.getReferenceTo(index), damage);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 741 */     DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
+/* 739 */     DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 746 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 744 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$OutOfWorldDamage.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$OutOfWorldDamage.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

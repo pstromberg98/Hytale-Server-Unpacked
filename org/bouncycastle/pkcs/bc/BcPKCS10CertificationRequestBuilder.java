@@ -13,7 +13,7 @@ public class BcPKCS10CertificationRequestBuilder extends PKCS10CertificationRequ
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\pkcs\bc\BcPKCS10CertificationRequestBuilder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\pkcs\bc\BcPKCS10CertificationRequestBuilder.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

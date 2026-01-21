@@ -77,7 +77,7 @@ public class SubjectPublicKeyInfo extends ASN1Object {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x509\SubjectPublicKeyInfo.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\asn1\x509\SubjectPublicKeyInfo.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

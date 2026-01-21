@@ -9,6 +9,7 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -26,14 +27,14 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public static ComponentType<EntityStore, PickupItemComponent> getComponentType() {
-/*  29 */     return EntityModule.get().getPickupItemComponentType();
+/*  30 */     return EntityModule.get().getPickupItemComponentType();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  36 */   public static final BuilderCodec<PickupItemComponent> CODEC = BuilderCodec.builder(PickupItemComponent.class, PickupItemComponent::new).build();
+/*  37 */   public static final BuilderCodec<PickupItemComponent> CODEC = BuilderCodec.builder(PickupItemComponent.class, PickupItemComponent::new).build();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -53,7 +54,7 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*  56 */   private float lifeTime = 0.15F;
+/*  57 */   private float lifeTime = 0.15F;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -73,7 +74,7 @@
 /*     */ 
 /*     */   
 /*     */   public PickupItemComponent(@Nonnull Ref<EntityStore> targetRef, @Nonnull Vector3d startPosition) {
-/*  76 */     this(targetRef, startPosition, 0.15F);
+/*  77 */     this(targetRef, startPosition, 0.15F);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -84,10 +85,10 @@
 /*     */ 
 /*     */   
 /*     */   public PickupItemComponent(@Nonnull Ref<EntityStore> targetRef, @Nonnull Vector3d startPosition, float lifeTime) {
-/*  87 */     this.targetRef = targetRef;
-/*  88 */     this.startPosition = startPosition;
-/*  89 */     this.lifeTime = lifeTime;
-/*  90 */     this.originalLifeTime = lifeTime;
+/*  88 */     this.targetRef = targetRef;
+/*  89 */     this.startPosition = startPosition;
+/*  90 */     this.lifeTime = lifeTime;
+/*  91 */     this.originalLifeTime = lifeTime;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -96,18 +97,18 @@
 /*     */ 
 /*     */   
 /*     */   public PickupItemComponent(@Nonnull PickupItemComponent pickupItemComponent) {
-/*  99 */     this.targetRef = pickupItemComponent.targetRef;
-/* 100 */     this.lifeTime = pickupItemComponent.lifeTime;
-/* 101 */     this.startPosition = pickupItemComponent.startPosition;
-/* 102 */     this.originalLifeTime = pickupItemComponent.originalLifeTime;
-/* 103 */     this.finished = pickupItemComponent.finished;
+/* 100 */     this.targetRef = pickupItemComponent.targetRef;
+/* 101 */     this.lifeTime = pickupItemComponent.lifeTime;
+/* 102 */     this.startPosition = pickupItemComponent.startPosition;
+/* 103 */     this.originalLifeTime = pickupItemComponent.originalLifeTime;
+/* 104 */     this.finished = pickupItemComponent.finished;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean hasFinished() {
-/* 110 */     return this.finished;
+/* 111 */     return this.finished;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -116,7 +117,7 @@
 /*     */ 
 /*     */   
 /*     */   public void setFinished(boolean finished) {
-/* 119 */     this.finished = finished;
+/* 120 */     this.finished = finished;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -125,21 +126,21 @@
 /*     */ 
 /*     */   
 /*     */   public void decreaseLifetime(float amount) {
-/* 128 */     this.lifeTime -= amount;
+/* 129 */     this.lifeTime -= amount;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public float getLifeTime() {
-/* 135 */     return this.lifeTime;
+/* 136 */     return this.lifeTime;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public float getOriginalLifeTime() {
-/* 142 */     return this.originalLifeTime;
+/* 143 */     return this.originalLifeTime;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -148,8 +149,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setInitialLifeTime(float lifeTimeS) {
-/* 151 */     this.originalLifeTime = lifeTimeS;
-/* 152 */     this.lifeTime = lifeTimeS;
+/* 152 */     this.originalLifeTime = lifeTimeS;
+/* 153 */     this.lifeTime = lifeTimeS;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -157,28 +158,28 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3d getStartPosition() {
-/* 160 */     return this.startPosition;
+/* 161 */     return this.startPosition;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   @Nonnull
+/*     */   @Nullable
 /*     */   public Ref<EntityStore> getTargetRef() {
-/* 168 */     return this.targetRef;
+/* 169 */     return this.targetRef;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public PickupItemComponent clone() {
-/* 174 */     return new PickupItemComponent(this);
+/* 175 */     return new PickupItemComponent(this);
 /*     */   }
 /*     */   
 /*     */   public PickupItemComponent() {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\PickupItemComponent.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\PickupItemComponent.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

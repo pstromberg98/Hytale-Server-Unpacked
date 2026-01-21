@@ -144,18 +144,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
 /*     */   private static class WorldPathBuilderClearCommand
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 152 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED = Message.translation("server.universe.worldpath.pointsCleared");
+/* 155 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED = Message.translation("server.universe.worldpath.pointsCleared");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderClearCommand() {
-/* 158 */       super("clear", "server.commands.worldpath.builder.clear.desc");
+/* 161 */       super("clear", "server.commands.worldpath.builder.clear.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -164,11 +167,11 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 167 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
-/* 168 */       if (builder == null)
+/* 170 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
+/* 171 */       if (builder == null)
 /*     */         return; 
-/* 170 */       builder.getPath().getWaypoints().clear();
-/* 171 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED);
+/* 173 */       builder.getPath().getWaypoints().clear();
+/* 174 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -177,13 +180,13 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 180 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED = Message.translation("server.universe.worldpath.pointAdded");
+/* 183 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED = Message.translation("server.universe.worldpath.pointAdded");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderAddCommand() {
-/* 186 */       super("add", "server.commands.worldpath.builder.add.desc");
+/* 189 */       super("add", "server.commands.worldpath.builder.add.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -192,12 +195,12 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 195 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 196 */       assert transformComponent != null;
+/* 198 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 199 */       assert transformComponent != null;
 /*     */       
-/* 198 */       Transform transform = transformComponent.getTransform().clone();
-/* 199 */       WorldPathBuilderCommand.getOrCreateBuilder(ref, store).getPath().getWaypoints().add(transform);
-/* 200 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED);
+/* 201 */       Transform transform = transformComponent.getTransform().clone();
+/* 202 */       WorldPathBuilderCommand.getOrCreateBuilder(ref, store).getPath().getWaypoints().add(transform);
+/* 203 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -206,19 +209,19 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 209 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_SET = Message.translation("server.universe.worldpath.pointSet");
+/* 212 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_SET = Message.translation("server.universe.worldpath.pointSet");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 215 */     private final OptionalArg<Integer> indexArg = withOptionalArg("index", "server.commands.worldpath.builder.set.index.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 218 */     private final OptionalArg<Integer> indexArg = withOptionalArg("index", "server.commands.worldpath.builder.set.index.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderSetCommand() {
-/* 221 */       super("set", "server.commands.worldpath.builder.set.desc");
+/* 224 */       super("set", "server.commands.worldpath.builder.set.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -227,16 +230,16 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 230 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
-/* 231 */       if (builder == null)
+/* 233 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
+/* 234 */       if (builder == null)
 /*     */         return; 
-/* 233 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 234 */       assert transformComponent != null;
+/* 236 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 237 */       assert transformComponent != null;
 /*     */       
-/* 236 */       WorldPath worldPath = builder.getPath();
-/* 237 */       int index = this.indexArg.provided(context) ? ((Integer)this.indexArg.get(context)).intValue() : (worldPath.getWaypoints().size() - 1);
-/* 238 */       worldPath.getWaypoints().set(index, transformComponent.getTransform().clone());
-/* 239 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_SET);
+/* 239 */       WorldPath worldPath = builder.getPath();
+/* 240 */       int index = this.indexArg.provided(context) ? ((Integer)this.indexArg.get(context)).intValue() : (worldPath.getWaypoints().size() - 1);
+/* 241 */       worldPath.getWaypoints().set(index, transformComponent.getTransform().clone());
+/* 242 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_SET);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -249,13 +252,13 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 252 */     private final RequiredArg<Integer> indexArg = withRequiredArg("index", "server.commands.worldpath.builder.goto.index.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 255 */     private final RequiredArg<Integer> indexArg = withRequiredArg("index", "server.commands.worldpath.builder.goto.index.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderGotoCommand() {
-/* 258 */       super("goto", "server.commands.worldpath.builder.goto.desc");
+/* 261 */       super("goto", "server.commands.worldpath.builder.goto.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -264,14 +267,17 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 267 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
-/* 268 */       if (builder == null)
+/* 270 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
+/* 271 */       if (builder == null)
 /*     */         return; 
-/* 270 */       Integer index = (Integer)this.indexArg.get(context);
-/* 271 */       WorldPath worldPath = builder.getPath();
-/* 272 */       store.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(null, worldPath.getWaypoints().get(index.intValue())));
-/* 273 */       context.sendMessage(Message.translation("server.universe.worldpath.teleportedToPoint")
-/* 274 */           .param("index", index.intValue()));
+/* 273 */       Integer index = (Integer)this.indexArg.get(context);
+/* 274 */       WorldPath worldPath = builder.getPath();
+/* 275 */       Transform waypointTransform = worldPath.getWaypoints().get(index.intValue());
+/* 276 */       Teleport teleportComponent = Teleport.createForPlayer(null, waypointTransform);
+/*     */       
+/* 278 */       store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 279 */       context.sendMessage(Message.translation("server.universe.worldpath.teleportedToPoint")
+/* 280 */           .param("index", index.intValue()));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -284,13 +290,13 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 287 */     private final RequiredArg<Integer> indexArg = withRequiredArg("index", "server.commands.worldpath.builder.remove.index.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 293 */     private final RequiredArg<Integer> indexArg = withRequiredArg("index", "server.commands.worldpath.builder.remove.index.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderRemoveCommand() {
-/* 293 */       super("remove", "server.commands.worldpath.builder.remove.desc");
+/* 299 */       super("remove", "server.commands.worldpath.builder.remove.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -299,12 +305,12 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 302 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
-/* 303 */       if (builder == null)
+/* 308 */       WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
+/* 309 */       if (builder == null)
 /*     */         return; 
-/* 305 */       int index = ((Integer)this.indexArg.get(context)).intValue();
-/* 306 */       builder.getPath().getWaypoints().remove(index);
-/* 307 */       context.sendMessage(Message.translation("server.universe.worldpath.removedIndex").param("index", index));
+/* 311 */       int index = ((Integer)this.indexArg.get(context)).intValue();
+/* 312 */       builder.getPath().getWaypoints().remove(index);
+/* 313 */       context.sendMessage(Message.translation("server.universe.worldpath.removedIndex").param("index", index));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -313,21 +319,21 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 316 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_NO_POINTS_DEFINED = Message.translation("server.universe.worldpath.noPointsDefined");
+/* 322 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_NO_POINTS_DEFINED = Message.translation("server.universe.worldpath.noPointsDefined");
 /*     */     @Nonnull
-/* 318 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_SAVED = Message.translation("server.universe.worldpath.saved");
+/* 324 */     private static final Message MESSAGE_UNIVERSE_WORLD_PATH_SAVED = Message.translation("server.universe.worldpath.saved");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 324 */     private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.worldpath.builder.save.name.desc", (ArgumentType)ArgTypes.STRING);
+/* 330 */     private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.worldpath.builder.save.name.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public WorldPathBuilderSaveCommand() {
-/* 330 */       super("save", "server.commands.worldpath.builder.save.desc");
+/* 336 */       super("save", "server.commands.worldpath.builder.save.desc");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -336,20 +342,20 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 339 */       String name = (String)this.nameArg.get(context);
-/* 340 */       WorldPath path = WorldPathBuilderCommand.removeBuilder(ref, store);
+/* 345 */       String name = (String)this.nameArg.get(context);
+/* 346 */       WorldPath path = WorldPathBuilderCommand.removeBuilder(ref, store);
 /*     */       
-/* 342 */       if (path == null || path.getWaypoints().isEmpty()) {
-/* 343 */         context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_NO_POINTS_DEFINED);
+/* 348 */       if (path == null || path.getWaypoints().isEmpty()) {
+/* 349 */         context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_NO_POINTS_DEFINED);
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 347 */       WorldPathConfig worldPathConfig = world.getWorldPathConfig();
-/* 348 */       WorldPath worldPath = new WorldPath(name, path.getWaypoints());
-/* 349 */       worldPathConfig.putPath(worldPath);
-/* 350 */       worldPathConfig.save(world);
+/* 353 */       WorldPathConfig worldPathConfig = world.getWorldPathConfig();
+/* 354 */       WorldPath worldPath = new WorldPath(name, path.getWaypoints());
+/* 355 */       worldPathConfig.putPath(worldPath);
+/* 356 */       worldPathConfig.save(world);
 /*     */       
-/* 352 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_SAVED);
+/* 358 */       context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_SAVED);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -363,17 +369,17 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   private static WorldPathBuilder createBuilder(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nullable WorldPath existing) {
-/* 366 */     UUIDComponent uuidComponent = (UUIDComponent)store.getComponent(ref, UUIDComponent.getComponentType());
-/* 367 */     assert uuidComponent != null;
+/* 372 */     UUIDComponent uuidComponent = (UUIDComponent)store.getComponent(ref, UUIDComponent.getComponentType());
+/* 373 */     assert uuidComponent != null;
 /*     */     
-/* 369 */     String name = "Builder-" + String.valueOf(uuidComponent.getUuid());
-/* 370 */     WorldPathBuilder builder = new WorldPathBuilder();
-/* 371 */     if (existing == null) {
-/* 372 */       builder.setPath(new WorldPath(name, (List)new ObjectArrayList()));
+/* 375 */     String name = "Builder-" + String.valueOf(uuidComponent.getUuid());
+/* 376 */     WorldPathBuilder builder = new WorldPathBuilder();
+/* 377 */     if (existing == null) {
+/* 378 */       builder.setPath(new WorldPath(name, (List)new ObjectArrayList()));
 /*     */     } else {
-/* 374 */       builder.setPath(new WorldPath(name, (List)new ObjectArrayList(existing.getWaypoints())));
+/* 380 */       builder.setPath(new WorldPath(name, (List)new ObjectArrayList(existing.getWaypoints())));
 /*     */     } 
-/* 376 */     return builder;
+/* 382 */     return builder;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -385,7 +391,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private static WorldPathBuilder getBuilder(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-/* 388 */     return (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
+/* 394 */     return (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -397,10 +403,10 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   private static WorldPathBuilder getOrCreateBuilder(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-/* 400 */     WorldPathBuilder builder = (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
-/* 401 */     if (builder != null) return builder;
+/* 406 */     WorldPathBuilder builder = (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
+/* 407 */     if (builder != null) return builder;
 /*     */     
-/* 403 */     return putBuilder(ref, store, createBuilder(ref, store, (WorldPath)null));
+/* 409 */     return putBuilder(ref, store, createBuilder(ref, store, (WorldPath)null));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -412,13 +418,13 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private static WorldPath removeBuilder(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-/* 415 */     WorldPathBuilder worldPath = (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
-/* 416 */     if (worldPath != null) {
-/* 417 */       store.removeComponent(ref, WorldPathBuilder.getComponentType());
-/* 418 */       return worldPath.getPath();
+/* 421 */     WorldPathBuilder worldPath = (WorldPathBuilder)store.getComponent(ref, WorldPathBuilder.getComponentType());
+/* 422 */     if (worldPath != null) {
+/* 423 */       store.removeComponent(ref, WorldPathBuilder.getComponentType());
+/* 424 */       return worldPath.getPath();
 /*     */     } 
 /*     */     
-/* 421 */     return null;
+/* 427 */     return null;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -431,13 +437,13 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   private static WorldPathBuilder putBuilder(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull WorldPathBuilder builder) {
-/* 434 */     store.putComponent(ref, WorldPathBuilder.getComponentType(), (Component)builder);
-/* 435 */     return builder;
+/* 440 */     store.putComponent(ref, WorldPathBuilder.getComponentType(), (Component)builder);
+/* 441 */     return builder;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -13,12 +13,6 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -275,38 +269,38 @@
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 278 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
-/* 279 */         (Query)PlayerRef.getComponentType(), 
-/* 280 */         (Query)TransformComponent.getComponentType(), 
-/* 281 */         (Query)HeadRotation.getComponentType()
+/* 272 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
+/* 273 */         (Query)PlayerRef.getComponentType(), 
+/* 274 */         (Query)TransformComponent.getComponentType(), 
+/* 275 */         (Query)HeadRotation.getComponentType()
 /*     */       });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 287 */     return this.query;
+/* 281 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void tick(float dt, int index, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 292 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 286 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
 /*     */     
-/* 294 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/* 295 */     assert transformComponent != null;
-/* 296 */     Transform transform = transformComponent.getTransform();
+/* 288 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/* 289 */     assert transformComponent != null;
+/* 290 */     Transform transform = transformComponent.getTransform();
 /*     */     
-/* 298 */     HeadRotation headRotationComponent = (HeadRotation)archetypeChunk.getComponent(index, HeadRotation.getComponentType());
-/* 299 */     assert headRotationComponent != null;
-/* 300 */     Vector3f headRotation = headRotationComponent.getRotation();
+/* 292 */     HeadRotation headRotationComponent = (HeadRotation)archetypeChunk.getComponent(index, HeadRotation.getComponentType());
+/* 293 */     assert headRotationComponent != null;
+/* 294 */     Vector3f headRotation = headRotationComponent.getRotation();
 /*     */     
-/* 302 */     PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
-/* 303 */     assert playerRefComponent != null;
-/* 304 */     playerRefComponent.updatePosition(world, transform, headRotation);
+/* 296 */     PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
+/* 297 */     assert playerRefComponent != null;
+/* 298 */     playerRefComponent.updatePosition(world, transform, headRotation);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$UpdatePlayerRef.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$UpdatePlayerRef.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

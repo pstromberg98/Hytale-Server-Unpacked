@@ -13,7 +13,7 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import java.util.Set;
 /*    */ import java.util.UUID;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+/*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
 /*    */ 
@@ -22,62 +22,67 @@
 /*    */ public class OpSelfCommand
 /*    */   extends AbstractPlayerCommand
 /*    */ {
-/* 25 */   private static final Message MESSAGE_COMMANDS_OP_ADDED = Message.translation("server.commands.op.self.added");
-/* 26 */   private static final Message MESSAGE_COMMANDS_OP_REMOVED = Message.translation("server.commands.op.self.removed");
-/* 27 */   private static final Message MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS = Message.translation("server.commands.op.self.nonVanillaPermissions");
-/* 28 */   private static final Message MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ = Message.translation("server.commands.op.self.singleplayerOwnerReq");
-/* 29 */   private static final Message MESSAGE_COMMANDS_MULTIPLAYER_TIP = Message.translation("server.commands.op.self.multiplayerTip");
+/*    */   @Nonnull
+/* 26 */   private static final Message MESSAGE_COMMANDS_OP_ADDED = Message.translation("server.commands.op.self.added");
+/*    */   @Nonnull
+/* 28 */   private static final Message MESSAGE_COMMANDS_OP_REMOVED = Message.translation("server.commands.op.self.removed");
+/*    */   @Nonnull
+/* 30 */   private static final Message MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS = Message.translation("server.commands.op.self.nonVanillaPermissions");
+/*    */   @Nonnull
+/* 32 */   private static final Message MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ = Message.translation("server.commands.op.self.singleplayerOwnerReq");
+/*    */   @Nonnull
+/* 34 */   private static final Message MESSAGE_COMMANDS_MULTIPLAYER_TIP = Message.translation("server.commands.op.self.multiplayerTip");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public OpSelfCommand() {
-/* 35 */     super("self", "server.commands.op.self.desc");
+/* 40 */     super("self", "server.commands.op.self.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected boolean canGeneratePermission() {
-/* 40 */     return false;
+/* 45 */     return false;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   protected void execute(@NonNullDecl CommandContext context, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-/* 45 */     if (PermissionsModule.get().areProvidersTampered()) {
-/* 46 */       playerRef.sendMessage(MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS);
+/*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
+/* 50 */     if (PermissionsModule.get().areProvidersTampered()) {
+/* 51 */       playerRef.sendMessage(MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 50 */     if (Constants.SINGLEPLAYER && !SingleplayerModule.isOwner(playerRef)) {
-/* 51 */       playerRef.sendMessage(MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ);
+/* 55 */     if (Constants.SINGLEPLAYER && !SingleplayerModule.isOwner(playerRef)) {
+/* 56 */       playerRef.sendMessage(MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 55 */     if (!Constants.SINGLEPLAYER && !Constants.ALLOWS_SELF_OP_COMMAND) {
-/* 56 */       playerRef.sendMessage(MESSAGE_COMMANDS_MULTIPLAYER_TIP
-/* 57 */           .param("uuidCommand", "uuid")
-/* 58 */           .param("permissionFile", "permissions.json")
-/* 59 */           .param("launchArg", "--allow-op"));
+/* 60 */     if (!Constants.SINGLEPLAYER && !Constants.ALLOWS_SELF_OP_COMMAND) {
+/* 61 */       playerRef.sendMessage(MESSAGE_COMMANDS_MULTIPLAYER_TIP
+/* 62 */           .param("uuidCommand", "uuid")
+/* 63 */           .param("permissionFile", "permissions.json")
+/* 64 */           .param("launchArg", "--allow-op"));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 63 */     UUID uuid = playerRef.getUuid();
+/* 68 */     UUID uuid = playerRef.getUuid();
 /*    */     
-/* 65 */     PermissionsModule perms = PermissionsModule.get();
-/* 66 */     String opGroup = "OP";
-/* 67 */     Set<String> groups = perms.getGroupsForUser(uuid);
+/* 70 */     PermissionsModule perms = PermissionsModule.get();
+/* 71 */     String opGroup = "OP";
+/* 72 */     Set<String> groups = perms.getGroupsForUser(uuid);
 /*    */     
-/* 69 */     if (groups.contains("OP")) {
-/* 70 */       perms.removeUserFromGroup(uuid, "OP");
-/* 71 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED);
+/* 74 */     if (groups.contains("OP")) {
+/* 75 */       perms.removeUserFromGroup(uuid, "OP");
+/* 76 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED);
 /*    */     } else {
-/* 73 */       perms.addUserToGroup(uuid, "OP");
-/* 74 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED);
+/* 78 */       perms.addUserToGroup(uuid, "OP");
+/* 79 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED);
 /*    */     } 
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpSelfCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpSelfCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

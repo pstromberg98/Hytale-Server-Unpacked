@@ -7,8 +7,7 @@
 /*     */ import com.hypixel.hytale.server.npc.metadata.CapturedNPCMetadata;
 /*     */ import java.time.Instant;
 /*     */ import java.util.function.Supplier;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
-/*     */ 
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -501,13 +500,13 @@
 /*     */ {
 /*     */   public static final BuilderCodec<CoopResident> CODEC;
 /*     */   protected CapturedNPCMetadata metadata;
-/*     */   @NullableDecl
+/*     */   @Nullable
 /*     */   protected PersistentRef persistentRef;
 /*     */   protected boolean deployedToWorld;
 /*     */   protected Instant lastProduced;
 /*     */   
 /*     */   static {
-/* 510 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CoopResident.class, CoopResident::new).append(new KeyedCodec("Metadata", (Codec)CapturedNPCMetadata.CODEC), (coop, meta) -> coop.metadata = meta, coop -> coop.metadata).add()).append(new KeyedCodec("PersistentRef", (Codec)PersistentRef.CODEC), (coop, persistentRef) -> coop.persistentRef = persistentRef, coop -> coop.persistentRef).add()).append(new KeyedCodec("DeployedToWorld", (Codec)Codec.BOOLEAN), (coop, deployedToWorld) -> coop.deployedToWorld = deployedToWorld.booleanValue(), coop -> Boolean.valueOf(coop.deployedToWorld)).add()).append(new KeyedCodec("LastHarvested", (Codec)Codec.INSTANT), (coop, instant) -> coop.lastProduced = instant, coop -> coop.lastProduced).add()).build();
+/* 509 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CoopResident.class, CoopResident::new).append(new KeyedCodec("Metadata", (Codec)CapturedNPCMetadata.CODEC), (coop, meta) -> coop.metadata = meta, coop -> coop.metadata).add()).append(new KeyedCodec("PersistentRef", (Codec)PersistentRef.CODEC), (coop, persistentRef) -> coop.persistentRef = persistentRef, coop -> coop.persistentRef).add()).append(new KeyedCodec("DeployedToWorld", (Codec)Codec.BOOLEAN), (coop, deployedToWorld) -> coop.deployedToWorld = deployedToWorld.booleanValue(), coop -> Boolean.valueOf(coop.deployedToWorld)).add()).append(new KeyedCodec("LastHarvested", (Codec)Codec.INSTANT), (coop, instant) -> coop.lastProduced = instant, coop -> coop.lastProduced).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -520,39 +519,39 @@
 /*     */ 
 /*     */   
 /*     */   public CoopResident(CapturedNPCMetadata metadata, PersistentRef persistentRef, Instant lastProduced) {
-/* 523 */     this.metadata = metadata;
-/* 524 */     this.persistentRef = persistentRef;
-/* 525 */     this.lastProduced = lastProduced;
+/* 522 */     this.metadata = metadata;
+/* 523 */     this.persistentRef = persistentRef;
+/* 524 */     this.lastProduced = lastProduced;
 /*     */   }
 /*     */   
 /*     */   public CapturedNPCMetadata getMetadata() {
-/* 529 */     return this.metadata;
+/* 528 */     return this.metadata;
 /*     */   }
 /*     */   
-/*     */   @NullableDecl
+/*     */   @Nullable
 /*     */   public PersistentRef getPersistentRef() {
-/* 534 */     return this.persistentRef;
+/* 533 */     return this.persistentRef;
 /*     */   }
 /*     */   
-/*     */   public void setPersistentRef(@NullableDecl PersistentRef persistentRef) {
-/* 538 */     this.persistentRef = persistentRef;
+/*     */   public void setPersistentRef(@Nullable PersistentRef persistentRef) {
+/* 537 */     this.persistentRef = persistentRef;
 /*     */   }
 /*     */   public boolean getDeployedToWorld() {
-/* 541 */     return this.deployedToWorld;
+/* 540 */     return this.deployedToWorld;
 /*     */   } public void setDeployedToWorld(boolean deployedToWorld) {
-/* 543 */     this.deployedToWorld = deployedToWorld;
+/* 542 */     this.deployedToWorld = deployedToWorld;
 /*     */   }
 /*     */   public Instant getLastProduced() {
-/* 546 */     return this.lastProduced;
+/* 545 */     return this.lastProduced;
 /*     */   }
 /*     */   
 /*     */   public void setLastProduced(Instant lastProduced) {
-/* 550 */     this.lastProduced = lastProduced;
+/* 549 */     this.lastProduced = lastProduced;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\states\CoopBlock$CoopResident.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\states\CoopBlock$CoopResident.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

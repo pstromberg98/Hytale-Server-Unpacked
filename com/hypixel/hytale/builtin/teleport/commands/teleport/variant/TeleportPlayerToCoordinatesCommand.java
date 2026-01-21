@@ -106,7 +106,6 @@
 /*     */     
 /* 107 */     targetWorld.execute(() -> {
 /*     */           TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/*     */ 
 /*     */           
 /*     */           assert transformComponent != null;
 /*     */           
@@ -138,7 +137,7 @@
 /*     */           
 /*     */           float roll = this.rollArg.provided(context) ? (((RelativeFloat)this.rollArg.get(context)).resolve(previousHeadRotation.getRoll() * 57.295776F) * 0.017453292F) : Float.NaN;
 /*     */           
-/*     */           Teleport teleport = (new Teleport(new Vector3d(x, y, z), new Vector3f(previousBodyRotation.getPitch(), yaw, previousBodyRotation.getRoll()))).withHeadRotation(new Vector3f(pitch, yaw, roll));
+/*     */           Teleport teleport = Teleport.createExact(new Vector3d(x, y, z), new Vector3f(previousBodyRotation.getPitch(), yaw, previousBodyRotation.getRoll()), new Vector3f(pitch, yaw, roll));
 /*     */           
 /*     */           store.addComponent(ref, Teleport.getComponentType(), (Component)teleport);
 /*     */           
@@ -148,7 +147,7 @@
 /*     */             ((TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType())).append(targetWorld, previousPos, previousHeadRotation, String.format("Teleport to (%s, %s, %s)", new Object[] { Double.valueOf(x), Double.valueOf(y), Double.valueOf(z) }));
 /*     */           }
 /*     */           
-/* 151 */           boolean hasRotation = (this.yawArg.provided(context) || this.pitchArg.provided(context) || this.rollArg.provided(context));
+/* 150 */           boolean hasRotation = (this.yawArg.provided(context) || this.pitchArg.provided(context) || this.rollArg.provided(context));
 /*     */           if (hasRotation) {
 /*     */             float displayYaw = Float.isNaN(yaw) ? (previousHeadRotation.getYaw() * 57.295776F) : (yaw * 57.295776F);
 /*     */             float displayPitch = Float.isNaN(pitch) ? (previousHeadRotation.getPitch() * 57.295776F) : (pitch * 57.295776F);
@@ -162,7 +161,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\variant\TeleportPlayerToCoordinatesCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\variant\TeleportPlayerToCoordinatesCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

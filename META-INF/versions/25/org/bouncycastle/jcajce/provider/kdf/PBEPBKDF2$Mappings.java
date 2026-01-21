@@ -29,7 +29,7 @@ public class Mappings extends AlgorithmProvider {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\25\org\bouncycastle\jcajce\provider\kdf\PBEPBKDF2$Mappings.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\25\org\bouncycastle\jcajce\provider\kdf\PBEPBKDF2$Mappings.class
  * Java compiler version: 25 (69.0)
  * JD-Core Version:       1.1.3
  */

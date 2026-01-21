@@ -267,7 +267,7 @@ public class Base32Encoder implements Encoder {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastl\\util\encoders\Base32Encoder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastl\\util\encoders\Base32Encoder.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

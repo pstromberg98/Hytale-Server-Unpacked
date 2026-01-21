@@ -183,7 +183,7 @@ public class BCGOST3410PrivateKey implements GOST3410PrivateKey, PKCS12BagAttrib
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\gost\BCGOST3410PrivateKey.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetric\gost\BCGOST3410PrivateKey.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 @interface NotNullByDefault {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\io\netty\handler\codec\http3\NotNullByDefault.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\io\netty\handler\codec\http3\NotNullByDefault.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

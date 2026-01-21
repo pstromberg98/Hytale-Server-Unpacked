@@ -20,7 +20,7 @@ public class HQCPrivateKeyParameters extends HQCKeyParameters {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\pqc\crypto\hqc\HQCPrivateKeyParameters.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\pqc\crypto\hqc\HQCPrivateKeyParameters.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

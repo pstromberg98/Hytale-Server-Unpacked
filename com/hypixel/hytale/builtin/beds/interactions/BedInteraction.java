@@ -1,7 +1,10 @@
 /*     */ package com.hypixel.hytale.builtin.beds.interactions;
+/*     */ import com.hypixel.hytale.builtin.beds.respawn.SelectOverrideRespawnPointPage;
+/*     */ import com.hypixel.hytale.builtin.beds.respawn.SetNameRespawnPointPage;
 /*     */ import com.hypixel.hytale.builtin.beds.sleep.components.PlayerSomnolence;
 /*     */ import com.hypixel.hytale.builtin.mounts.BlockMountAPI;
 /*     */ import com.hypixel.hytale.codec.builder.BuilderCodec;
+/*     */ import com.hypixel.hytale.component.AddReason;
 /*     */ import com.hypixel.hytale.component.CommandBuffer;
 /*     */ import com.hypixel.hytale.component.Component;
 /*     */ import com.hypixel.hytale.component.Holder;
@@ -33,88 +36,94 @@
 /*     */ import java.util.UUID;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 /*     */ 
 /*     */ public class BedInteraction extends SimpleBlockInteraction {
-/*  40 */   public static final BuilderCodec<BedInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(BedInteraction.class, BedInteraction::new, SimpleBlockInteraction.CODEC)
-/*  41 */     .documentation("Interact with a bed block, ostensibly to sleep in it."))
-/*  42 */     .build();
+/*     */   @Nonnull
+/*  42 */   private static final Message MESSAGE_SERVER_CUSTOM_UI_RESPAWN_POINT_CLAIMED = Message.translation("server.customUI.respawnPointClaimed");
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */   
-/*     */   protected void interactWithBlock(@NonNullDecl World world, @NonNullDecl CommandBuffer<EntityStore> commandBuffer, @NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NullableDecl ItemStack itemInHand, @NonNullDecl Vector3i pos, @NonNullDecl CooldownHandler cooldownHandler) {
-/*  46 */     Ref<EntityStore> ref = context.getEntity();
+/*     */   @Nonnull
+/*  48 */   public static final BuilderCodec<BedInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(BedInteraction.class, BedInteraction::new, SimpleBlockInteraction.CODEC)
+/*  49 */     .documentation("Interact with a bed block, ostensibly to sleep in it."))
+/*  50 */     .build();
+/*     */ 
+/*     */   
+/*     */   protected void interactWithBlock(@Nonnull World world, @Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull Vector3i pos, @Nonnull CooldownHandler cooldownHandler) {
+/*  54 */     Ref<EntityStore> ref = context.getEntity();
 /*     */     
-/*  48 */     Player player = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
-/*  49 */     if (player == null)
+/*  56 */     Player player = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
+/*  57 */     if (player == null)
 /*     */       return; 
-/*  51 */     Store<EntityStore> store = commandBuffer.getStore();
+/*  59 */     Store<EntityStore> store = commandBuffer.getStore();
 /*     */     
-/*  53 */     PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(ref, PlayerRef.getComponentType());
-/*  54 */     assert playerRefComponent != null;
+/*  61 */     PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+/*  62 */     assert playerRefComponent != null;
 /*     */     
-/*  56 */     UUIDComponent playerUuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
-/*  57 */     assert playerUuidComponent != null;
+/*  64 */     UUIDComponent playerUuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+/*  65 */     assert playerUuidComponent != null;
 /*     */     
-/*  59 */     UUID playerUuid = playerUuidComponent.getUuid();
+/*  67 */     UUID playerUuid = playerUuidComponent.getUuid();
 /*     */     
-/*  61 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(ChunkUtil.indexChunkFromBlock(pos.x, pos.z));
-/*  62 */     if (chunkReference == null)
+/*  69 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(ChunkUtil.indexChunkFromBlock(pos.x, pos.z));
+/*  70 */     if (chunkReference == null)
 /*     */       return; 
-/*  64 */     Store<ChunkStore> chunkStore = chunkReference.getStore();
-/*  65 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
-/*  66 */     assert blockComponentChunk != null;
+/*  72 */     Store<ChunkStore> chunkStore = chunkReference.getStore();
+/*  73 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
+/*  74 */     assert blockComponentChunk != null;
 /*     */     
-/*  68 */     int blockIndex = ChunkUtil.indexBlockInColumn(pos.x, pos.y, pos.z);
-/*  69 */     Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockIndex);
-/*  70 */     if (blockRef == null) {
-/*  71 */       Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
-/*  72 */       holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(blockIndex, chunkReference));
-/*  73 */       holder.ensureComponent(RespawnBlock.getComponentType());
-/*  74 */       blockRef = chunkStore.addEntity(holder, AddReason.SPAWN);
+/*  76 */     int blockIndex = ChunkUtil.indexBlockInColumn(pos.x, pos.y, pos.z);
+/*  77 */     Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockIndex);
+/*  78 */     if (blockRef == null) {
+/*  79 */       Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
+/*  80 */       holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(blockIndex, chunkReference));
+/*  81 */       holder.ensureComponent(RespawnBlock.getComponentType());
+/*  82 */       blockRef = chunkStore.addEntity(holder, AddReason.SPAWN);
 /*     */     } 
 /*     */     
-/*  77 */     RespawnBlock respawnBlock = (RespawnBlock)chunkStore.getComponent(blockRef, RespawnBlock.getComponentType());
-/*  78 */     if (respawnBlock == null)
+/*  85 */     RespawnBlock respawnBlockComponent = (RespawnBlock)chunkStore.getComponent(blockRef, RespawnBlock.getComponentType());
+/*  86 */     if (respawnBlockComponent == null)
 /*     */       return; 
-/*  80 */     UUID ownerUUID = respawnBlock.getOwnerUUID();
-/*  81 */     PageManager pageManager = player.getPageManager();
+/*  88 */     UUID ownerUUID = respawnBlockComponent.getOwnerUUID();
+/*  89 */     PageManager pageManager = player.getPageManager();
 /*     */     
-/*  83 */     boolean isOwner = playerUuid.equals(ownerUUID);
-/*  84 */     if (isOwner) {
-/*  85 */       BlockPosition rawTarget = (BlockPosition)context.getMetaStore().getMetaObject(TARGET_BLOCK_RAW);
-/*  86 */       Vector3f whereWasHit = new Vector3f(rawTarget.x + 0.5F, rawTarget.y + 0.5F, rawTarget.z + 0.5F);
-/*  87 */       BlockMountAPI.BlockMountResult result = BlockMountAPI.mountOnBlock(ref, commandBuffer, pos, whereWasHit);
-/*  88 */       if (result instanceof BlockMountAPI.DidNotMount) {
-/*  89 */         player.sendMessage(Message.translation("server.interactions.didNotMount").param("state", result.toString()));
-/*  90 */       } else if (result instanceof BlockMountAPI.Mounted) {
-/*  91 */         commandBuffer.putComponent(ref, PlayerSomnolence.getComponentType(), (Component)PlayerSleep.NoddingOff.createComponent());
+/*  91 */     boolean isOwner = playerUuid.equals(ownerUUID);
+/*  92 */     if (isOwner) {
+/*  93 */       BlockPosition rawTarget = (BlockPosition)context.getMetaStore().getMetaObject(TARGET_BLOCK_RAW);
+/*  94 */       Vector3f whereWasHit = new Vector3f(rawTarget.x + 0.5F, rawTarget.y + 0.5F, rawTarget.z + 0.5F);
+/*  95 */       BlockMountAPI.BlockMountResult result = BlockMountAPI.mountOnBlock(ref, commandBuffer, pos, whereWasHit);
+/*  96 */       if (result instanceof BlockMountAPI.DidNotMount) {
+/*  97 */         player.sendMessage(Message.translation("server.interactions.didNotMount")
+/*  98 */             .param("state", result.toString()));
+/*  99 */       } else if (result instanceof BlockMountAPI.Mounted) {
+/* 100 */         commandBuffer.putComponent(ref, PlayerSomnolence.getComponentType(), (Component)PlayerSleep.NoddingOff.createComponent());
 /*     */       } 
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  96 */     if (ownerUUID != null) {
+/* 105 */     if (ownerUUID != null) {
 /*     */       
-/*  98 */       player.sendMessage(Message.translation("server.customUI.respawnPointClaimed"));
+/* 107 */       player.sendMessage(MESSAGE_SERVER_CUSTOM_UI_RESPAWN_POINT_CLAIMED);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 102 */     PlayerRespawnPointData[] respawnPoints = player.getPlayerConfigData().getPerWorldData(world.getName()).getRespawnPoints();
-/* 103 */     RespawnConfig respawnConfig = world.getGameplayConfig().getRespawnConfig();
+/* 111 */     PlayerRespawnPointData[] respawnPoints = player.getPlayerConfigData().getPerWorldData(world.getName()).getRespawnPoints();
+/* 112 */     RespawnConfig respawnConfig = world.getGameplayConfig().getRespawnConfig();
 /*     */     
-/* 105 */     int radiusLimitRespawnPoint = respawnConfig.getRadiusLimitRespawnPoint();
-/* 106 */     PlayerRespawnPointData[] nearbyRespawnPoints = getNearbySavedRespawnPoints(pos, respawnBlock, respawnPoints, radiusLimitRespawnPoint);
-/* 107 */     if (nearbyRespawnPoints != null) {
-/* 108 */       pageManager.openCustomPage(ref, store, (CustomUIPage)new OverrideNearbyRespawnPointPage(playerRefComponent, type, pos, respawnBlock, nearbyRespawnPoints, radiusLimitRespawnPoint));
+/* 114 */     int radiusLimitRespawnPoint = respawnConfig.getRadiusLimitRespawnPoint();
+/* 115 */     PlayerRespawnPointData[] nearbyRespawnPoints = getNearbySavedRespawnPoints(pos, respawnBlockComponent, respawnPoints, radiusLimitRespawnPoint);
+/* 116 */     if (nearbyRespawnPoints != null) {
+/* 117 */       pageManager.openCustomPage(ref, store, (CustomUIPage)new OverrideNearbyRespawnPointPage(playerRefComponent, type, pos, respawnBlockComponent, nearbyRespawnPoints, radiusLimitRespawnPoint));
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 112 */     if (respawnPoints != null && respawnPoints.length >= respawnConfig.getMaxRespawnPointsPerPlayer()) {
-/* 113 */       pageManager.openCustomPage(ref, store, (CustomUIPage)new SelectOverrideRespawnPointPage(playerRefComponent, type, pos, respawnBlock, respawnPoints));
+/* 121 */     if (respawnPoints != null && respawnPoints.length >= respawnConfig.getMaxRespawnPointsPerPlayer()) {
+/* 122 */       pageManager.openCustomPage(ref, store, (CustomUIPage)new SelectOverrideRespawnPointPage(playerRefComponent, type, pos, respawnBlockComponent, respawnPoints));
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 117 */     pageManager.openCustomPage(ref, store, (CustomUIPage)new SetNameRespawnPointPage(playerRefComponent, type, pos, respawnBlock));
+/* 126 */     pageManager.openCustomPage(ref, store, (CustomUIPage)new SetNameRespawnPointPage(playerRefComponent, type, pos, respawnBlockComponent));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -125,7 +134,7 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   protected void simulateInteractWithBlock(@NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NullableDecl ItemStack itemInHand, @NonNullDecl World world, @NonNullDecl Vector3i targetBlock) {}
+/*     */   protected void simulateInteractWithBlock(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull World world, @Nonnull Vector3i targetBlock) {}
 /*     */ 
 /*     */ 
 /*     */ 
@@ -136,32 +145,32 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private PlayerRespawnPointData[] getNearbySavedRespawnPoints(@Nonnull Vector3i currentRespawnPointPosition, @Nonnull RespawnBlock respawnBlock, @Nullable PlayerRespawnPointData[] respawnPoints, int radiusLimitRespawnPoint) {
-/* 139 */     if (respawnPoints == null || respawnPoints.length == 0) return null;
+/* 148 */     if (respawnPoints == null || respawnPoints.length == 0) return null;
 /*     */     
-/* 141 */     ObjectArrayList<PlayerRespawnPointData> nearbyRespawnPointList = new ObjectArrayList();
+/* 150 */     ObjectArrayList<PlayerRespawnPointData> nearbyRespawnPointList = new ObjectArrayList();
 /*     */     
-/* 143 */     for (int i = 0; i < respawnPoints.length; i++) {
-/* 144 */       PlayerRespawnPointData respawnPoint = respawnPoints[i];
-/* 145 */       Vector3i respawnPointPosition = respawnPoint.getBlockPosition();
+/* 152 */     for (int i = 0; i < respawnPoints.length; i++) {
+/* 153 */       PlayerRespawnPointData respawnPoint = respawnPoints[i];
+/* 154 */       Vector3i respawnPointPosition = respawnPoint.getBlockPosition();
 /*     */ 
 /*     */       
-/* 148 */       if (respawnPointPosition.distanceTo(currentRespawnPointPosition.x, respawnPointPosition.y, currentRespawnPointPosition.z) < radiusLimitRespawnPoint) {
-/* 149 */         nearbyRespawnPointList.add(respawnPoint);
+/* 157 */       if (respawnPointPosition.distanceTo(currentRespawnPointPosition.x, respawnPointPosition.y, currentRespawnPointPosition.z) < radiusLimitRespawnPoint) {
+/* 158 */         nearbyRespawnPointList.add(respawnPoint);
 /*     */       }
 /*     */     } 
 /*     */     
-/* 153 */     return nearbyRespawnPointList.isEmpty() ? null : (PlayerRespawnPointData[])nearbyRespawnPointList.toArray(x$0 -> new PlayerRespawnPointData[x$0]);
+/* 162 */     return nearbyRespawnPointList.isEmpty() ? null : (PlayerRespawnPointData[])nearbyRespawnPointList.toArray(x$0 -> new PlayerRespawnPointData[x$0]);
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   @NonNullDecl
+/*     */   @Nonnull
 /*     */   public String toString() {
-/* 159 */     return "BedInteraction{} " + super.toString();
+/* 168 */     return "BedInteraction{} " + super.toString();
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\interactions\BedInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\interactions\BedInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

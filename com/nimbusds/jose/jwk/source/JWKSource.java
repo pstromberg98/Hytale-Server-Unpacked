@@ -10,7 +10,7 @@ public interface JWKSource<C extends com.nimbusds.jose.proc.SecurityContext> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\nimbusds\jose\jwk\source\JWKSource.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\nimbusds\jose\jwk\source\JWKSource.class
  * Java compiler version: 7 (51.0)
  * JD-Core Version:       1.1.3
  */

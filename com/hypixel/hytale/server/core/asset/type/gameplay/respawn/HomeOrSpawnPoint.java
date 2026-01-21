@@ -30,13 +30,14 @@
 /*    */ 
 /*    */   
 /*    */   public void respawnPlayer(@Nonnull World world, @Nonnull Ref<EntityStore> playerReference, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 33 */     Transform homePosition = Player.getRespawnPosition(playerReference, world.getName(), (ComponentAccessor)commandBuffer);
-/* 34 */     commandBuffer.addComponent(playerReference, Teleport.getComponentType(), (Component)new Teleport(null, homePosition));
+/* 33 */     Transform homeTransform = Player.getRespawnPosition(playerReference, world.getName(), (ComponentAccessor)commandBuffer);
+/* 34 */     Teleport teleportComponent = Teleport.createForPlayer(homeTransform);
+/* 35 */     commandBuffer.addComponent(playerReference, Teleport.getComponentType(), (Component)teleportComponent);
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\gameplay\respawn\HomeOrSpawnPoint.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\gameplay\respawn\HomeOrSpawnPoint.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

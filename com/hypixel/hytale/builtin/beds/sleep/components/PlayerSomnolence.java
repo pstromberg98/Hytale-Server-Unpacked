@@ -4,41 +4,42 @@
 /*    */ import com.hypixel.hytale.component.Component;
 /*    */ import com.hypixel.hytale.component.ComponentType;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nullable;
 /*    */ 
-/*    */ public class PlayerSomnolence implements Component<EntityStore> {
+/*    */ public class PlayerSomnolence
+/*    */   implements Component<EntityStore> {
 /*    */   public static ComponentType<EntityStore, PlayerSomnolence> getComponentType() {
-/* 11 */     return BedsPlugin.getInstance().getPlayerSomnolenceComponentType();
+/* 12 */     return BedsPlugin.getInstance().getPlayerSomnolenceComponentType();
 /*    */   }
 /*    */   
-/* 14 */   public static PlayerSomnolence AWAKE = new PlayerSomnolence(PlayerSleep.FullyAwake.INSTANCE);
+/* 15 */   public static PlayerSomnolence AWAKE = new PlayerSomnolence(PlayerSleep.FullyAwake.INSTANCE);
 /*    */   
-/* 16 */   private PlayerSleep state = PlayerSleep.FullyAwake.INSTANCE;
+/* 17 */   private PlayerSleep state = PlayerSleep.FullyAwake.INSTANCE;
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public PlayerSomnolence(PlayerSleep state) {
-/* 22 */     this.state = state;
+/* 23 */     this.state = state;
 /*    */   }
 /*    */   
 /*    */   public PlayerSleep getSleepState() {
-/* 26 */     return this.state;
+/* 27 */     return this.state;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   @NullableDecl
+/*    */   @Nullable
 /*    */   public Component<EntityStore> clone() {
-/* 32 */     PlayerSomnolence clone = new PlayerSomnolence();
-/* 33 */     clone.state = this.state;
-/* 34 */     return clone;
+/* 33 */     PlayerSomnolence clone = new PlayerSomnolence();
+/* 34 */     clone.state = this.state;
+/* 35 */     return clone;
 /*    */   }
 /*    */   
 /*    */   public PlayerSomnolence() {}
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\components\PlayerSomnolence.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\components\PlayerSomnolence.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

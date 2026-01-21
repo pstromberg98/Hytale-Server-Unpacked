@@ -19,7 +19,7 @@ public class JcaRespID extends RespID {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\cert\ocsp\jcajce\JcaRespID.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\cert\ocsp\jcajce\JcaRespID.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

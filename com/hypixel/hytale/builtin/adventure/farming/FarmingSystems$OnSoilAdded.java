@@ -38,46 +38,44 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class OnSoilAdded
 /*    */   extends RefSystem<ChunkStore>
 /*    */ {
-/* 46 */   private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
-/* 47 */         (Query)BlockModule.BlockStateInfo.getComponentType(), 
-/* 48 */         (Query)TilledSoilBlock.getComponentType()
+/* 44 */   private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
+/* 45 */         (Query)BlockModule.BlockStateInfo.getComponentType(), 
+/* 46 */         (Query)TilledSoilBlock.getComponentType()
 /*    */       });
 /*    */ 
 /*    */   
 /*    */   public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 53 */     TilledSoilBlock soil = (TilledSoilBlock)commandBuffer.getComponent(ref, TilledSoilBlock.getComponentType());
-/* 54 */     assert soil != null;
-/* 55 */     BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 56 */     assert info != null;
+/* 51 */     TilledSoilBlock soil = (TilledSoilBlock)commandBuffer.getComponent(ref, TilledSoilBlock.getComponentType());
+/* 52 */     assert soil != null;
+/* 53 */     BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 54 */     assert info != null;
 /*    */     
-/* 58 */     if (!soil.isPlanted()) {
-/* 59 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 60 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 61 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 56 */     if (!soil.isPlanted()) {
+/* 57 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 58 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 59 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*    */       
-/* 63 */       assert info.getChunkRef() != null;
-/* 64 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 65 */       assert blockChunk != null;
-/* 66 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/* 61 */       assert info.getChunkRef() != null;
+/* 62 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 63 */       assert blockChunk != null;
+/* 64 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*    */ 
 /*    */       
-/* 69 */       Instant decayTime = soil.getDecayTime();
-/* 70 */       if (decayTime == null) {
+/* 67 */       Instant decayTime = soil.getDecayTime();
+/* 68 */       if (decayTime == null) {
 /*    */ 
 /*    */         
-/* 73 */         BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
-/* 74 */         FarmingSystems.updateSoilDecayTime(commandBuffer, soil, blockType);
+/* 71 */         BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
+/* 72 */         FarmingSystems.updateSoilDecayTime(commandBuffer, soil, blockType);
 /*    */       } 
-/* 76 */       if (decayTime == null) {
+/* 74 */       if (decayTime == null) {
 /*    */         return;
 /*    */       }
 /*    */       
-/* 80 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
+/* 78 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
 /*    */     } 
 /*    */   }
 /*    */ 
@@ -89,12 +87,12 @@
 /*    */   
 /*    */   @Nullable
 /*    */   public Query<ChunkStore> getQuery() {
-/* 92 */     return QUERY;
+/* 90 */     return QUERY;
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$OnSoilAdded.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$OnSoilAdded.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

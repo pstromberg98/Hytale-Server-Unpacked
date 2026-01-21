@@ -19,7 +19,7 @@ public abstract class AssetPacketGenerator<K, T extends JsonAssetWithMap<K, M>, 
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\packet\AssetPacketGenerator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\packet\AssetPacketGenerator.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

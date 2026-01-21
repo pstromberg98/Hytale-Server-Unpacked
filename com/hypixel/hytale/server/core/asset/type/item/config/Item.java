@@ -1051,7 +1051,7 @@
 /* 1051 */       this.qualityIndex = itemQualityAssetMap.getIndexOrDefault(this.qualityId, 0);
 /*      */       
 /* 1053 */       ItemQuality itemQuality = (ItemQuality)itemQualityAssetMap.getAsset(this.qualityIndex);
-/* 1054 */       if (this.itemEntityConfig == null && itemQuality != null) {
+/* 1054 */       if (itemQuality != null) {
 /* 1055 */         this.itemEntityConfig = itemQuality.getItemEntityConfig();
 /*      */       }
 /*      */     } 
@@ -1108,7 +1108,7 @@
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\item\config\Item.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\item\config\Item.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -13,7 +13,7 @@ public interface PriorityQueue<T> extends Queue<T> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\io\nett\\util\internal\PriorityQueue.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\io\nett\\util\internal\PriorityQueue.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -146,28 +146,29 @@
 /* 146 */       playerRef.sendMessage(MESSAGE_COMMANDS_TELEPORT_WORLD_NOT_LOADED);
 /*     */     } else {
 /* 148 */       to.push(point);
-/* 149 */       store.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(targetWorld, point.position, point.rotation));
+/* 149 */       Teleport teleportComponent = Teleport.createForPlayer(targetWorld, point.position, point.rotation);
+/* 150 */       store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */ 
 /*     */       
-/* 152 */       Vector3d pos = point.position;
-/* 153 */       int remainingInDirection = from.size();
-/* 154 */       int totalInOtherDirection = to.size() - 1;
+/* 153 */       Vector3d pos = point.position;
+/* 154 */       int remainingInDirection = from.size();
+/* 155 */       int totalInOtherDirection = to.size() - 1;
 /*     */       
-/* 156 */       if (point.message != null && !point.message.isEmpty()) {
-/* 157 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_WAYPOINT : 
+/* 157 */       if (point.message != null && !point.message.isEmpty()) {
+/* 158 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_WAYPOINT : 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */             
-/* 163 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_WAYPOINT.param("name", point.message).param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
+/* 164 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_WAYPOINT.param("name", point.message).param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
 /*     */       } else {
-/* 165 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_COORDINATES : 
+/* 166 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_COORDINATES : 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */             
-/* 170 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_COORDINATES.param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
+/* 171 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_COORDINATES.param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
 /*     */       } 
 /*     */     } 
 /*     */   }
@@ -181,17 +182,17 @@
 /*     */ 
 /*     */   
 /*     */   public void append(@Nonnull World world, @Nonnull Vector3d pos, @Nonnull Vector3f rotation, @Nonnull String key) {
-/* 184 */     this.back.push(new Waypoint(world.getName(), pos, rotation, key));
-/* 185 */     this.forward.clear();
-/* 186 */     while (this.back.size() > 100) {
-/* 187 */       this.back.removeLast();
+/* 185 */     this.back.push(new Waypoint(world.getName(), pos, rotation, key));
+/* 186 */     this.forward.clear();
+/* 187 */     while (this.back.size() > 100) {
+/* 188 */       this.back.removeLast();
 /*     */     }
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 194 */     return "TeleportHistory{back=" + String.valueOf(this.back) + ", forward=" + String.valueOf(this.forward) + "}";
+/* 195 */     return "TeleportHistory{back=" + String.valueOf(this.back) + ", forward=" + String.valueOf(this.forward) + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -200,10 +201,10 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<EntityStore> clone() {
-/* 203 */     TeleportHistory cloned = new TeleportHistory();
-/* 204 */     cloned.back.addAll(this.back);
-/* 205 */     cloned.forward.addAll(this.forward);
-/* 206 */     return cloned;
+/* 204 */     TeleportHistory cloned = new TeleportHistory();
+/* 205 */     cloned.back.addAll(this.back);
+/* 206 */     cloned.forward.addAll(this.forward);
+/* 207 */     return cloned;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -240,22 +241,22 @@
 /*     */ 
 /*     */     
 /*     */     public Waypoint(@Nonnull String world, @Nonnull Vector3d position, @Nonnull Vector3f rotation, @Nonnull String message) {
-/* 243 */       this.world = world;
-/* 244 */       this.position = position;
-/* 245 */       this.rotation = rotation;
-/* 246 */       this.message = message;
+/* 244 */       this.world = world;
+/* 245 */       this.position = position;
+/* 246 */       this.rotation = rotation;
+/* 247 */       this.message = message;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public String toString() {
-/* 252 */       return "Waypoint{world='" + this.world + "', position=" + String.valueOf(this.position) + ", rotation=" + String.valueOf(this.rotation) + ", message='" + this.message + "'}";
+/* 253 */       return "Waypoint{world='" + this.world + "', position=" + String.valueOf(this.position) + ", rotation=" + String.valueOf(this.rotation) + ", message='" + this.message + "'}";
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\components\TeleportHistory.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\components\TeleportHistory.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -74,7 +74,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */   
 /*     */   public Warp() {}
 /*     */ 
@@ -98,63 +97,63 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public Warp(double locX, double locY, double locZ, float yaw, float pitch, float roll, String id, @Nonnull World world, String creator, Instant creationDate) {
-/* 102 */     this.id = id;
-/* 103 */     this.world = world.getName();
-/* 104 */     this.transform = new Transform(locX, locY, locZ, pitch, yaw, roll);
-/* 105 */     this.creator = creator;
-/* 106 */     this.creationDate = creationDate;
+/*     */   public Warp(@Nonnull Transform transform, @Nonnull String id, @Nonnull World world, @Nonnull String creator, @Nonnull Instant creationDate) {
+/* 101 */     this.id = id;
+/* 102 */     this.world = world.getName();
+/* 103 */     this.transform = transform;
+/* 104 */     this.creator = creator;
+/* 105 */     this.creationDate = creationDate;
 /*     */   }
 /*     */   
 /*     */   public String getId() {
-/* 110 */     return this.id;
+/* 109 */     return this.id;
 /*     */   }
 /*     */   
 /*     */   public String getWorld() {
-/* 114 */     return this.world;
+/* 113 */     return this.world;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public Transform getTransform() {
-/* 119 */     return this.transform;
+/* 118 */     return this.transform;
 /*     */   }
 /*     */   
 /*     */   public String getCreator() {
-/* 123 */     return this.creator;
+/* 122 */     return this.creator;
 /*     */   }
 /*     */   
 /*     */   public Instant getCreationDate() {
-/* 127 */     return this.creationDate;
+/* 126 */     return this.creationDate;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean equals(@Nullable Object o) {
-/* 132 */     if (this == o) return true; 
-/* 133 */     if (o == null || getClass() != o.getClass()) return false;
+/* 131 */     if (this == o) return true; 
+/* 132 */     if (o == null || getClass() != o.getClass()) return false;
 /*     */     
-/* 135 */     Warp warp = (Warp)o;
+/* 134 */     Warp warp = (Warp)o;
 /*     */     
-/* 137 */     if (!Objects.equals(this.id, warp.id)) return false; 
-/* 138 */     if (!Objects.equals(this.world, warp.world)) return false; 
-/* 139 */     if (!Objects.equals(this.transform, warp.transform)) return false; 
-/* 140 */     if (!Objects.equals(this.creator, warp.creator)) return false; 
-/* 141 */     return Objects.equals(this.creationDate, warp.creationDate);
+/* 136 */     if (!Objects.equals(this.id, warp.id)) return false; 
+/* 137 */     if (!Objects.equals(this.world, warp.world)) return false; 
+/* 138 */     if (!Objects.equals(this.transform, warp.transform)) return false; 
+/* 139 */     if (!Objects.equals(this.creator, warp.creator)) return false; 
+/* 140 */     return Objects.equals(this.creationDate, warp.creationDate);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 146 */     int result = (this.id != null) ? this.id.hashCode() : 0;
-/* 147 */     result = 31 * result + ((this.world != null) ? this.world.hashCode() : 0);
-/* 148 */     result = 31 * result + ((this.transform != null) ? this.transform.hashCode() : 0);
-/* 149 */     result = 31 * result + ((this.creator != null) ? this.creator.hashCode() : 0);
-/* 150 */     result = 31 * result + ((this.creationDate != null) ? this.creationDate.hashCode() : 0);
-/* 151 */     return result;
+/* 145 */     int result = (this.id != null) ? this.id.hashCode() : 0;
+/* 146 */     result = 31 * result + ((this.world != null) ? this.world.hashCode() : 0);
+/* 147 */     result = 31 * result + ((this.transform != null) ? this.transform.hashCode() : 0);
+/* 148 */     result = 31 * result + ((this.creator != null) ? this.creator.hashCode() : 0);
+/* 149 */     result = 31 * result + ((this.creationDate != null) ? this.creationDate.hashCode() : 0);
+/* 150 */     return result;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 157 */     return "Warp{id='" + this.id + "', transform=" + String.valueOf(this.transform) + ", creator='" + this.creator + "', creationDate=" + String.valueOf(this.creationDate) + "}";
+/* 156 */     return "Warp{id='" + this.id + "', transform=" + String.valueOf(this.transform) + ", creator='" + this.creator + "', creationDate=" + String.valueOf(this.creationDate) + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -169,14 +168,14 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public Teleport toTeleport() {
-/* 172 */     World worldInstance = Universe.get().getWorld(this.world);
-/* 173 */     if (worldInstance == null) return null; 
-/* 174 */     return new Teleport(worldInstance, this.transform);
+/* 171 */     World worldInstance = Universe.get().getWorld(this.world);
+/* 172 */     if (worldInstance == null) return null; 
+/* 173 */     return Teleport.createForPlayer(worldInstance, this.transform);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\Warp.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\Warp.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -197,7 +197,7 @@ public class SignatureSpi extends SignatureSpi {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\15\org\bouncycastle\jcajce\provider\asymmetric\edec\SignatureSpi.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\15\org\bouncycastle\jcajce\provider\asymmetric\edec\SignatureSpi.class
  * Java compiler version: 15 (59.0)
  * JD-Core Version:       1.1.3
  */

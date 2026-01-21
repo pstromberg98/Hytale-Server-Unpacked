@@ -40,53 +40,45 @@
 /*     */ import java.util.List;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ public class StructuralCraftingWindow
-/*     */   extends CraftingWindow
-/*     */   implements ItemContainerWindow
-/*     */ {
+/*     */ public class StructuralCraftingWindow extends CraftingWindow implements ItemContainerWindow {
 /*     */   private static final int MAX_OPTIONS = 64;
 /*     */   private final SimpleItemContainer inputContainer;
+/*  47 */   private final Int2ObjectMap<String> optionSlotToRecipeMap = (Int2ObjectMap<String>)new Int2ObjectOpenHashMap();
 /*     */   private final SimpleItemContainer optionsContainer;
 /*     */   private final CombinedItemContainer combinedItemContainer;
-/*  55 */   private final Int2ObjectMap<String> optionSlotToRecipeMap = (Int2ObjectMap<String>)new Int2ObjectOpenHashMap();
-/*     */   
 /*     */   private int selectedSlot;
-/*     */   
 /*     */   @Nullable
 /*     */   private EventRegistration inventoryRegistration;
 /*     */   
 /*     */   public StructuralCraftingWindow(BenchState benchState) {
-/*  63 */     super(WindowType.StructuralCrafting, benchState);
+/*  55 */     super(WindowType.StructuralCrafting, benchState);
 /*     */     
-/*  65 */     this.inputContainer = new SimpleItemContainer((short)1);
-/*  66 */     this.inputContainer.registerChangeEvent(e -> updateRecipes());
-/*  67 */     this.inputContainer.setSlotFilter(FilterActionType.ADD, (short)0, this::isValidInput);
+/*  57 */     this.inputContainer = new SimpleItemContainer((short)1);
+/*  58 */     this.inputContainer.registerChangeEvent(e -> updateRecipes());
+/*  59 */     this.inputContainer.setSlotFilter(FilterActionType.ADD, (short)0, this::isValidInput);
 /*     */     
-/*  69 */     this.optionsContainer = new SimpleItemContainer((short)64);
-/*  70 */     this.optionsContainer.setGlobalFilter(FilterType.DENY_ALL);
+/*  61 */     this.optionsContainer = new SimpleItemContainer((short)64);
+/*  62 */     this.optionsContainer.setGlobalFilter(FilterType.DENY_ALL);
 /*     */     
-/*  72 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.inputContainer, (ItemContainer)this.optionsContainer });
-/*  73 */     this.windowData.addProperty("selected", Integer.valueOf(this.selectedSlot));
+/*  64 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.inputContainer, (ItemContainer)this.optionsContainer });
+/*  65 */     this.windowData.addProperty("selected", Integer.valueOf(this.selectedSlot));
 /*     */     
-/*  75 */     StructuralCraftingBench structuralBench = (StructuralCraftingBench)this.bench;
-/*  76 */     this.windowData.addProperty("allowBlockGroupCycling", Boolean.valueOf(structuralBench.shouldAllowBlockGroupCycling()));
-/*  77 */     this.windowData.addProperty("alwaysShowInventoryHints", Boolean.valueOf(structuralBench.shouldAlwaysShowInventoryHints()));
+/*  67 */     StructuralCraftingBench structuralBench = (StructuralCraftingBench)this.bench;
+/*  68 */     this.windowData.addProperty("allowBlockGroupCycling", Boolean.valueOf(structuralBench.shouldAllowBlockGroupCycling()));
+/*  69 */     this.windowData.addProperty("alwaysShowInventoryHints", Boolean.valueOf(structuralBench.shouldAlwaysShowInventoryHints()));
 /*     */   }
 /*     */   
 /*     */   private boolean isValidInput(FilterActionType filterActionType, ItemContainer itemContainer, short i, ItemStack itemStack) {
-/*  81 */     if (filterActionType != FilterActionType.ADD) return true;
+/*  73 */     if (filterActionType != FilterActionType.ADD) return true;
 /*     */     
-/*  83 */     ObjectList<CraftingRecipe> matchingRecipes = getMatchingRecipes(itemStack);
+/*  75 */     ObjectList<CraftingRecipe> matchingRecipes = getMatchingRecipes(itemStack);
 /*     */     
-/*  85 */     return (matchingRecipes != null && !matchingRecipes.isEmpty());
+/*  77 */     return (matchingRecipes != null && !matchingRecipes.isEmpty());
 /*     */   }
 /*     */   
 /*     */   private static void sortRecipes(ObjectList<CraftingRecipe> matching, StructuralCraftingBench structuralBench) {
-/*  89 */     matching.sort((a, b) -> {
+/*  81 */     matching.sort((a, b) -> {
 /*     */           boolean aHasHeaderCategory = hasHeaderCategory(structuralBench, a);
 /*     */           boolean bHasHeaderCategory = hasHeaderCategory(structuralBench, b);
 /*     */           if (aHasHeaderCategory != bHasHeaderCategory) {
@@ -103,31 +95,31 @@
 /*     */ 
 /*     */   
 /*     */   private static boolean hasHeaderCategory(StructuralCraftingBench bench, CraftingRecipe recipe) {
-/* 106 */     for (BenchRequirement requirement : recipe.getBenchRequirement()) {
-/* 107 */       if (requirement.type == bench.getType() && requirement.id.equals(bench.getId()) && requirement.categories != null) {
-/* 108 */         for (String category : requirement.categories) {
-/* 109 */           if (bench.isHeaderCategory(category)) {
-/* 110 */             return true;
+/*  98 */     for (BenchRequirement requirement : recipe.getBenchRequirement()) {
+/*  99 */       if (requirement.type == bench.getType() && requirement.id.equals(bench.getId()) && requirement.categories != null) {
+/* 100 */         for (String category : requirement.categories) {
+/* 101 */           if (bench.isHeaderCategory(category)) {
+/* 102 */             return true;
 /*     */           }
 /*     */         } 
 /*     */       }
 /*     */     } 
-/* 115 */     return false;
+/* 107 */     return false;
 /*     */   }
 /*     */   
 /*     */   private static int getSortingPriority(StructuralCraftingBench bench, CraftingRecipe recipe) {
-/* 119 */     int priority = Integer.MAX_VALUE;
+/* 111 */     int priority = Integer.MAX_VALUE;
 /*     */     
-/* 121 */     for (BenchRequirement requirement : recipe.getBenchRequirement()) {
-/* 122 */       if (requirement.type == bench.getType() && requirement.id.equals(bench.getId()) && requirement.categories != null) {
-/* 123 */         for (String category : requirement.categories) {
-/* 124 */           priority = Math.min(priority, bench.getCategoryIndex(category));
+/* 113 */     for (BenchRequirement requirement : recipe.getBenchRequirement()) {
+/* 114 */       if (requirement.type == bench.getType() && requirement.id.equals(bench.getId()) && requirement.categories != null) {
+/* 115 */         for (String category : requirement.categories) {
+/* 116 */           priority = Math.min(priority, bench.getCategoryIndex(category));
 /*     */         }
 /*     */         
 /*     */         break;
 /*     */       } 
 /*     */     } 
-/* 130 */     return priority;
+/* 122 */     return priority;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -288,38 +280,38 @@
 /*     */     //   306: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #135	-> 0
-/*     */     //   #137	-> 13
-/*     */     //   #138	-> 60
-/*     */     //   #139	-> 67
-/*     */     //   #140	-> 85
-/*     */     //   #141	-> 94
-/*     */     //   #142	-> 100
-/*     */     //   #143	-> 116
-/*     */     //   #145	-> 120
-/*     */     //   #146	-> 123
-/*     */     //   #147	-> 130
-/*     */     //   #148	-> 144
-/*     */     //   #149	-> 149
-/*     */     //   #150	-> 156
-/*     */     //   #152	-> 174
-/*     */     //   #153	-> 179
-/*     */     //   #156	-> 180
-/*     */     //   #157	-> 193
-/*     */     //   #158	-> 198
-/*     */     //   #161	-> 199
-/*     */     //   #162	-> 206
-/*     */     //   #164	-> 213
-/*     */     //   #165	-> 218
-/*     */     //   #167	-> 231
-/*     */     //   #168	-> 236
-/*     */     //   #172	-> 244
-/*     */     //   #173	-> 265
-/*     */     //   #175	-> 269
-/*     */     //   #176	-> 272
-/*     */     //   #177	-> 279
-/*     */     //   #178	-> 292
-/*     */     //   #184	-> 306
+/*     */     //   #127	-> 0
+/*     */     //   #129	-> 13
+/*     */     //   #130	-> 60
+/*     */     //   #131	-> 67
+/*     */     //   #132	-> 85
+/*     */     //   #133	-> 94
+/*     */     //   #134	-> 100
+/*     */     //   #135	-> 116
+/*     */     //   #137	-> 120
+/*     */     //   #138	-> 123
+/*     */     //   #139	-> 130
+/*     */     //   #140	-> 144
+/*     */     //   #141	-> 149
+/*     */     //   #142	-> 156
+/*     */     //   #144	-> 174
+/*     */     //   #145	-> 179
+/*     */     //   #148	-> 180
+/*     */     //   #149	-> 193
+/*     */     //   #150	-> 198
+/*     */     //   #153	-> 199
+/*     */     //   #154	-> 206
+/*     */     //   #156	-> 213
+/*     */     //   #157	-> 218
+/*     */     //   #159	-> 231
+/*     */     //   #160	-> 236
+/*     */     //   #164	-> 244
+/*     */     //   #165	-> 265
+/*     */     //   #167	-> 269
+/*     */     //   #168	-> 272
+/*     */     //   #169	-> 279
+/*     */     //   #170	-> 292
+/*     */     //   #176	-> 306
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   85	35	8	newSlot	I
@@ -369,196 +361,196 @@
 /*     */ 
 /*     */   
 /*     */   private void playCraftSound(Ref<EntityStore> ref, Store<EntityStore> store, Item item) {
-/* 187 */     ItemSoundSet soundSet = (ItemSoundSet)ItemSoundSet.getAssetMap().getAsset(item.getItemSoundSetIndex());
-/* 188 */     if (soundSet == null)
+/* 179 */     ItemSoundSet soundSet = (ItemSoundSet)ItemSoundSet.getAssetMap().getAsset(item.getItemSoundSetIndex());
+/* 180 */     if (soundSet == null)
 /*     */       return; 
-/* 190 */     String dragSound = (String)soundSet.getSoundEventIds().get(ItemSoundEvent.Drop);
-/* 191 */     if (dragSound == null)
+/* 182 */     String dragSound = (String)soundSet.getSoundEventIds().get(ItemSoundEvent.Drop);
+/* 183 */     if (dragSound == null)
 /*     */       return; 
-/* 193 */     int dragSoundIndex = SoundEvent.getAssetMap().getIndex(dragSound);
-/* 194 */     if (dragSoundIndex == 0)
+/* 185 */     int dragSoundIndex = SoundEvent.getAssetMap().getIndex(dragSound);
+/* 186 */     if (dragSoundIndex == 0)
 /*     */       return; 
-/* 196 */     SoundUtil.playSoundEvent2d(ref, dragSoundIndex, SoundCategory.UI, (ComponentAccessor)store);
+/* 188 */     SoundUtil.playSoundEvent2d(ref, dragSoundIndex, SoundCategory.UI, (ComponentAccessor)store);
 /*     */   }
 /*     */   private void changeBlockType(@Nonnull Ref<EntityStore> ref, boolean down, @Nonnull Store<EntityStore> store) {
 /*     */     int newIndex;
-/* 200 */     ItemStack item = this.inputContainer.getItemStack((short)0);
-/* 201 */     if (item == null) {
+/* 192 */     ItemStack item = this.inputContainer.getItemStack((short)0);
+/* 193 */     if (item == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 205 */     BlockGroup set = BlockGroup.findItemGroup(item.getItem());
-/* 206 */     if (set == null) {
+/* 197 */     BlockGroup set = BlockGroup.findItemGroup(item.getItem());
+/* 198 */     if (set == null) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */     
-/* 211 */     int currentIndex = -1;
-/* 212 */     for (int i = 0; i < set.size(); i++) {
-/* 213 */       if (set.get(i).equals(item.getItem().getId())) {
-/* 214 */         currentIndex = i;
+/* 203 */     int currentIndex = -1;
+/* 204 */     for (int i = 0; i < set.size(); i++) {
+/* 205 */       if (set.get(i).equals(item.getItem().getId())) {
+/* 206 */         currentIndex = i;
 /*     */         
 /*     */         break;
 /*     */       } 
 /*     */     } 
-/* 219 */     if (currentIndex == -1) {
+/* 211 */     if (currentIndex == -1) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */     
-/* 225 */     if (down) {
-/* 226 */       newIndex = (currentIndex - 1 + set.size()) % set.size();
+/* 217 */     if (down) {
+/* 218 */       newIndex = (currentIndex - 1 + set.size()) % set.size();
 /*     */     } else {
-/* 228 */       newIndex = (currentIndex + 1) % set.size();
+/* 220 */       newIndex = (currentIndex + 1) % set.size();
 /*     */     } 
-/* 230 */     String next = set.get(newIndex);
-/* 231 */     Item desiredItem = (Item)Item.getAssetMap().getAsset(next);
+/* 222 */     String next = set.get(newIndex);
+/* 223 */     Item desiredItem = (Item)Item.getAssetMap().getAsset(next);
 /*     */     
-/* 233 */     if (desiredItem == null) {
+/* 225 */     if (desiredItem == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 237 */     this.inputContainer.replaceItemStackInSlot((short)0, item, new ItemStack(next, item.getQuantity()));
-/* 238 */     playCraftSound(ref, store, desiredItem);
+/* 229 */     this.inputContainer.replaceItemStackInSlot((short)0, item, new ItemStack(next, item.getQuantity()));
+/* 230 */     playCraftSound(ref, store, desiredItem);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public ItemContainer getItemContainer() {
-/* 244 */     return (ItemContainer)this.combinedItemContainer;
+/* 236 */     return (ItemContainer)this.combinedItemContainer;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean onOpen0() {
-/* 249 */     super.onOpen0();
+/* 241 */     super.onOpen0();
 /*     */     
-/* 251 */     PlayerRef playerRef = getPlayerRef();
-/* 252 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 253 */     Store<EntityStore> store = ref.getStore();
+/* 243 */     PlayerRef playerRef = getPlayerRef();
+/* 244 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 245 */     Store<EntityStore> store = ref.getStore();
 /*     */     
-/* 255 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/* 256 */     Inventory inventory = player.getInventory();
+/* 247 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 248 */     Inventory inventory = player.getInventory();
 /*     */     
-/* 258 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
+/* 250 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
 /*     */           this.windowData.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(CraftingPlugin.getBenchRecipes(this.bench), 0, (ItemContainer)inventory.getCombinedHotbarFirst()));
 /*     */           
 /*     */           invalidate();
 /*     */         });
-/* 263 */     this.windowData.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(CraftingPlugin.getBenchRecipes(this.bench), 0, (ItemContainer)inventory.getCombinedHotbarFirst()));
-/* 264 */     return true;
+/* 255 */     this.windowData.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(CraftingPlugin.getBenchRecipes(this.bench), 0, (ItemContainer)inventory.getCombinedHotbarFirst()));
+/* 256 */     return true;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onClose0() {
-/* 269 */     super.onClose0();
+/* 261 */     super.onClose0();
 /*     */     
-/* 271 */     PlayerRef playerRef = getPlayerRef();
-/* 272 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 273 */     Store<EntityStore> store = ref.getStore();
+/* 263 */     PlayerRef playerRef = getPlayerRef();
+/* 264 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 265 */     Store<EntityStore> store = ref.getStore();
 /*     */     
-/* 275 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/* 276 */     List<ItemStack> itemStacks = this.inputContainer.dropAllItemStacks();
-/* 277 */     SimpleItemContainer.addOrDropItemStacks((ComponentAccessor)store, ref, (ItemContainer)player.getInventory().getCombinedHotbarFirst(), itemStacks);
+/* 267 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 268 */     List<ItemStack> itemStacks = this.inputContainer.dropAllItemStacks();
+/* 269 */     SimpleItemContainer.addOrDropItemStacks((ComponentAccessor)store, ref, (ItemContainer)player.getInventory().getCombinedHotbarFirst(), itemStacks);
 /*     */     
-/* 279 */     CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
-/* 280 */     craftingManager.cancelAllCrafting(ref, (ComponentAccessor)store);
+/* 271 */     CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
+/* 272 */     craftingManager.cancelAllCrafting(ref, (ComponentAccessor)store);
 /*     */     
-/* 282 */     if (this.inventoryRegistration != null) {
-/* 283 */       this.inventoryRegistration.unregister();
-/* 284 */       this.inventoryRegistration = null;
+/* 274 */     if (this.inventoryRegistration != null) {
+/* 275 */       this.inventoryRegistration.unregister();
+/* 276 */       this.inventoryRegistration = null;
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private void updateRecipes() {
-/* 289 */     invalidate();
+/* 281 */     invalidate();
 /*     */     
-/* 291 */     this.optionsContainer.clear();
-/* 292 */     this.optionSlotToRecipeMap.clear();
+/* 283 */     this.optionsContainer.clear();
+/* 284 */     this.optionSlotToRecipeMap.clear();
 /*     */     
-/* 294 */     ItemStack inputStack = this.inputContainer.getItemStack((short)0);
-/* 295 */     ObjectList<CraftingRecipe> matchingRecipes = getMatchingRecipes(inputStack);
+/* 286 */     ItemStack inputStack = this.inputContainer.getItemStack((short)0);
+/* 287 */     ObjectList<CraftingRecipe> matchingRecipes = getMatchingRecipes(inputStack);
 /*     */     
-/* 297 */     if (matchingRecipes == null)
+/* 289 */     if (matchingRecipes == null)
 /*     */       return; 
-/* 299 */     StructuralCraftingBench structuralBench = (StructuralCraftingBench)this.bench;
-/* 300 */     sortRecipes(matchingRecipes, structuralBench);
+/* 291 */     StructuralCraftingBench structuralBench = (StructuralCraftingBench)this.bench;
+/* 292 */     sortRecipes(matchingRecipes, structuralBench);
 /*     */     
-/* 302 */     int dividerIndex = 0;
+/* 294 */     int dividerIndex = 0;
 /*     */     
-/* 304 */     while (dividerIndex < matchingRecipes.size()) {
-/* 305 */       CraftingRecipe recipe = (CraftingRecipe)matchingRecipes.get(dividerIndex);
-/* 306 */       if (!hasHeaderCategory(structuralBench, recipe)) {
+/* 296 */     while (dividerIndex < matchingRecipes.size()) {
+/* 297 */       CraftingRecipe recipe = (CraftingRecipe)matchingRecipes.get(dividerIndex);
+/* 298 */       if (!hasHeaderCategory(structuralBench, recipe)) {
 /*     */         break;
 /*     */       }
-/* 309 */       dividerIndex++;
+/* 301 */       dividerIndex++;
 /*     */     } 
 /*     */     
-/* 312 */     this.windowData.addProperty("dividerIndex", Integer.valueOf(dividerIndex));
+/* 304 */     this.windowData.addProperty("dividerIndex", Integer.valueOf(dividerIndex));
 /*     */     
-/* 314 */     this.optionsContainer.clear();
-/* 315 */     short index = 0;
+/* 306 */     this.optionsContainer.clear();
+/* 307 */     short index = 0;
 /*     */     
-/* 317 */     for (int i = 0, bound = matchingRecipes.size(); i < bound; i++) {
-/* 318 */       CraftingRecipe match = (CraftingRecipe)matchingRecipes.get(i);
-/* 319 */       for (BenchRequirement requirement : match.getBenchRequirement()) {
-/* 320 */         if (requirement.type == this.bench.getType() && requirement.id.equals(this.bench.getId())) {
+/* 309 */     for (int i = 0, bound = matchingRecipes.size(); i < bound; i++) {
+/* 310 */       CraftingRecipe match = (CraftingRecipe)matchingRecipes.get(i);
+/* 311 */       for (BenchRequirement requirement : match.getBenchRequirement()) {
+/* 312 */         if (requirement.type == this.bench.getType() && requirement.id.equals(this.bench.getId())) {
 /*     */ 
 /*     */ 
 /*     */           
-/* 324 */           List<ItemStack> output = CraftingManager.getOutputItemStacks(match);
-/* 325 */           this.optionsContainer.setItemStackForSlot(index, output.getFirst(), false);
-/* 326 */           this.optionSlotToRecipeMap.put(index, match.getId());
-/* 327 */           index = (short)(index + 1);
+/* 316 */           List<ItemStack> output = CraftingManager.getOutputItemStacks(match);
+/* 317 */           this.optionsContainer.setItemStackForSlot(index, output.getFirst(), false);
+/* 318 */           this.optionSlotToRecipeMap.put(index, match.getId());
+/* 319 */           index = (short)(index + 1);
 /*     */         } 
 /*     */       } 
 /*     */     } 
-/* 331 */     JsonArray optionSlotRecipes = new JsonArray();
-/* 332 */     for (int j = 0; j < this.optionsContainer.getCapacity(); j++) {
-/* 333 */       String recipeId = (String)this.optionSlotToRecipeMap.get(j);
-/* 334 */       if (recipeId != null) {
-/* 335 */         optionSlotRecipes.add(recipeId);
+/* 323 */     JsonArray optionSlotRecipes = new JsonArray();
+/* 324 */     for (int j = 0; j < this.optionsContainer.getCapacity(); j++) {
+/* 325 */       String recipeId = (String)this.optionSlotToRecipeMap.get(j);
+/* 326 */       if (recipeId != null) {
+/* 327 */         optionSlotRecipes.add(recipeId);
 /*     */       }
 /*     */     } 
 /*     */     
-/* 339 */     this.windowData.add("optionSlotRecipes", (JsonElement)optionSlotRecipes);
+/* 331 */     this.windowData.add("optionSlotRecipes", (JsonElement)optionSlotRecipes);
 /*     */   }
 /*     */   
-/*     */   @NullableDecl
+/*     */   @Nullable
 /*     */   private ObjectList<CraftingRecipe> getMatchingRecipes(@Nullable ItemStack inputStack) {
-/* 344 */     if (inputStack == null) {
-/* 345 */       return null;
+/* 336 */     if (inputStack == null) {
+/* 337 */       return null;
 /*     */     }
 /*     */     
-/* 348 */     List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
-/* 349 */     if (recipes.isEmpty()) {
-/* 350 */       return null;
+/* 340 */     List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
+/* 341 */     if (recipes.isEmpty()) {
+/* 342 */       return null;
 /*     */     }
 /*     */ 
 /*     */     
-/* 354 */     ObjectArrayList objectArrayList = new ObjectArrayList();
+/* 346 */     ObjectArrayList objectArrayList = new ObjectArrayList();
 /*     */     
-/* 356 */     for (int i = 0, bound = recipes.size(); i < bound; i++) {
-/* 357 */       CraftingRecipe recipe = recipes.get(i);
-/* 358 */       List<MaterialQuantity> inputMaterials = CraftingManager.getInputMaterials(recipe);
+/* 348 */     for (int i = 0, bound = recipes.size(); i < bound; i++) {
+/* 349 */       CraftingRecipe recipe = recipes.get(i);
+/* 350 */       List<MaterialQuantity> inputMaterials = CraftingManager.getInputMaterials(recipe);
 /*     */ 
 /*     */       
-/* 361 */       if (inputMaterials.size() == 1)
+/* 353 */       if (inputMaterials.size() == 1)
 /*     */       {
-/* 363 */         if (CraftingManager.matches(inputMaterials.getFirst(), inputStack)) {
-/* 364 */           objectArrayList.add(recipe);
+/* 355 */         if (CraftingManager.matches(inputMaterials.getFirst(), inputStack)) {
+/* 356 */           objectArrayList.add(recipe);
 /*     */         }
 /*     */       }
 /*     */     } 
-/* 368 */     if (objectArrayList.isEmpty()) {
-/* 369 */       return null;
+/* 360 */     if (objectArrayList.isEmpty()) {
+/* 361 */       return null;
 /*     */     }
-/* 371 */     return (ObjectList<CraftingRecipe>)objectArrayList;
+/* 363 */     return (ObjectList<CraftingRecipe>)objectArrayList;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\crafting\window\StructuralCraftingWindow.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\crafting\window\StructuralCraftingWindow.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

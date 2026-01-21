@@ -230,44 +230,38 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class ProcessPlayerInput
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 243 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
-/* 244 */         (Query)Player.getComponentType(), 
-/* 245 */         (Query)PlayerInput.getComponentType(), 
-/* 246 */         (Query)TransformComponent.getComponentType()
+/* 237 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
+/* 238 */         (Query)Player.getComponentType(), 
+/* 239 */         (Query)PlayerInput.getComponentType(), 
+/* 240 */         (Query)TransformComponent.getComponentType()
 /*     */       });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 252 */     return this.query;
+/* 246 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 257 */     PlayerInput playerInputComponent = (PlayerInput)archetypeChunk.getComponent(index, PlayerInput.getComponentType());
-/* 258 */     assert playerInputComponent != null;
+/* 251 */     PlayerInput playerInputComponent = (PlayerInput)archetypeChunk.getComponent(index, PlayerInput.getComponentType());
+/* 252 */     assert playerInputComponent != null;
 /*     */     
-/* 260 */     List<PlayerInput.InputUpdate> movementUpdateQueue = playerInputComponent.getMovementUpdateQueue();
-/* 261 */     for (PlayerInput.InputUpdate entry : movementUpdateQueue) {
-/* 262 */       entry.apply(commandBuffer, archetypeChunk, index);
+/* 254 */     List<PlayerInput.InputUpdate> movementUpdateQueue = playerInputComponent.getMovementUpdateQueue();
+/* 255 */     for (PlayerInput.InputUpdate entry : movementUpdateQueue) {
+/* 256 */       entry.apply(commandBuffer, archetypeChunk, index);
 /*     */     }
 /*     */     
-/* 265 */     movementUpdateQueue.clear();
+/* 259 */     movementUpdateQueue.clear();
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$ProcessPlayerInput.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$ProcessPlayerInput.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

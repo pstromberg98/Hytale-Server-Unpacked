@@ -23,8 +23,7 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -32,15 +31,15 @@
 /*     */   extends AbstractCommandCollection
 /*     */ {
 /*     */   @Nonnull
-/*  35 */   protected static final ArgumentType<CameraEffect> CAMERA_EFFECT_ARGUMENT_TYPE = (ArgumentType<CameraEffect>)new AssetArgumentType("CameraEffect", CameraEffect.class, "");
+/*  34 */   protected static final ArgumentType<CameraEffect> CAMERA_EFFECT_ARGUMENT_TYPE = (ArgumentType<CameraEffect>)new AssetArgumentType("CameraEffect", CameraEffect.class, "");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public CameraEffectCommand() {
-/*  41 */     super("camshake", "server.commands.camshake.desc");
-/*  42 */     addSubCommand((AbstractCommand)new DamageCommand());
-/*  43 */     addSubCommand((AbstractCommand)new DebugCommand());
+/*  40 */     super("camshake", "server.commands.camshake.desc");
+/*  41 */     addSubCommand((AbstractCommand)new DamageCommand());
+/*  42 */     addSubCommand((AbstractCommand)new DebugCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -52,56 +51,56 @@
 /*     */     extends AbstractTargetPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/*  55 */     protected static final ArgumentType<DamageCause> DAMAGE_CAUSE_ARGUMENT_TYPE = (ArgumentType<DamageCause>)new AssetArgumentType("DamageCause", DamageCause.class, "");
+/*  54 */     protected static final ArgumentType<DamageCause> DAMAGE_CAUSE_ARGUMENT_TYPE = (ArgumentType<DamageCause>)new AssetArgumentType("DamageCause", DamageCause.class, "");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/*  61 */     protected final OptionalArg<CameraEffect> effectArg = withOptionalArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
+/*  60 */     protected final OptionalArg<CameraEffect> effectArg = withOptionalArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/*  67 */     protected final RequiredArg<DamageCause> causeArg = withRequiredArg("cause", "server.commands.camshake.damage.cause.desc", DAMAGE_CAUSE_ARGUMENT_TYPE);
+/*  66 */     protected final RequiredArg<DamageCause> causeArg = withRequiredArg("cause", "server.commands.camshake.damage.cause.desc", DAMAGE_CAUSE_ARGUMENT_TYPE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/*  73 */     protected final RequiredArg<Float> damageArg = withRequiredArg("amount", "server.commands.camshake.damage.amount.desc", (ArgumentType)ArgTypes.FLOAT);
+/*  72 */     protected final RequiredArg<Float> damageArg = withRequiredArg("amount", "server.commands.camshake.damage.amount.desc", (ArgumentType)ArgTypes.FLOAT);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public DamageCommand() {
-/*  79 */       super("damage", "server.commands.camshake.damage.desc");
+/*  78 */       super("damage", "server.commands.camshake.damage.desc");
 /*     */     }
 /*     */ 
 /*     */     
-/*     */     protected void execute(@NonNullDecl CommandContext context, @NullableDecl Ref<EntityStore> sourceRef, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
-/*  84 */       DamageCause damageCause = (DamageCause)context.get((Argument)this.causeArg);
-/*  85 */       float damageAmount = ((Float)context.get((Argument)this.damageArg)).floatValue();
+/*     */     protected void execute(@Nonnull CommandContext context, @Nullable Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world, @Nonnull Store<EntityStore> store) {
+/*  83 */       DamageCause damageCause = (DamageCause)context.get((Argument)this.causeArg);
+/*  84 */       float damageAmount = ((Float)context.get((Argument)this.damageArg)).floatValue();
 /*     */       
-/*  87 */       Damage.CommandSource damageSource = new Damage.CommandSource(context.sender(), getName());
-/*  88 */       Damage damageEvent = new Damage((Damage.Source)damageSource, damageCause, damageAmount);
+/*  86 */       Damage.CommandSource damageSource = new Damage.CommandSource(context.sender(), getName());
+/*  87 */       Damage damageEvent = new Damage((Damage.Source)damageSource, damageCause, damageAmount);
 /*     */ 
 /*     */       
-/*  91 */       String cameraEffectId = "Default";
-/*  92 */       if (this.effectArg.provided(context)) {
-/*  93 */         cameraEffectId = ((CameraEffect)context.get((Argument)this.effectArg)).getId();
+/*  90 */       String cameraEffectId = "Default";
+/*  91 */       if (this.effectArg.provided(context)) {
+/*  92 */         cameraEffectId = ((CameraEffect)context.get((Argument)this.effectArg)).getId();
 /*     */         
-/*  95 */         Damage.CameraEffect damageEffect = new Damage.CameraEffect(CameraEffect.getAssetMap().getIndex(cameraEffectId));
-/*  96 */         damageEvent.getMetaStore().putMetaObject(Damage.CAMERA_EFFECT, damageEffect);
+/*  94 */         Damage.CameraEffect damageEffect = new Damage.CameraEffect(CameraEffect.getAssetMap().getIndex(cameraEffectId));
+/*  95 */         damageEvent.getMetaStore().putMetaObject(Damage.CAMERA_EFFECT, damageEffect);
 /*     */       } 
 /*     */       
-/*  99 */       DamageSystems.executeDamage(ref, (ComponentAccessor)store, damageEvent);
+/*  98 */       DamageSystems.executeDamage(ref, (ComponentAccessor)store, damageEvent);
 /*     */       
-/* 101 */       context.sendMessage(Message.translation("server.commands.camshake.damage.success")
-/* 102 */           .param("effect", cameraEffectId)
-/* 103 */           .param("cause", damageCause.getId())
-/* 104 */           .param("amount", damageAmount));
+/* 100 */       context.sendMessage(Message.translation("server.commands.camshake.damage.success")
+/* 101 */           .param("effect", cameraEffectId)
+/* 102 */           .param("cause", damageCause.getId())
+/* 103 */           .param("amount", damageAmount));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -115,40 +114,40 @@
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 118 */     protected final RequiredArg<CameraEffect> effectArg = withRequiredArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
+/* 117 */     protected final RequiredArg<CameraEffect> effectArg = withRequiredArg("effect", "server.commands.camshake.effect.desc", CameraEffectCommand.CAMERA_EFFECT_ARGUMENT_TYPE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 124 */     protected final RequiredArg<Float> intensityArg = withRequiredArg("intensity", "server.commands.camshake.debug.intensity.desc", (ArgumentType)ArgTypes.FLOAT);
+/* 123 */     protected final RequiredArg<Float> intensityArg = withRequiredArg("intensity", "server.commands.camshake.debug.intensity.desc", (ArgumentType)ArgTypes.FLOAT);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public DebugCommand() {
-/* 130 */       super("debug", "server.commands.camshake.debug.desc");
+/* 129 */       super("debug", "server.commands.camshake.debug.desc");
 /*     */     }
 /*     */ 
 /*     */     
-/*     */     protected void execute(@NonNullDecl CommandContext context, @NullableDecl Ref<EntityStore> sourceRef, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
-/* 135 */       CameraEffect cameraEffect = (CameraEffect)context.get((Argument)this.effectArg);
-/* 136 */       float intensity = ((Float)context.get((Argument)this.intensityArg)).floatValue();
+/*     */     protected void execute(@Nonnull CommandContext context, @Nullable Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world, @Nonnull Store<EntityStore> store) {
+/* 134 */       CameraEffect cameraEffect = (CameraEffect)context.get((Argument)this.effectArg);
+/* 135 */       float intensity = ((Float)context.get((Argument)this.intensityArg)).floatValue();
 /*     */       
-/* 138 */       PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
-/* 139 */       assert playerRefComponent != null;
+/* 137 */       PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 138 */       assert playerRefComponent != null;
 /*     */       
-/* 141 */       playerRefComponent.getPacketHandler().writeNoCache((Packet)cameraEffect.createCameraShakePacket(intensity));
+/* 140 */       playerRefComponent.getPacketHandler().writeNoCache((Packet)cameraEffect.createCameraShakePacket(intensity));
 /*     */       
-/* 143 */       context.sendMessage(Message.translation("server.commands.camshake.debug.success")
-/* 144 */           .param("effect", cameraEffect.getId())
-/* 145 */           .param("intensity", intensity));
+/* 142 */       context.sendMessage(Message.translation("server.commands.camshake.debug.success")
+/* 143 */           .param("effect", cameraEffect.getId())
+/* 144 */           .param("intensity", intensity));
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\camera\command\CameraEffectCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\camera\command\CameraEffectCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

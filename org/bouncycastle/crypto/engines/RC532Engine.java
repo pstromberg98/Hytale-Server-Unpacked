@@ -122,7 +122,7 @@ public class RC532Engine implements BlockCipher {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\engines\RC532Engine.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\engines\RC532Engine.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

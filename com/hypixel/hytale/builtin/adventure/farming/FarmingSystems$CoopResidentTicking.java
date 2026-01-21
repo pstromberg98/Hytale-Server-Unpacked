@@ -9,7 +9,10 @@
 /*     */ import com.hypixel.hytale.component.query.Query;
 /*     */ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+/*     */ import javax.annotation.Nonnull;
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -549,27 +552,27 @@
 /*     */ public class CoopResidentTicking
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
-/* 552 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 555 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 556 */     return (Query)componentType;
+/* 559 */     return (Query)componentType;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void tick(float dt, int index, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 561 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
-/* 562 */     if (coopResidentComponent == null) {
+/*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 564 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
+/* 565 */     if (coopResidentComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 566 */     if (coopResidentComponent.getMarkedForDespawn())
-/* 567 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
+/* 569 */     if (coopResidentComponent.getMarkedForDespawn())
+/* 570 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$CoopResidentTicking.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$CoopResidentTicking.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

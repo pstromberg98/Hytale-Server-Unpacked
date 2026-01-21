@@ -226,21 +226,22 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
 /*      */   
 /*      */   private void givePrefabSelectorTool(@Nonnull Player playerComponent, @Nonnull PlayerRef playerRef) {
-/*  231 */     Inventory inventory = playerComponent.getInventory();
-/*  232 */     ItemContainer hotbar = inventory.getHotbar();
+/*  232 */     Inventory inventory = playerComponent.getInventory();
+/*  233 */     ItemContainer hotbar = inventory.getHotbar();
 /*      */     
-/*  234 */     int hotbarSize = hotbar.getCapacity();
+/*  235 */     int hotbarSize = hotbar.getCapacity();
 /*      */     
 /*      */     short slot;
-/*  237 */     for (slot = 0; slot < hotbarSize; slot = (short)(slot + 1)) {
-/*  238 */       ItemStack itemStack = hotbar.getItemStack(slot);
-/*  239 */       if (itemStack != null && !itemStack.isEmpty() && 
-/*  240 */         "EditorTool_PrefabEditing_SelectPrefab".equals(itemStack.getItemId())) {
+/*  238 */     for (slot = 0; slot < hotbarSize; slot = (short)(slot + 1)) {
+/*  239 */       ItemStack itemStack = hotbar.getItemStack(slot);
+/*  240 */       if (itemStack != null && !itemStack.isEmpty() && 
+/*  241 */         "EditorTool_PrefabEditing_SelectPrefab".equals(itemStack.getItemId())) {
 /*      */         
-/*  242 */         inventory.setActiveHotbarSlot((byte)slot);
-/*  243 */         playerRef.getPacketHandler().writeNoCache((Packet)new SetActiveSlot(-1, (byte)slot));
+/*  243 */         inventory.setActiveHotbarSlot((byte)slot);
+/*  244 */         playerRef.getPacketHandler().writeNoCache((Packet)new SetActiveSlot(-1, (byte)slot));
 /*      */ 
 /*      */         
 /*      */         return;
@@ -248,26 +249,26 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/*  251 */     short emptySlot = -1; short s1;
-/*  252 */     for (s1 = 0; s1 < hotbarSize; s1 = (short)(s1 + 1)) {
-/*  253 */       ItemStack itemStack = hotbar.getItemStack(s1);
-/*  254 */       if (itemStack == null || itemStack.isEmpty()) {
-/*  255 */         emptySlot = s1;
+/*  252 */     short emptySlot = -1; short s1;
+/*  253 */     for (s1 = 0; s1 < hotbarSize; s1 = (short)(s1 + 1)) {
+/*  254 */       ItemStack itemStack = hotbar.getItemStack(s1);
+/*  255 */       if (itemStack == null || itemStack.isEmpty()) {
+/*  256 */         emptySlot = s1;
 /*      */         
 /*      */         break;
 /*      */       } 
 /*      */     } 
-/*  260 */     if (emptySlot == -1)
+/*  261 */     if (emptySlot == -1)
 /*      */     {
-/*  262 */       emptySlot = 0;
+/*  263 */       emptySlot = 0;
 /*      */     }
 /*      */ 
 /*      */     
-/*  266 */     hotbar.setItemStackForSlot(emptySlot, new ItemStack("EditorTool_PrefabEditing_SelectPrefab"));
+/*  267 */     hotbar.setItemStackForSlot(emptySlot, new ItemStack("EditorTool_PrefabEditing_SelectPrefab"));
 /*      */ 
 /*      */     
-/*  269 */     inventory.setActiveHotbarSlot((byte)emptySlot);
-/*  270 */     playerRef.getPacketHandler().writeNoCache((Packet)new SetActiveSlot(-1, (byte)emptySlot));
+/*  270 */     inventory.setActiveHotbarSlot((byte)emptySlot);
+/*  271 */     playerRef.getPacketHandler().writeNoCache((Packet)new SetActiveSlot(-1, (byte)emptySlot));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -279,10 +280,10 @@
 /*      */ 
 /*      */   
 /*      */   public void onPlayerAddedToWorld(@Nonnull AddPlayerToWorldEvent event) {
-/*  282 */     World world = event.getWorld();
+/*  283 */     World world = event.getWorld();
 /*      */     
-/*  284 */     if (world.getName().startsWith("prefabEditor-")) {
-/*  285 */       world.execute(() -> {
+/*  285 */     if (world.getName().startsWith("prefabEditor-")) {
+/*  286 */       world.execute(() -> {
 /*      */             Holder<EntityStore> playerHolder = event.getHolder();
 /*      */             UUIDComponent uuidComponent = (UUIDComponent)playerHolder.getComponent(UUIDComponent.getComponentType());
 /*      */             assert uuidComponent != null;
@@ -299,8 +300,8 @@
 /*      */ 
 /*      */   
 /*      */   public void updatePathOfLoadedPrefab(@Nonnull Path oldPath, @Nonnull Path newPath) {
-/*  302 */     this.prefabsBeingEdited.remove(oldPath);
-/*  303 */     this.prefabsBeingEdited.add(newPath);
+/*  303 */     this.prefabsBeingEdited.remove(oldPath);
+/*  304 */     this.prefabsBeingEdited.add(newPath);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -308,7 +309,7 @@
 /*      */ 
 /*      */   
 /*      */   public boolean isEditingAPrefab(@Nonnull UUID playerUUID) {
-/*  311 */     return this.activeEditSessions.containsKey(playerUUID);
+/*  312 */     return this.activeEditSessions.containsKey(playerUUID);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -318,7 +319,7 @@
 /*      */ 
 /*      */   
 /*      */   public PrefabEditSession getPrefabEditSession(@Nonnull UUID playerUUID) {
-/*  321 */     return this.activeEditSessions.get(playerUUID);
+/*  322 */     return this.activeEditSessions.get(playerUUID);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -326,7 +327,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Map<UUID, PrefabEditSession> getActiveEditSessions() {
-/*  329 */     return this.activeEditSessions;
+/*  330 */     return this.activeEditSessions;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -334,7 +335,7 @@
 /*      */ 
 /*      */   
 /*      */   void populateActiveEditSession(@Nonnull UUID playerUuid, @Nonnull PrefabEditSession editSession) {
-/*  337 */     this.activeEditSessions.put(playerUuid, editSession);
+/*  338 */     this.activeEditSessions.put(playerUuid, editSession);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -342,7 +343,7 @@
 /*      */ 
 /*      */   
 /*      */   void populatePrefabsBeingEdited(@Nonnull Path prefabPath) {
-/*  345 */     this.prefabsBeingEdited.add(prefabPath);
+/*  346 */     this.prefabsBeingEdited.add(prefabPath);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -353,7 +354,7 @@
 /*      */ 
 /*      */   
 /*      */   void scheduleAnchorEntityRecreation(@Nonnull PrefabEditSession editSession) {
-/*  356 */     CompletableFuture.runAsync(() -> {
+/*  357 */     CompletableFuture.runAsync(() -> {
 /*      */           World world = Universe.get().getWorld(editSession.getWorldName());
 /*      */           if (world != null) {
 /*      */             world.execute(());
@@ -372,7 +373,7 @@
 /*      */ 
 /*      */   
 /*      */   public boolean hasInProgressLoading(@Nonnull UUID playerUuid) {
-/*  375 */     return this.inProgressLoading.contains(playerUuid);
+/*  376 */     return this.inProgressLoading.contains(playerUuid);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -382,7 +383,7 @@
 /*      */ 
 /*      */   
 /*      */   public void cancelLoading(@Nonnull UUID playerUuid) {
-/*  385 */     this.cancelledLoading.add(playerUuid);
+/*  386 */     this.cancelledLoading.add(playerUuid);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -392,7 +393,7 @@
 /*      */ 
 /*      */   
 /*      */   public boolean isLoadingCancelled(@Nonnull UUID playerUuid) {
-/*  395 */     return this.cancelledLoading.contains(playerUuid);
+/*  396 */     return this.cancelledLoading.contains(playerUuid);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -402,8 +403,8 @@
 /*      */ 
 /*      */   
 /*      */   public void clearLoadingState(@Nonnull UUID playerUuid) {
-/*  405 */     this.inProgressLoading.remove(playerUuid);
-/*  406 */     this.cancelledLoading.remove(playerUuid);
+/*  406 */     this.inProgressLoading.remove(playerUuid);
+/*  407 */     this.cancelledLoading.remove(playerUuid);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -420,16 +421,16 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Void> createEditSessionForNewPrefab(@Nonnull Ref<EntityStore> ref, @Nonnull Player editor, @Nonnull PrefabEditorCreationSettings settings, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  423 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/*  424 */     assert playerRefComponent != null;
+/*  424 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/*  425 */     assert playerRefComponent != null;
 /*      */     
-/*  426 */     PrefabEditorCreationContext prefabEditorCreationContext = settings.finishProcessing(editor, playerRefComponent, true);
-/*  427 */     if (prefabEditorCreationContext == null) {
-/*  428 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
-/*  429 */       return CompletableFuture.completedFuture(null);
+/*  427 */     PrefabEditorCreationContext prefabEditorCreationContext = settings.finishProcessing(editor, playerRefComponent, true);
+/*  428 */     if (prefabEditorCreationContext == null) {
+/*  429 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
+/*  430 */       return CompletableFuture.completedFuture(null);
 /*      */     } 
 /*      */     
-/*  432 */     return createEditSession(ref, prefabEditorCreationContext, true, componentAccessor);
+/*  433 */     return createEditSession(ref, prefabEditorCreationContext, true, componentAccessor);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -447,7 +448,7 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public CompletableFuture<Void> loadPrefabAndCreateEditSession(@Nonnull Ref<EntityStore> ref, @Nonnull Player editor, @Nonnull PrefabEditorCreationSettings settings, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  450 */     return loadPrefabAndCreateEditSession(ref, editor, settings, componentAccessor, null);
+/*  451 */     return loadPrefabAndCreateEditSession(ref, editor, settings, componentAccessor, null);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -467,47 +468,47 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public CompletableFuture<Void> loadPrefabAndCreateEditSession(@Nonnull Ref<EntityStore> ref, @Nonnull Player editor, @Nonnull PrefabEditorCreationSettings settings, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nullable Consumer<PrefabLoadingState> progressCallback) {
-/*  470 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/*  471 */     assert playerRefComponent != null;
+/*  471 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/*  472 */     assert playerRefComponent != null;
 /*      */     
-/*  473 */     UUID playerUuid = playerRefComponent.getUuid();
+/*  474 */     UUID playerUuid = playerRefComponent.getUuid();
 /*      */ 
 /*      */     
-/*  476 */     if (this.inProgressLoading.contains(playerUuid)) {
-/*  477 */       PrefabLoadingState prefabLoadingState = new PrefabLoadingState();
-/*  478 */       prefabLoadingState.addError("server.commands.editprefab.error.loadingInProgress");
-/*  479 */       notifyProgress(progressCallback, prefabLoadingState);
-/*  480 */       playerRefComponent.sendMessage(Message.translation("server.commands.editprefab.error.loadingInProgress"));
-/*  481 */       return null;
+/*  477 */     if (this.inProgressLoading.contains(playerUuid)) {
+/*  478 */       PrefabLoadingState prefabLoadingState = new PrefabLoadingState();
+/*  479 */       prefabLoadingState.addError("server.commands.editprefab.error.loadingInProgress");
+/*  480 */       notifyProgress(progressCallback, prefabLoadingState);
+/*  481 */       playerRefComponent.sendMessage(Message.translation("server.commands.editprefab.error.loadingInProgress"));
+/*  482 */       return null;
 /*      */     } 
 /*      */ 
 /*      */     
-/*  485 */     this.inProgressLoading.add(playerUuid);
-/*  486 */     this.cancelledLoading.remove(playerUuid);
+/*  486 */     this.inProgressLoading.add(playerUuid);
+/*  487 */     this.cancelledLoading.remove(playerUuid);
 /*      */     
-/*  488 */     PrefabLoadingState loadingState = new PrefabLoadingState();
-/*  489 */     loadingState.setPhase(PrefabLoadingState.Phase.INITIALIZING);
-/*  490 */     notifyProgress(progressCallback, loadingState);
+/*  489 */     PrefabLoadingState loadingState = new PrefabLoadingState();
+/*  490 */     loadingState.setPhase(PrefabLoadingState.Phase.INITIALIZING);
+/*  491 */     notifyProgress(progressCallback, loadingState);
 /*      */     
-/*  492 */     PrefabEditorCreationContext prefabEditorCreationContext = settings.finishProcessing(editor, playerRefComponent, false);
-/*  493 */     if (prefabEditorCreationContext == null) {
-/*  494 */       loadingState.addError("server.commands.editprefab.error.processingFailed");
-/*  495 */       notifyProgress(progressCallback, loadingState);
-/*  496 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
-/*  497 */       return null;
+/*  493 */     PrefabEditorCreationContext prefabEditorCreationContext = settings.finishProcessing(editor, playerRefComponent, false);
+/*  494 */     if (prefabEditorCreationContext == null) {
+/*  495 */       loadingState.addError("server.commands.editprefab.error.processingFailed");
+/*  496 */       notifyProgress(progressCallback, loadingState);
+/*  497 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
+/*  498 */       return null;
 /*      */     } 
 /*      */     
-/*  500 */     if (prefabEditorCreationContext.getPrefabPaths().isEmpty()) {
-/*  501 */       loadingState.addError("server.commands.editprefab.error.noPrefabsFound");
-/*  502 */       notifyProgress(progressCallback, loadingState);
-/*  503 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
-/*  504 */       return null;
+/*  501 */     if (prefabEditorCreationContext.getPrefabPaths().isEmpty()) {
+/*  502 */       loadingState.addError("server.commands.editprefab.error.noPrefabsFound");
+/*  503 */       notifyProgress(progressCallback, loadingState);
+/*  504 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_EDIT_PREFAB_SOMETHING_WENT_WRONG);
+/*  505 */       return null;
 /*      */     } 
 /*      */     
-/*  507 */     loadingState.setTotalPrefabs(prefabEditorCreationContext.getPrefabPaths().size());
-/*  508 */     notifyProgress(progressCallback, loadingState);
+/*  508 */     loadingState.setTotalPrefabs(prefabEditorCreationContext.getPrefabPaths().size());
+/*  509 */     notifyProgress(progressCallback, loadingState);
 /*      */     
-/*  510 */     return createEditSession(ref, prefabEditorCreationContext, false, componentAccessor, loadingState, progressCallback);
+/*  511 */     return createEditSession(ref, prefabEditorCreationContext, false, componentAccessor, loadingState, progressCallback);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -519,21 +520,21 @@
 /*      */ 
 /*      */   
 /*      */   private void notifyProgress(@Nullable Consumer<PrefabLoadingState> progressCallback, @Nonnull PrefabLoadingState loadingState) {
-/*  522 */     if (progressCallback == null) {
+/*  523 */     if (progressCallback == null) {
 /*      */       return;
 /*      */     }
 /*      */     
-/*  526 */     PrefabLoadingState.Phase phase = loadingState.getCurrentPhase();
-/*  527 */     if (phase != PrefabLoadingState.Phase.LOADING_PREFABS && phase != PrefabLoadingState.Phase.PASTING_PREFABS) {
+/*  527 */     PrefabLoadingState.Phase phase = loadingState.getCurrentPhase();
+/*  528 */     if (phase != PrefabLoadingState.Phase.LOADING_PREFABS && phase != PrefabLoadingState.Phase.PASTING_PREFABS) {
 /*      */       
-/*  529 */       progressCallback.accept(loadingState);
+/*  530 */       progressCallback.accept(loadingState);
 /*      */       
 /*      */       return;
 /*      */     } 
-/*  533 */     long now = System.nanoTime();
-/*  534 */     if (now - loadingState.getLastNotifyTimeNanos() >= 100000000L) {
-/*  535 */       loadingState.setLastNotifyTimeNanos(now);
-/*  536 */       progressCallback.accept(loadingState);
+/*  534 */     long now = System.nanoTime();
+/*  535 */     if (now - loadingState.getLastNotifyTimeNanos() >= 100000000L) {
+/*  536 */       loadingState.setLastNotifyTimeNanos(now);
+/*  537 */       progressCallback.accept(loadingState);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -542,7 +543,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private CompletableFuture<Void> createEditSession(@Nonnull Ref<EntityStore> ref, @Nonnull PrefabEditorCreationContext context, boolean createNewPrefab, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  545 */     return createEditSession(ref, context, createNewPrefab, componentAccessor, null, null);
+/*  546 */     return createEditSession(ref, context, createNewPrefab, componentAccessor, null, null);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -552,101 +553,101 @@
 /*      */   @Nonnull
 /*      */   private CompletableFuture<Void> createEditSession(@Nonnull Ref<EntityStore> ref, @Nonnull PrefabEditorCreationContext context, boolean createNewPrefab, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nullable PrefabLoadingState loadingState, @Nullable Consumer<PrefabLoadingState> progressCallback) {
 /*      */     CompletableFuture<World> future;
-/*  555 */     World sourceWorld = ((EntityStore)componentAccessor.getExternalData()).getWorld();
+/*  556 */     World sourceWorld = ((EntityStore)componentAccessor.getExternalData()).getWorld();
 /*      */     
-/*  557 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/*  558 */     assert playerRefComponent != null;
+/*  558 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/*  559 */     assert playerRefComponent != null;
 /*      */     
-/*  560 */     UUID playerUUID = playerRefComponent.getUuid();
+/*  561 */     UUID playerUUID = playerRefComponent.getUuid();
 /*      */ 
 /*      */     
-/*  563 */     if (this.activeEditSessions.containsKey(playerUUID)) {
-/*  564 */       if (loadingState != null) {
-/*  565 */         loadingState.addError("server.commands.editprefab.error.existingSession");
-/*  566 */         notifyProgress(progressCallback, loadingState);
+/*  564 */     if (this.activeEditSessions.containsKey(playerUUID)) {
+/*  565 */       if (loadingState != null) {
+/*  566 */         loadingState.addError("server.commands.editprefab.error.existingSession");
+/*  567 */         notifyProgress(progressCallback, loadingState);
 /*      */       } 
-/*  568 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_PREFAB_EDIT_SESSION_MANAGER_EXISTING_EDIT_SESSION);
-/*  569 */       return CompletableFuture.completedFuture(null);
+/*  569 */       playerRefComponent.sendMessage(MESSAGE_COMMANDS_PREFAB_EDIT_SESSION_MANAGER_EXISTING_EDIT_SESSION);
+/*  570 */       return CompletableFuture.completedFuture(null);
 /*      */     } 
 /*      */ 
 /*      */     
-/*  573 */     for (Path prefabPath : context.getPrefabPaths()) {
-/*  574 */       if (this.prefabsBeingEdited.contains(prefabPath)) {
-/*  575 */         if (loadingState != null) {
-/*  576 */           loadingState.addError("server.commands.editprefab.error.alreadyBeingEdited", prefabPath.toString());
-/*  577 */           notifyProgress(progressCallback, loadingState);
+/*  574 */     for (Path prefabPath : context.getPrefabPaths()) {
+/*  575 */       if (this.prefabsBeingEdited.contains(prefabPath)) {
+/*  576 */         if (loadingState != null) {
+/*  577 */           loadingState.addError("server.commands.editprefab.error.alreadyBeingEdited", prefabPath.toString());
+/*  578 */           notifyProgress(progressCallback, loadingState);
 /*      */         } 
-/*  579 */         playerRefComponent.sendMessage(Message.translation("server.commands.prefabeditsessionmanager.alreadyBeingEdited")
-/*  580 */             .param("path", prefabPath.toString()));
-/*  581 */         return CompletableFuture.completedFuture(null);
+/*  580 */         playerRefComponent.sendMessage(Message.translation("server.commands.prefabeditsessionmanager.alreadyBeingEdited")
+/*  581 */             .param("path", prefabPath.toString()));
+/*  582 */         return CompletableFuture.completedFuture(null);
 /*      */       } 
 /*      */     } 
 /*      */ 
 /*      */     
-/*  586 */     if (loadingState != null) {
-/*  587 */       loadingState.setPhase(PrefabLoadingState.Phase.CREATING_WORLD);
-/*  588 */       notifyProgress(progressCallback, loadingState);
+/*  587 */     if (loadingState != null) {
+/*  588 */       loadingState.setPhase(PrefabLoadingState.Phase.CREATING_WORLD);
+/*  589 */       notifyProgress(progressCallback, loadingState);
 /*      */     } 
 /*      */ 
 /*      */     
-/*  592 */     WorldConfig config = new WorldConfig();
+/*  593 */     WorldConfig config = new WorldConfig();
 /*      */     
-/*  594 */     boolean enableTicking = context.isWorldTickingEnabled();
-/*  595 */     config.setBlockTicking(enableTicking);
-/*  596 */     config.setSpawningNPC(false);
-/*  597 */     config.setIsSpawnMarkersEnabled(false);
-/*  598 */     config.setObjectiveMarkersEnabled(false);
-/*  599 */     config.setGameMode(GameMode.Creative);
-/*  600 */     config.setDeleteOnRemove(true);
-/*  601 */     config.setUuid(UUID.randomUUID());
-/*  602 */     config.setGameTimePaused(true);
-/*  603 */     config.setIsAllNPCFrozen(true);
-/*  604 */     config.setSavingPlayers(true);
-/*  605 */     config.setCanSaveChunks(true);
-/*  606 */     config.setTicking(enableTicking);
-/*  607 */     config.setForcedWeather(getWeatherFromEnvironment(context.getEnvironment()));
+/*  595 */     boolean enableTicking = context.isWorldTickingEnabled();
+/*  596 */     config.setBlockTicking(enableTicking);
+/*  597 */     config.setSpawningNPC(false);
+/*  598 */     config.setIsSpawnMarkersEnabled(false);
+/*  599 */     config.setObjectiveMarkersEnabled(false);
+/*  600 */     config.setGameMode(GameMode.Creative);
+/*  601 */     config.setDeleteOnRemove(true);
+/*  602 */     config.setUuid(UUID.randomUUID());
+/*  603 */     config.setGameTimePaused(true);
+/*  604 */     config.setIsAllNPCFrozen(true);
+/*  605 */     config.setSavingPlayers(true);
+/*  606 */     config.setCanSaveChunks(true);
+/*  607 */     config.setTicking(enableTicking);
+/*  608 */     config.setForcedWeather(getWeatherFromEnvironment(context.getEnvironment()));
 /*      */     
-/*  609 */     String worldName = getWorldName(context);
+/*  610 */     String worldName = getWorldName(context);
 /*      */ 
 /*      */     
 /*      */     try {
-/*  613 */       Files.createDirectories(getSavePath(context), (FileAttribute<?>[])new FileAttribute[0]);
-/*  614 */     } catch (IOException e) {
-/*  615 */       if (loadingState != null) {
-/*  616 */         loadingState.addError("server.commands.editprefab.error.createDirectoryFailed", e.getMessage());
-/*  617 */         notifyProgress(progressCallback, loadingState);
+/*  614 */       Files.createDirectories(getSavePath(context), (FileAttribute<?>[])new FileAttribute[0]);
+/*  615 */     } catch (IOException e) {
+/*  616 */       if (loadingState != null) {
+/*  617 */         loadingState.addError("server.commands.editprefab.error.createDirectoryFailed", e.getMessage());
+/*  618 */         notifyProgress(progressCallback, loadingState);
 /*      */       } 
-/*  619 */       playerRefComponent.sendMessage(Message.translation("server.commands.instances.createDirectory.failed")
-/*  620 */           .param("errormsg", e.getMessage()));
-/*  621 */       return CompletableFuture.completedFuture(null);
+/*  620 */       playerRefComponent.sendMessage(Message.translation("server.commands.instances.createDirectory.failed")
+/*  621 */           .param("errormsg", e.getMessage()));
+/*  622 */       return CompletableFuture.completedFuture(null);
 /*      */     } 
 /*      */     
-/*  624 */     TransformComponent transformComponent = (TransformComponent)componentAccessor.getComponent(ref, TransformComponent.getComponentType());
-/*  625 */     assert transformComponent != null;
+/*  625 */     TransformComponent transformComponent = (TransformComponent)componentAccessor.getComponent(ref, TransformComponent.getComponentType());
+/*  626 */     assert transformComponent != null;
 /*      */ 
 /*      */     
-/*  628 */     Transform transform = transformComponent.getTransform().clone();
-/*  629 */     PrefabEditSession prefabEditSession = new PrefabEditSession(worldName, playerUUID, sourceWorld.getWorldConfig().getUuid(), transform);
+/*  629 */     Transform transform = transformComponent.getTransform().clone();
+/*  630 */     PrefabEditSession prefabEditSession = new PrefabEditSession(worldName, playerUUID, sourceWorld.getWorldConfig().getUuid(), transform);
 /*      */ 
 /*      */ 
 /*      */     
-/*  633 */     if (createNewPrefab) {
-/*  634 */       future = getPrefabCreatingCompletableFuture(context, prefabEditSession, config);
+/*  634 */     if (createNewPrefab) {
+/*  635 */       future = getPrefabCreatingCompletableFuture(context, prefabEditSession, config);
 /*      */     } else {
-/*  636 */       future = getPrefabLoadingCompletableFuture(context, prefabEditSession, config, loadingState, progressCallback, playerUUID);
+/*  637 */       future = getPrefabLoadingCompletableFuture(context, prefabEditSession, config, loadingState, progressCallback, playerUUID);
 /*      */     } 
 /*      */ 
 /*      */     
-/*  640 */     if (future == null) {
-/*  641 */       if (loadingState != null) {
-/*  642 */         loadingState.addError("server.commands.editprefab.error.loadFailed");
-/*  643 */         notifyProgress(progressCallback, loadingState);
+/*  641 */     if (future == null) {
+/*  642 */       if (loadingState != null) {
+/*  643 */         loadingState.addError("server.commands.editprefab.error.loadFailed");
+/*  644 */         notifyProgress(progressCallback, loadingState);
 /*      */       } 
-/*  645 */       return CompletableFuture.completedFuture(null);
+/*  646 */       return CompletableFuture.completedFuture(null);
 /*      */     } 
 /*      */     
-/*  648 */     return future
-/*  649 */       .exceptionally(throwable -> {
+/*  649 */     return future
+/*  650 */       .exceptionally(throwable -> {
 /*      */           if (isLoadingCancelled(playerUUID)) {
 /*      */             return null;
 /*      */           }
@@ -661,7 +662,7 @@
 /*      */           
 /*      */           playerRefComponent.sendMessage(Message.translation("server.commands.editprefab.error.exception").param("details", (throwable.getMessage() != null) ? throwable.getMessage() : "Unknown error"));
 /*      */           return null;
-/*  664 */         }).thenAcceptAsync(targetWorld -> {
+/*  665 */         }).thenAcceptAsync(targetWorld -> {
 /*      */           if (isLoadingCancelled(playerUUID)) {
 /*      */             return;
 /*      */           }
@@ -690,12 +691,14 @@
 /*      */           
 /*      */           targetWorld.getWorldConfig().setSpawnProvider((ISpawnProvider)new GlobalSpawnProvider(new Transform(spawnPoint)));
 /*      */ 
+/*      */ 
 /*      */           
 /*      */           CompletableFuture.runAsync((), (Executor)targetWorld);
 /*      */ 
+/*      */ 
 /*      */           
 /*      */           CompletableFuture.runAsync((), (Executor)sourceWorld);
-/*  698 */         }).thenRun(() -> {
+/*  701 */         }).thenRun(() -> {
 /*      */           if (isLoadingCancelled(playerUUID)) {
 /*      */             return;
 /*      */           }
@@ -712,7 +715,7 @@
 /*      */           } 
 /*      */           
 /*      */           playerRefComponent.sendMessage(Message.translation("server.commands.prefabeditsessionmanager.success." + (createNewPrefab ? "new" : "load")));
-/*  715 */         }).whenComplete((result, throwable) -> this.inProgressLoading.remove(playerUUID));
+/*  718 */         }).whenComplete((result, throwable) -> this.inProgressLoading.remove(playerUUID));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -726,7 +729,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private CompletableFuture<World> getWorldCreatingFuture(@Nonnull PrefabEditorCreationContext context, @Nonnull WorldConfig config) {
-/*  729 */     return Universe.get().makeWorld(getWorldName(context), getSavePath(context), config, true);
+/*  732 */     return Universe.get().makeWorld(getWorldName(context), getSavePath(context), config, true);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -734,7 +737,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private String getWorldName(@Nonnull PrefabEditorCreationContext context) {
-/*  737 */     return "prefabEditor-" + context.getEditorRef().getUsername();
+/*  740 */     return "prefabEditor-" + context.getEditorRef().getUsername();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -743,31 +746,31 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private String getWeatherFromEnvironment(@Nullable String environmentId) {
-/*  746 */     if (environmentId == null || environmentId.isEmpty()) {
-/*  747 */       return "Zone1_Sunny";
+/*  749 */     if (environmentId == null || environmentId.isEmpty()) {
+/*  750 */       return "Zone1_Sunny";
 /*      */     }
 /*      */     
-/*  750 */     Environment environment = (Environment)Environment.getAssetMap().getAsset(environmentId);
-/*  751 */     if (environment == null) {
-/*  752 */       return "Zone1_Sunny";
+/*  753 */     Environment environment = (Environment)Environment.getAssetMap().getAsset(environmentId);
+/*  754 */     if (environment == null) {
+/*  755 */       return "Zone1_Sunny";
 /*      */     }
 /*      */     
-/*  755 */     IWeightedMap<WeatherForecast> forecast = environment.getWeatherForecast(12);
-/*  756 */     if (forecast == null || forecast.size() == 0) {
-/*  757 */       return "Zone1_Sunny";
+/*  758 */     IWeightedMap<WeatherForecast> forecast = environment.getWeatherForecast(12);
+/*  759 */     if (forecast == null || forecast.size() == 0) {
+/*  760 */       return "Zone1_Sunny";
 /*      */     }
 /*      */     
-/*  760 */     String[] bestWeatherId = { null };
-/*  761 */     double[] highestWeight = { Double.NEGATIVE_INFINITY };
+/*  763 */     String[] bestWeatherId = { null };
+/*  764 */     double[] highestWeight = { Double.NEGATIVE_INFINITY };
 /*      */     
-/*  763 */     forecast.forEachEntry((weatherForecast, weight) -> {
+/*  766 */     forecast.forEachEntry((weatherForecast, weight) -> {
 /*      */           if (weight > highestWeight[0]) {
 /*      */             highestWeight[0] = weight;
 /*      */             
 /*      */             bestWeatherId[0] = weatherForecast.getWeatherId();
 /*      */           } 
 /*      */         });
-/*  770 */     return (bestWeatherId[0] != null) ? bestWeatherId[0] : "Zone1_Sunny";
+/*  773 */     return (bestWeatherId[0] != null) ? bestWeatherId[0] : "Zone1_Sunny";
 /*      */   }
 /*      */ 
 /*      */ 
@@ -775,7 +778,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private Path getSavePath(@Nonnull PrefabEditorCreationContext context) {
-/*  778 */     return Constants.UNIVERSE_PATH.resolve("worlds").resolve(getWorldName(context));
+/*  781 */     return Constants.UNIVERSE_PATH.resolve("worlds").resolve(getWorldName(context));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -785,45 +788,45 @@
 /*      */ 
 /*      */   
 /*      */   private void applyWorldGenWorldConfig(@Nonnull PrefabEditorCreationContext context, int yLevelToPastePrefabsAt, @Nonnull WorldConfig worldConfig) {
-/*  788 */     String environment = (context.getEnvironment() != null) ? context.getEnvironment() : "Env_Zone1_Plains";
-/*  789 */     Color tint = DEFAULT_TINT;
-/*  790 */     if (context.getGrassTint() != null && !context.getGrassTint().isEmpty()) {
-/*  791 */       Color parsed = ColorParseUtil.parseColor(context.getGrassTint());
-/*  792 */       if (parsed != null) {
-/*  793 */         tint = parsed;
+/*  791 */     String environment = (context.getEnvironment() != null) ? context.getEnvironment() : "Env_Zone1_Plains";
+/*  792 */     Color tint = DEFAULT_TINT;
+/*  793 */     if (context.getGrassTint() != null && !context.getGrassTint().isEmpty()) {
+/*  794 */       Color parsed = ColorParseUtil.parseColor(context.getGrassTint());
+/*  795 */       if (parsed != null) {
+/*  796 */         tint = parsed;
 /*      */       }
 /*      */     } 
 /*      */ 
 /*      */     
-/*  798 */     if (context.getWorldGenType().equals(WorldGenType.FLAT)) {
+/*  801 */     if (context.getWorldGenType().equals(WorldGenType.FLAT)) {
 /*      */ 
 /*      */       
-/*  801 */       int yLevelForFlatWorldExclusive = Math.max(1, yLevelToPastePrefabsAt - context.getBlocksAboveSurface());
+/*  804 */       int yLevelForFlatWorldExclusive = Math.max(1, yLevelToPastePrefabsAt - context.getBlocksAboveSurface());
 /*      */       
-/*  803 */       FlatWorldGenProvider.Layer topLayer = new FlatWorldGenProvider.Layer();
-/*  804 */       topLayer.blockType = "Soil_Grass";
-/*  805 */       topLayer.to = yLevelForFlatWorldExclusive;
-/*  806 */       topLayer.from = yLevelForFlatWorldExclusive - 1;
-/*  807 */       topLayer.environment = environment;
+/*  806 */       FlatWorldGenProvider.Layer topLayer = new FlatWorldGenProvider.Layer();
+/*  807 */       topLayer.blockType = "Soil_Grass";
+/*  808 */       topLayer.to = yLevelForFlatWorldExclusive;
+/*  809 */       topLayer.from = yLevelForFlatWorldExclusive - 1;
+/*  810 */       topLayer.environment = environment;
 /*      */       
-/*  809 */       FlatWorldGenProvider.Layer airLayer = new FlatWorldGenProvider.Layer();
-/*  810 */       airLayer.blockType = "Empty";
-/*  811 */       airLayer.to = 320;
-/*  812 */       airLayer.from = yLevelForFlatWorldExclusive;
-/*  813 */       airLayer.environment = environment;
+/*  812 */       FlatWorldGenProvider.Layer airLayer = new FlatWorldGenProvider.Layer();
+/*  813 */       airLayer.blockType = "Empty";
+/*  814 */       airLayer.to = 320;
+/*  815 */       airLayer.from = yLevelForFlatWorldExclusive;
+/*  816 */       airLayer.environment = environment;
 /*      */       
-/*  815 */       if (yLevelForFlatWorldExclusive - 2 >= 0) {
-/*  816 */         FlatWorldGenProvider.Layer bottomLayer = new FlatWorldGenProvider.Layer();
-/*  817 */         bottomLayer.blockType = "Soil_Clay";
-/*  818 */         bottomLayer.to = yLevelForFlatWorldExclusive - 1;
-/*  819 */         bottomLayer.from = 0;
-/*  820 */         bottomLayer.environment = environment;
-/*  821 */         worldConfig.setWorldGenProvider((IWorldGenProvider)new FlatWorldGenProvider(tint, new FlatWorldGenProvider.Layer[] { airLayer, topLayer, bottomLayer }));
+/*  818 */       if (yLevelForFlatWorldExclusive - 2 >= 0) {
+/*  819 */         FlatWorldGenProvider.Layer bottomLayer = new FlatWorldGenProvider.Layer();
+/*  820 */         bottomLayer.blockType = "Soil_Clay";
+/*  821 */         bottomLayer.to = yLevelForFlatWorldExclusive - 1;
+/*  822 */         bottomLayer.from = 0;
+/*  823 */         bottomLayer.environment = environment;
+/*  824 */         worldConfig.setWorldGenProvider((IWorldGenProvider)new FlatWorldGenProvider(tint, new FlatWorldGenProvider.Layer[] { airLayer, topLayer, bottomLayer }));
 /*      */       } else {
-/*  823 */         worldConfig.setWorldGenProvider((IWorldGenProvider)new FlatWorldGenProvider(tint, new FlatWorldGenProvider.Layer[] { airLayer, topLayer }));
+/*  826 */         worldConfig.setWorldGenProvider((IWorldGenProvider)new FlatWorldGenProvider(tint, new FlatWorldGenProvider.Layer[] { airLayer, topLayer }));
 /*      */       } 
 /*      */     } else {
-/*  826 */       worldConfig.setWorldGenProvider((IWorldGenProvider)new VoidWorldGenProvider(tint, environment));
+/*  829 */       worldConfig.setWorldGenProvider((IWorldGenProvider)new VoidWorldGenProvider(tint, environment));
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -838,10 +841,10 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private CompletableFuture<World> getPrefabCreatingCompletableFuture(@Nonnull PrefabEditorCreationContext context, @Nonnull PrefabEditSession editSession, @Nonnull WorldConfig worldConfig) {
-/*  841 */     applyWorldGenWorldConfig(context, context.getPasteLevelGoal() - 1, worldConfig);
+/*  844 */     applyWorldGenWorldConfig(context, context.getPasteLevelGoal() - 1, worldConfig);
 /*      */ 
 /*      */     
-/*  844 */     return getWorldCreatingFuture(context, worldConfig).thenCompose(world -> CompletableFuture.supplyAsync((), (Executor)world));
+/*  847 */     return getWorldCreatingFuture(context, worldConfig).thenCompose(world -> CompletableFuture.supplyAsync((), (Executor)world));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -885,30 +888,30 @@
 /*      */   
 /*      */   @Nullable
 /*      */   private CompletableFuture<World> getPrefabLoadingCompletableFuture(@Nonnull PrefabEditorCreationContext context, @Nonnull PrefabEditSession editSession, @Nonnull WorldConfig worldConfig, @Nullable PrefabLoadingState loadingState, @Nullable Consumer<PrefabLoadingState> progressCallback, @Nonnull UUID playerUuid) {
-/*  888 */     CompletableFuture[] initializationFutures = new CompletableFuture[context.getPrefabPaths().size()];
+/*  891 */     CompletableFuture[] initializationFutures = new CompletableFuture[context.getPrefabPaths().size()];
 /*      */     
-/*  890 */     if (loadingState != null) {
-/*  891 */       loadingState.setPhase(PrefabLoadingState.Phase.LOADING_PREFABS);
-/*  892 */       notifyProgress(progressCallback, loadingState);
+/*  893 */     if (loadingState != null) {
+/*  894 */       loadingState.setPhase(PrefabLoadingState.Phase.LOADING_PREFABS);
+/*  895 */       notifyProgress(progressCallback, loadingState);
 /*      */     } 
 /*      */ 
 /*      */     
-/*  896 */     for (int i = 0; i < context.getPrefabPaths().size(); i++) {
+/*  899 */     for (int i = 0; i < context.getPrefabPaths().size(); i++) {
 /*      */       
-/*  898 */       Path prefabPath = context.getPrefabPaths().get(i);
-/*  899 */       CompletableFuture<IPrefabBuffer> prefabLoadingFuture = getPrefabBuffer((CommandSender)context.getEditor(), prefabPath);
+/*  901 */       Path prefabPath = context.getPrefabPaths().get(i);
+/*  902 */       CompletableFuture<IPrefabBuffer> prefabLoadingFuture = getPrefabBuffer((CommandSender)context.getEditor(), prefabPath);
 /*      */       
-/*  901 */       if (prefabLoadingFuture == null) {
-/*  902 */         if (loadingState != null) {
-/*  903 */           loadingState.addError("server.commands.editprefab.error.prefabLoadFailed", prefabPath.toString());
-/*  904 */           notifyProgress(progressCallback, loadingState);
+/*  904 */       if (prefabLoadingFuture == null) {
+/*  905 */         if (loadingState != null) {
+/*  906 */           loadingState.addError("server.commands.editprefab.error.prefabLoadFailed", prefabPath.toString());
+/*  907 */           notifyProgress(progressCallback, loadingState);
 /*      */         } 
-/*  906 */         return null;
+/*  909 */         return null;
 /*      */       } 
 /*      */ 
 /*      */       
-/*  910 */       Path pathForCallback = prefabPath;
-/*  911 */       initializationFutures[i] = prefabLoadingFuture.thenApply(buffer -> {
+/*  913 */       Path pathForCallback = prefabPath;
+/*  914 */       initializationFutures[i] = prefabLoadingFuture.thenApply(buffer -> {
 /*      */             if (loadingState != null) {
 /*      */               loadingState.onPrefabLoaded(pathForCallback);
 /*      */               
@@ -917,11 +920,11 @@
 /*      */             return buffer;
 /*      */           });
 /*      */     } 
-/*  920 */     return 
+/*  923 */     return 
 /*      */ 
 /*      */       
-/*  923 */       CompletableFuture.allOf((CompletableFuture<?>[])initializationFutures)
-/*  924 */       .thenApply(unused -> {
+/*  926 */       CompletableFuture.allOf((CompletableFuture<?>[])initializationFutures)
+/*  927 */       .thenApply(unused -> {
 /*      */           if (isLoadingCancelled(playerUuid)) {
 /*      */             return null;
 /*      */           }
@@ -975,7 +978,7 @@
 /*      */           } 
 /*      */           
 /*      */           return new Tri<>(objectArrayList, Integer.valueOf(yLevelToPastePrefabsAt), getWorldCreatingFuture(context, worldConfig).join());
-/*  978 */         }).thenCompose(passedData -> (passedData == null) ? CompletableFuture.completedFuture(null) : CompletableFuture.supplyAsync((), (Executor)passedData.getRight()));
+/*  981 */         }).thenCompose(passedData -> (passedData == null) ? CompletableFuture.completedFuture(null) : CompletableFuture.supplyAsync((), (Executor)passedData.getRight()));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1163,68 +1166,68 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   private int[] calculateRowGroups(@Nonnull PrefabEditorCreationContext context, int prefabCount) {
-/* 1166 */     int[] rowGroups = new int[prefabCount];
-/* 1167 */     PrefabRowSplitMode rowSplitMode = context.getRowSplitMode();
-/* 1168 */     List<Path> prefabPaths = context.getPrefabPaths();
+/* 1169 */     int[] rowGroups = new int[prefabCount];
+/* 1170 */     PrefabRowSplitMode rowSplitMode = context.getRowSplitMode();
+/* 1171 */     List<Path> prefabPaths = context.getPrefabPaths();
 /*      */     
-/* 1170 */     if (rowSplitMode == PrefabRowSplitMode.NONE || prefabCount == 0)
+/* 1173 */     if (rowSplitMode == PrefabRowSplitMode.NONE || prefabCount == 0)
 /*      */     {
-/* 1172 */       return rowGroups;
+/* 1175 */       return rowGroups;
 /*      */     }
 /*      */     
-/* 1175 */     if (rowSplitMode == PrefabRowSplitMode.BY_SPECIFIED_FOLDER) {
+/* 1178 */     if (rowSplitMode == PrefabRowSplitMode.BY_SPECIFIED_FOLDER) {
 /*      */       
-/* 1177 */       List<String> unprocessedPaths = context.getUnprocessedPrefabPaths();
-/* 1178 */       Path rootPath = context.getPrefabRootDirectory().getPrefabPath();
+/* 1180 */       List<String> unprocessedPaths = context.getUnprocessedPrefabPaths();
+/* 1181 */       Path rootPath = context.getPrefabRootDirectory().getPrefabPath();
 /*      */       
-/* 1180 */       int currentGroup = 0;
-/* 1181 */       int prefabIndex = 0;
+/* 1183 */       int currentGroup = 0;
+/* 1184 */       int prefabIndex = 0;
 /*      */       
-/* 1183 */       for (String unprocessedPath : unprocessedPaths) {
+/* 1186 */       for (String unprocessedPath : unprocessedPaths) {
 /*      */         
-/* 1185 */         Path resolvedPath = rootPath.resolve(unprocessedPath.replace('/', File.separatorChar)
-/* 1186 */             .replace('\\', File.separatorChar));
+/* 1188 */         Path resolvedPath = rootPath.resolve(unprocessedPath.replace('/', File.separatorChar)
+/* 1189 */             .replace('\\', File.separatorChar));
 /*      */         
-/* 1188 */         while (prefabIndex < prefabCount) {
-/* 1189 */           Path prefabPath = prefabPaths.get(prefabIndex);
+/* 1191 */         while (prefabIndex < prefabCount) {
+/* 1192 */           Path prefabPath = prefabPaths.get(prefabIndex);
 /*      */           
-/* 1191 */           if (prefabPath.startsWith(resolvedPath) || (
-/* 1192 */             unprocessedPath.endsWith("\\") ? prefabPath
-/* 1193 */             .startsWith(resolvedPath) : prefabPath
-/* 1194 */             .equals(resolvedPath))) {
-/* 1195 */             rowGroups[prefabIndex] = currentGroup;
-/* 1196 */             prefabIndex++;
+/* 1194 */           if (prefabPath.startsWith(resolvedPath) || (
+/* 1195 */             unprocessedPath.endsWith("\\") ? prefabPath
+/* 1196 */             .startsWith(resolvedPath) : prefabPath
+/* 1197 */             .equals(resolvedPath))) {
+/* 1198 */             rowGroups[prefabIndex] = currentGroup;
+/* 1199 */             prefabIndex++;
 /*      */           } 
 /*      */         } 
 /*      */ 
 /*      */         
-/* 1201 */         currentGroup++;
+/* 1204 */         currentGroup++;
 /*      */       } 
-/* 1203 */     } else if (rowSplitMode == PrefabRowSplitMode.BY_ALL_SUBFOLDERS) {
+/* 1206 */     } else if (rowSplitMode == PrefabRowSplitMode.BY_ALL_SUBFOLDERS) {
 /*      */       
-/* 1205 */       Object2ObjectOpenHashMap<Path, Integer> parentDirToGroup = new Object2ObjectOpenHashMap();
-/* 1206 */       int nextGroup = 0;
+/* 1208 */       Object2ObjectOpenHashMap<Path, Integer> parentDirToGroup = new Object2ObjectOpenHashMap();
+/* 1209 */       int nextGroup = 0;
 /*      */       
-/* 1208 */       for (int i = 0; i < prefabCount; i++) {
-/* 1209 */         Path prefabPath = prefabPaths.get(i);
-/* 1210 */         Path parentDir = prefabPath.getParent();
+/* 1211 */       for (int i = 0; i < prefabCount; i++) {
+/* 1212 */         Path prefabPath = prefabPaths.get(i);
+/* 1213 */         Path parentDir = prefabPath.getParent();
 /*      */         
-/* 1212 */         if (parentDir != null) {
-/* 1213 */           Integer group = (Integer)parentDirToGroup.get(parentDir);
-/* 1214 */           if (group == null) {
-/* 1215 */             parentDirToGroup.put(parentDir, Integer.valueOf(nextGroup));
-/* 1216 */             rowGroups[i] = nextGroup;
-/* 1217 */             nextGroup++;
+/* 1215 */         if (parentDir != null) {
+/* 1216 */           Integer group = (Integer)parentDirToGroup.get(parentDir);
+/* 1217 */           if (group == null) {
+/* 1218 */             parentDirToGroup.put(parentDir, Integer.valueOf(nextGroup));
+/* 1219 */             rowGroups[i] = nextGroup;
+/* 1220 */             nextGroup++;
 /*      */           } else {
-/* 1219 */             rowGroups[i] = group.intValue();
+/* 1222 */             rowGroups[i] = group.intValue();
 /*      */           } 
 /*      */         } else {
-/* 1222 */           rowGroups[i] = 0;
+/* 1225 */           rowGroups[i] = 0;
 /*      */         } 
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1227 */     return rowGroups;
+/* 1230 */     return rowGroups;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1236,9 +1239,9 @@
 /*      */ 
 /*      */   
 /*      */   private int getAmountOfBlocksBelowPrefab(int prefabHeight, int desiredYLevel) {
-/* 1239 */     if (desiredYLevel < 0) throw new IllegalArgumentException("Cannot have a negative y level for pasting prefabs"); 
-/* 1240 */     if (desiredYLevel >= 320) throw new IllegalArgumentException("Cannot paste above or at the world height"); 
-/* 1241 */     return Math.min(desiredYLevel, 320 - prefabHeight);
+/* 1242 */     if (desiredYLevel < 0) throw new IllegalArgumentException("Cannot have a negative y level for pasting prefabs"); 
+/* 1243 */     if (desiredYLevel >= 320) throw new IllegalArgumentException("Cannot paste above or at the world height"); 
+/* 1244 */     return Math.min(desiredYLevel, 320 - prefabHeight);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1255,31 +1258,33 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public CompletableFuture<Void> exitEditSession(@Nonnull Ref<EntityStore> ref, @Nonnull World world, @Nonnull PlayerRef playerRef, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 1258 */     PrefabEditSession prefabEditSession = this.activeEditSessions.get(playerRef.getUuid());
-/* 1259 */     if (prefabEditSession == null) return null;
+/* 1261 */     PrefabEditSession prefabEditSession = this.activeEditSessions.get(playerRef.getUuid());
+/* 1262 */     if (prefabEditSession == null) return null;
 /*      */     
-/* 1261 */     prefabEditSession.hidePrefabAnchors(playerRef.getPacketHandler());
+/* 1264 */     prefabEditSession.hidePrefabAnchors(playerRef.getPacketHandler());
 /*      */     
-/* 1263 */     World returnWorld = Universe.get().getWorld(prefabEditSession.getWorldArrivedFrom());
-/* 1264 */     Transform returnLocation = prefabEditSession.getTransformArrivedFrom();
+/* 1266 */     World returnWorld = Universe.get().getWorld(prefabEditSession.getWorldArrivedFrom());
+/* 1267 */     Transform returnLocation = prefabEditSession.getTransformArrivedFrom();
 /*      */ 
 /*      */     
-/* 1267 */     if (returnWorld == null || returnLocation == null) {
-/* 1268 */       LOGGER.at(Level.WARNING).log("Prefab editor exit fallback triggered for player %s: returnWorld=%s (worldArrivedFrom=%s), returnLocation=%s. Using default world spawn.", playerRef
+/* 1270 */     if (returnWorld == null || returnLocation == null) {
+/* 1271 */       LOGGER.at(Level.WARNING).log("Prefab editor exit fallback triggered for player %s: returnWorld=%s (worldArrivedFrom=%s), returnLocation=%s. Using default world spawn.", playerRef
 /*      */           
-/* 1270 */           .getUuid(), 
-/* 1271 */           (returnWorld != null) ? returnWorld.getName() : "null", prefabEditSession
-/* 1272 */           .getWorldArrivedFrom(), returnLocation);
+/* 1273 */           .getUuid(), 
+/* 1274 */           (returnWorld != null) ? returnWorld.getName() : "null", prefabEditSession
+/* 1275 */           .getWorldArrivedFrom(), returnLocation);
 /*      */ 
 /*      */       
-/* 1275 */       returnWorld = Universe.get().getDefaultWorld();
-/* 1276 */       returnLocation = returnWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, componentAccessor);
+/* 1278 */       returnWorld = Universe.get().getDefaultWorld();
+/* 1279 */       returnLocation = returnWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, componentAccessor);
 /*      */     } 
 /*      */     
-/* 1279 */     World finalReturnWorld = returnWorld;
-/* 1280 */     Transform finalReturnLocation = returnLocation;
-/* 1281 */     return CompletableFuture.runAsync(() -> componentAccessor.putComponent(ref, Teleport.getComponentType(), (Component)new Teleport(finalReturnWorld, finalReturnLocation)), (Executor)world)
-/* 1282 */       .thenRunAsync(() -> {
+/* 1282 */     World finalReturnWorld = returnWorld;
+/* 1283 */     Transform finalReturnLocation = returnLocation;
+/* 1284 */     Teleport teleportComponent = Teleport.createForPlayer(finalReturnWorld, finalReturnLocation);
+/*      */     
+/* 1286 */     return CompletableFuture.runAsync(() -> componentAccessor.putComponent(ref, Teleport.getComponentType(), (Component)teleportComponent), (Executor)world)
+/* 1287 */       .thenRunAsync(() -> {
 /*      */           World worldToRemove = Universe.get().getWorld(prefabEditSession.getWorldName());
 /*      */           if (worldToRemove != null) {
 /*      */             Universe.get().removeWorld(prefabEditSession.getWorldName());
@@ -1309,13 +1314,13 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Void> cleanupCancelledSession(@Nonnull UUID playerUuid, @Nonnull String worldName, @Nullable Consumer<PrefabLoadingState> progressCallback) {
-/* 1312 */     cancelLoading(playerUuid);
+/* 1317 */     cancelLoading(playerUuid);
 /*      */     
-/* 1314 */     PrefabLoadingState loadingState = new PrefabLoadingState();
-/* 1315 */     loadingState.setPhase(PrefabLoadingState.Phase.CANCELLING);
-/* 1316 */     notifyProgress(progressCallback, loadingState);
+/* 1319 */     PrefabLoadingState loadingState = new PrefabLoadingState();
+/* 1320 */     loadingState.setPhase(PrefabLoadingState.Phase.CANCELLING);
+/* 1321 */     notifyProgress(progressCallback, loadingState);
 /*      */     
-/* 1318 */     return CompletableFuture.runAsync(() -> {
+/* 1323 */     return CompletableFuture.runAsync(() -> {
 /*      */           World world = Universe.get().getWorld(worldName);
 /*      */           if (world != null) {
 /*      */             loadingState.setPhase(PrefabLoadingState.Phase.SHUTTING_DOWN_WORLD);
@@ -1361,7 +1366,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<Void> cleanupCancelledSession(@Nonnull UUID playerUuid, @Nonnull String worldName) {
-/* 1364 */     return cleanupCancelledSession(playerUuid, worldName, null);
+/* 1369 */     return cleanupCancelledSession(playerUuid, worldName, null);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1374,17 +1379,17 @@
 /*      */   
 /*      */   @Nullable
 /*      */   private CompletableFuture<IPrefabBuffer> getPrefabBuffer(@Nonnull CommandSender sender, @Nonnull Path path) {
-/* 1377 */     if (!Files.exists(path, new java.nio.file.LinkOption[0])) {
-/* 1378 */       sender.sendMessage(Message.translation("server.commands.editprefab.prefabNotFound")
-/* 1379 */           .param("name", path.toString()));
-/* 1380 */       return null;
+/* 1382 */     if (!Files.exists(path, new java.nio.file.LinkOption[0])) {
+/* 1383 */       sender.sendMessage(Message.translation("server.commands.editprefab.prefabNotFound")
+/* 1384 */           .param("name", path.toString()));
+/* 1385 */       return null;
 /*      */     } 
-/* 1382 */     return CompletableFuture.supplyAsync(() -> PrefabBufferUtil.getCached(path));
+/* 1387 */     return CompletableFuture.supplyAsync(() -> PrefabBufferUtil.getCached(path));
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\prefabeditor\PrefabEditSessionManager.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\prefabeditor\PrefabEditSessionManager.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

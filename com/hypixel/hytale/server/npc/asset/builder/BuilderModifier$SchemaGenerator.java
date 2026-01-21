@@ -1,5 +1,6 @@
 /*     */ package com.hypixel.hytale.server.npc.asset.builder;
 /*     */ 
+/*     */ import com.hypixel.hytale.codec.Codec;
 /*     */ import com.hypixel.hytale.codec.schema.NamedSchema;
 /*     */ import com.hypixel.hytale.codec.schema.SchemaContext;
 /*     */ import com.hypixel.hytale.codec.schema.SchemaConvertable;
@@ -248,45 +249,52 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class SchemaGenerator
 /*     */   implements SchemaConvertable<Void>, NamedSchema
 /*     */ {
 /*     */   @Nonnull
-/* 255 */   public static SchemaGenerator INSTANCE = new SchemaGenerator();
+/* 259 */   public static SchemaGenerator INSTANCE = new SchemaGenerator();
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String getSchemaName() {
-/* 260 */     return "NPC:Type:BuilderModifier";
+/* 264 */     return "NPC:Type:BuilderModifier";
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Schema toSchema(@Nonnull SchemaContext context) {
-/* 266 */     ObjectSchema s = new ObjectSchema();
-/* 267 */     s.setTitle("BuilderModifier");
-/* 268 */     LinkedHashMap<String, Schema> props = new LinkedHashMap<>();
-/* 269 */     s.setProperties(props);
+/* 270 */     ObjectSchema s = new ObjectSchema();
+/* 271 */     s.setTitle("BuilderModifier");
+/* 272 */     LinkedHashMap<String, Schema> props = new LinkedHashMap<>();
+/* 273 */     s.setProperties(props);
 /*     */     
-/* 271 */     props.put("_ExportStates", new ArraySchema((Schema)new StringSchema()));
-/* 272 */     props.put("_InterfaceParameters", new ObjectSchema());
-/* 273 */     StringSchema combatConfig = new StringSchema();
-/* 274 */     combatConfig.setHytaleAssetRef(BalanceAsset.class.getSimpleName());
-/* 275 */     props.put("_CombatConfig", combatConfig);
-/* 276 */     ObjectSchema interactionVars = new ObjectSchema();
-/* 277 */     interactionVars.setTitle("Map");
-/* 278 */     Schema childSchema = context.refDefinition((SchemaConvertable)RootInteraction.CHILD_ASSET_CODEC);
-/* 279 */     interactionVars.setAdditionalProperties(childSchema);
-/* 280 */     props.put("_InteractionVars", interactionVars);
+/* 275 */     props.put("_ExportStates", new ArraySchema((Schema)new StringSchema()));
+/* 276 */     props.put("_InterfaceParameters", new ObjectSchema());
+/*     */     
+/* 278 */     Schema combatConfigKeySchema = context.refDefinition((SchemaConvertable)Codec.STRING);
+/* 279 */     combatConfigKeySchema.setTitle("Reference to " + BalanceAsset.class.getSimpleName());
+/* 280 */     Schema combatConfigNestedSchema = context.refDefinition((SchemaConvertable)BalanceAsset.CHILD_ASSET_CODEC);
+/* 281 */     Schema combatConfigSchema = Schema.anyOf(new Schema[] { combatConfigKeySchema, combatConfigNestedSchema });
+/* 282 */     props.put("_CombatConfig", combatConfigSchema);
+/*     */     
+/* 284 */     ObjectSchema interactionVars = new ObjectSchema();
+/* 285 */     interactionVars.setTitle("Map");
+/* 286 */     Schema childSchema = context.refDefinition((SchemaConvertable)RootInteraction.CHILD_ASSET_CODEC);
+/* 287 */     interactionVars.setAdditionalProperties(childSchema);
+/* 288 */     props.put("_InteractionVars", interactionVars);
 /*     */ 
 /*     */     
-/* 283 */     s.setAdditionalProperties(BuilderExpression.toSchema(context));
-/* 284 */     return (Schema)s;
+/* 291 */     s.setAdditionalProperties(BuilderExpression.toSchema(context));
+/* 292 */     return (Schema)s;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\asset\builder\BuilderModifier$SchemaGenerator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\asset\builder\BuilderModifier$SchemaGenerator.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

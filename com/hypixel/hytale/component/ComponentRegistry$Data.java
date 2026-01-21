@@ -1537,197 +1537,198 @@
 /*      */   @Nonnull
 /*      */   private BuilderCodec<Holder<ECS_TYPE>> createCodec() {
 /* 1539 */     Function<Codec<Component<ECS_TYPE>>, Codec<Component<ECS_TYPE>>> function = componentCodec -> (componentCodec != null) ? componentCodec : TempUnknownComponent.COMPONENT_CODEC;
-/* 1540 */     Objects.requireNonNull(this.registry); return ((BuilderCodec.Builder)BuilderCodec.builder(Holder.class, this.registry::newHolder)
-/* 1541 */       .addField(new KeyedCodec("Components", (Codec)new MapProvidedMapCodec(this.codecMap, function, java.util.LinkedHashMap::new, false)), (holder, map) -> holder.loadComponentsMap(this, map), holder -> holder.createComponentsMap(this)))
+/* 1540 */     Objects.requireNonNull(this.registry); return BuilderCodec.builder(Holder.class, this.registry::newHolder)
+/* 1541 */       .append(new KeyedCodec("Components", (Codec)new MapProvidedMapCodec(this.codecMap, function, java.util.LinkedHashMap::new, false)), (holder, map) -> holder.loadComponentsMap(this, map), holder -> holder.createComponentsMap(this))
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */       
-/* 1546 */       .build();
+/* 1546 */       .add()
+/* 1547 */       .build();
 /*      */   }
 /*      */   
 /*      */   public int getVersion() {
-/* 1550 */     return this.version;
+/* 1551 */     return this.version;
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public ComponentRegistry<ECS_TYPE> getRegistry() {
-/* 1555 */     return this.registry;
+/* 1556 */     return this.registry;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public ComponentType<ECS_TYPE, ?> getComponentType(String id) {
-/* 1560 */     int index = this.componentIdToIndex.getInt(id);
-/* 1561 */     if (index == Integer.MIN_VALUE) return null; 
-/* 1562 */     return this.componentTypes[index];
+/* 1561 */     int index = this.componentIdToIndex.getInt(id);
+/* 1562 */     if (index == Integer.MIN_VALUE) return null; 
+/* 1563 */     return this.componentTypes[index];
 /*      */   }
 /*      */   
 /*      */   public int getComponentSize() {
-/* 1566 */     return this.componentSize;
+/* 1567 */     return this.componentSize;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public String getComponentId(@Nonnull ComponentType<ECS_TYPE, ?> componentType) {
-/* 1571 */     return this.componentIds[componentType.getIndex()];
+/* 1572 */     return this.componentIds[componentType.getIndex()];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nullable
 /*      */   public <T extends Component<ECS_TYPE>> Codec<T> getComponentCodec(@Nonnull ComponentType<ECS_TYPE, T> componentType) {
-/* 1577 */     return (Codec)this.componentCodecs[componentType.getIndex()];
+/* 1578 */     return (Codec)this.componentCodecs[componentType.getIndex()];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <T extends Component<ECS_TYPE>> T createComponent(@Nonnull ComponentType<ECS_TYPE, T> componentType) {
-/* 1582 */     componentType.validateRegistry(this.registry);
-/* 1583 */     componentType.validate();
-/* 1584 */     return (T)this.componentSuppliers[componentType.getIndex()].get();
+/* 1583 */     componentType.validateRegistry(this.registry);
+/* 1584 */     componentType.validate();
+/* 1585 */     return (T)this.componentSuppliers[componentType.getIndex()].get();
 /*      */   }
 /*      */   
 /*      */   public ResourceType<ECS_TYPE, ?> getResourceType(int index) {
-/* 1588 */     return this.resourceTypes[index];
+/* 1589 */     return this.resourceTypes[index];
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public ResourceType<ECS_TYPE, ?> getResourceType(String id) {
-/* 1593 */     int index = this.resourceIdToIndex.getInt(id);
-/* 1594 */     if (index == Integer.MIN_VALUE) return null; 
-/* 1595 */     return this.resourceTypes[index];
+/* 1594 */     int index = this.resourceIdToIndex.getInt(id);
+/* 1595 */     if (index == Integer.MIN_VALUE) return null; 
+/* 1596 */     return this.resourceTypes[index];
 /*      */   }
 /*      */   
 /*      */   public int getResourceSize() {
-/* 1599 */     return this.resourceSize;
+/* 1600 */     return this.resourceSize;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public String getResourceId(@Nonnull ResourceType<ECS_TYPE, ?> resourceType) {
-/* 1604 */     return this.resourceIds[resourceType.getIndex()];
+/* 1605 */     return this.resourceIds[resourceType.getIndex()];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nullable
 /*      */   public <T extends Resource<ECS_TYPE>> BuilderCodec<T> getResourceCodec(@Nonnull ResourceType<ECS_TYPE, T> resourceType) {
-/* 1610 */     return (BuilderCodec)this.resourceCodecs[resourceType.getIndex()];
+/* 1611 */     return (BuilderCodec)this.resourceCodecs[resourceType.getIndex()];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <T extends Resource<ECS_TYPE>> T createResource(@Nonnull ResourceType<ECS_TYPE, T> resourceType) {
-/* 1615 */     resourceType.validateRegistry(this.registry);
-/* 1616 */     resourceType.validate();
-/* 1617 */     return (T)this.resourceSuppliers[resourceType.getIndex()].get();
+/* 1616 */     resourceType.validateRegistry(this.registry);
+/* 1617 */     resourceType.validate();
+/* 1618 */     return (T)this.resourceSuppliers[resourceType.getIndex()].get();
 /*      */   }
 /*      */   
 /*      */   public int getSystemTypeSize() {
-/* 1621 */     return this.systemTypeSize;
+/* 1622 */     return this.systemTypeSize;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public <T extends ISystem<ECS_TYPE>> SystemType<ECS_TYPE, T> getSystemType(Class<? super T> systemTypeClass) {
-/* 1626 */     int systemTypeClassToIndexInt = this.systemTypeClassToIndex.getInt(systemTypeClass);
-/* 1627 */     if (systemTypeClassToIndexInt == Integer.MIN_VALUE) return null;
+/* 1627 */     int systemTypeClassToIndexInt = this.systemTypeClassToIndex.getInt(systemTypeClass);
+/* 1628 */     if (systemTypeClassToIndexInt == Integer.MIN_VALUE) return null;
 /*      */     
-/* 1629 */     return (SystemType)this.systemTypes[systemTypeClassToIndexInt];
+/* 1630 */     return (SystemType)this.systemTypes[systemTypeClassToIndexInt];
 /*      */   }
 /*      */   
 /*      */   public SystemType<ECS_TYPE, ? extends ISystem<ECS_TYPE>> getSystemType(int systemTypeIndex) {
-/* 1633 */     return this.systemTypes[systemTypeIndex];
+/* 1634 */     return this.systemTypes[systemTypeIndex];
 /*      */   }
 /*      */   
 /*      */   public <T extends ISystem<ECS_TYPE>> BitSet getSystemIndexesForType(@Nonnull SystemType<ECS_TYPE, T> systemType) {
-/* 1637 */     return this.systemTypeToSystemIndex[systemType.getIndex()];
+/* 1638 */     return this.systemTypeToSystemIndex[systemType.getIndex()];
 /*      */   }
 /*      */   
 /*      */   public int getSystemSize() {
-/* 1641 */     return this.systemSize;
+/* 1642 */     return this.systemSize;
 /*      */   }
 /*      */   
 /*      */   public ISystem<ECS_TYPE> getSystem(int systemIndex) {
-/* 1645 */     return this.sortedSystems[systemIndex];
+/* 1646 */     return this.sortedSystems[systemIndex];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <T extends ISystem<ECS_TYPE>> T getSystem(int systemIndex, SystemType<ECS_TYPE, T> systemType) {
-/* 1650 */     return (T)this.sortedSystems[systemIndex];
+/* 1651 */     return (T)this.sortedSystems[systemIndex];
 /*      */   }
 /*      */   
 /*      */   public int indexOf(ISystem<ECS_TYPE> system) {
-/* 1654 */     int systemIndex = -1;
-/* 1655 */     for (int i = 0; i < this.sortedSystems.length; i++) {
-/* 1656 */       if (this.sortedSystems[i] == system) {
-/* 1657 */         systemIndex = i;
+/* 1655 */     int systemIndex = -1;
+/* 1656 */     for (int i = 0; i < this.sortedSystems.length; i++) {
+/* 1657 */       if (this.sortedSystems[i] == system) {
+/* 1658 */         systemIndex = i;
 /*      */         break;
 /*      */       } 
 /*      */     } 
-/* 1661 */     return systemIndex;
+/* 1662 */     return systemIndex;
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public BuilderCodec<Holder<ECS_TYPE>> getEntityCodec() {
-/* 1666 */     return this.entityCodec;
+/* 1667 */     return this.entityCodec;
 /*      */   }
 /*      */   
 /*      */   public int getDataChangeCount() {
-/* 1670 */     return this.dataChanges.length;
+/* 1671 */     return this.dataChanges.length;
 /*      */   }
 /*      */   
 /*      */   public DataChange getDataChange(int index) {
-/* 1674 */     return this.dataChanges[index];
+/* 1675 */     return this.dataChanges[index];
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean equals(@Nullable Object o) {
-/* 1679 */     if (this == o) return true; 
-/* 1680 */     if (o == null || getClass() != o.getClass()) return false;
+/* 1680 */     if (this == o) return true; 
+/* 1681 */     if (o == null || getClass() != o.getClass()) return false;
 /*      */     
-/* 1682 */     Data<?> data = (Data)o;
+/* 1683 */     Data<?> data = (Data)o;
 /*      */     
-/* 1684 */     return (this.version == data.version);
+/* 1685 */     return (this.version == data.version);
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public int hashCode() {
-/* 1689 */     return this.version;
+/* 1690 */     return this.version;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public String toString() {
-/* 1695 */     return "Data{version=" + this.version + ", componentSize=" + this.componentSize + ", componentSuppliers=" + 
+/* 1696 */     return "Data{version=" + this.version + ", componentSize=" + this.componentSize + ", componentSuppliers=" + 
 /*      */ 
 /*      */       
-/* 1698 */       Arrays.toString((Object[])this.componentSuppliers) + ", resourceSize=" + this.resourceSize + ", resourceSuppliers=" + 
+/* 1699 */       Arrays.toString((Object[])this.componentSuppliers) + ", resourceSize=" + this.resourceSize + ", resourceSuppliers=" + 
 /*      */       
-/* 1700 */       Arrays.toString((Object[])this.resourceSuppliers) + ", systemSize=" + this.systemSize + ", sortedSystems=" + 
+/* 1701 */       Arrays.toString((Object[])this.resourceSuppliers) + ", systemSize=" + this.systemSize + ", sortedSystems=" + 
 /*      */       
-/* 1702 */       Arrays.toString((Object[])this.sortedSystems) + ", dataChanges=" + 
-/* 1703 */       Arrays.toString((Object[])this.dataChanges) + "}";
+/* 1703 */       Arrays.toString((Object[])this.sortedSystems) + ", dataChanges=" + 
+/* 1704 */       Arrays.toString((Object[])this.dataChanges) + "}";
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void appendDump(@Nonnull String prefix, @Nonnull StringBuilder sb) {
-/* 1708 */     sb.append(prefix).append("version=").append(this.version).append("\n");
-/* 1709 */     sb.append(prefix).append("componentSize=").append(this.componentSize).append("\n");
-/* 1710 */     sb.append(prefix).append("componentSuppliers=").append("\n"); int i;
-/* 1711 */     for (i = 0; i < this.componentSize; i++) {
-/* 1712 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.componentSuppliers[i]).append("\n");
+/* 1709 */     sb.append(prefix).append("version=").append(this.version).append("\n");
+/* 1710 */     sb.append(prefix).append("componentSize=").append(this.componentSize).append("\n");
+/* 1711 */     sb.append(prefix).append("componentSuppliers=").append("\n"); int i;
+/* 1712 */     for (i = 0; i < this.componentSize; i++) {
+/* 1713 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.componentSuppliers[i]).append("\n");
 /*      */     }
-/* 1714 */     sb.append(prefix).append("resourceSuppliers=").append("\n");
-/* 1715 */     for (i = 0; i < this.resourceSize; i++) {
-/* 1716 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.resourceSuppliers[i]).append("\n");
+/* 1715 */     sb.append(prefix).append("resourceSuppliers=").append("\n");
+/* 1716 */     for (i = 0; i < this.resourceSize; i++) {
+/* 1717 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.resourceSuppliers[i]).append("\n");
 /*      */     }
-/* 1718 */     sb.append(prefix).append("systemSize=").append(this.systemSize).append("\n");
-/* 1719 */     sb.append(prefix).append("sortedSystems=").append("\n");
-/* 1720 */     for (i = 0; i < this.systemSize; i++) {
-/* 1721 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.sortedSystems[i]).append("\n");
+/* 1719 */     sb.append(prefix).append("systemSize=").append(this.systemSize).append("\n");
+/* 1720 */     sb.append(prefix).append("sortedSystems=").append("\n");
+/* 1721 */     for (i = 0; i < this.systemSize; i++) {
+/* 1722 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.sortedSystems[i]).append("\n");
 /*      */     }
-/* 1723 */     sb.append(prefix).append("dataChanges=").append("\n");
-/* 1724 */     for (i = 0; i < this.dataChanges.length; i++)
-/* 1725 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.dataChanges[i]).append("\n"); 
+/* 1724 */     sb.append(prefix).append("dataChanges=").append("\n");
+/* 1725 */     for (i = 0; i < this.dataChanges.length; i++)
+/* 1726 */       sb.append(prefix).append("\t- ").append(i).append("\t").append(this.dataChanges[i]).append("\n"); 
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\component\ComponentRegistry$Data.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\component\ComponentRegistry$Data.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

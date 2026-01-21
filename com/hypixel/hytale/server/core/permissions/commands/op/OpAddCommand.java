@@ -2,7 +2,6 @@
 /*    */ 
 /*    */ import com.hypixel.hytale.server.core.Message;
 /*    */ import com.hypixel.hytale.server.core.command.system.CommandContext;
-/*    */ import com.hypixel.hytale.server.core.command.system.arguments.system.Argument;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgumentType;
@@ -14,6 +13,7 @@
 /*    */ import java.util.Set;
 /*    */ import java.util.UUID;
 /*    */ import javax.annotation.Nonnull;
+/*    */ 
 /*    */ 
 /*    */ public class OpAddCommand
 /*    */   extends CommandBase
@@ -46,28 +46,28 @@
 /* 46 */     String opGroup = "OP";
 /*    */ 
 /*    */     
-/* 49 */     String rawInput = context.getInput((Argument)this.playerArg)[0];
-/* 50 */     Message displayMessage = Message.raw(rawInput).bold(true);
+/* 49 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
+/* 50 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
+/* 51 */     Message displayMessage = Message.raw(displayName).bold(true);
 /*    */     
-/* 52 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
-/* 53 */     if (groups.contains("OP")) {
-/* 54 */       context.sendMessage(MESSAGE_COMMANDS_OP_ALREADY
-/* 55 */           .param("username", displayMessage));
+/* 53 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
+/* 54 */     if (groups.contains("OP")) {
+/* 55 */       context.sendMessage(MESSAGE_COMMANDS_OP_ALREADY
+/* 56 */           .param("username", displayMessage));
 /*    */     } else {
-/* 57 */       permissionsModule.addUserToGroup(uuid, "OP");
-/* 58 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED
-/* 59 */           .param("username", displayMessage));
+/* 58 */       permissionsModule.addUserToGroup(uuid, "OP");
+/* 59 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED
+/* 60 */           .param("username", displayMessage));
 /*    */ 
 /*    */       
-/* 62 */       PlayerRef oppedPlayerRef = Universe.get().getPlayer(uuid);
-/* 63 */       if (oppedPlayerRef != null)
-/* 64 */         oppedPlayerRef.sendMessage(MESSAGE_COMMANDS_OP_ADDED_TARGET); 
+/* 63 */       if (playerRef != null)
+/* 64 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_ADDED_TARGET); 
 /*    */     } 
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpAddCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpAddCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

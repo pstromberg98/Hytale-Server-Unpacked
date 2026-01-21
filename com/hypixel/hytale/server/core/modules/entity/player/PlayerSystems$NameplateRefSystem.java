@@ -15,7 +15,6 @@
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -502,28 +501,28 @@
 /*     */ {
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 505 */     return (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), DisplayNameComponent.getComponentType() });
+/* 504 */     return (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), DisplayNameComponent.getComponentType() });
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void onEntityAdded(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl AddReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 510 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)commandBuffer.getComponent(ref, DisplayNameComponent.getComponentType());
-/* 511 */     assert displayNameComponent != null;
+/*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 509 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)commandBuffer.getComponent(ref, DisplayNameComponent.getComponentType());
+/* 510 */     assert displayNameComponent != null;
 /*     */ 
 /*     */     
-/* 514 */     if (commandBuffer.getComponent(ref, Nameplate.getComponentType()) != null) {
+/* 513 */     if (commandBuffer.getComponent(ref, Nameplate.getComponentType()) != null) {
 /*     */       return;
 /*     */     }
-/* 517 */     String displayName = (displayNameComponent.getDisplayName() != null) ? displayNameComponent.getDisplayName().getAnsiMessage() : "";
-/* 518 */     Nameplate nameplateComponent = new Nameplate(displayName);
-/* 519 */     commandBuffer.putComponent(ref, Nameplate.getComponentType(), (Component)nameplateComponent);
+/* 516 */     String displayName = (displayNameComponent.getDisplayName() != null) ? displayNameComponent.getDisplayName().getAnsiMessage() : "";
+/* 517 */     Nameplate nameplateComponent = new Nameplate(displayName);
+/* 518 */     commandBuffer.putComponent(ref, Nameplate.getComponentType(), (Component)nameplateComponent);
 /*     */   }
 /*     */   
-/*     */   public void onEntityRemove(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl RemoveReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {}
+/*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$NameplateRefSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$NameplateRefSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

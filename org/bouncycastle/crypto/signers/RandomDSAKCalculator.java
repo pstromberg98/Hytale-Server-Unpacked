@@ -35,7 +35,7 @@ public class RandomDSAKCalculator implements DSAKCalculator {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\signers\RandomDSAKCalculator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\signers\RandomDSAKCalculator.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

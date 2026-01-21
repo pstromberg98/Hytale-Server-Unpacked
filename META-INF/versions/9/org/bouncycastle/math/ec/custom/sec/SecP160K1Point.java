@@ -159,7 +159,7 @@ public class SecP160K1Point extends ECPoint.AbstractFp {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecP160K1Point.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecP160K1Point.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

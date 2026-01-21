@@ -22,7 +22,7 @@
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\javax\annotation\meta\When.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\javax\annotation\meta\When.class
  * Java compiler version: 5 (49.0)
  * JD-Core Version:       1.1.3
  */

@@ -13,7 +13,7 @@ public @interface SuppressJava6Requirement {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\io\nett\\util\internal\SuppressJava6Requirement.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\io\nett\\util\internal\SuppressJava6Requirement.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

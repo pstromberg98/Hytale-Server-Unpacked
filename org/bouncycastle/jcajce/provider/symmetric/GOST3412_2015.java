@@ -86,7 +86,7 @@ public class GOST3412_2015 {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\symmetric\GOST3412_2015.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\symmetric\GOST3412_2015.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

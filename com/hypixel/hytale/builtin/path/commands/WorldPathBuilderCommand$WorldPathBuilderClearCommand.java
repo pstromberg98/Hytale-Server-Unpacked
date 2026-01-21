@@ -145,17 +145,20 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class WorldPathBuilderClearCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/* 152 */   private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED = Message.translation("server.universe.worldpath.pointsCleared");
+/* 155 */   private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED = Message.translation("server.universe.worldpath.pointsCleared");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public WorldPathBuilderClearCommand() {
-/* 158 */     super("clear", "server.commands.worldpath.builder.clear.desc");
+/* 161 */     super("clear", "server.commands.worldpath.builder.clear.desc");
 /*     */   }
 /*     */ 
 /*     */ 
@@ -164,16 +167,16 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 167 */     WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
-/* 168 */     if (builder == null)
+/* 170 */     WorldPathBuilder builder = WorldPathBuilderCommand.getBuilder(ref, store);
+/* 171 */     if (builder == null)
 /*     */       return; 
-/* 170 */     builder.getPath().getWaypoints().clear();
-/* 171 */     context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED);
+/* 173 */     builder.getPath().getWaypoints().clear();
+/* 174 */     context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINTS_CLEARED);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand$WorldPathBuilderClearCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand$WorldPathBuilderClearCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -5,6 +5,7 @@
 /*    */ import com.hypixel.hytale.component.AddReason;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.component.Store;
+/*    */ import com.hypixel.hytale.math.vector.Transform;
 /*    */ import com.hypixel.hytale.math.vector.Vector3d;
 /*    */ import com.hypixel.hytale.math.vector.Vector3f;
 /*    */ import com.hypixel.hytale.server.core.Message;
@@ -27,68 +28,69 @@
 /*    */   extends AbstractPlayerCommand
 /*    */ {
 /*    */   @Nonnull
-/* 30 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED = Message.translation("server.commands.teleport.warp.notLoaded");
+/* 31 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED = Message.translation("server.commands.teleport.warp.notLoaded");
 /*    */   @Nonnull
-/* 32 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_RESERVED_KEYWORD = Message.translation("server.commands.teleport.warp.reservedKeyword");
+/* 33 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_RESERVED_KEYWORD = Message.translation("server.commands.teleport.warp.reservedKeyword");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 38 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.warp.set.name.desc", (ArgumentType)ArgTypes.STRING);
+/* 39 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.warp.set.name.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public WarpSetCommand() {
-/* 44 */     super("set", "server.commands.warp.set.desc");
-/* 45 */     requirePermission(HytalePermissions.fromCommand("warp.set"));
+/* 45 */     super("set", "server.commands.warp.set.desc");
+/* 46 */     requirePermission(HytalePermissions.fromCommand("warp.set"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 50 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
-/* 51 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
+/* 51 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
+/* 52 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 55 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
-/* 56 */     String newId = ((String)this.nameArg.get(context)).toLowerCase();
+/* 56 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
+/* 57 */     String newId = ((String)this.nameArg.get(context)).toLowerCase();
 /*    */     
-/* 58 */     if ("reload".equals(newId) || "remove".equals(newId) || "set".equals(newId) || "list".equals(newId) || "go".equals(newId)) {
-/* 59 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_RESERVED_KEYWORD);
+/* 59 */     if ("reload".equals(newId) || "remove".equals(newId) || "set".equals(newId) || "list".equals(newId) || "go".equals(newId)) {
+/* 60 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_RESERVED_KEYWORD);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 63 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 64 */     assert transformComponent != null;
+/* 64 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 65 */     assert transformComponent != null;
 /*    */     
-/* 66 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
-/* 67 */     assert headRotationComponent != null;
+/* 67 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
+/* 68 */     assert headRotationComponent != null;
 /*    */     
-/* 69 */     Vector3d position = transformComponent.getPosition();
-/* 70 */     Vector3f rotation = transformComponent.getRotation();
+/* 70 */     Vector3d position = transformComponent.getPosition();
 /* 71 */     Vector3f headRotation = headRotationComponent.getRotation();
 /*    */ 
 /*    */ 
+/*    */     
+/* 75 */     Transform transform = new Transform(position.clone(), headRotation.clone());
 /*    */ 
 /*    */     
-/* 76 */     Warp newWarp = new Warp(position.getX(), position.getY(), position.getZ(), headRotation.getYaw(), rotation.getPitch(), rotation.getRoll(), newId, world, playerRef.getUsername(), Instant.now());
+/* 78 */     Warp newWarp = new Warp(transform, newId, world, playerRef.getUsername(), Instant.now());
 /*    */     
-/* 78 */     warps.put(newWarp.getId().toLowerCase(), newWarp);
+/* 80 */     warps.put(newWarp.getId().toLowerCase(), newWarp);
 /*    */     
-/* 80 */     TeleportPlugin plugin = TeleportPlugin.get();
-/* 81 */     plugin.saveWarps();
+/* 82 */     TeleportPlugin plugin = TeleportPlugin.get();
+/* 83 */     plugin.saveWarps();
 /*    */     
-/* 83 */     store.addEntity(plugin.createWarp(newWarp, store), AddReason.LOAD);
+/* 85 */     store.addEntity(plugin.createWarp(newWarp, store), AddReason.LOAD);
 /*    */     
-/* 85 */     context.sendMessage(Message.translation("server.commands.teleport.warp.setWarp")
-/* 86 */         .param("name", newWarp.getId()));
+/* 87 */     context.sendMessage(Message.translation("server.commands.teleport.warp.setWarp")
+/* 88 */         .param("name", newWarp.getId()));
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\warp\WarpSetCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\warp\WarpSetCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

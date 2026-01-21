@@ -186,7 +186,7 @@ public class SecT131FieldElement extends ECFieldElement.AbstractF2m {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecT131FieldElement.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecT131FieldElement.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

@@ -256,7 +256,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public interface Constants
 /*     */ {
 /*     */   public static final String KEY_YAW = "Yaw";
@@ -276,14 +275,14 @@
 /*     */   public static final String KEY_SUBMERGE = "Submerge";
 /*     */   public static final String KEY_MAXIMUM_SIZE = "MaximumSize";
 /*     */   public static final String KEY_ENVIRONMENT = "Environment";
-/* 279 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
+/* 278 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
 /*     */   public static final String ERROR_NO_ENTRY = "\"Entry\" is not defined. Define an entry node type";
 /*     */   public static final String ERROR_NO_ENTRY_POINTS = "\"EntryPoints\" is not defined, no spawn information for caves available";
 /*     */   public static final String ERROR_LOADING_ENVIRONMENT = "Error while looking up environment \"%s\"!";
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\cave\CaveTypeJsonLoader$Constants.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\cave\CaveTypeJsonLoader$Constants.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

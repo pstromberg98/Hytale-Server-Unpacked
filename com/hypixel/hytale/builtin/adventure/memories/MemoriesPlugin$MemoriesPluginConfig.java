@@ -280,13 +280,33 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class MemoriesPluginConfig
 /*     */ {
 /*     */   public static final BuilderCodec<MemoriesPluginConfig> CODEC;
 /*     */   private Object2DoubleMap<String> collectionRadius;
 /*     */   
 /*     */   static {
-/* 289 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(MemoriesPluginConfig.class, MemoriesPluginConfig::new).append(new KeyedCodec("CollectionRadius", (Codec)new Object2DoubleMapCodec((Codec)Codec.STRING, it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap::new)), (config, map) -> config.collectionRadius = map, config -> config.collectionRadius).add()).build();
+/* 309 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(MemoriesPluginConfig.class, MemoriesPluginConfig::new).append(new KeyedCodec("CollectionRadius", (Codec)new Object2DoubleMapCodec((Codec)Codec.STRING, it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap::new)), (config, map) -> config.collectionRadius = map, config -> config.collectionRadius).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -296,12 +316,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Object2DoubleMap<String> getCollectionRadius() {
-/* 299 */     return (this.collectionRadius != null) ? this.collectionRadius : (Object2DoubleMap<String>)Object2DoubleMaps.EMPTY_MAP;
+/* 319 */     return (this.collectionRadius != null) ? this.collectionRadius : (Object2DoubleMap<String>)Object2DoubleMaps.EMPTY_MAP;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\MemoriesPlugin$MemoriesPluginConfig.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\MemoriesPlugin$MemoriesPluginConfig.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

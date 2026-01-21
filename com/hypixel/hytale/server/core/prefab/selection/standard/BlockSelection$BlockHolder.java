@@ -1623,6 +1623,36 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public final class BlockHolder
 /*      */   extends Record
 /*      */ {
@@ -1639,7 +1669,7 @@
 /*      */     //   6: areturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1648	-> 0
+/*      */     //   #1678	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$BlockHolder;
@@ -1652,7 +1682,7 @@
 /*      */     //   6: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1648	-> 0
+/*      */     //   #1678	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$BlockHolder;
@@ -1666,7 +1696,7 @@
 /*      */     //   7: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1648	-> 0
+/*      */     //   #1678	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/prefab/selection/standard/BlockSelection$BlockHolder;
@@ -1674,17 +1704,17 @@
 /*      */   }
 /*      */   
 /*      */   public BlockHolder(int blockId, int rotation, int filler, int supportValue, Holder<ChunkStore> holder) {
-/* 1648 */     this.blockId = blockId; this.rotation = rotation; this.filler = filler; this.supportValue = supportValue; this.holder = holder; } public int blockId() { return this.blockId; } public int rotation() { return this.rotation; } public int filler() { return this.filler; } public int supportValue() { return this.supportValue; } public Holder<ChunkStore> holder() { return this.holder; }
+/* 1678 */     this.blockId = blockId; this.rotation = rotation; this.filler = filler; this.supportValue = supportValue; this.holder = holder; } public int blockId() { return this.blockId; } public int rotation() { return this.rotation; } public int filler() { return this.filler; } public int supportValue() { return this.supportValue; } public Holder<ChunkStore> holder() { return this.holder; }
 /*      */   
 /*      */   @Nonnull
 /*      */   public BlockHolder cloneBlockHolder() {
-/* 1652 */     if (this.holder == null) return this; 
-/* 1653 */     return new BlockHolder(this.blockId, this.rotation, this.filler, this.supportValue, this.holder.clone());
+/* 1682 */     if (this.holder == null) return this; 
+/* 1683 */     return new BlockHolder(this.blockId, this.rotation, this.filler, this.supportValue, this.holder.clone());
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\prefab\selection\standard\BlockSelection$BlockHolder.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\prefab\selection\standard\BlockSelection$BlockHolder.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

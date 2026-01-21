@@ -35,7 +35,7 @@ public class UINT32 extends UintBase {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\oer\its\ieee1609dot2\basetypes\UINT32.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\oer\its\ieee1609dot2\basetypes\UINT32.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

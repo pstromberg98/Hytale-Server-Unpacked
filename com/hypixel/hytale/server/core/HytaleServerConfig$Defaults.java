@@ -867,78 +867,51 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class Defaults
 /*     */ {
-/* 899 */   public static final KeyedCodec<String> WORLD = new KeyedCodec("World", (Codec)Codec.STRING);
-/* 900 */   public static final KeyedCodec<GameMode> GAMEMODE = new KeyedCodec("GameMode", (Codec)ProtocolCodecs.GAMEMODE_LEGACY);
+/* 872 */   public static final KeyedCodec<String> WORLD = new KeyedCodec("World", (Codec)Codec.STRING);
+/* 873 */   public static final KeyedCodec<GameMode> GAMEMODE = new KeyedCodec("GameMode", (Codec)ProtocolCodecs.GAMEMODE_LEGACY);
 /*     */   public static final BuilderCodec<Defaults> CODEC;
 /*     */   private transient HytaleServerConfig hytaleServerConfig;
 /*     */   
 /*     */   static {
-/* 905 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Defaults.class, Defaults::new).addField(WORLD, (o, i) -> o.world = i, o -> o.world)).addField(GAMEMODE, (o, s) -> o.gameMode = s, o -> o.gameMode)).build();
+/* 878 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Defaults.class, Defaults::new).addField(WORLD, (o, i) -> o.world = i, o -> o.world)).addField(GAMEMODE, (o, s) -> o.gameMode = s, o -> o.gameMode)).build();
 /*     */   }
 /*     */ 
 /*     */   
-/* 909 */   private String world = "default";
-/* 910 */   private GameMode gameMode = GameMode.Adventure;
+/* 882 */   private String world = "default";
+/* 883 */   private GameMode gameMode = GameMode.Adventure;
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private Defaults(HytaleServerConfig hytaleServerConfig) {
-/* 916 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 889 */     this.hytaleServerConfig = hytaleServerConfig;
 /*     */   }
 /*     */   
 /*     */   public String getWorld() {
-/* 920 */     return this.world;
+/* 893 */     return this.world;
 /*     */   }
 /*     */   
 /*     */   public void setWorld(String world) {
-/* 924 */     this.world = world;
-/* 925 */     this.hytaleServerConfig.markChanged();
+/* 897 */     this.world = world;
+/* 898 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */   
 /*     */   public GameMode getGameMode() {
-/* 929 */     return this.gameMode;
+/* 902 */     return this.gameMode;
 /*     */   }
 /*     */   
 /*     */   public void setGameMode(GameMode gameMode) {
-/* 933 */     this.gameMode = gameMode;
-/* 934 */     this.hytaleServerConfig.markChanged();
+/* 906 */     this.gameMode = gameMode;
+/* 907 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */   
 /*     */   private Defaults() {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$Defaults.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$Defaults.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

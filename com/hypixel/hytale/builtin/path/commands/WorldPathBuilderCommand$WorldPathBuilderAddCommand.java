@@ -173,17 +173,20 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class WorldPathBuilderAddCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/* 180 */   private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED = Message.translation("server.universe.worldpath.pointAdded");
+/* 183 */   private static final Message MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED = Message.translation("server.universe.worldpath.pointAdded");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public WorldPathBuilderAddCommand() {
-/* 186 */     super("add", "server.commands.worldpath.builder.add.desc");
+/* 189 */     super("add", "server.commands.worldpath.builder.add.desc");
 /*     */   }
 /*     */ 
 /*     */ 
@@ -192,17 +195,17 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 195 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 196 */     assert transformComponent != null;
+/* 198 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 199 */     assert transformComponent != null;
 /*     */     
-/* 198 */     Transform transform = transformComponent.getTransform().clone();
-/* 199 */     WorldPathBuilderCommand.getOrCreateBuilder(ref, store).getPath().getWaypoints().add(transform);
-/* 200 */     context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED);
+/* 201 */     Transform transform = transformComponent.getTransform().clone();
+/* 202 */     WorldPathBuilderCommand.getOrCreateBuilder(ref, store).getPath().getWaypoints().add(transform);
+/* 203 */     context.sendMessage(MESSAGE_UNIVERSE_WORLD_PATH_POINT_ADDED);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand$WorldPathBuilderAddCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\path\commands\WorldPathBuilderCommand$WorldPathBuilderAddCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

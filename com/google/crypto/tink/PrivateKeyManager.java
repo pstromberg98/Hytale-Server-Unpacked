@@ -9,7 +9,7 @@ public interface PrivateKeyManager<P> extends KeyManager<P> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\google\crypto\tink\PrivateKeyManager.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\google\crypto\tink\PrivateKeyManager.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

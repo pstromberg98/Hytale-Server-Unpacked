@@ -403,24 +403,23 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class EnsureEffectControllerSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   public Query<EntityStore> getQuery() {
-/* 411 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 410 */     return (Query<EntityStore>)PlayerRef.getComponentType();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 416 */     holder.ensureComponent(EffectControllerComponent.getComponentType());
+/* 415 */     holder.ensureComponent(EffectControllerComponent.getComponentType());
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsureEffectControllerSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsureEffectControllerSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

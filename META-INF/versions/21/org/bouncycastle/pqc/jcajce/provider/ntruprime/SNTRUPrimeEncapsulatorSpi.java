@@ -51,7 +51,7 @@ class SNTRUPrimeEncapsulatorSpi implements KEMSpi.EncapsulatorSpi {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\21\org\bouncycastle\pqc\jcajce\provider\ntruprime\SNTRUPrimeEncapsulatorSpi.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\21\org\bouncycastle\pqc\jcajce\provider\ntruprime\SNTRUPrimeEncapsulatorSpi.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

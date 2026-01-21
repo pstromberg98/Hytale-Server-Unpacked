@@ -16,11 +16,12 @@
 /* 16 */     addSubCommand((AbstractCommand)new MemoriesCapacityCommand());
 /* 17 */     addSubCommand((AbstractCommand)new MemoriesLevelCommand());
 /* 18 */     addSubCommand((AbstractCommand)new MemoriesUnlockCommand());
+/* 19 */     addSubCommand((AbstractCommand)new MemoriesSetCountCommand());
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\commands\MemoriesCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\commands\MemoriesCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

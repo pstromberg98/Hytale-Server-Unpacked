@@ -223,7 +223,7 @@
 /*     */             
 /*     */             flow.onFlowInfo(deviceAuth.userCode(), deviceAuth.verificationUri(), deviceAuth.verificationUriComplete(), deviceAuth.expiresIn());
 /*     */             
-/*     */             int pollInterval = Math.max(deviceAuth.interval, 5);
+/*     */             int pollInterval = Math.max(deviceAuth.interval, 15);
 /*     */             
 /*     */             long deadline = System.currentTimeMillis() + deviceAuth.expiresIn * 1000L;
 /*     */             
@@ -560,7 +560,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\oauth\OAuthClient.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\auth\oauth\OAuthClient.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

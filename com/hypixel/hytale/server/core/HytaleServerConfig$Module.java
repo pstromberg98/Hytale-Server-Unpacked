@@ -653,52 +653,25 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class Module
 /*     */ {
 /*     */   @Nonnull
 /*     */   protected static BuilderCodec.Builder<Module> BUILDER_CODEC_BUILDER;
 /*     */   
 /*     */   static {
-/* 689 */     BUILDER_CODEC_BUILDER = (BuilderCodec.Builder<Module>)BuilderCodec.builder(Module.class, Module::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, i) -> o.enabled = i, o -> o.enabled);
+/* 662 */     BUILDER_CODEC_BUILDER = (BuilderCodec.Builder<Module>)BuilderCodec.builder(Module.class, Module::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, i) -> o.enabled = i, o -> o.enabled);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 695 */   protected static BuilderCodec<Module> BUILDER_CODEC = BUILDER_CODEC_BUILDER.build();
+/* 668 */   protected static BuilderCodec<Module> BUILDER_CODEC = BUILDER_CODEC_BUILDER.build();
 /*     */   
 /*     */   @Nonnull
 /*     */   public static final DocumentContainingCodec<Module> CODEC;
 /*     */   
 /*     */   static {
-/* 701 */     CODEC = new DocumentContainingCodec(BUILDER_CODEC, (o, i) -> o.document = i, o -> o.document);
+/* 674 */     CODEC = new DocumentContainingCodec(BUILDER_CODEC, (o, i) -> o.document = i, o -> o.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -714,13 +687,13 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 717 */   private Map<String, Module> modules = new ConcurrentHashMap<>();
+/* 690 */   private Map<String, Module> modules = new ConcurrentHashMap<>();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 723 */   private BsonDocument document = new BsonDocument();
+/* 696 */   private BsonDocument document = new BsonDocument();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -737,7 +710,7 @@
 /*     */ 
 /*     */   
 /*     */   private Module(@Nonnull HytaleServerConfig hytaleServerConfig) {
-/* 740 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 713 */     this.hytaleServerConfig = hytaleServerConfig;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -747,7 +720,7 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isEnabled(boolean def) {
-/* 750 */     return (this.enabled != null) ? this.enabled.booleanValue() : def;
+/* 723 */     return (this.enabled != null) ? this.enabled.booleanValue() : def;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -756,15 +729,15 @@
 /*     */ 
 /*     */   
 /*     */   public void setEnabled(boolean enabled) {
-/* 759 */     this.enabled = Boolean.valueOf(enabled);
-/* 760 */     this.hytaleServerConfig.markChanged();
+/* 732 */     this.enabled = Boolean.valueOf(enabled);
+/* 733 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public Boolean getEnabled() {
-/* 767 */     return this.enabled;
+/* 740 */     return this.enabled;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -772,7 +745,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Map<String, Module> getModules() {
-/* 775 */     return Collections.unmodifiableMap(this.modules);
+/* 748 */     return Collections.unmodifiableMap(this.modules);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -783,7 +756,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Module getModule(@Nonnull String moduleName) {
-/* 786 */     return this.modules.computeIfAbsent(moduleName, k -> new Module(this.hytaleServerConfig));
+/* 759 */     return this.modules.computeIfAbsent(moduleName, k -> new Module(this.hytaleServerConfig));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -792,8 +765,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setModules(@Nonnull Map<String, Module> modules) {
-/* 795 */     this.modules = modules;
-/* 796 */     this.hytaleServerConfig.markChanged();
+/* 768 */     this.modules = modules;
+/* 769 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -801,7 +774,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public BsonDocument getDocument() {
-/* 804 */     return this.document;
+/* 777 */     return this.document;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -813,7 +786,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public <T> T decode(@Nonnull Codec<T> codec) {
-/* 816 */     return (T)codec.decode((BsonValue)this.document);
+/* 789 */     return (T)codec.decode((BsonValue)this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -824,7 +797,7 @@
 /*     */ 
 /*     */   
 /*     */   public <T> void encode(@Nonnull Codec<T> codec, @Nonnull T t) {
-/* 827 */     this.document = codec.encode(t).asDocument();
+/* 800 */     this.document = codec.encode(t).asDocument();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -836,7 +809,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public <T> Optional<T> getData(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 839 */     return keyedCodec.get(this.document);
+/* 812 */     return keyedCodec.get(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -848,7 +821,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public <T> T getDataOrNull(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 851 */     return (T)keyedCodec.getOrNull(this.document);
+/* 824 */     return (T)keyedCodec.getOrNull(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -859,7 +832,7 @@
 /*     */ 
 /*     */   
 /*     */   public <T> T getDataNow(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 862 */     return (T)keyedCodec.getNow(this.document);
+/* 835 */     return (T)keyedCodec.getNow(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -870,8 +843,8 @@
 /*     */ 
 /*     */   
 /*     */   public <T> void put(@Nonnull KeyedCodec<T> keyedCodec, T t) {
-/* 873 */     keyedCodec.put(this.document, t);
-/* 874 */     this.hytaleServerConfig.markChanged();
+/* 846 */     keyedCodec.put(this.document, t);
+/* 847 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -880,8 +853,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setDocument(@Nonnull BsonDocument document) {
-/* 883 */     this.document = document;
-/* 884 */     this.hytaleServerConfig.markChanged();
+/* 856 */     this.document = document;
+/* 857 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -890,15 +863,15 @@
 /*     */ 
 /*     */   
 /*     */   void setHytaleServerConfig(@Nonnull HytaleServerConfig hytaleServerConfig) {
-/* 893 */     this.hytaleServerConfig = hytaleServerConfig;
-/* 894 */     this.modules.values().forEach(module -> module.setHytaleServerConfig(hytaleServerConfig));
+/* 866 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 867 */     this.modules.values().forEach(module -> module.setHytaleServerConfig(hytaleServerConfig));
 /*     */   }
 /*     */   
 /*     */   private Module() {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$Module.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$Module.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

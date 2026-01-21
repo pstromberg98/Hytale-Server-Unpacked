@@ -77,7 +77,7 @@
 /*     */     
 /*  78 */     int blockIdBelow = blockSectionBelow.get(worldX, worldY - 1, worldZ);
 /*  79 */     BlockType blockBelow = (BlockType)blockMap.getAsset(blockIdBelow);
-/*  80 */     if (!isSolid(blockBelow)) {
+/*  80 */     if (!isSolid(blockBelow) && (fluidBelowId == 0 || fluidBelowId == spreadFluidId || fluidBelowId != fluidId)) {
 /*  81 */       FluidCollisionConfig config = (FluidCollisionConfig)getCollisionMap().get(fluidBelowId);
 /*  82 */       if (config != null && 
 /*  83 */         !executeCollision(world, accessor, fluidSectionBelow, blockSectionBelow, config, worldX, worldY - 1, worldZ)) {
@@ -97,7 +97,7 @@
 /*  97 */       return BlockTickStrategy.SLEEP;
 /*     */     } 
 /*     */     
-/* 100 */     if (fluidBelowId == 0) {
+/* 100 */     if (fluidBelowId == 0 || fluidBelowId != spreadFluidId) {
 /* 101 */       if (fluidLevel == 1 && fluid.getMaxFluidLevel() != 1) return BlockTickStrategy.SLEEP;
 /*     */       
 /* 103 */       int offsets = getSpreadOffsets(blockMap, accessor, fluidSection, blockSection, worldX, worldY, worldZ, ORTO_OFFSETS, fluidId, 5);
@@ -264,7 +264,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\DefaultFluidTicker.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\DefaultFluidTicker.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

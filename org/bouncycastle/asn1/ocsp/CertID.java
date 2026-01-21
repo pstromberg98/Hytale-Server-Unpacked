@@ -93,7 +93,7 @@ public class CertID extends ASN1Object {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn1\ocsp\CertID.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn1\ocsp\CertID.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

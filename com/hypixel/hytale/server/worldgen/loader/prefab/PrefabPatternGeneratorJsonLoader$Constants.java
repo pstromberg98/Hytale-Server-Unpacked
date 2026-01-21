@@ -267,7 +267,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public interface Constants
 /*     */ {
 /*     */   public static final String KEY_GRID_GENERATOR = "GridGenerator";
@@ -286,13 +285,13 @@
 /*     */   public static final String KEY_CATEGORY = "Category";
 /*     */   public static final String ERROR_NO_GRID_GENERATOR = "Could not find point generator to place prefabs at! Keyword: GridGenerator";
 /*     */   public static final String ERROR_DEEP_SEARCH = "DeepSearch is enabled but HeightThreshold is not set!";
-/* 289 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
-/* 290 */   public static final Integer DEFAULT_MAX_SIZE = Integer.valueOf(5);
-/* 291 */   public static final Integer DEFAULT_EXCLUSION_RADIUS = Integer.valueOf(0);
+/* 288 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
+/* 289 */   public static final Integer DEFAULT_MAX_SIZE = Integer.valueOf(5);
+/* 290 */   public static final Integer DEFAULT_EXCLUSION_RADIUS = Integer.valueOf(0);
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefab\PrefabPatternGeneratorJsonLoader$Constants.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefab\PrefabPatternGeneratorJsonLoader$Constants.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -101,47 +101,45 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class AddedFromWorldGen
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   @Nullable
-/* 110 */   private static final ComponentType<EntityStore, PatrolPathMarkerEntity> PATH_MARKER_ENTITY_COMPONENT_TYPE = PatrolPathMarkerEntity.getComponentType();
-/* 111 */   private static final ComponentType<EntityStore, WorldGenId> WORLD_GEN_ID_COMPONENT_TYPE = WorldGenId.getComponentType();
-/* 112 */   private static final ComponentType<EntityStore, FromWorldGen> FROM_WORLD_GEN_COMPONENT_TYPE = FromWorldGen.getComponentType();
-/* 113 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)PATH_MARKER_ENTITY_COMPONENT_TYPE, (Query)FROM_WORLD_GEN_COMPONENT_TYPE });
-/* 114 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PrefabPathSystems.AddOrRemove.class));
+/* 108 */   private static final ComponentType<EntityStore, PatrolPathMarkerEntity> PATH_MARKER_ENTITY_COMPONENT_TYPE = PatrolPathMarkerEntity.getComponentType();
+/* 109 */   private static final ComponentType<EntityStore, WorldGenId> WORLD_GEN_ID_COMPONENT_TYPE = WorldGenId.getComponentType();
+/* 110 */   private static final ComponentType<EntityStore, FromWorldGen> FROM_WORLD_GEN_COMPONENT_TYPE = FromWorldGen.getComponentType();
+/* 111 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)PATH_MARKER_ENTITY_COMPONENT_TYPE, (Query)FROM_WORLD_GEN_COMPONENT_TYPE });
+/* 112 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PrefabPathSystems.AddOrRemove.class));
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 119 */     return QUERY;
+/* 117 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 125 */     return DEPENDENCIES;
+/* 123 */     return DEPENDENCIES;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 131 */     return EntityModule.get().getPreClearMarkersGroup();
+/* 129 */     return EntityModule.get().getPreClearMarkersGroup();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 137 */     holder.putComponent(WORLD_GEN_ID_COMPONENT_TYPE, (Component)new WorldGenId(((FromWorldGen)holder.getComponent(FROM_WORLD_GEN_COMPONENT_TYPE)).getWorldGenId()));
+/* 135 */     holder.putComponent(WORLD_GEN_ID_COMPONENT_TYPE, (Component)new WorldGenId(((FromWorldGen)holder.getComponent(FROM_WORLD_GEN_COMPONENT_TYPE)).getWorldGenId()));
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\path\PrefabPathSystems$AddedFromWorldGen.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\path\PrefabPathSystems$AddedFromWorldGen.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

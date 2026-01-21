@@ -90,7 +90,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ class EmptyChunkSaver
 /*     */   implements IChunkSaver
 /*     */ {
@@ -98,26 +97,26 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<Void> saveHolder(int x, int z, @Nonnull Holder<ChunkStore> holder) {
-/* 101 */     return CompletableFuture.completedFuture(null);
+/* 100 */     return CompletableFuture.completedFuture(null);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<Void> removeHolder(int x, int z) {
-/* 107 */     return CompletableFuture.completedFuture(null);
+/* 106 */     return CompletableFuture.completedFuture(null);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public LongSet getIndexes() {
-/* 113 */     return (LongSet)LongSets.EMPTY_SET;
+/* 112 */     return (LongSet)LongSets.EMPTY_SET;
 /*     */   }
 /*     */   
 /*     */   public void flush() {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\EmptyChunkStorageProvider$EmptyChunkSaver.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\EmptyChunkStorageProvider$EmptyChunkSaver.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -1010,33 +1010,6 @@
 /*      */ 
 /*      */ 
 /*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
-/*      */ 
 /*      */ public class RateLimitConfig
 /*      */ {
 /*      */   public static final int DEFAULT_PACKETS_PER_SECOND = 2000;
@@ -1048,7 +1021,7 @@
 /*      */   transient HytaleServerConfig hytaleServerConfig;
 /*      */   
 /*      */   static {
-/* 1051 */     CODEC = (Codec<RateLimitConfig>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RateLimitConfig.class, RateLimitConfig::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, b) -> o.enabled = b, o -> o.enabled)).addField(new KeyedCodec("PacketsPerSecond", (Codec)Codec.INTEGER), (o, i) -> o.packetsPerSecond = i, o -> o.packetsPerSecond)).addField(new KeyedCodec("BurstCapacity", (Codec)Codec.INTEGER), (o, i) -> o.burstCapacity = i, o -> o.burstCapacity)).build();
+/* 1024 */     CODEC = (Codec<RateLimitConfig>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RateLimitConfig.class, RateLimitConfig::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, b) -> o.enabled = b, o -> o.enabled)).addField(new KeyedCodec("PacketsPerSecond", (Codec)Codec.INTEGER), (o, i) -> o.packetsPerSecond = i, o -> o.packetsPerSecond)).addField(new KeyedCodec("BurstCapacity", (Codec)Codec.INTEGER), (o, i) -> o.burstCapacity = i, o -> o.burstCapacity)).build();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1059,39 +1032,39 @@
 /*      */ 
 /*      */   
 /*      */   public RateLimitConfig(HytaleServerConfig hytaleServerConfig) {
-/* 1062 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 1035 */     this.hytaleServerConfig = hytaleServerConfig;
 /*      */   }
 /*      */   
 /*      */   public boolean isEnabled() {
-/* 1066 */     return (this.enabled != null) ? this.enabled.booleanValue() : true;
+/* 1039 */     return (this.enabled != null) ? this.enabled.booleanValue() : true;
 /*      */   }
 /*      */   
 /*      */   public void setEnabled(boolean enabled) {
-/* 1070 */     this.enabled = Boolean.valueOf(enabled);
-/* 1071 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1043 */     this.enabled = Boolean.valueOf(enabled);
+/* 1044 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */   
 /*      */   public int getPacketsPerSecond() {
-/* 1075 */     return (this.packetsPerSecond != null) ? this.packetsPerSecond.intValue() : 2000;
+/* 1048 */     return (this.packetsPerSecond != null) ? this.packetsPerSecond.intValue() : 2000;
 /*      */   }
 /*      */   
 /*      */   public void setPacketsPerSecond(int packetsPerSecond) {
-/* 1079 */     this.packetsPerSecond = Integer.valueOf(packetsPerSecond);
-/* 1080 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1052 */     this.packetsPerSecond = Integer.valueOf(packetsPerSecond);
+/* 1053 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */   
 /*      */   public int getBurstCapacity() {
-/* 1084 */     return (this.burstCapacity != null) ? this.burstCapacity.intValue() : 500;
+/* 1057 */     return (this.burstCapacity != null) ? this.burstCapacity.intValue() : 500;
 /*      */   }
 /*      */   
 /*      */   public void setBurstCapacity(int burstCapacity) {
-/* 1088 */     this.burstCapacity = Integer.valueOf(burstCapacity);
-/* 1089 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1061 */     this.burstCapacity = Integer.valueOf(burstCapacity);
+/* 1062 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$RateLimitConfig.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\HytaleServerConfig$RateLimitConfig.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

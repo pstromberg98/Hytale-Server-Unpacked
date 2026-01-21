@@ -381,28 +381,27 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class EnsurePlayerInput
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   public Query<EntityStore> getQuery() {
-/* 389 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 388 */     return (Query<EntityStore>)PlayerRef.getComponentType();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 394 */     holder.ensureComponent(PlayerInput.getComponentType());
+/* 393 */     holder.ensureComponent(PlayerInput.getComponentType());
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 400 */     holder.removeComponent(PlayerInput.getComponentType());
+/* 399 */     holder.removeComponent(PlayerInput.getComponentType());
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsurePlayerInput.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\player\PlayerSystems$EnsurePlayerInput.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

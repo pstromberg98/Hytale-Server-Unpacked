@@ -10,13 +10,8 @@
 /*    */ import com.hypixel.hytale.server.worldgen.chunk.ChunkGeneratorExecution;
 /*    */ import com.hypixel.hytale.server.worldgen.loader.WorldGenPrefabSupplier;
 /*    */ import com.hypixel.hytale.server.worldgen.util.condition.BlockMaskCondition;
-/*    */ import com.hypixel.hytale.server.worldgen.util.condition.DefaultBlockMaskCondition;
 /*    */ import java.util.Random;
 /*    */ import javax.annotation.Nullable;
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -33,9 +28,9 @@
 /*    */ {
 /*    */   @Nullable
 /*    */   public ChunkGeneratorExecution execution;
-/* 36 */   public final Vector3i posWorld = new Vector3i();
-/* 37 */   public final Vector3i posChunk = new Vector3i();
-/* 38 */   public final Random childRandom = (Random)new FastRandom(0L);
+/* 31 */   public final Vector3i posWorld = new Vector3i();
+/* 32 */   public final Vector3i posChunk = new Vector3i();
+/* 33 */   public final Random childRandom = (Random)new FastRandom(0L);
 /*    */   
 /*    */   public int originHeight;
 /*    */   public int yOffset;
@@ -53,32 +48,32 @@
 /*    */   private int depth;
 /*    */   
 /*    */   public PrefabPasteBuffer() {
-/* 56 */     this.random = (Random)new FastRandom(0L);
-/* 57 */     reset();
+/* 51 */     this.random = (Random)new FastRandom(0L);
+/* 52 */     reset();
 /*    */   }
 /*    */   
 /*    */   public void setSeed(int worldSeed, long externalSeed) {
-/* 61 */     this.seed = worldSeed;
-/* 62 */     this.specificSeed = (int)externalSeed;
-/* 63 */     this.random.setSeed(externalSeed);
-/* 64 */     this.childRandom.setSeed(externalSeed);
+/* 56 */     this.seed = worldSeed;
+/* 57 */     this.specificSeed = (int)externalSeed;
+/* 58 */     this.random.setSeed(externalSeed);
+/* 59 */     this.childRandom.setSeed(externalSeed);
 /*    */   }
 /*    */   
 /*    */   void reset() {
-/* 68 */     this.execution = null;
-/* 69 */     this.fitHeightmap = false;
-/* 70 */     this.deepSearch = false;
-/* 71 */     this.blockMask = (BlockMaskCondition)DefaultBlockMaskCondition.DEFAULT_TRUE;
-/* 72 */     this.environmentId = Integer.MIN_VALUE;
-/* 73 */     this.heightCondition = (ICoordinateCondition)DefaultCoordinateCondition.DEFAULT_TRUE;
-/* 74 */     this.spawnCondition = (ICoordinateRndCondition)DefaultCoordinateRndCondition.DEFAULT_TRUE;
-/* 75 */     this.supplier = null;
-/* 76 */     this.depth = 0;
+/* 63 */     this.execution = null;
+/* 64 */     this.fitHeightmap = false;
+/* 65 */     this.deepSearch = false;
+/* 66 */     this.blockMask = BlockMaskCondition.DEFAULT_TRUE;
+/* 67 */     this.environmentId = Integer.MIN_VALUE;
+/* 68 */     this.heightCondition = (ICoordinateCondition)DefaultCoordinateCondition.DEFAULT_TRUE;
+/* 69 */     this.spawnCondition = (ICoordinateRndCondition)DefaultCoordinateRndCondition.DEFAULT_TRUE;
+/* 70 */     this.supplier = null;
+/* 71 */     this.depth = 0;
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\prefab\PrefabPasteUtil$PrefabPasteBuffer.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\prefab\PrefabPasteUtil$PrefabPasteBuffer.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

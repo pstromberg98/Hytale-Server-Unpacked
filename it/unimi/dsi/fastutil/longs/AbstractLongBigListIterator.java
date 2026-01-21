@@ -4,7 +4,7 @@ package it.unimi.dsi.fastutil.longs;
 public abstract class AbstractLongBigListIterator extends AbstractLongBidirectionalIterator implements LongBigListIterator {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\i\\unimi\dsi\fastutil\longs\AbstractLongBigListIterator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\i\\unimi\dsi\fastutil\longs\AbstractLongBigListIterator.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

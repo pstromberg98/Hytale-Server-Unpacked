@@ -196,7 +196,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public interface Constants
 /*     */ {
 /*     */   public static final String KEY_PARENT = "Parent";
@@ -224,11 +223,11 @@
 /*     */   public static final int DEFAULT_MAX_ATTEMPTS = 5000;
 /*     */   public static final double DEFAULT_EXCLUSION_RADIUS = 50.0D;
 /*     */   public static final double DEFAULT_ZONE_BORDER_EXCLUSION = 25.0D;
-/* 227 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
+/* 226 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefa\\unique\UniquePrefabConfigurationJsonLoader$Constants.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefa\\unique\UniquePrefabConfigurationJsonLoader$Constants.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

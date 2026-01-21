@@ -1,8 +1,8 @@
 /*    */ package com.hypixel.hytale.server.worldgen.loader.prefab;
 /*    */ 
 /*    */ import com.hypixel.hytale.server.worldgen.loader.util.FileMaskCache;
-/*    */ import com.hypixel.hytale.server.worldgen.prefab.BlockPlacementMask;
 /*    */ import com.hypixel.hytale.server.worldgen.util.ResolvedBlockArray;
+/*    */ import com.hypixel.hytale.server.worldgen.util.condition.BlockMaskCondition;
 /*    */ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 /*    */ import java.util.HashMap;
 /*    */ import java.util.Map;
@@ -15,44 +15,43 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
 /*    */ public class BlockPlacementMaskRegistry
-/*    */   extends FileMaskCache<BlockPlacementMask>
+/*    */   extends FileMaskCache<BlockMaskCondition>
 /*    */ {
 /*    */   @Nonnull
-/* 23 */   private final Map<BlockPlacementMask, BlockPlacementMask> masks = new HashMap<>(); @Nonnull
-/* 24 */   private final Map<BlockPlacementMask.BlockArrayEntry, BlockPlacementMask.BlockArrayEntry> entries = new HashMap<>();
-/* 25 */   private BlockPlacementMask tempMask = new BlockPlacementMask();
-/* 26 */   private BlockPlacementMask.BlockArrayEntry tempEntry = new BlockPlacementMask.BlockArrayEntry();
+/* 22 */   private final Map<BlockMaskCondition, BlockMaskCondition> masks = new HashMap<>(); @Nonnull
+/* 23 */   private final Map<BlockMaskCondition.MaskEntry, BlockMaskCondition.MaskEntry> entries = new HashMap<>();
+/* 24 */   private BlockMaskCondition tempMask = new BlockMaskCondition();
+/* 25 */   private BlockMaskCondition.MaskEntry tempEntry = new BlockMaskCondition.MaskEntry();
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/*    */   public BlockPlacementMask retainOrAllocateMask(BlockPlacementMask.IMask defaultMask, Long2ObjectMap<BlockPlacementMask.Mask> specificMasks) {
-/* 31 */     BlockPlacementMask mask = this.tempMask;
-/* 32 */     mask.set(defaultMask, specificMasks);
+/*    */   public BlockMaskCondition retainOrAllocateMask(@Nonnull BlockMaskCondition.Mask defaultMask, @Nonnull Long2ObjectMap<BlockMaskCondition.Mask> specificMasks) {
+/* 30 */     BlockMaskCondition mask = this.tempMask;
+/* 31 */     mask.set(defaultMask, specificMasks);
 /*    */     
-/* 34 */     BlockPlacementMask old = this.masks.putIfAbsent(mask, mask);
-/* 35 */     if (old != null) return old;
+/* 33 */     BlockMaskCondition old = this.masks.putIfAbsent(mask, mask);
+/* 34 */     if (old != null) return old;
 /*    */     
-/* 37 */     this.tempMask = new BlockPlacementMask();
-/* 38 */     return mask;
+/* 36 */     this.tempMask = new BlockMaskCondition();
+/* 37 */     return mask;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
-/*    */   public BlockPlacementMask.BlockArrayEntry retainOrAllocateEntry(ResolvedBlockArray blocks, boolean replace) {
-/* 43 */     BlockPlacementMask.BlockArrayEntry entry = this.tempEntry;
-/* 44 */     entry.set(blocks, replace);
+/*    */   public BlockMaskCondition.MaskEntry retainOrAllocateEntry(@Nonnull ResolvedBlockArray blocks, boolean replace) {
+/* 42 */     BlockMaskCondition.MaskEntry entry = this.tempEntry;
+/* 43 */     entry.set(blocks, replace);
 /*    */     
-/* 46 */     BlockPlacementMask.BlockArrayEntry old = this.entries.putIfAbsent(entry, entry);
-/* 47 */     if (old != null) return old;
+/* 45 */     BlockMaskCondition.MaskEntry old = this.entries.putIfAbsent(entry, entry);
+/* 46 */     if (old != null) return old;
 /*    */     
-/* 49 */     this.tempEntry = new BlockPlacementMask.BlockArrayEntry();
-/* 50 */     return entry;
+/* 48 */     this.tempEntry = new BlockMaskCondition.MaskEntry();
+/* 49 */     return entry;
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefab\BlockPlacementMaskRegistry.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\loader\prefab\BlockPlacementMaskRegistry.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

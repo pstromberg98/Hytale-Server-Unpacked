@@ -84,7 +84,7 @@ public class DeltaCertificateRequestAttributeValue implements ASN1Encodable {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\pkcs\DeltaCertificateRequestAttributeValue.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\pkcs\DeltaCertificateRequestAttributeValue.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

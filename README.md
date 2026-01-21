@@ -1,5 +1,16 @@
 # Hytale Server Plugin API Documentation
 
+This project is auto-generated from the decompiled source code and shared as a reference only, to allow reading of public methods. It is not intended for build purposes. 
+<br>
+
+For more details you can visit our discord channel:  https://discord.gg/Xx86jhzNaJ
+
+
+## AI Integration
+
+If you intend to use this project as a reference for writing code with artificial intelligence, you can download it and specify the file location com/hypixel/hytale in your prompts so that the agent can receive information about the project.
+
+
 ## Languages
 [Türkçe (Turkish)](README_TR.md)
 
@@ -7,8 +18,6 @@
 - [English](HYTALE_CORE_API.md)
 - [Türkçe](HYTALE_CORE_API_TR.md)
 
-
-This documentation is auto-generated from the decompiled source code.
 
 ## AssetEditor
 - **Version**: 1.0.0

@@ -7,18 +7,19 @@
 /*    */ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.server.OpenCustomUIInteraction;
 /*    */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nullable;
 /*    */ 
 /*    */ public class MemoriesPageSupplier
-/*    */   implements OpenCustomUIInteraction.CustomPageSupplier {
-/*    */   @NullableDecl
+/*    */   implements OpenCustomUIInteraction.CustomPageSupplier
+/*    */ {
+/*    */   @Nullable
 /*    */   public CustomUIPage tryCreate(Ref<EntityStore> ref, ComponentAccessor<EntityStore> componentAccessor, PlayerRef playerRef, InteractionContext context) {
-/* 16 */     return (CustomUIPage)new MemoriesPage(playerRef, context.getTargetBlock());
+/* 17 */     return (CustomUIPage)new MemoriesPage(playerRef, context.getTargetBlock());
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\page\MemoriesPageSupplier.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\page\MemoriesPageSupplier.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -995,14 +995,22 @@
 /*      */     }
 /*      */     else {
 /*      */       
-/*  998 */       CompletableFuture.runAsync(() -> { Player playerComponent = (Player)ref.getStore().getComponent(ref, Player.getComponentType()); if (playerComponent != null) playerComponent.remove();  }(Executor)world)
-/*      */ 
+/*  998 */       CompletableFuture<Void> removedFuture = new CompletableFuture<>();
+/*  999 */       CompletableFuture.runAsync(() -> { Player playerComponent = (Player)ref.getStore().getComponent(ref, Player.getComponentType()); if (playerComponent != null) playerComponent.remove();  }(Executor)world)
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */         
-/* 1004 */         .orTimeout(5L, TimeUnit.SECONDS)
-/* 1005 */         .whenComplete((result, error) -> {
+/* 1004 */         .whenComplete((unused, throwable) -> {
+/*      */             if (throwable != null) {
+/*      */               removedFuture.completeExceptionally(throwable);
+/*      */             } else {
+/*      */               removedFuture.complete(unused);
+/*      */             } 
+/*      */           });
+/*      */       
+/* 1012 */       removedFuture.orTimeout(5L, TimeUnit.SECONDS)
+/* 1013 */         .whenComplete((result, error) -> {
 /*      */             if (error != null) {
 /*      */               ((HytaleLogger.Api)getLogger().at(Level.WARNING).withCause(error)).log("Timeout or error waiting for player '%s' removal from world store", playerRef.getUsername());
 /*      */             }
@@ -1022,16 +1030,16 @@
 /*      */ 
 /*      */   
 /*      */   private void finalizePlayerRemoval(@Nonnull PlayerRef playerRef) {
-/* 1025 */     this.players.remove(playerRef.getUuid());
+/* 1033 */     this.players.remove(playerRef.getUuid());
 /*      */     
-/* 1027 */     if (Constants.SINGLEPLAYER) {
-/* 1028 */       if (this.players.isEmpty()) {
-/* 1029 */         getLogger().at(Level.INFO).log("No players left on singleplayer server shutting down!");
-/* 1030 */         HytaleServer.get().shutdownServer();
-/* 1031 */       } else if (SingleplayerModule.isOwner(playerRef)) {
-/* 1032 */         getLogger().at(Level.INFO).log("Owner left the singleplayer server shutting down!");
-/* 1033 */         getPlayers().forEach(p -> p.getPacketHandler().disconnect(playerRef.getUsername() + " left! Shutting down singleplayer world!"));
-/* 1034 */         HytaleServer.get().shutdownServer();
+/* 1035 */     if (Constants.SINGLEPLAYER) {
+/* 1036 */       if (this.players.isEmpty()) {
+/* 1037 */         getLogger().at(Level.INFO).log("No players left on singleplayer server shutting down!");
+/* 1038 */         HytaleServer.get().shutdownServer();
+/* 1039 */       } else if (SingleplayerModule.isOwner(playerRef)) {
+/* 1040 */         getLogger().at(Level.INFO).log("Owner left the singleplayer server shutting down!");
+/* 1041 */         getPlayers().forEach(p -> p.getPacketHandler().disconnect(playerRef.getUsername() + " left! Shutting down singleplayer world!"));
+/* 1042 */         HytaleServer.get().shutdownServer();
 /*      */       } 
 /*      */     }
 /*      */   }
@@ -1044,11 +1052,11 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<PlayerRef> resetPlayer(@Nonnull PlayerRef oldPlayer) {
-/* 1047 */     return this.playerStorage.load(oldPlayer.getUuid())
-/* 1048 */       .exceptionally(throwable -> {
+/* 1055 */     return this.playerStorage.load(oldPlayer.getUuid())
+/* 1056 */       .exceptionally(throwable -> {
 /*      */           
 /*      */           throw new RuntimeException("Exception when adding player to universe:", throwable);
-/* 1051 */         }).thenCompose(holder -> resetPlayer(oldPlayer, holder));
+/* 1059 */         }).thenCompose(holder -> resetPlayer(oldPlayer, holder));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1060,7 +1068,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public CompletableFuture<PlayerRef> resetPlayer(@Nonnull PlayerRef oldPlayer, @Nonnull Holder<EntityStore> holder) {
-/* 1063 */     return resetPlayer(oldPlayer, holder, (World)null, (Transform)null);
+/* 1071 */     return resetPlayer(oldPlayer, holder, (World)null, (Transform)null);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1074,35 +1082,35 @@
 /*      */   @Nonnull
 /*      */   public CompletableFuture<PlayerRef> resetPlayer(@Nonnull PlayerRef playerRef, @Nonnull Holder<EntityStore> holder, @Nullable World world, @Nullable Transform transform) {
 /*      */     World targetWorld;
-/* 1077 */     UUID uuid = playerRef.getUuid();
-/* 1078 */     Player oldPlayer = playerRef.<Player>getComponent(Player.getComponentType());
+/* 1085 */     UUID uuid = playerRef.getUuid();
+/* 1086 */     Player oldPlayer = playerRef.<Player>getComponent(Player.getComponentType());
 /*      */ 
 /*      */     
-/* 1081 */     if (world == null) {
-/* 1082 */       targetWorld = oldPlayer.getWorld();
+/* 1089 */     if (world == null) {
+/* 1090 */       targetWorld = oldPlayer.getWorld();
 /*      */     } else {
-/* 1084 */       targetWorld = world;
+/* 1092 */       targetWorld = world;
 /*      */     } 
 /*      */     
-/* 1087 */     getLogger().at(Level.INFO).log("Resetting player '%s', moving to world '%s' at location %s (%s)", playerRef.getUsername(), (world != null) ? world.getName() : null, transform, playerRef.getUuid());
+/* 1095 */     getLogger().at(Level.INFO).log("Resetting player '%s', moving to world '%s' at location %s (%s)", playerRef.getUsername(), (world != null) ? world.getName() : null, transform, playerRef.getUuid());
 /*      */     
-/* 1089 */     GamePacketHandler playerConnection = (GamePacketHandler)playerRef.getPacketHandler();
+/* 1097 */     GamePacketHandler playerConnection = (GamePacketHandler)playerRef.getPacketHandler();
 /*      */ 
 /*      */     
-/* 1092 */     Player newPlayer = (Player)holder.ensureAndGetComponent(Player.getComponentType());
-/* 1093 */     newPlayer.init(uuid, playerRef);
+/* 1100 */     Player newPlayer = (Player)holder.ensureAndGetComponent(Player.getComponentType());
+/* 1101 */     newPlayer.init(uuid, playerRef);
 /*      */     
-/* 1095 */     CompletableFuture<Void> leaveWorld = new CompletableFuture<>();
-/* 1096 */     if (oldPlayer.getWorld() != null) {
-/* 1097 */       oldPlayer.getWorld().execute(() -> {
+/* 1103 */     CompletableFuture<Void> leaveWorld = new CompletableFuture<>();
+/* 1104 */     if (oldPlayer.getWorld() != null) {
+/* 1105 */       oldPlayer.getWorld().execute(() -> {
 /*      */             playerRef.removeFromStore();
 /*      */             leaveWorld.complete(null);
 /*      */           });
 /*      */     } else {
-/* 1102 */       leaveWorld.complete(null);
+/* 1110 */       leaveWorld.complete(null);
 /*      */     } 
 /*      */     
-/* 1105 */     return leaveWorld.thenAccept(v -> {
+/* 1113 */     return leaveWorld.thenAccept(v -> {
 /*      */           oldPlayer.resetManagers(holder);
 /*      */           
 /*      */           newPlayer.copyFrom(oldPlayer);
@@ -1117,13 +1125,13 @@
 /*      */           playerConnection.setPlayerRef(playerRef, newPlayer);
 /*      */           playerRef.replaceHolder(holder);
 /*      */           holder.putComponent(PlayerRef.getComponentType(), playerRef);
-/* 1120 */         }).thenCompose(v -> targetWorld.addPlayer(playerRef, transform));
+/* 1128 */         }).thenCompose(v -> targetWorld.addPlayer(playerRef, transform));
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void sendMessage(@Nonnull Message message) {
-/* 1125 */     for (PlayerRef ref : this.players.values()) {
-/* 1126 */       ref.sendMessage(message);
+/* 1133 */     for (PlayerRef ref : this.players.values()) {
+/* 1134 */       ref.sendMessage(message);
 /*      */     }
 /*      */   }
 /*      */ 
@@ -1134,8 +1142,8 @@
 /*      */ 
 /*      */   
 /*      */   public void broadcastPacket(@Nonnull Packet packet) {
-/* 1137 */     for (PlayerRef player : this.players.values()) {
-/* 1138 */       player.getPacketHandler().write(packet);
+/* 1145 */     for (PlayerRef player : this.players.values()) {
+/* 1146 */       player.getPacketHandler().write(packet);
 /*      */     }
 /*      */   }
 /*      */ 
@@ -1145,8 +1153,8 @@
 /*      */ 
 /*      */   
 /*      */   public void broadcastPacketNoCache(@Nonnull Packet packet) {
-/* 1148 */     for (PlayerRef player : this.players.values()) {
-/* 1149 */       player.getPacketHandler().writeNoCache(packet);
+/* 1156 */     for (PlayerRef player : this.players.values()) {
+/* 1157 */       player.getPacketHandler().writeNoCache(packet);
 /*      */     }
 /*      */   }
 /*      */ 
@@ -1156,8 +1164,8 @@
 /*      */ 
 /*      */   
 /*      */   public void broadcastPacket(@Nonnull Packet... packets) {
-/* 1159 */     for (PlayerRef player : this.players.values()) {
-/* 1160 */       player.getPacketHandler().write(packets);
+/* 1167 */     for (PlayerRef player : this.players.values()) {
+/* 1168 */       player.getPacketHandler().write(packets);
 /*      */     }
 /*      */   }
 /*      */ 
@@ -1165,7 +1173,7 @@
 /*      */ 
 /*      */   
 /*      */   public PlayerStorage getPlayerStorage() {
-/* 1168 */     return this.playerStorage;
+/* 1176 */     return this.playerStorage;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1174,14 +1182,14 @@
 /*      */ 
 /*      */   
 /*      */   public void setPlayerStorage(@Nonnull PlayerStorage playerStorage) {
-/* 1177 */     this.playerStorage = playerStorage;
+/* 1185 */     this.playerStorage = playerStorage;
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public WorldConfigProvider getWorldConfigProvider() {
-/* 1184 */     return this.worldConfigProvider;
+/* 1192 */     return this.worldConfigProvider;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1189,29 +1197,29 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public ComponentType<EntityStore, PlayerRef> getPlayerRefComponentType() {
-/* 1192 */     return this.playerRefComponentType;
+/* 1200 */     return this.playerRefComponentType;
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   @Deprecated
 /*      */   public static Map<Integer, String> getLegacyBlockIdMap() {
-/* 1198 */     return LEGACY_BLOCK_ID_MAP;
+/* 1206 */     return LEGACY_BLOCK_ID_MAP;
 /*      */   }
 /*      */   
 /*      */   public static Path getWorldGenPath() {
 /*      */     Path worldGenPath;
-/* 1203 */     OptionSet optionSet = Options.getOptionSet();
-/* 1204 */     if (optionSet.has(Options.WORLD_GEN_DIRECTORY)) {
-/* 1205 */       worldGenPath = (Path)optionSet.valueOf(Options.WORLD_GEN_DIRECTORY);
+/* 1211 */     OptionSet optionSet = Options.getOptionSet();
+/* 1212 */     if (optionSet.has(Options.WORLD_GEN_DIRECTORY)) {
+/* 1213 */       worldGenPath = (Path)optionSet.valueOf(Options.WORLD_GEN_DIRECTORY);
 /*      */     } else {
-/* 1207 */       worldGenPath = AssetUtil.getHytaleAssetsPath().resolve("Server").resolve("World");
+/* 1215 */       worldGenPath = AssetUtil.getHytaleAssetsPath().resolve("Server").resolve("World");
 /*      */     } 
-/* 1209 */     return worldGenPath;
+/* 1217 */     return worldGenPath;
 /*      */   }
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\Universe.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\Universe.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

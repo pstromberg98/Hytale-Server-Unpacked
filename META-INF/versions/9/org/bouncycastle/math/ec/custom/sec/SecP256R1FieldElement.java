@@ -140,7 +140,7 @@ public class SecP256R1FieldElement extends ECFieldElement.AbstractFp {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecP256R1FieldElement.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\math\ec\custom\sec\SecP256R1FieldElement.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

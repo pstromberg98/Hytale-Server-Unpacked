@@ -195,7 +195,7 @@
 /* 195 */               boolean isCandidateBlock = (!surfaceLimited || current != 0);
 /* 196 */               if (isCandidateBlock) {
 /* 197 */                 BlockFluidEntry blockEntry = CaveNodeShapeUtils.getFillingBlock(caveType, caveNodeType, y, random);
-/* 198 */                 if (caveType.getBlockMask().eval(current, currentFluid, blockEntry)) {
+/* 198 */                 if (caveType.getBlockMask().eval(current, currentFluid, blockEntry.blockId(), blockEntry.fluidId())) {
 /* 199 */                   if (execution.setBlock(cx, y, cz, (byte)6, blockEntry, environment)) {
 /* 200 */                     if (y < lowest) lowest = y; 
 /* 201 */                     if (y > highest) highest = y; 
@@ -364,7 +364,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\cave\shape\DistortedCaveNodeShape.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\worldgen\cave\shape\DistortedCaveNodeShape.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

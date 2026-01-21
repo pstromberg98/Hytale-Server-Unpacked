@@ -45,6 +45,7 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   private Vector3f headRotation;
@@ -60,30 +61,10 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public Teleport(@Nullable World world, @Nonnull Transform transform) {
-/*  64 */     this(world, transform.getPosition(), transform.getRotation());
-/*     */   }
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
 /*     */   public Teleport(@Nullable World world, @Nonnull Vector3d position, @Nonnull Vector3f rotation) {
-/*  75 */     this.world = world;
-/*  76 */     this.position.assign(position);
-/*  77 */     this.rotation.assign(rotation);
-/*     */   }
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
-/*     */   public Teleport(@Nonnull Transform transform) {
-/*  86 */     this(null, transform.getPosition(), transform.getRotation());
+/*  65 */     this.world = world;
+/*  66 */     this.position.assign(position);
+/*  67 */     this.rotation.assign(rotation);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -93,9 +74,61 @@
 /*     */ 
 /*     */   
 /*     */   public Teleport(@Nonnull Vector3d position, @Nonnull Vector3f rotation) {
-/*  96 */     this.world = null;
-/*  97 */     this.position.assign(position);
-/*  98 */     this.rotation.assign(rotation);
+/*  77 */     this.world = null;
+/*  78 */     this.position.assign(position);
+/*  79 */     this.rotation.assign(rotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public static Teleport createForPlayer(@Nullable World world, @Nonnull Transform transform) {
+/*  93 */     Vector3f headRotation = transform.getRotation();
+/*  94 */     Vector3f bodyRotation = new Vector3f(0.0F, headRotation.getYaw(), 0.0F);
+/*  95 */     return (new Teleport(world, transform.getPosition(), bodyRotation))
+/*  96 */       .setHeadRotation(headRotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public static Teleport createForPlayer(@Nullable World world, @Nonnull Vector3d position, @Nonnull Vector3f rotation) {
+/* 113 */     Vector3f headRotation = rotation.clone();
+/* 114 */     Vector3f bodyRotation = new Vector3f(0.0F, headRotation.getYaw(), 0.0F);
+/* 115 */     return (new Teleport(world, position, bodyRotation))
+/* 116 */       .setHeadRotation(headRotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public static Teleport createForPlayer(@Nonnull Vector3d position, @Nonnull Vector3f rotation) {
+/* 131 */     return createForPlayer(null, position, rotation);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -105,25 +138,78 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*     */   public Teleport withHeadRotation(@Nonnull Vector3f headRotation) {
-/* 109 */     this.headRotation = headRotation;
-/* 110 */     return this;
+/*     */   public static Teleport createForPlayer(@Nonnull Transform transform) {
+/* 142 */     return createForPlayer((World)null, transform);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   public Teleport withResetRoll() {
-/* 117 */     this.rotation.setRoll(0.0F);
-/* 118 */     return this;
+/*     */   @Nonnull
+/*     */   public static Teleport createExact(@Nonnull Vector3d position, @Nonnull Vector3f bodyRotation, @Nonnull Vector3f headRotation) {
+/* 159 */     return (new Teleport(position, bodyRotation)).setHeadRotation(headRotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public static Teleport createExact(@Nonnull Vector3d position, @Nonnull Vector3f bodyRotation) {
+/* 174 */     return new Teleport(position, bodyRotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public void setPosition(@Nonnull Vector3d position) {
+/* 183 */     this.position.assign(position);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public void setRotation(@Nonnull Vector3f rotation) {
+/* 192 */     this.rotation.assign(rotation);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public Teleport setHeadRotation(@Nonnull Vector3f headRotation) {
+/* 203 */     this.headRotation = headRotation.clone();
+/* 204 */     return this;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public Teleport withoutVelocityReset() {
-/* 125 */     this.resetVelocity = false;
-/* 126 */     return this;
+/* 211 */     this.resetVelocity = false;
+/* 212 */     return this;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -131,7 +217,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public World getWorld() {
-/* 134 */     return this.world;
+/* 220 */     return this.world;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -139,7 +225,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3d getPosition() {
-/* 142 */     return this.position;
+/* 228 */     return this.position;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -147,7 +233,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3f getRotation() {
-/* 150 */     return this.rotation;
+/* 236 */     return this.rotation;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -155,25 +241,25 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public Vector3f getHeadRotation() {
-/* 158 */     return this.headRotation;
+/* 244 */     return this.headRotation;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean isResetVelocity() {
-/* 165 */     return this.resetVelocity;
+/* 251 */     return this.resetVelocity;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Teleport clone() {
-/* 171 */     return new Teleport(this.world, this.position, this.rotation);
+/* 257 */     return new Teleport(this.world, this.position, this.rotation);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\teleport\Teleport.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\teleport\Teleport.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

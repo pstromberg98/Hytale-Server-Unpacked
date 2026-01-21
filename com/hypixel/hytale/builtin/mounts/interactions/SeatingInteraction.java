@@ -52,7 +52,7 @@
 /* 52 */     BlockMountAPI.BlockMountResult result = BlockMountAPI.mountOnBlock(ref, commandBuffer, targetBlock, whereWasHit);
 /*    */     
 /* 54 */     if (result == BlockMountAPI.DidNotMount.ALREADY_MOUNTED)
-/* 55 */     { int soundEventIndex = SoundEvent.getAssetMap().getIndex("Creative_Play_Add_Mask");
+/* 55 */     { int soundEventIndex = SoundEvent.getAssetMap().getIndex("SFX_Creative_Play_Add_Mask");
 /* 56 */       SoundUtil.playSoundEvent2d(ref, soundEventIndex, SoundCategory.SFX, (ComponentAccessor)commandBuffer); }
 /* 57 */     else if (result instanceof BlockMountAPI.Mounted) { BlockMountAPI.Mounted mounted = (BlockMountAPI.Mounted)result;
 /* 58 */       BlockSoundSet soundSet = (BlockSoundSet)BlockSoundSet.getAssetMap().getAsset(mounted.blockType().getBlockSoundSetIndex());
@@ -70,7 +70,7 @@
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\mounts\interactions\SeatingInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\mounts\interactions\SeatingInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

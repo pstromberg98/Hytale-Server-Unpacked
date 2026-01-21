@@ -36,7 +36,7 @@ class BC11XDHPrivateKey extends BCXDHPrivateKey implements XECPrivateKey {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\11\org\bouncycastle\jcajce\provider\asymmetric\edec\BC11XDHPrivateKey.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\11\org\bouncycastle\jcajce\provider\asymmetric\edec\BC11XDHPrivateKey.class
  * Java compiler version: 11 (55.0)
  * JD-Core Version:       1.1.3
  */

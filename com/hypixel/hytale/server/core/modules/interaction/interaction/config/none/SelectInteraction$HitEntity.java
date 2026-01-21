@@ -402,7 +402,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class HitEntity
 /*     */   implements NetworkSerializable<HitEntity>
 /*     */ {
@@ -411,7 +410,7 @@
 /*     */   protected SelectInteraction.EntityMatcher[] matchers;
 /*     */   
 /*     */   static {
-/* 414 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HitEntity.class, HitEntity::new).appendInherited(new KeyedCodec("Next", (Codec)RootInteraction.CHILD_ASSET_CODEC), (o, i) -> o.next = i, o -> o.next, (o, p) -> o.next = p.next).addValidatorLate(() -> RootInteraction.VALIDATOR_CACHE.getValidator().late()).addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("Matchers", (Codec)new ArrayCodec((Codec)SelectInteraction.EntityMatcher.CODEC, x$0 -> new SelectInteraction.EntityMatcher[x$0])), (o, i) -> o.matchers = i, o -> o.matchers, (o, p) -> o.matchers = p.matchers).addValidator(Validators.nonNull()).add()).build();
+/* 413 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HitEntity.class, HitEntity::new).appendInherited(new KeyedCodec("Next", (Codec)RootInteraction.CHILD_ASSET_CODEC), (o, i) -> o.next = i, o -> o.next, (o, p) -> o.next = p.next).addValidatorLate(() -> RootInteraction.VALIDATOR_CACHE.getValidator().late()).addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("Matchers", (Codec)new ArrayCodec((Codec)SelectInteraction.EntityMatcher.CODEC, x$0 -> new SelectInteraction.EntityMatcher[x$0])), (o, i) -> o.matchers = i, o -> o.matchers, (o, p) -> o.matchers = p.matchers).addValidator(Validators.nonNull()).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -419,17 +418,17 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public HitEntity toPacket() {
-/* 422 */     EntityMatcher[] protoMatchers = new EntityMatcher[this.matchers.length];
-/* 423 */     for (int i = 0; i < this.matchers.length; i++) {
-/* 424 */       protoMatchers[i] = this.matchers[i].toPacket();
+/* 421 */     EntityMatcher[] protoMatchers = new EntityMatcher[this.matchers.length];
+/* 422 */     for (int i = 0; i < this.matchers.length; i++) {
+/* 423 */       protoMatchers[i] = this.matchers[i].toPacket();
 /*     */     }
-/* 426 */     return new HitEntity(
-/* 427 */         RootInteraction.getRootInteractionIdOrUnknown(this.next), protoMatchers);
+/* 425 */     return new HitEntity(
+/* 426 */         RootInteraction.getRootInteractionIdOrUnknown(this.next), protoMatchers);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\SelectInteraction$HitEntity.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\SelectInteraction$HitEntity.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

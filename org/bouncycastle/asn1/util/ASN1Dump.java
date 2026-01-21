@@ -209,7 +209,7 @@ public class ASN1Dump {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn\\util\ASN1Dump.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn\\util\ASN1Dump.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

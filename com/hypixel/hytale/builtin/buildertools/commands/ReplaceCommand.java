@@ -120,77 +120,77 @@
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 123 */     if (fromMaterial == null) {
-/* 124 */       context.sendMessage(Message.translation("server.builderTools.invalidBlockType")
-/* 125 */           .param("name", fromValue)
-/* 126 */           .param("key", fromValue));
-/*     */       
-/*     */       return;
-/*     */     } 
-/*     */     
-/* 131 */     if (substringSwap) {
-/* 132 */       String[] blockKeys = fromValue.split(",");
-/* 133 */       Int2IntArrayMap swapMap = new Int2IntArrayMap();
-/*     */       
-/* 135 */       for (int blockId = 0; blockId < assetMap.getAssetCount(); blockId++) {
-/* 136 */         BlockType blockType = (BlockType)assetMap.getAsset(blockId);
-/* 137 */         String blockKeyStr = blockType.getId();
-/*     */         
-/* 139 */         for (String from : blockKeys) {
-/* 140 */           if (blockKeyStr.contains(from.trim())) {
-/*     */             String replacedKey;
-/*     */             try {
-/* 143 */               replacedKey = blockKeyStr.replace(from.trim(), toValue);
-/* 144 */             } catch (Exception e) {}
-/*     */ 
-/*     */ 
-/*     */             
-/* 148 */             int index = assetMap.getIndex(replacedKey);
-/* 149 */             if (index != Integer.MIN_VALUE) {
-/* 150 */               swapMap.put(blockId, index);
-/*     */               
-/*     */               break;
-/*     */             } 
-/*     */           } 
-/*     */         } 
-/*     */       } 
-/* 157 */       if (!swapMap.isEmpty()) {
-/* 158 */         BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> s.replace(r, (), componentAccessor));
-/*     */         
-/* 160 */         context.sendMessage(Message.translation("server.builderTools.replace.replacementDone")
-/* 161 */             .param("nb", swapMap.size())
-/* 162 */             .param("to", toValue));
-/*     */       } else {
-/* 164 */         context.sendMessage(Message.translation("server.commands.replace.noMatchingBlocks")
-/* 165 */             .param("blockType", fromValue));
-/*     */       } 
-/*     */       
-/*     */       return;
-/*     */     } 
-/*     */     
-/* 171 */     if (regex) {
+/* 123 */     if (regex) {
 /*     */       Pattern pattern;
 /*     */       try {
-/* 174 */         pattern = Pattern.compile(fromValue);
-/* 175 */       } catch (PatternSyntaxException e) {
-/* 176 */         context.sendMessage(Message.translation("server.commands.replace.invalidRegex")
-/* 177 */             .param("error", e.getMessage()));
+/* 126 */         pattern = Pattern.compile(fromValue);
+/* 127 */       } catch (PatternSyntaxException e) {
+/* 128 */         context.sendMessage(Message.translation("server.commands.replace.invalidRegex")
+/* 129 */             .param("error", e.getMessage()));
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 181 */       int[] arrayOfInt = toIntArray(toBlockIds);
-/* 182 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
+/* 133 */       int[] arrayOfInt = toIntArray(toBlockIds);
+/* 134 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
 /*     */             s.replace(r, (), toIds, componentAccessor);
 /*     */ 
 /*     */ 
 /*     */             
-/*     */             context.sendMessage(Message.translation("server.commands.replace.success").param("regex", fromValue).param("to", toValue));
+/*     */             context.sendMessage(Message.translation("server.commands.replace.success").param("regex", fromValue).param("replacement", toValue));
 /*     */           });
 /*     */ 
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */ 
+/*     */     
+/* 147 */     if (fromMaterial == null) {
+/* 148 */       context.sendMessage(Message.translation("server.builderTools.invalidBlockType")
+/* 149 */           .param("name", fromValue)
+/* 150 */           .param("key", fromValue));
+/*     */       
+/*     */       return;
+/*     */     } 
+/*     */     
+/* 155 */     if (substringSwap) {
+/* 156 */       String[] blockKeys = fromValue.split(",");
+/* 157 */       Int2IntArrayMap swapMap = new Int2IntArrayMap();
+/*     */       
+/* 159 */       for (int blockId = 0; blockId < assetMap.getAssetCount(); blockId++) {
+/* 160 */         BlockType blockType = (BlockType)assetMap.getAsset(blockId);
+/* 161 */         String blockKeyStr = blockType.getId();
+/*     */         
+/* 163 */         for (String from : blockKeys) {
+/* 164 */           if (blockKeyStr.contains(from.trim())) {
+/*     */             String replacedKey;
+/*     */             try {
+/* 167 */               replacedKey = blockKeyStr.replace(from.trim(), toValue);
+/* 168 */             } catch (Exception e) {}
+/*     */ 
+/*     */ 
+/*     */             
+/* 172 */             int index = assetMap.getIndex(replacedKey);
+/* 173 */             if (index != Integer.MIN_VALUE) {
+/* 174 */               swapMap.put(blockId, index);
+/*     */               
+/*     */               break;
+/*     */             } 
+/*     */           } 
+/*     */         } 
+/*     */       } 
+/* 181 */       if (!swapMap.isEmpty()) {
+/* 182 */         BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> s.replace(r, (), componentAccessor));
+/*     */         
+/* 184 */         context.sendMessage(Message.translation("server.builderTools.replace.replacementDone")
+/* 185 */             .param("nb", swapMap.size())
+/* 186 */             .param("to", toValue));
+/*     */       } else {
+/* 188 */         context.sendMessage(Message.translation("server.commands.replace.noMatchingBlocks")
+/* 189 */             .param("blockType", fromValue));
+/*     */       } 
+/*     */       
+/*     */       return;
+/*     */     } 
 /*     */     
 /* 195 */     int[] toIds = toIntArray(toBlockIds);
 /* 196 */     int fromBlockId = fromMaterial.getBlockId();
@@ -245,7 +245,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\commands\ReplaceCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\buildertools\commands\ReplaceCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

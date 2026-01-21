@@ -19,8 +19,6 @@
 /*     */ import java.util.Set;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -764,47 +762,47 @@
 /*     */   static final float CURVE_MULTIPLIER = 2.0F;
 /*     */   public static final double MIN_DAMAGE = 10.0D;
 /*     */   @Nonnull
-/* 767 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
-/* 768 */         (Query)EntityStatMap.getComponentType(), 
-/* 769 */         (Query)MovementStatesComponent.getComponentType(), 
-/* 770 */         (Query)EntityModule.get().getPlayerComponentType(), 
-/* 771 */         (Query)PlayerInput.getComponentType()
+/* 765 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
+/* 766 */         (Query)EntityStatMap.getComponentType(), 
+/* 767 */         (Query)MovementStatesComponent.getComponentType(), 
+/* 768 */         (Query)EntityModule.get().getPlayerComponentType(), 
+/* 769 */         (Query)PlayerInput.getComponentType()
 /*     */       });
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 778 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PlayerSystems.ProcessPlayerInput.class));
+/* 776 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PlayerSystems.ProcessPlayerInput.class));
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 785 */     return DamageModule.get().getGatherDamageGroup();
+/* 783 */     return DamageModule.get().getGatherDamageGroup();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 791 */     return QUERY;
+/* 789 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 797 */     return DEPENDENCIES;
+/* 795 */     return DEPENDENCIES;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void tick(float dt, int systemIndex, @NonNullDecl Store<EntityStore> store) {
-/* 802 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 803 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
+/*     */   public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
+/* 800 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 801 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 807 */     super.tick(dt, systemIndex, store);
+/* 805 */     super.tick(dt, systemIndex, store);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -1076,47 +1074,47 @@
 /*     */     //   551: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #812	-> 0
-/*     */     //   #813	-> 13
-/*     */     //   #815	-> 32
-/*     */     //   #816	-> 45
-/*     */     //   #817	-> 64
-/*     */     //   #819	-> 77
-/*     */     //   #820	-> 90
-/*     */     //   #822	-> 100
-/*     */     //   #823	-> 107
-/*     */     //   #824	-> 122
-/*     */     //   #826	-> 136
-/*     */     //   #827	-> 184
-/*     */     //   #828	-> 207
-/*     */     //   #829	-> 214
-/*     */     //   #830	-> 227
-/*     */     //   #832	-> 246
-/*     */     //   #833	-> 267
-/*     */     //   #834	-> 274
-/*     */     //   #835	-> 287
-/*     */     //   #837	-> 294
-/*     */     //   #838	-> 314
-/*     */     //   #839	-> 327
-/*     */     //   #841	-> 346
-/*     */     //   #842	-> 368
-/*     */     //   #843	-> 378
-/*     */     //   #845	-> 397
-/*     */     //   #846	-> 404
-/*     */     //   #848	-> 413
-/*     */     //   #851	-> 424
-/*     */     //   #852	-> 435
-/*     */     //   #853	-> 447
-/*     */     //   #854	-> 453
-/*     */     //   #855	-> 465
-/*     */     //   #859	-> 484
-/*     */     //   #860	-> 489
-/*     */     //   #861	-> 509
-/*     */     //   #862	-> 527
-/*     */     //   #866	-> 536
-/*     */     //   #868	-> 542
-/*     */     //   #823	-> 545
-/*     */     //   #873	-> 551
+/*     */     //   #810	-> 0
+/*     */     //   #811	-> 13
+/*     */     //   #813	-> 32
+/*     */     //   #814	-> 45
+/*     */     //   #815	-> 64
+/*     */     //   #817	-> 77
+/*     */     //   #818	-> 90
+/*     */     //   #820	-> 100
+/*     */     //   #821	-> 107
+/*     */     //   #822	-> 122
+/*     */     //   #824	-> 136
+/*     */     //   #825	-> 184
+/*     */     //   #826	-> 207
+/*     */     //   #827	-> 214
+/*     */     //   #828	-> 227
+/*     */     //   #830	-> 246
+/*     */     //   #831	-> 267
+/*     */     //   #832	-> 274
+/*     */     //   #833	-> 287
+/*     */     //   #835	-> 294
+/*     */     //   #836	-> 314
+/*     */     //   #837	-> 327
+/*     */     //   #839	-> 346
+/*     */     //   #840	-> 368
+/*     */     //   #841	-> 378
+/*     */     //   #843	-> 397
+/*     */     //   #844	-> 404
+/*     */     //   #846	-> 413
+/*     */     //   #849	-> 424
+/*     */     //   #850	-> 435
+/*     */     //   #851	-> 447
+/*     */     //   #852	-> 453
+/*     */     //   #853	-> 465
+/*     */     //   #857	-> 484
+/*     */     //   #858	-> 489
+/*     */     //   #859	-> 509
+/*     */     //   #860	-> 527
+/*     */     //   #864	-> 536
+/*     */     //   #866	-> 542
+/*     */     //   #821	-> 545
+/*     */     //   #871	-> 551
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   191	16	17	velocityEntry	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$SetClientVelocity;
@@ -1186,12 +1184,12 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 877 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 875 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$FallDamagePlayers.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$FallDamagePlayers.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

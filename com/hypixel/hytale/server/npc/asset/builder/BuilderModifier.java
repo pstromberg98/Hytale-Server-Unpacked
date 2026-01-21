@@ -3,6 +3,7 @@
 /*     */ import com.google.gson.JsonArray;
 /*     */ import com.google.gson.JsonElement;
 /*     */ import com.google.gson.JsonObject;
+/*     */ import com.hypixel.hytale.codec.Codec;
 /*     */ import com.hypixel.hytale.codec.ExtraInfo;
 /*     */ import com.hypixel.hytale.codec.schema.NamedSchema;
 /*     */ import com.hypixel.hytale.codec.schema.SchemaContext;
@@ -86,202 +87,209 @@
 /*     */   private final Map<String, String> interactionVars;
 /*     */   
 /*     */   protected BuilderModifier(Object2ObjectMap<String, ExpressionHolder> builderExpressionMap, StatePair[] exportedStateIndexes, StateMappingHelper stateHelper, String combatConfig, Map<String, String> interactionVars) {
-/*  89 */     this.builderExpressionMap = builderExpressionMap;
-/*  90 */     this.exportedStateIndexes = exportedStateIndexes;
-/*  91 */     this.stateHelper = stateHelper;
-/*  92 */     this.combatConfig = combatConfig;
-/*  93 */     this.interactionVars = interactionVars;
+/*  90 */     this.builderExpressionMap = builderExpressionMap;
+/*  91 */     this.exportedStateIndexes = exportedStateIndexes;
+/*  92 */     this.stateHelper = stateHelper;
+/*  93 */     this.combatConfig = combatConfig;
+/*  94 */     this.interactionVars = interactionVars;
 /*     */   }
 /*     */   
 /*     */   public String getCombatConfig() {
-/*  97 */     return this.combatConfig;
+/*  98 */     return this.combatConfig;
 /*     */   }
 /*     */   
 /*     */   public Map<String, String> getInteractionVars() {
-/* 101 */     return this.interactionVars;
+/* 102 */     return this.interactionVars;
 /*     */   }
 /*     */   
 /*     */   public boolean isEmpty() {
-/* 105 */     return this.builderExpressionMap.isEmpty();
+/* 106 */     return this.builderExpressionMap.isEmpty();
 /*     */   }
 /*     */   
 /*     */   public int exportedStateCount() {
-/* 109 */     return this.exportedStateIndexes.length;
+/* 110 */     return this.exportedStateIndexes.length;
 /*     */   }
 /*     */   
 /*     */   public void applyComponentStateMap(@Nonnull BuilderSupport support) {
-/* 113 */     support.setModifiedStateMap(this.stateHelper, this.exportedStateIndexes);
+/* 114 */     support.setModifiedStateMap(this.stateHelper, this.exportedStateIndexes);
 /*     */   }
 /*     */   
 /*     */   public void popComponentStateMap(@Nonnull BuilderSupport support) {
-/* 117 */     support.popModifiedStateMap();
+/* 118 */     support.popModifiedStateMap();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Scope createScope(@Nonnull BuilderSupport builderSupport, @Nonnull BuilderParameters builderParameters, Scope globalScope) {
-/* 122 */     ExecutionContext executionContext = builderSupport.getExecutionContext();
-/* 123 */     return createScope(executionContext, builderParameters, globalScope);
+/* 123 */     ExecutionContext executionContext = builderSupport.getExecutionContext();
+/* 124 */     return createScope(executionContext, builderParameters, globalScope);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Scope createScope(ExecutionContext executionContext, @Nonnull BuilderParameters builderParameters, @Nullable Scope globalScope) {
-/* 128 */     StdScope scope = builderParameters.createScope();
-/* 129 */     if (globalScope != null) {
-/* 130 */       StdScope mergedScope = new StdScope(globalScope);
-/* 131 */       mergedScope.merge(scope);
-/* 132 */       scope = mergedScope;
+/* 129 */     StdScope scope = builderParameters.createScope();
+/* 130 */     if (globalScope != null) {
+/* 131 */       StdScope mergedScope = new StdScope(globalScope);
+/* 132 */       mergedScope.merge(scope);
+/* 133 */       scope = mergedScope;
 /*     */     } 
 /*     */     
-/* 135 */     StdScope finalScope = scope;
-/* 136 */     ObjectIterator<Object2ObjectMap.Entry<String, ExpressionHolder>> iterator = Object2ObjectMaps.fastIterator(this.builderExpressionMap);
-/* 137 */     while (iterator.hasNext()) {
-/* 138 */       Object2ObjectMap.Entry<String, ExpressionHolder> pair = (Object2ObjectMap.Entry<String, ExpressionHolder>)iterator.next();
-/* 139 */       String name = (String)pair.getKey();
-/* 140 */       ExpressionHolder holder = (ExpressionHolder)pair.getValue();
-/* 141 */       ValueType valueType = builderParameters.getParameterType(name);
+/* 136 */     StdScope finalScope = scope;
+/* 137 */     ObjectIterator<Object2ObjectMap.Entry<String, ExpressionHolder>> iterator = Object2ObjectMaps.fastIterator(this.builderExpressionMap);
+/* 138 */     while (iterator.hasNext()) {
+/* 139 */       Object2ObjectMap.Entry<String, ExpressionHolder> pair = (Object2ObjectMap.Entry<String, ExpressionHolder>)iterator.next();
+/* 140 */       String name = (String)pair.getKey();
+/* 141 */       ExpressionHolder holder = (ExpressionHolder)pair.getValue();
+/* 142 */       ValueType valueType = builderParameters.getParameterType(name);
 /*     */ 
 /*     */       
-/* 144 */       BuilderExpression expression = holder.getExpression(builderParameters.getInterfaceCode());
-/* 145 */       if (expression == null) {
+/* 145 */       BuilderExpression expression = holder.getExpression(builderParameters.getInterfaceCode());
+/* 146 */       if (expression == null) {
 /*     */         continue;
 /*     */       }
 /*     */ 
 /*     */       
-/* 150 */       if (valueType == ValueType.VOID) {
-/* 151 */         throw new SkipSentryException(new IllegalStateException("Parameter " + name + " does not exist or is private"));
+/* 151 */       if (valueType == ValueType.VOID) {
+/* 152 */         throw new SkipSentryException(new IllegalStateException("Parameter " + name + " does not exist or is private"));
 /*     */       }
 /*     */       
-/* 154 */       if (!ValueType.isAssignableType(expression.getType(), valueType)) {
-/* 155 */         throw new SkipSentryException(new IllegalStateException("Parameter " + name + " has type " + String.valueOf(expression.getType()) + " but should be " + String.valueOf(valueType)));
+/* 155 */       if (!ValueType.isAssignableType(expression.getType(), valueType)) {
+/* 156 */         throw new SkipSentryException(new IllegalStateException("Parameter " + name + " has type " + String.valueOf(expression.getType()) + " but should be " + String.valueOf(valueType)));
 /*     */       }
 /*     */       
-/* 158 */       expression.updateScope(finalScope, name, executionContext);
+/* 159 */       expression.updateScope(finalScope, name, executionContext);
 /*     */     } 
-/* 160 */     return (Scope)scope;
+/* 161 */     return (Scope)scope;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static BuilderModifier fromJSON(@Nonnull JsonObject jsonObject, @Nonnull BuilderParameters builderParameters, @Nonnull StateMappingHelper helper, @Nonnull ExtraInfo extraInfo) {
-/* 165 */     JsonObject modify = null;
-/* 166 */     JsonElement modifyObject = jsonObject.get("Modify");
-/* 167 */     if (modifyObject != null) {
-/* 168 */       modify = BuilderBase.expectObject(modifyObject, "Modify");
+/* 166 */     JsonObject modify = null;
+/* 167 */     JsonElement modifyObject = jsonObject.get("Modify");
+/* 168 */     if (modifyObject != null) {
+/* 169 */       modify = BuilderBase.expectObject(modifyObject, "Modify");
 /*     */     }
 /*     */     
-/* 171 */     if (modify == null || modify.entrySet().isEmpty()) {
-/* 172 */       return EmptyBuilderModifier.INSTANCE;
+/* 172 */     if (modify == null || modify.entrySet().isEmpty()) {
+/* 173 */       return EmptyBuilderModifier.INSTANCE;
 /*     */     }
 /*     */     
-/* 175 */     Object2ObjectOpenHashMap object2ObjectOpenHashMap = new Object2ObjectOpenHashMap();
-/* 176 */     ObjectArrayList objectArrayList = new ObjectArrayList();
-/* 177 */     for (Map.Entry<String, JsonElement> stringElementPair : (Iterable<Map.Entry<String, JsonElement>>)modify.entrySet()) {
-/* 178 */       String key = stringElementPair.getKey();
-/* 179 */       if (object2ObjectOpenHashMap.containsKey(key)) {
-/* 180 */         throw new SkipSentryException(new IllegalStateException("Duplicate entry '" + key + "' in 'Modify' block"));
+/* 176 */     Object2ObjectOpenHashMap object2ObjectOpenHashMap = new Object2ObjectOpenHashMap();
+/* 177 */     ObjectArrayList objectArrayList = new ObjectArrayList();
+/* 178 */     for (Map.Entry<String, JsonElement> stringElementPair : (Iterable<Map.Entry<String, JsonElement>>)modify.entrySet()) {
+/* 179 */       String key = stringElementPair.getKey();
+/* 180 */       if (object2ObjectOpenHashMap.containsKey(key)) {
+/* 181 */         throw new SkipSentryException(new IllegalStateException("Duplicate entry '" + key + "' in 'Modify' block"));
 /*     */       }
-/* 182 */       if (key.equals("_InterfaceParameters") || key.equals("_CombatConfig") || key.equals("_InteractionVars")) {
+/* 183 */       if (key.equals("_InterfaceParameters") || key.equals("_CombatConfig") || key.equals("_InteractionVars")) {
 /*     */         continue;
 /*     */       }
-/* 185 */       if (key.equals("_ExportStates")) {
-/* 186 */         if (!((JsonElement)stringElementPair.getValue()).isJsonArray()) {
-/* 187 */           throw new SkipSentryException(new IllegalStateException(String.format("%s in modifier block must be a Json Array", new Object[] { "_ExportStates" })));
+/* 186 */       if (key.equals("_ExportStates")) {
+/* 187 */         if (!((JsonElement)stringElementPair.getValue()).isJsonArray()) {
+/* 188 */           throw new SkipSentryException(new IllegalStateException(String.format("%s in modifier block must be a Json Array", new Object[] { "_ExportStates" })));
 /*     */         }
-/* 189 */         StateStringValidator validator = StateStringValidator.requireMainState();
-/* 190 */         JsonArray array = ((JsonElement)stringElementPair.getValue()).getAsJsonArray();
-/* 191 */         for (int i = 0; i < array.size(); i++) {
-/* 192 */           String state = array.get(i).getAsString();
-/* 193 */           if (!validator.test(state)) {
-/* 194 */             throw new SkipSentryException(new IllegalStateException(validator.errorMessage(state)));
+/* 190 */         StateStringValidator validator = StateStringValidator.requireMainState();
+/* 191 */         JsonArray array = ((JsonElement)stringElementPair.getValue()).getAsJsonArray();
+/* 192 */         for (int i = 0; i < array.size(); i++) {
+/* 193 */           String state = array.get(i).getAsString();
+/* 194 */           if (!validator.test(state)) {
+/* 195 */             throw new SkipSentryException(new IllegalStateException(validator.errorMessage(state)));
 /*     */           }
-/* 196 */           String substate = validator.hasSubState() ? validator.getSubState() : helper.getDefaultSubState();
-/* 197 */           helper.getAndPutSetterIndex(validator.getMainState(), substate, (m, s) -> exportedStateIndexes.add(new StatePair(validator.getMainState(), m.intValue(), s.intValue())));
+/* 197 */           String substate = validator.hasSubState() ? validator.getSubState() : helper.getDefaultSubState();
+/* 198 */           helper.getAndPutSetterIndex(validator.getMainState(), substate, (m, s) -> exportedStateIndexes.add(new StatePair(validator.getMainState(), m.intValue(), s.intValue())));
 /*     */         } 
 /*     */         continue;
 /*     */       } 
-/* 201 */       BuilderExpression expression = BuilderExpression.fromJSON(stringElementPair.getValue(), builderParameters, false);
-/* 202 */       object2ObjectOpenHashMap.put(key, new ExpressionHolder(expression));
+/* 202 */       BuilderExpression expression = BuilderExpression.fromJSON(stringElementPair.getValue(), builderParameters, false);
+/* 203 */       object2ObjectOpenHashMap.put(key, new ExpressionHolder(expression));
 /*     */     } 
 /*     */     
-/* 205 */     JsonElement interfaceValue = modify.get("_InterfaceParameters");
-/* 206 */     if (interfaceValue != null) {
-/* 207 */       JsonObject interfaceParameters = BuilderBase.expectObject(interfaceValue, "_InterfaceParameters");
-/* 208 */       for (Map.Entry<String, JsonElement> interfaceEntry : (Iterable<Map.Entry<String, JsonElement>>)interfaceParameters.entrySet()) {
-/* 209 */         String interfaceKey = interfaceEntry.getKey();
-/* 210 */         JsonObject parameters = BuilderBase.expectObject(interfaceEntry.getValue());
-/* 211 */         for (Map.Entry<String, JsonElement> parameterEntry : (Iterable<Map.Entry<String, JsonElement>>)parameters.entrySet()) {
-/* 212 */           ExpressionHolder holder = (ExpressionHolder)object2ObjectOpenHashMap.computeIfAbsent(parameterEntry.getKey(), key -> new ExpressionHolder());
-/* 213 */           if (holder.hasInterfaceMappedExpression(interfaceKey)) {
-/* 214 */             throw new SkipSentryException(new IllegalStateException("Duplicate entry '" + (String)parameterEntry.getKey() + "' in 'Modify' block for interface '" + interfaceKey));
+/* 206 */     JsonElement interfaceValue = modify.get("_InterfaceParameters");
+/* 207 */     if (interfaceValue != null) {
+/* 208 */       JsonObject interfaceParameters = BuilderBase.expectObject(interfaceValue, "_InterfaceParameters");
+/* 209 */       for (Map.Entry<String, JsonElement> interfaceEntry : (Iterable<Map.Entry<String, JsonElement>>)interfaceParameters.entrySet()) {
+/* 210 */         String interfaceKey = interfaceEntry.getKey();
+/* 211 */         JsonObject parameters = BuilderBase.expectObject(interfaceEntry.getValue());
+/* 212 */         for (Map.Entry<String, JsonElement> parameterEntry : (Iterable<Map.Entry<String, JsonElement>>)parameters.entrySet()) {
+/* 213 */           ExpressionHolder holder = (ExpressionHolder)object2ObjectOpenHashMap.computeIfAbsent(parameterEntry.getKey(), key -> new ExpressionHolder());
+/* 214 */           if (holder.hasInterfaceMappedExpression(interfaceKey)) {
+/* 215 */             throw new SkipSentryException(new IllegalStateException("Duplicate entry '" + (String)parameterEntry.getKey() + "' in 'Modify' block for interface '" + interfaceKey));
 /*     */           }
-/* 216 */           holder.addInterfaceMappedExpression(interfaceKey, BuilderExpression.fromJSON(parameterEntry.getValue(), builderParameters, false));
+/* 217 */           holder.addInterfaceMappedExpression(interfaceKey, BuilderExpression.fromJSON(parameterEntry.getValue(), builderParameters, false));
 /*     */         } 
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 221 */     String combatConfig = null;
-/* 222 */     JsonElement combatConfigValue = modify.get("_CombatConfig");
-/* 223 */     if (combatConfigValue != null) {
-/* 224 */       combatConfig = combatConfigValue.getAsString();
-/*     */     }
-/*     */     
-/* 227 */     Map<String, String> interactionVars = null;
-/* 228 */     JsonElement interactionVarsValue = modify.get("_InteractionVars");
-/* 229 */     if (interactionVarsValue != null) {
-/* 230 */       interactionVars = RootInteraction.CHILD_ASSET_CODEC_MAP.decode(BsonUtil.translateJsonToBson(interactionVarsValue), extraInfo);
+/* 222 */     String combatConfig = null;
+/* 223 */     JsonElement combatConfigValue = modify.get("_CombatConfig");
+/* 224 */     if (combatConfigValue != null) {
+/* 225 */       combatConfig = (String)BalanceAsset.CHILD_ASSET_CODEC.decode(BsonUtil.translateJsonToBson(combatConfigValue), extraInfo);
 /*     */       
-/* 232 */       extraInfo.getValidationResults()._processValidationResults();
-/* 233 */       extraInfo.getValidationResults().logOrThrowValidatorExceptions(HytaleLogger.getLogger());
+/* 227 */       extraInfo.getValidationResults()._processValidationResults();
+/* 228 */       extraInfo.getValidationResults().logOrThrowValidatorExceptions(HytaleLogger.getLogger());
 /*     */     } 
 /*     */     
-/* 236 */     return new BuilderModifier((Object2ObjectMap<String, ExpressionHolder>)object2ObjectOpenHashMap, (StatePair[])objectArrayList.toArray(x$0 -> new StatePair[x$0]), helper, combatConfig, interactionVars);
+/* 231 */     Map<String, String> interactionVars = null;
+/* 232 */     JsonElement interactionVarsValue = modify.get("_InteractionVars");
+/* 233 */     if (interactionVarsValue != null) {
+/* 234 */       interactionVars = RootInteraction.CHILD_ASSET_CODEC_MAP.decode(BsonUtil.translateJsonToBson(interactionVarsValue), extraInfo);
+/*     */       
+/* 236 */       extraInfo.getValidationResults()._processValidationResults();
+/* 237 */       extraInfo.getValidationResults().logOrThrowValidatorExceptions(HytaleLogger.getLogger());
+/*     */     } 
+/*     */     
+/* 240 */     return new BuilderModifier((Object2ObjectMap<String, ExpressionHolder>)object2ObjectOpenHashMap, (StatePair[])objectArrayList.toArray(x$0 -> new StatePair[x$0]), helper, combatConfig, interactionVars);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public static void readModifierObject(@Nonnull JsonObject jsonObject, @Nonnull BuilderParameters builderParameters, @Nonnull StringHolder holder, @Nonnull Consumer<StringHolder> referenceConsumer, @Nonnull Consumer<BuilderModifier> builderModifierConsumer, @Nonnull StateMappingHelper helper, @Nonnull ExtraInfo extraInfo) {
-/* 242 */     holder.readJSON(BuilderBase.expectKey(jsonObject, "Reference"), (StringValidator)StringNotEmptyValidator.get(), "Reference", builderParameters);
-/* 243 */     BuilderModifier modifier = fromJSON(jsonObject, builderParameters, helper, extraInfo);
-/* 244 */     referenceConsumer.accept(holder);
-/* 245 */     builderModifierConsumer.accept(modifier);
+/* 246 */     holder.readJSON(BuilderBase.expectKey(jsonObject, "Reference"), (StringValidator)StringNotEmptyValidator.get(), "Reference", builderParameters);
+/* 247 */     BuilderModifier modifier = fromJSON(jsonObject, builderParameters, helper, extraInfo);
+/* 248 */     referenceConsumer.accept(holder);
+/* 249 */     builderModifierConsumer.accept(modifier);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static Schema toSchema(@Nonnull SchemaContext context) {
-/* 250 */     return context.refDefinition(SchemaGenerator.INSTANCE);
+/* 254 */     return context.refDefinition(SchemaGenerator.INSTANCE);
 /*     */   }
 /*     */   
 /*     */   private static class SchemaGenerator implements SchemaConvertable<Void>, NamedSchema {
 /*     */     @Nonnull
-/* 255 */     public static SchemaGenerator INSTANCE = new SchemaGenerator();
+/* 259 */     public static SchemaGenerator INSTANCE = new SchemaGenerator();
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public String getSchemaName() {
-/* 260 */       return "NPC:Type:BuilderModifier";
+/* 264 */       return "NPC:Type:BuilderModifier";
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public Schema toSchema(@Nonnull SchemaContext context) {
-/* 266 */       ObjectSchema s = new ObjectSchema();
-/* 267 */       s.setTitle("BuilderModifier");
-/* 268 */       LinkedHashMap<String, Schema> props = new LinkedHashMap<>();
-/* 269 */       s.setProperties(props);
+/* 270 */       ObjectSchema s = new ObjectSchema();
+/* 271 */       s.setTitle("BuilderModifier");
+/* 272 */       LinkedHashMap<String, Schema> props = new LinkedHashMap<>();
+/* 273 */       s.setProperties(props);
 /*     */       
-/* 271 */       props.put("_ExportStates", new ArraySchema((Schema)new StringSchema()));
-/* 272 */       props.put("_InterfaceParameters", new ObjectSchema());
-/* 273 */       StringSchema combatConfig = new StringSchema();
-/* 274 */       combatConfig.setHytaleAssetRef(BalanceAsset.class.getSimpleName());
-/* 275 */       props.put("_CombatConfig", combatConfig);
-/* 276 */       ObjectSchema interactionVars = new ObjectSchema();
-/* 277 */       interactionVars.setTitle("Map");
-/* 278 */       Schema childSchema = context.refDefinition((SchemaConvertable)RootInteraction.CHILD_ASSET_CODEC);
-/* 279 */       interactionVars.setAdditionalProperties(childSchema);
-/* 280 */       props.put("_InteractionVars", interactionVars);
+/* 275 */       props.put("_ExportStates", new ArraySchema((Schema)new StringSchema()));
+/* 276 */       props.put("_InterfaceParameters", new ObjectSchema());
+/*     */       
+/* 278 */       Schema combatConfigKeySchema = context.refDefinition((SchemaConvertable)Codec.STRING);
+/* 279 */       combatConfigKeySchema.setTitle("Reference to " + BalanceAsset.class.getSimpleName());
+/* 280 */       Schema combatConfigNestedSchema = context.refDefinition((SchemaConvertable)BalanceAsset.CHILD_ASSET_CODEC);
+/* 281 */       Schema combatConfigSchema = Schema.anyOf(new Schema[] { combatConfigKeySchema, combatConfigNestedSchema });
+/* 282 */       props.put("_CombatConfig", combatConfigSchema);
+/*     */       
+/* 284 */       ObjectSchema interactionVars = new ObjectSchema();
+/* 285 */       interactionVars.setTitle("Map");
+/* 286 */       Schema childSchema = context.refDefinition((SchemaConvertable)RootInteraction.CHILD_ASSET_CODEC);
+/* 287 */       interactionVars.setAdditionalProperties(childSchema);
+/* 288 */       props.put("_InteractionVars", interactionVars);
 /*     */ 
 /*     */       
-/* 283 */       s.setAdditionalProperties(BuilderExpression.toSchema(context));
-/* 284 */       return (Schema)s;
+/* 291 */       s.setAdditionalProperties(BuilderExpression.toSchema(context));
+/* 292 */       return (Schema)s;
 /*     */     }
 /*     */   }
 /*     */   
@@ -290,31 +298,31 @@
 /*     */     private Object2ObjectMap<String, BuilderExpression> interfaceMappedExpressions;
 /*     */     
 /*     */     public ExpressionHolder() {
-/* 293 */       this(null);
+/* 301 */       this(null);
 /*     */     }
 /*     */     
 /*     */     public ExpressionHolder(BuilderExpression expression) {
-/* 297 */       this.expression = expression;
+/* 305 */       this.expression = expression;
 /*     */     }
 /*     */     
 /*     */     public boolean hasInterfaceMappedExpression(String interfaceKey) {
-/* 301 */       return (this.interfaceMappedExpressions != null && this.interfaceMappedExpressions.containsKey(interfaceKey));
+/* 309 */       return (this.interfaceMappedExpressions != null && this.interfaceMappedExpressions.containsKey(interfaceKey));
 /*     */     }
 /*     */     
 /*     */     public void addInterfaceMappedExpression(String interfaceKey, BuilderExpression expression) {
-/* 305 */       if (this.interfaceMappedExpressions == null) this.interfaceMappedExpressions = (Object2ObjectMap<String, BuilderExpression>)new Object2ObjectOpenHashMap(); 
-/* 306 */       this.interfaceMappedExpressions.put(interfaceKey, expression);
+/* 313 */       if (this.interfaceMappedExpressions == null) this.interfaceMappedExpressions = (Object2ObjectMap<String, BuilderExpression>)new Object2ObjectOpenHashMap(); 
+/* 314 */       this.interfaceMappedExpressions.put(interfaceKey, expression);
 /*     */     }
 /*     */     
 /*     */     public BuilderExpression getExpression(@Nullable String interfaceKey) {
-/* 310 */       if (interfaceKey == null || this.interfaceMappedExpressions == null || !this.interfaceMappedExpressions.containsKey(interfaceKey)) return this.expression; 
-/* 311 */       return (BuilderExpression)this.interfaceMappedExpressions.get(interfaceKey);
+/* 318 */       if (interfaceKey == null || this.interfaceMappedExpressions == null || !this.interfaceMappedExpressions.containsKey(interfaceKey)) return this.expression; 
+/* 319 */       return (BuilderExpression)this.interfaceMappedExpressions.get(interfaceKey);
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\asset\builder\BuilderModifier.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\asset\builder\BuilderModifier.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

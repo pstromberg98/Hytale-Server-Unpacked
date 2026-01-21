@@ -9,7 +9,6 @@
 /*    */ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInteraction;
 /*    */ import java.util.function.Supplier;
 /*    */ import javax.annotation.Nonnull;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*    */ 
 /*    */ 
 /*    */ 
@@ -20,42 +19,42 @@
 /*    */   extends SimpleInteraction
 /*    */ {
 /*    */   @Nonnull
-/* 23 */   public static final BuilderCodec<BuilderToolInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(BuilderToolInteraction.class, BuilderToolInteraction::new, SimpleInteraction.CODEC)
-/* 24 */     .documentation("Runs a builder tool"))
-/* 25 */     .build();
+/* 22 */   public static final BuilderCodec<BuilderToolInteraction> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(BuilderToolInteraction.class, BuilderToolInteraction::new, SimpleInteraction.CODEC)
+/* 23 */     .documentation("Runs a builder tool"))
+/* 24 */     .build();
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   protected Interaction generatePacket() {
-/* 30 */     return (Interaction)new com.hypixel.hytale.protocol.BuilderToolInteraction();
+/* 29 */     return (Interaction)new com.hypixel.hytale.protocol.BuilderToolInteraction();
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public boolean needsRemoteSync() {
-/* 35 */     return true;
+/* 34 */     return true;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public WaitForDataFrom getWaitForDataFrom() {
-/* 41 */     return WaitForDataFrom.Client;
+/* 40 */     return WaitForDataFrom.Client;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   protected void tick0(boolean firstRun, float time, @NonNullDecl InteractionType type, @Nonnull InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
-/* 46 */     (context.getState()).state = (context.getClientState()).state;
-/* 47 */     super.tick0(firstRun, time, type, context, cooldownHandler);
+/*    */   protected void tick0(boolean firstRun, float time, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/* 45 */     (context.getState()).state = (context.getClientState()).state;
+/* 46 */     super.tick0(firstRun, time, type, context, cooldownHandler);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 53 */     return "BuilderToolInteraction{} " + super.toString();
+/* 52 */     return "BuilderToolInteraction{} " + super.toString();
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\BuilderToolInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\none\BuilderToolInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

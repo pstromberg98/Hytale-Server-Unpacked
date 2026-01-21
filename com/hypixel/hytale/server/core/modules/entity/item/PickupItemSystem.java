@@ -66,7 +66,7 @@
 /*     */     } 
 /*     */     
 /*  68 */     Ref<EntityStore> targetRef = pickupItemComponent.getTargetRef();
-/*  69 */     if (!targetRef.isValid()) {
+/*  69 */     if (targetRef == null || !targetRef.isValid()) {
 /*  70 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */       
 /*     */       return;
@@ -122,7 +122,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\PickupItemSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\item\PickupItemSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -40,7 +40,7 @@ public final class Salsa20 {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\symmetric\Salsa20.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\symmetric\Salsa20.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

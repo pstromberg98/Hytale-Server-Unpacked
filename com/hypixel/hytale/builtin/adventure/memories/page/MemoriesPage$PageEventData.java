@@ -409,6 +409,18 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class PageEventData
 /*     */ {
 /*     */   public static final String KEY_ACTION = "Action";
@@ -420,12 +432,12 @@
 /*     */   public String memoryId;
 /*     */   
 /*     */   static {
-/* 423 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageEventData.class, PageEventData::new).append(new KeyedCodec("Action", MemoriesPage.PageAction.CODEC), (pageEventData, pageAction) -> pageEventData.action = pageAction, pageEventData -> pageEventData.action).add()).append(new KeyedCodec("Category", (Codec)Codec.STRING), (pageEventData, s) -> pageEventData.category = s, pageEventData -> pageEventData.category).add()).append(new KeyedCodec("MemoryId", (Codec)Codec.STRING), (pageEventData, id) -> pageEventData.memoryId = id, pageEventData -> pageEventData.memoryId).add()).build();
+/* 435 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageEventData.class, PageEventData::new).append(new KeyedCodec("Action", MemoriesPage.PageAction.CODEC), (pageEventData, pageAction) -> pageEventData.action = pageAction, pageEventData -> pageEventData.action).add()).append(new KeyedCodec("Category", (Codec)Codec.STRING), (pageEventData, s) -> pageEventData.category = s, pageEventData -> pageEventData.category).add()).append(new KeyedCodec("MemoryId", (Codec)Codec.STRING), (pageEventData, id) -> pageEventData.memoryId = id, pageEventData -> pageEventData.memoryId).add()).build();
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\page\MemoriesPage$PageEventData.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\page\MemoriesPage$PageEventData.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

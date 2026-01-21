@@ -125,7 +125,7 @@ public class TupleHash implements Xof, SavableDigest {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\crypto\digests\TupleHash.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\crypto\digests\TupleHash.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

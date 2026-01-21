@@ -7,7 +7,7 @@ import org.bouncycastle.util.Memoable;
 public interface SavableDigest extends ExtendedDigest, EncodableDigest, Memoable {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\crypto\SavableDigest.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\crypto\SavableDigest.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

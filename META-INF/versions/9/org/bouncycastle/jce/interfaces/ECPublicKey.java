@@ -9,7 +9,7 @@ public interface ECPublicKey extends ECKey, PublicKey {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\jce\interfaces\ECPublicKey.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\9\org\bouncycastle\jce\interfaces\ECPublicKey.class
  * Java compiler version: 9 (53.0)
  * JD-Core Version:       1.1.3
  */

@@ -1031,6 +1031,7 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
 /*      */ final class TickRequest
 /*      */   extends Record
 /*      */ {
@@ -1045,7 +1046,7 @@
 /*      */     //   6: areturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1054	-> 0
+/*      */     //   #1055	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;
@@ -1058,7 +1059,7 @@
 /*      */     //   6: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1054	-> 0
+/*      */     //   #1055	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;
@@ -1072,7 +1073,7 @@
 /*      */     //   7: ireturn
 /*      */     // Line number table:
 /*      */     //   Java source line number -> byte code offset
-/*      */     //   #1054	-> 0
+/*      */     //   #1055	-> 0
 /*      */     // Local variable table:
 /*      */     //   start	length	slot	name	descriptor
 /*      */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection$TickRequest;
@@ -1080,12 +1081,12 @@
 /*      */   }
 /*      */   
 /*      */   private TickRequest(int index, @Nonnull Instant requestedGameTime) {
-/* 1054 */     this.index = index; this.requestedGameTime = requestedGameTime; } public int index() { return this.index; } @Nonnull public Instant requestedGameTime() { return this.requestedGameTime; }
+/* 1055 */     this.index = index; this.requestedGameTime = requestedGameTime; } public int index() { return this.index; } @Nonnull public Instant requestedGameTime() { return this.requestedGameTime; }
 /*      */ 
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\chunk\section\BlockSection$TickRequest.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\chunk\section\BlockSection$TickRequest.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

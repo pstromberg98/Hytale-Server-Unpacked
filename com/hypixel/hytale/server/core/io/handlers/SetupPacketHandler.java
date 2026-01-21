@@ -106,10 +106,10 @@
 /*     */   public String getIdentifier() {
 /* 107 */     return "{Setup(" + NettyUtil.formatRemoteAddress(this.channel) + "), " + this.username + ", " + String.valueOf(this.uuid) + ", " + ((this.auth != null) ? "SECURE" : "INSECURE") + "}";
 /*     */   }
+/*     */ 
 /*     */   
 /*     */   public void registered0(@Nonnull PacketHandler oldHandler) {
-/*     */     boolean enableCompression;
-/* 112 */     setTimeout("send-world-settings", () -> (this.assets != null), 1L, TimeUnit.SECONDS);
+/* 112 */     setTimeout("send-world-settings", () -> (this.assets != null), 10L, TimeUnit.SECONDS);
 /*     */ 
 /*     */     
 /* 115 */     PlayerSetupConnectEvent event = (PlayerSetupConnectEvent)HytaleServer.get().getEventBus().dispatchFor(PlayerSetupConnectEvent.class).dispatch((IBaseEvent)new PlayerSetupConnectEvent(this, this.username, this.uuid, this.auth, this.referralData, this.referralSource));
@@ -126,33 +126,22 @@
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 129 */     HytaleServerConfig serverConfig = HytaleServer.get().getConfig();
-/* 130 */     if (!serverConfig.isLocalCompressionEnabled()) {
+/* 129 */     PlayerRef otherPlayer = Universe.get().getPlayer(this.uuid);
+/* 130 */     if (otherPlayer != null) {
+/* 131 */       HytaleLogger.getLogger().at(Level.INFO).log("Found match of player %s on %s", this.uuid, otherPlayer.getUsername());
 /*     */       
-/* 132 */       enableCompression = !oldHandler.isLocalConnection();
-/*     */     } else {
+/* 133 */       Channel otherPlayerChannel = otherPlayer.getPacketHandler().getChannel();
 /*     */       
-/* 135 */       enableCompression = true;
-/*     */     } 
-/* 137 */     oldHandler.setCompressionEnabled(enableCompression);
-/*     */ 
-/*     */     
-/* 140 */     PlayerRef otherPlayer = Universe.get().getPlayer(this.uuid);
-/* 141 */     if (otherPlayer != null) {
-/* 142 */       HytaleLogger.getLogger().at(Level.INFO).log("Found match of player %s on %s", this.uuid, otherPlayer.getUsername());
-/*     */       
-/* 144 */       Channel otherPlayerChannel = otherPlayer.getPacketHandler().getChannel();
-/*     */       
-/* 146 */       if (NettyUtil.isFromSameOrigin(otherPlayerChannel, this.channel)) {
+/* 135 */       if (NettyUtil.isFromSameOrigin(otherPlayerChannel, this.channel)) {
 /*     */ 
 /*     */         
-/* 149 */         Ref<EntityStore> reference = otherPlayer.getReference();
-/* 150 */         if (reference != null) {
-/* 151 */           World world = ((EntityStore)reference.getStore().getExternalData()).getWorld();
-/* 152 */           if (world != null) {
-/* 153 */             CompletableFuture<Void> removalFuture = new CompletableFuture<>();
+/* 138 */         Ref<EntityStore> reference = otherPlayer.getReference();
+/* 139 */         if (reference != null) {
+/* 140 */           World world = ((EntityStore)reference.getStore().getExternalData()).getWorld();
+/* 141 */           if (world != null) {
+/* 142 */             CompletableFuture<Void> removalFuture = new CompletableFuture<>();
 /*     */             
-/* 155 */             world.execute(() -> {
+/* 144 */             world.execute(() -> {
 /*     */                   otherPlayer.getPacketHandler().disconnect("You logged in again with the account!");
 /*     */ 
 /*     */                   
@@ -160,87 +149,89 @@
 /*     */                 });
 /*     */ 
 /*     */             
-/* 163 */             removalFuture.join();
+/* 152 */             removalFuture.join();
 /*     */           } else {
-/* 165 */             otherPlayer.getPacketHandler().disconnect("You logged in again with the account!");
+/* 154 */             otherPlayer.getPacketHandler().disconnect("You logged in again with the account!");
 /*     */           }
 /*     */         
 /*     */         }
 /*     */       
 /*     */       } else {
 /*     */         
-/* 172 */         disconnect("You are already logged in on that account!");
-/* 173 */         otherPlayer.sendMessage(Message.translation("server.io.setuppackethandler.otherLoginAttempt"));
+/* 161 */         disconnect("You are already logged in on that account!");
+/* 162 */         otherPlayer.sendMessage(Message.translation("server.io.setuppackethandler.otherLoginAttempt"));
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     } 
-/* 178 */     PacketHandler.logConnectionTimings(this.channel, "Load Player Config", Level.FINE);
+/* 167 */     PacketHandler.logConnectionTimings(this.channel, "Load Player Config", Level.FINE);
 /*     */     
-/* 180 */     WorldSettings worldSettings = new WorldSettings();
-/* 181 */     worldSettings.worldHeight = 320;
+/* 169 */     WorldSettings worldSettings = new WorldSettings();
+/* 170 */     worldSettings.worldHeight = 320;
 /*     */     
-/* 183 */     Asset[] requiredAssets = CommonAssetModule.get().getRequiredAssets();
-/* 184 */     this.assets = new PlayerCommonAssets(requiredAssets);
-/* 185 */     worldSettings.requiredAssets = requiredAssets;
+/* 172 */     Asset[] requiredAssets = CommonAssetModule.get().getRequiredAssets();
+/* 173 */     this.assets = new PlayerCommonAssets(requiredAssets);
+/* 174 */     worldSettings.requiredAssets = requiredAssets;
 /*     */     
-/* 187 */     write((Packet)worldSettings);
-/* 188 */     write((Packet)new ServerInfo(HytaleServer.get().getServerName(), serverConfig.getMotd(), serverConfig.getMaxPlayers()));
+/* 176 */     write((Packet)worldSettings);
 /*     */     
-/* 190 */     setTimeout("receive-assets-request", () -> this.receivedRequest, 120L, TimeUnit.SECONDS);
+/* 178 */     HytaleServerConfig serverConfig = HytaleServer.get().getConfig();
+/* 179 */     write((Packet)new ServerInfo(HytaleServer.get().getServerName(), serverConfig.getMotd(), serverConfig.getMaxPlayers()));
+/*     */     
+/* 181 */     setTimeout("receive-assets-request", () -> this.receivedRequest, 120L, TimeUnit.SECONDS);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void accept(@Nonnull Packet packet) {
-/* 195 */     switch (packet.getId()) { case 1:
-/* 196 */         handle((Disconnect)packet); return;
-/* 197 */       case 23: handle((RequestAssets)packet); return;
-/* 198 */       case 32: handle((ViewRadius)packet); return;
-/* 199 */       case 33: handle((PlayerOptions)packet); return; }
-/* 200 */      disconnect("Protocol error: unexpected packet " + packet.getId());
+/* 186 */     switch (packet.getId()) { case 1:
+/* 187 */         handle((Disconnect)packet); return;
+/* 188 */       case 23: handle((RequestAssets)packet); return;
+/* 189 */       case 32: handle((ViewRadius)packet); return;
+/* 190 */       case 33: handle((PlayerOptions)packet); return; }
+/* 191 */      disconnect("Protocol error: unexpected packet " + packet.getId());
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void closed(ChannelHandlerContext ctx) {
-/* 206 */     super.closed(ctx);
-/* 207 */     IEventDispatcher<PlayerSetupDisconnectEvent, PlayerSetupDisconnectEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerSetupDisconnectEvent.class);
-/* 208 */     if (dispatcher.hasListener()) dispatcher.dispatch((IBaseEvent)new PlayerSetupDisconnectEvent(this.username, this.uuid, this.auth, this.disconnectReason));
+/* 197 */     super.closed(ctx);
+/* 198 */     IEventDispatcher<PlayerSetupDisconnectEvent, PlayerSetupDisconnectEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerSetupDisconnectEvent.class);
+/* 199 */     if (dispatcher.hasListener()) dispatcher.dispatch((IBaseEvent)new PlayerSetupDisconnectEvent(this.username, this.uuid, this.auth, this.disconnectReason));
 /*     */     
-/* 210 */     if (Constants.SINGLEPLAYER) {
-/* 211 */       if (Universe.get().getPlayerCount() == 0) {
-/* 212 */         HytaleLogger.getLogger().at(Level.INFO).log("No players left on singleplayer server shutting down!");
-/* 213 */         HytaleServer.get().shutdownServer();
-/* 214 */       } else if (SingleplayerModule.isOwner(this.auth, this.uuid)) {
-/* 215 */         HytaleLogger.getLogger().at(Level.INFO).log("Owner left the singleplayer server shutting down!");
-/* 216 */         Universe.get().getPlayers().forEach(p -> p.getPacketHandler().disconnect(this.username + " left! Shutting down singleplayer world!"));
-/* 217 */         HytaleServer.get().shutdownServer();
+/* 201 */     if (Constants.SINGLEPLAYER) {
+/* 202 */       if (Universe.get().getPlayerCount() == 0) {
+/* 203 */         HytaleLogger.getLogger().at(Level.INFO).log("No players left on singleplayer server shutting down!");
+/* 204 */         HytaleServer.get().shutdownServer();
+/* 205 */       } else if (SingleplayerModule.isOwner(this.auth, this.uuid)) {
+/* 206 */         HytaleLogger.getLogger().at(Level.INFO).log("Owner left the singleplayer server shutting down!");
+/* 207 */         Universe.get().getPlayers().forEach(p -> p.getPacketHandler().disconnect(this.username + " left! Shutting down singleplayer world!"));
+/* 208 */         HytaleServer.get().shutdownServer();
 /*     */       } 
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull Disconnect packet) {
-/* 223 */     this.disconnectReason.setClientDisconnectType(packet.type);
-/* 224 */     HytaleLogger.getLogger().at(Level.INFO).log("%s - %s at %s left with reason: %s - %s", this.uuid, this.username, 
+/* 214 */     this.disconnectReason.setClientDisconnectType(packet.type);
+/* 215 */     HytaleLogger.getLogger().at(Level.INFO).log("%s - %s at %s left with reason: %s - %s", this.uuid, this.username, 
 /*     */         
-/* 226 */         NettyUtil.formatRemoteAddress(this.channel), packet.type
-/* 227 */         .name(), packet.reason);
-/* 228 */     ProtocolUtil.closeApplicationConnection(this.channel);
+/* 217 */         NettyUtil.formatRemoteAddress(this.channel), packet.type
+/* 218 */         .name(), packet.reason);
+/* 219 */     ProtocolUtil.closeApplicationConnection(this.channel);
 /*     */     
-/* 230 */     if (packet.type == DisconnectType.Crash && Constants.SINGLEPLAYER && (
-/* 231 */       Universe.get().getPlayerCount() == 0 || SingleplayerModule.isOwner(this.auth, this.uuid))) {
-/* 232 */       DumpUtil.dump(true, false);
+/* 221 */     if (packet.type == DisconnectType.Crash && Constants.SINGLEPLAYER && (
+/* 222 */       Universe.get().getPlayerCount() == 0 || SingleplayerModule.isOwner(this.auth, this.uuid))) {
+/* 223 */       DumpUtil.dump(true, false);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull RequestAssets packet) {
-/* 237 */     if (this.receivedRequest) throw new IllegalArgumentException("Received duplicate RequestAssets!"); 
-/* 238 */     this.receivedRequest = true;
+/* 228 */     if (this.receivedRequest) throw new IllegalArgumentException("Received duplicate RequestAssets!"); 
+/* 229 */     this.receivedRequest = true;
 /*     */     
-/* 240 */     PacketHandler.logConnectionTimings(this.channel, "Request Assets", Level.FINE);
+/* 231 */     PacketHandler.logConnectionTimings(this.channel, "Request Assets", Level.FINE);
 /*     */     
-/* 242 */     CompletableFuture<Void> future = CompletableFutureUtil._catch(((CompletableFuture)HytaleServer.get().getEventBus().dispatchForAsync(SendCommonAssetsEvent.class).dispatch((IBaseEvent)new SendCommonAssetsEvent(this, packet.assets)))
-/* 243 */         .thenAccept(event -> {
+/* 233 */     CompletableFuture<Void> future = CompletableFutureUtil._catch(((CompletableFuture)HytaleServer.get().getEventBus().dispatchForAsync(SendCommonAssetsEvent.class).dispatch((IBaseEvent)new SendCommonAssetsEvent(this, packet.assets)))
+/* 234 */         .thenAccept(event -> {
 /*     */             if (!this.channel.isActive()) {
 /*     */               return;
 /*     */             }
@@ -253,55 +244,55 @@
 /*     */             PacketHandler.logConnectionTimings(this.channel, "Send Config Assets", Level.FINE);
 /*     */             write((Packet)new WorldLoadProgress("Loading world...", 0, 0));
 /*     */             write((Packet)new WorldLoadFinished());
-/* 256 */           }).exceptionally(throwable -> {
+/* 247 */           }).exceptionally(throwable -> {
 /*     */             if (!this.channel.isActive())
 /*     */               return null; 
 /*     */             disconnect("An exception occurred while trying to login!");
 /*     */             throw new RuntimeException("Exception when player was joining", throwable);
 /*     */           }));
-/* 262 */     setTimeout("send-assets", () -> (future.isDone() || !future.cancel(true)), 120L, TimeUnit.SECONDS);
+/* 253 */     setTimeout("send-assets", () -> (future.isDone() || !future.cancel(true)), 120L, TimeUnit.SECONDS);
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull ViewRadius packet) {
-/* 266 */     this.clientViewRadiusChunks = MathUtil.ceil((packet.value / 32.0F));
+/* 257 */     this.clientViewRadiusChunks = MathUtil.ceil((packet.value / 32.0F));
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull PlayerOptions packet) {
-/* 270 */     if (!this.receivedRequest) throw new IllegalArgumentException("Hasn't received RequestAssets yet!"); 
-/* 271 */     PacketHandler.logConnectionTimings(this.channel, "Player Options", Level.FINE);
+/* 261 */     if (!this.receivedRequest) throw new IllegalArgumentException("Hasn't received RequestAssets yet!"); 
+/* 262 */     PacketHandler.logConnectionTimings(this.channel, "Player Options", Level.FINE);
 /*     */     
-/* 273 */     if (!this.channel.isActive())
+/* 264 */     if (!this.channel.isActive())
 /*     */       return; 
-/* 275 */     if (packet.skin != null) {
+/* 266 */     if (packet.skin != null) {
 /*     */       try {
-/* 277 */         CosmeticsModule.get().validateSkin(packet.skin);
-/* 278 */       } catch (com.hypixel.hytale.server.core.cosmetics.CosmeticsModule.InvalidSkinException e) {
-/* 279 */         disconnect("Invalid skin! " + e.getMessage());
+/* 268 */         CosmeticsModule.get().validateSkin(packet.skin);
+/* 269 */       } catch (com.hypixel.hytale.server.core.cosmetics.CosmeticsModule.InvalidSkinException e) {
+/* 270 */         disconnect("Invalid skin! " + e.getMessage());
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     }
-/* 284 */     CompletableFuture<Void> future = CompletableFutureUtil._catch(Universe.get().addPlayer(this.channel, this.language, this.protocolVersion, this.uuid, this.username, this.auth, this.clientViewRadiusChunks, packet.skin)
+/* 275 */     CompletableFuture<Void> future = CompletableFutureUtil._catch(Universe.get().addPlayer(this.channel, this.language, this.protocolVersion, this.uuid, this.username, this.auth, this.clientViewRadiusChunks, packet.skin)
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */         
-/* 289 */         .thenAccept(player -> {
+/* 280 */         .thenAccept(player -> {
 /*     */             if (!this.channel.isActive())
 /*     */               return;  PacketHandler.logConnectionTimings(this.channel, "Add To Universe", Level.FINE);
 /*     */             clearTimeout();
-/* 293 */           }).exceptionally(throwable -> {
+/* 284 */           }).exceptionally(throwable -> {
 /*     */             if (!this.channel.isActive())
 /*     */               return null; 
 /*     */             disconnect("An exception occurred when adding to the universe!");
 /*     */             throw new RuntimeException("Exception when player adding to universe", throwable);
 /*     */           }));
-/* 299 */     setTimeout("add-to-universe", () -> (future.isDone() || !future.cancel(true)), 60L, TimeUnit.SECONDS);
+/* 290 */     setTimeout("add-to-universe", () -> (future.isDone() || !future.cancel(true)), 60L, TimeUnit.SECONDS);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\io\handlers\SetupPacketHandler.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\io\handlers\SetupPacketHandler.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

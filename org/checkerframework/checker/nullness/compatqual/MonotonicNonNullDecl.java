@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
 public @interface MonotonicNonNullDecl {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\checkerframework\checker\nullness\compatqual\MonotonicNonNullDecl.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\checkerframework\checker\nullness\compatqual\MonotonicNonNullDecl.class
  * Java compiler version: 6 (50.0)
  * JD-Core Version:       1.1.3
  */

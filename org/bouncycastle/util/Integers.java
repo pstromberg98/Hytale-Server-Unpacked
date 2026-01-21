@@ -47,7 +47,7 @@ public class Integers {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastl\\util\Integers.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastl\\util\Integers.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

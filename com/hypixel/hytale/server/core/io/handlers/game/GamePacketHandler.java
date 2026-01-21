@@ -7,6 +7,7 @@
 /*      */ import com.hypixel.hytale.logger.HytaleLogger;
 /*      */ import com.hypixel.hytale.math.util.ChunkUtil;
 /*      */ import com.hypixel.hytale.math.util.MathUtil;
+/*      */ import com.hypixel.hytale.math.vector.Transform;
 /*      */ import com.hypixel.hytale.math.vector.Vector3d;
 /*      */ import com.hypixel.hytale.math.vector.Vector3i;
 /*      */ import com.hypixel.hytale.protocol.BlockRotation;
@@ -92,7 +93,6 @@
 /*      */ import java.net.InetSocketAddress;
 /*      */ import java.util.Deque;
 /*      */ import java.util.List;
-/*      */ import java.util.Objects;
 /*      */ import java.util.UUID;
 /*      */ import java.util.concurrent.CompletableFuture;
 /*      */ import java.util.concurrent.Executor;
@@ -878,8 +878,10 @@
 /*      */           } 
 /*      */           MapMarker marker = (MapMarker)worldMapTracker.getSentMarkers().get(packet.id);
 /*      */           if (marker != null) {
-/*      */             world.getEntityStore().getStore().addComponent(this.playerRef.getReference(), Teleport.getComponentType(), (Component)new Teleport(null, PositionUtil.toTransform(marker.transform)));
-/*      */           }
+/*      */             Transform transform = PositionUtil.toTransform(marker.transform);
+/*      */             Teleport teleportComponent = Teleport.createForPlayer(transform);
+/*      */             world.getEntityStore().getStore().addComponent(this.playerRef.getReference(), Teleport.getComponentType(), (Component)teleportComponent);
+/*      */           } 
 /*      */         });
 /*      */   }
 /*      */ 
@@ -894,17 +896,18 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
 /*      */   
 /*      */   public void handle(@Nonnull TeleportToWorldMapPosition packet) {
-/*  899 */     Ref<EntityStore> ref = this.playerRef.getReference();
-/*  900 */     if (ref == null || !ref.isValid()) {
+/*  902 */     Ref<EntityStore> ref = this.playerRef.getReference();
+/*  903 */     if (ref == null || !ref.isValid()) {
 /*      */       return;
 /*      */     }
 /*      */     
-/*  904 */     Store<EntityStore> store = ref.getStore();
-/*  905 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  907 */     Store<EntityStore> store = ref.getStore();
+/*  908 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*      */     
-/*  907 */     world.execute(() -> {
+/*  910 */     world.execute(() -> {
 /*      */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*      */           assert playerComponent != null;
 /*      */           WorldMapTracker worldMapTracker = playerComponent.getWorldMapTracker();
@@ -932,9 +935,13 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */   
 /*      */   public void handle(@Nonnull SyncInteractionChains packet) {
-/*  937 */     Collections.addAll(this.interactionPacketQueue, packet.updates);
+/*  944 */     Collections.addAll(this.interactionPacketQueue, packet.updates);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -943,15 +950,15 @@
 /*      */ 
 /*      */   
 /*      */   public void handle(@Nonnull MountMovement packet) {
-/*  946 */     Ref<EntityStore> ref = this.playerRef.getReference();
-/*  947 */     if (ref == null || !ref.isValid()) {
+/*  953 */     Ref<EntityStore> ref = this.playerRef.getReference();
+/*  954 */     if (ref == null || !ref.isValid()) {
 /*      */       return;
 /*      */     }
 /*      */     
-/*  951 */     Store<EntityStore> store = ref.getStore();
-/*  952 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  958 */     Store<EntityStore> store = ref.getStore();
+/*  959 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*      */     
-/*  954 */     world.execute(() -> {
+/*  961 */     world.execute(() -> {
 /*      */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*      */           assert playerComponent != null;
 /*      */           Ref<EntityStore> entityReference = world.getEntityStore().getRefFromNetworkId(playerComponent.getMountEntityId());
@@ -977,15 +984,15 @@
 /*      */ 
 /*      */   
 /*      */   public void handle(@Nonnull SetPaused packet) {
-/*  980 */     Ref<EntityStore> ref = this.playerRef.getReference();
-/*  981 */     if (ref == null || !ref.isValid()) {
+/*  987 */     Ref<EntityStore> ref = this.playerRef.getReference();
+/*  988 */     if (ref == null || !ref.isValid()) {
 /*      */       return;
 /*      */     }
 /*      */ 
 /*      */     
-/*  986 */     Store<EntityStore> store = ref.getStore();
-/*  987 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/*  988 */     world.execute(() -> {
+/*  993 */     Store<EntityStore> store = ref.getStore();
+/*  994 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  995 */     world.execute(() -> {
 /*      */           if (world.getPlayerCount() != 1 || !Constants.SINGLEPLAYER) {
 /*      */             return;
 /*      */           }
@@ -1001,15 +1008,15 @@
 /*      */ 
 /*      */   
 /*      */   public void handle(@Nonnull RequestFlyCameraMode packet) {
-/* 1004 */     Ref<EntityStore> ref = this.playerRef.getReference();
-/* 1005 */     if (ref == null || !ref.isValid()) {
+/* 1011 */     Ref<EntityStore> ref = this.playerRef.getReference();
+/* 1012 */     if (ref == null || !ref.isValid()) {
 /*      */       return;
 /*      */     }
 /*      */     
-/* 1009 */     Store<EntityStore> store = ref.getStore();
-/* 1010 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 1016 */     Store<EntityStore> store = ref.getStore();
+/* 1017 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*      */     
-/* 1012 */     world.execute(() -> {
+/* 1019 */     world.execute(() -> {
 /*      */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*      */           assert playerComponent != null;
 /*      */           if (playerComponent.hasPermission("hytale.camera.flycam")) {
@@ -1027,7 +1034,7 @@
 /*      */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\io\handlers\game\GamePacketHandler.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\io\handlers\game\GamePacketHandler.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

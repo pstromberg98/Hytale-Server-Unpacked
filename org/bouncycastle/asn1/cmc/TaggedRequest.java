@@ -74,7 +74,7 @@ public class TaggedRequest extends ASN1Object implements ASN1Choice {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn1\cmc\TaggedRequest.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn1\cmc\TaggedRequest.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

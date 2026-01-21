@@ -48,7 +48,7 @@
 /*     */ 
 /*     */   
 /*     */   static {
-/*  51 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(BlockState.class).addField(new KeyedCodec("Position", (Codec)Vector3i.CODEC), (entity, o) -> entity.position = o, entity -> Vector3i.ZERO.equals(entity.position) ? null : entity.position)).build();
+/*  51 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(BlockState.class).addField(new KeyedCodec("Position", (Codec)Vector3i.CODEC), (entity, o) -> entity.position = o, entity -> (entity.position == null || Vector3i.ZERO.equals(entity.position)) ? null : entity.position)).build();
 /*     */   }
 /*  53 */   public static final KeyedCodec<String> TYPE_STRUCTURE = new KeyedCodec("Type", (Codec)Codec.STRING);
 /*     */   
@@ -121,169 +121,177 @@
 /*     */   public Vector3i __internal_getPosition() {
 /* 122 */     return this.position;
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public void clearPositionForSerialization() {
+/* 130 */     this.position = null;
+/*     */   }
 /*     */   
 /*     */   public int getBlockX() {
-/* 126 */     return this.chunk.getX() << 5 | this.position.getX();
+/* 134 */     return this.chunk.getX() << 5 | this.position.getX();
 /*     */   }
 /*     */   
 /*     */   public int getBlockY() {
-/* 130 */     return this.position.y;
+/* 138 */     return this.position.y;
 /*     */   }
 /*     */   
 /*     */   public int getBlockZ() {
-/* 134 */     return this.chunk.getZ() << 5 | this.position.getZ();
+/* 142 */     return this.chunk.getZ() << 5 | this.position.getZ();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getBlockPosition() {
-/* 139 */     return new Vector3i(getBlockX(), getBlockY(), getBlockZ());
+/* 147 */     return new Vector3i(getBlockX(), getBlockY(), getBlockZ());
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3d getCenteredBlockPosition() {
-/* 144 */     BlockType blockType = getBlockType();
-/* 145 */     Vector3d blockCenter = new Vector3d(0.0D, 0.0D, 0.0D);
-/* 146 */     blockType.getBlockCenter(getRotationIndex(), blockCenter);
-/* 147 */     return blockCenter.add(getBlockX(), getBlockY(), getBlockZ());
+/* 152 */     BlockType blockType = getBlockType();
+/* 153 */     Vector3d blockCenter = new Vector3d(0.0D, 0.0D, 0.0D);
+/* 154 */     blockType.getBlockCenter(getRotationIndex(), blockCenter);
+/* 155 */     return blockCenter.add(getBlockX(), getBlockY(), getBlockZ());
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public WorldChunk getChunk() {
-/* 152 */     return this.chunk;
+/* 160 */     return this.chunk;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public BlockType getBlockType() {
-/* 157 */     return getChunk().getBlockType(this.position);
+/* 165 */     return getChunk().getBlockType(this.position);
 /*     */   }
 /*     */   
 /*     */   public int getRotationIndex() {
-/* 161 */     return getChunk().getRotationIndex(this.position.x, this.position.y, this.position.z);
+/* 169 */     return getChunk().getRotationIndex(this.position.x, this.position.y, this.position.z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void invalidate() {}
 /*     */   
 /*     */   public void markNeedsSave() {
-/* 168 */     getChunk().markNeedsSaving();
+/* 176 */     getChunk().markNeedsSaving();
 /*     */   }
 /*     */   
 /*     */   public BsonDocument saveToDocument() {
-/* 172 */     return CODEC.encode(this).asDocument();
+/* 180 */     return CODEC.encode(this).asDocument();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public Component<ChunkStore> clone() {
-/* 179 */     BsonDocument document = CODEC.encode(this, ExtraInfo.THREAD_LOCAL.get()).asDocument();
-/* 180 */     return (Component<ChunkStore>)CODEC.decode((BsonValue)document, ExtraInfo.THREAD_LOCAL.get());
+/* 187 */     BsonDocument document = CODEC.encode(this, ExtraInfo.THREAD_LOCAL.get()).asDocument();
+/* 188 */     return (Component<ChunkStore>)CODEC.decode((BsonValue)document, ExtraInfo.THREAD_LOCAL.get());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Holder<ChunkStore> toHolder() {
-/* 186 */     if (this.reference != null && this.reference.isValid() && this.chunk != null) {
-/* 187 */       Holder<ChunkStore> holder1 = ChunkStore.REGISTRY.newHolder();
-/* 188 */       Store<ChunkStore> componentStore = this.chunk.getWorld().getChunkStore().getStore();
-/* 189 */       Archetype<ChunkStore> archetype = componentStore.getArchetype(this.reference);
-/* 190 */       for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
-/* 191 */         ComponentType componentType1 = archetype.get(i);
-/* 192 */         if (componentType1 != null)
-/* 193 */           holder1.addComponent(componentType1, componentStore.getComponent(this.reference, componentType1)); 
+/* 194 */     if (this.reference != null && this.reference.isValid() && this.chunk != null) {
+/* 195 */       Holder<ChunkStore> holder1 = ChunkStore.REGISTRY.newHolder();
+/* 196 */       Store<ChunkStore> componentStore = this.chunk.getWorld().getChunkStore().getStore();
+/* 197 */       Archetype<ChunkStore> archetype = componentStore.getArchetype(this.reference);
+/* 198 */       for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
+/* 199 */         ComponentType componentType1 = archetype.get(i);
+/* 200 */         if (componentType1 != null)
+/* 201 */           holder1.addComponent(componentType1, componentStore.getComponent(this.reference, componentType1)); 
 /*     */       } 
-/* 195 */       return holder1;
+/* 203 */       return holder1;
 /*     */     } 
 /*     */     
-/* 198 */     Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
-/* 199 */     ComponentType<ChunkStore, ? extends BlockState> componentType = (ComponentType)BlockStateModule.get().getComponentType(getClass());
-/* 200 */     if (componentType == null) throw new IllegalArgumentException("Unable to find component type for: " + String.valueOf(this));
+/* 206 */     Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
+/* 207 */     ComponentType<ChunkStore, ? extends BlockState> componentType = (ComponentType)BlockStateModule.get().getComponentType(getClass());
+/* 208 */     if (componentType == null) throw new IllegalArgumentException("Unable to find component type for: " + String.valueOf(this));
 /*     */     
-/* 202 */     holder.addComponent(componentType, this);
-/* 203 */     return holder;
+/* 210 */     holder.addComponent(componentType, this);
+/* 211 */     return holder;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public static BlockState load(BsonDocument doc, @Nonnull WorldChunk chunk, @Nonnull Vector3i pos) throws NoSuchBlockStateException {
-/* 208 */     return load(doc, chunk, pos, chunk.getBlockType(pos.getX(), pos.getY(), pos.getZ()));
+/* 216 */     return load(doc, chunk, pos, chunk.getBlockType(pos.getX(), pos.getY(), pos.getZ()));
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public static BlockState load(BsonDocument doc, @Nullable WorldChunk chunk, Vector3i pos, BlockType blockType) throws NoSuchBlockStateException {
 /*     */     BlockState blockState;
 /*     */     try {
-/* 215 */       blockState = (BlockState)CODEC.decode((BsonValue)doc);
-/* 216 */     } catch (com.hypixel.hytale.codec.lookup.ACodecMapCodec.UnknownIdException e) {
-/* 217 */       throw new NoSuchBlockStateException(e);
+/* 223 */       blockState = (BlockState)CODEC.decode((BsonValue)doc);
+/* 224 */     } catch (com.hypixel.hytale.codec.lookup.ACodecMapCodec.UnknownIdException e) {
+/* 225 */       throw new NoSuchBlockStateException(e);
 /*     */     } 
 /*     */     
-/* 220 */     blockState.setPosition(chunk, pos);
-/* 221 */     if (chunk != null) {
-/* 222 */       if (!blockState.initialize(blockType)) return null;
+/* 228 */     blockState.setPosition(chunk, pos);
+/* 229 */     if (chunk != null) {
+/* 230 */       if (!blockState.initialize(blockType)) return null;
 /*     */       
-/* 224 */       blockState.initialized.set(true);
+/* 232 */       blockState.initialized.set(true);
 /*     */     } 
-/* 226 */     return blockState;
+/* 234 */     return blockState;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   @Deprecated
 /*     */   public static BlockState ensureState(@Nonnull WorldChunk worldChunk, int x, int y, int z) {
-/* 232 */     BlockType blockType = worldChunk.getBlockType(x, y, z);
-/* 233 */     if (blockType == null || blockType.isUnknown()) return null;
+/* 240 */     BlockType blockType = worldChunk.getBlockType(x, y, z);
+/* 241 */     if (blockType == null || blockType.isUnknown()) return null;
 /*     */     
-/* 235 */     StateData state = blockType.getState();
-/* 236 */     if (state == null || state.getId() == null) return null;
+/* 243 */     StateData state = blockType.getState();
+/* 244 */     if (state == null || state.getId() == null) return null;
 /*     */ 
 /*     */     
-/* 239 */     Vector3i position = new Vector3i(x, y, z);
-/* 240 */     BlockState blockState = BlockStateModule.get().createBlockState(state.getId(), worldChunk, position, blockType);
-/* 241 */     if (blockState != null) {
-/* 242 */       worldChunk.setState(x, y, z, blockState);
+/* 247 */     Vector3i position = new Vector3i(x, y, z);
+/* 248 */     BlockState blockState = BlockStateModule.get().createBlockState(state.getId(), worldChunk, position, blockType);
+/* 249 */     if (blockState != null) {
+/* 250 */       worldChunk.setState(x, y, z, blockState);
 /*     */     }
-/* 244 */     return blockState;
+/* 252 */     return blockState;
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public static BlockState getBlockState(@Nullable Ref<ChunkStore> reference, @Nonnull ComponentAccessor<ChunkStore> componentAccessor) {
-/* 249 */     if (reference == null) return null; 
-/* 250 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(componentAccessor.getArchetype(reference), BlockState.class);
-/* 251 */     if (componentType == null) return null; 
-/* 252 */     return (BlockState)componentAccessor.getComponent(reference, componentType);
+/* 257 */     if (reference == null) return null; 
+/* 258 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(componentAccessor.getArchetype(reference), BlockState.class);
+/* 259 */     if (componentType == null) return null; 
+/* 260 */     return (BlockState)componentAccessor.getComponent(reference, componentType);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   @Deprecated
 /*     */   public static BlockState getBlockState(int index, @Nonnull ArchetypeChunk<ChunkStore> archetypeChunk) {
-/* 258 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(archetypeChunk.getArchetype(), BlockState.class);
-/* 259 */     if (componentType == null) return null; 
-/* 260 */     return (BlockState)archetypeChunk.getComponent(index, componentType);
+/* 266 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(archetypeChunk.getArchetype(), BlockState.class);
+/* 267 */     if (componentType == null) return null; 
+/* 268 */     return (BlockState)archetypeChunk.getComponent(index, componentType);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   @Deprecated
 /*     */   public static BlockState getBlockState(@Nonnull Holder<ChunkStore> holder) {
-/* 266 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(holder.getArchetype(), BlockState.class);
-/* 267 */     if (componentType == null) return null; 
-/* 268 */     return (BlockState)holder.getComponent(componentType);
+/* 274 */     ComponentType<ChunkStore, BlockState> componentType = findComponentType(holder.getArchetype(), BlockState.class);
+/* 275 */     if (componentType == null) return null; 
+/* 276 */     return (BlockState)holder.getComponent(componentType);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   private static <C extends Component<ChunkStore>, T extends C> ComponentType<ChunkStore, T> findComponentType(@Nonnull Archetype<ChunkStore> archetype, @Nonnull Class<C> entityClass) {
-/* 273 */     for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
-/* 274 */       ComponentType<ChunkStore, ? extends Component<ChunkStore>> componentType = archetype.get(i);
-/* 275 */       if (componentType != null && 
-/* 276 */         entityClass.isAssignableFrom(componentType.getTypeClass()))
+/* 281 */     for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
+/* 282 */       ComponentType<ChunkStore, ? extends Component<ChunkStore>> componentType = archetype.get(i);
+/* 283 */       if (componentType != null && 
+/* 284 */         entityClass.isAssignableFrom(componentType.getTypeClass()))
 /*     */       {
-/* 278 */         return (ComponentType)componentType;
+/* 286 */         return (ComponentType)componentType;
 /*     */       }
 /*     */     } 
-/* 281 */     return null;
+/* 289 */     return null;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\meta\BlockState.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\meta\BlockState.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

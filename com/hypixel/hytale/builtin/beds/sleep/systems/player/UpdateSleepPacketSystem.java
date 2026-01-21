@@ -21,8 +21,8 @@
 /*     */ import java.util.Comparator;
 /*     */ import java.util.List;
 /*     */ import java.util.UUID;
+/*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -47,14 +47,18 @@
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void tick(float dt, int index, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
+/*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 /*  51 */     UpdateSleepState packet = createSleepPacket(store, index, archetypeChunk);
-/*  52 */     SleepTracker sleepTracker = (SleepTracker)archetypeChunk.getComponent(index, SleepTracker.getComponentType());
-/*  53 */     packet = sleepTracker.generatePacketToSend(packet);
+/*  52 */     SleepTracker sleepTrackerComponent = (SleepTracker)archetypeChunk.getComponent(index, SleepTracker.getComponentType());
+/*  53 */     assert sleepTrackerComponent != null;
 /*     */     
-/*  55 */     if (packet != null) {
-/*  56 */       PlayerRef playerRef = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
-/*  57 */       playerRef.getPacketHandler().write((Packet)packet);
+/*  55 */     packet = sleepTrackerComponent.generatePacketToSend(packet);
+/*     */     
+/*  57 */     if (packet != null) {
+/*  58 */       PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
+/*  59 */       assert playerRefComponent != null;
+/*     */       
+/*  61 */       playerRefComponent.getPacketHandler().write((Packet)packet);
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -69,8 +73,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */   
-/*     */   private UpdateSleepState createSleepPacket(Store<EntityStore> store, int index, ArchetypeChunk<EntityStore> archetypeChunk) {
+/*     */   private UpdateSleepState createSleepPacket(@Nonnull Store<EntityStore> store, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk) {
 /*     */     // Byte code:
 /*     */     //   0: aload_1
 /*     */     //   1: invokevirtual getExternalData : ()Ljava/lang/Object;
@@ -91,151 +96,161 @@
 /*     */     //   36: invokevirtual getComponent : (ILcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
 /*     */     //   39: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSomnolence
 /*     */     //   42: astore #7
-/*     */     //   44: aload #7
-/*     */     //   46: invokevirtual getSleepState : ()Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep;
-/*     */     //   49: astore #8
-/*     */     //   51: aload #6
-/*     */     //   53: instanceof com/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber
-/*     */     //   56: ifeq -> 74
-/*     */     //   59: aload #6
-/*     */     //   61: checkcast com/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber
-/*     */     //   64: astore #10
-/*     */     //   66: aload #10
-/*     */     //   68: invokevirtual createSleepClock : ()Lcom/hypixel/hytale/protocol/packets/world/SleepClock;
-/*     */     //   71: goto -> 75
-/*     */     //   74: aconst_null
-/*     */     //   75: astore #9
-/*     */     //   77: aload #8
-/*     */     //   79: dup
-/*     */     //   80: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
-/*     */     //   83: pop
-/*     */     //   84: astore #10
-/*     */     //   86: iconst_0
-/*     */     //   87: istore #11
-/*     */     //   89: aload #10
-/*     */     //   91: iload #11
-/*     */     //   93: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
-/*     */     //   98: tableswitch default -> 128, 0 -> 138, 1 -> 151, 2 -> 164, 3 -> 269
-/*     */     //   128: new java/lang/MatchException
-/*     */     //   131: dup
-/*     */     //   132: aconst_null
-/*     */     //   133: aconst_null
-/*     */     //   134: invokespecial <init> : (Ljava/lang/String;Ljava/lang/Throwable;)V
-/*     */     //   137: athrow
-/*     */     //   138: aload #10
-/*     */     //   140: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$FullyAwake
-/*     */     //   143: astore #12
-/*     */     //   145: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
-/*     */     //   148: goto -> 288
-/*     */     //   151: aload #10
-/*     */     //   153: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$MorningWakeUp
-/*     */     //   156: astore #13
-/*     */     //   158: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
-/*     */     //   161: goto -> 288
-/*     */     //   164: aload #10
-/*     */     //   166: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$NoddingOff
-/*     */     //   169: astore #14
-/*     */     //   171: aload #4
-/*     */     //   173: invokestatic check : (Lcom/hypixel/hytale/server/core/universe/world/World;)Lcom/hypixel/hytale/builtin/beds/sleep/systems/world/CanSleepInWorld$Result;
-/*     */     //   176: invokeinterface isNegative : ()Z
-/*     */     //   181: ifeq -> 190
-/*     */     //   184: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
-/*     */     //   187: goto -> 288
-/*     */     //   190: aload #14
-/*     */     //   192: invokevirtual realTimeStart : ()Ljava/time/Instant;
-/*     */     //   195: invokestatic now : ()Ljava/time/Instant;
-/*     */     //   198: invokestatic between : (Ljava/time/temporal/Temporal;Ljava/time/temporal/Temporal;)Ljava/time/Duration;
-/*     */     //   201: invokevirtual toMillis : ()J
-/*     */     //   204: lstore #15
-/*     */     //   206: lload #15
-/*     */     //   208: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.SPAN_BEFORE_BLACK_SCREEN : Ljava/time/Duration;
-/*     */     //   211: invokevirtual toMillis : ()J
-/*     */     //   214: lcmp
-/*     */     //   215: ifle -> 222
-/*     */     //   218: iconst_1
-/*     */     //   219: goto -> 223
-/*     */     //   222: iconst_0
-/*     */     //   223: istore #17
-/*     */     //   225: aload_3
-/*     */     //   226: iload_2
-/*     */     //   227: invokevirtual getReferenceTo : (I)Lcom/hypixel/hytale/component/Ref;
-/*     */     //   230: astore #18
-/*     */     //   232: aload_1
-/*     */     //   233: aload #18
-/*     */     //   235: invokestatic isReadyToSleep : (Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/component/Ref;)Z
-/*     */     //   238: istore #19
-/*     */     //   240: new com/hypixel/hytale/protocol/packets/world/UpdateSleepState
-/*     */     //   243: dup
-/*     */     //   244: iload #17
-/*     */     //   246: iconst_0
-/*     */     //   247: aload #9
-/*     */     //   249: iload #19
-/*     */     //   251: ifeq -> 262
-/*     */     //   254: aload_0
-/*     */     //   255: aload_1
-/*     */     //   256: invokevirtual createSleepMultiplayer : (Lcom/hypixel/hytale/component/Store;)Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;
-/*     */     //   259: goto -> 263
-/*     */     //   262: aconst_null
-/*     */     //   263: invokespecial <init> : (ZZLcom/hypixel/hytale/protocol/packets/world/SleepClock;Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;)V
-/*     */     //   266: goto -> 288
-/*     */     //   269: aload #10
-/*     */     //   271: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$Slumber
-/*     */     //   274: astore #15
-/*     */     //   276: new com/hypixel/hytale/protocol/packets/world/UpdateSleepState
-/*     */     //   279: dup
-/*     */     //   280: iconst_1
-/*     */     //   281: iconst_1
-/*     */     //   282: aload #9
-/*     */     //   284: aconst_null
-/*     */     //   285: invokespecial <init> : (ZZLcom/hypixel/hytale/protocol/packets/world/SleepClock;Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;)V
-/*     */     //   288: areturn
+/*     */     //   44: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.$assertionsDisabled : Z
+/*     */     //   47: ifne -> 63
+/*     */     //   50: aload #7
+/*     */     //   52: ifnonnull -> 63
+/*     */     //   55: new java/lang/AssertionError
+/*     */     //   58: dup
+/*     */     //   59: invokespecial <init> : ()V
+/*     */     //   62: athrow
+/*     */     //   63: aload #7
+/*     */     //   65: invokevirtual getSleepState : ()Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep;
+/*     */     //   68: astore #8
+/*     */     //   70: aload #6
+/*     */     //   72: instanceof com/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber
+/*     */     //   75: ifeq -> 93
+/*     */     //   78: aload #6
+/*     */     //   80: checkcast com/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber
+/*     */     //   83: astore #10
+/*     */     //   85: aload #10
+/*     */     //   87: invokevirtual createSleepClock : ()Lcom/hypixel/hytale/protocol/packets/world/SleepClock;
+/*     */     //   90: goto -> 94
+/*     */     //   93: aconst_null
+/*     */     //   94: astore #9
+/*     */     //   96: aload #8
+/*     */     //   98: dup
+/*     */     //   99: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */     //   102: pop
+/*     */     //   103: astore #10
+/*     */     //   105: iconst_0
+/*     */     //   106: istore #11
+/*     */     //   108: aload #10
+/*     */     //   110: iload #11
+/*     */     //   112: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
+/*     */     //   117: tableswitch default -> 148, 0 -> 158, 1 -> 171, 2 -> 184, 3 -> 289
+/*     */     //   148: new java/lang/MatchException
+/*     */     //   151: dup
+/*     */     //   152: aconst_null
+/*     */     //   153: aconst_null
+/*     */     //   154: invokespecial <init> : (Ljava/lang/String;Ljava/lang/Throwable;)V
+/*     */     //   157: athrow
+/*     */     //   158: aload #10
+/*     */     //   160: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$FullyAwake
+/*     */     //   163: astore #12
+/*     */     //   165: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
+/*     */     //   168: goto -> 308
+/*     */     //   171: aload #10
+/*     */     //   173: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$MorningWakeUp
+/*     */     //   176: astore #13
+/*     */     //   178: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
+/*     */     //   181: goto -> 308
+/*     */     //   184: aload #10
+/*     */     //   186: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$NoddingOff
+/*     */     //   189: astore #14
+/*     */     //   191: aload #4
+/*     */     //   193: invokestatic check : (Lcom/hypixel/hytale/server/core/universe/world/World;)Lcom/hypixel/hytale/builtin/beds/sleep/systems/world/CanSleepInWorld$Result;
+/*     */     //   196: invokeinterface isNegative : ()Z
+/*     */     //   201: ifeq -> 210
+/*     */     //   204: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.PACKET_NO_SLEEP_UI : Lcom/hypixel/hytale/protocol/packets/world/UpdateSleepState;
+/*     */     //   207: goto -> 308
+/*     */     //   210: aload #14
+/*     */     //   212: invokevirtual realTimeStart : ()Ljava/time/Instant;
+/*     */     //   215: invokestatic now : ()Ljava/time/Instant;
+/*     */     //   218: invokestatic between : (Ljava/time/temporal/Temporal;Ljava/time/temporal/Temporal;)Ljava/time/Duration;
+/*     */     //   221: invokevirtual toMillis : ()J
+/*     */     //   224: lstore #15
+/*     */     //   226: lload #15
+/*     */     //   228: getstatic com/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem.SPAN_BEFORE_BLACK_SCREEN : Ljava/time/Duration;
+/*     */     //   231: invokevirtual toMillis : ()J
+/*     */     //   234: lcmp
+/*     */     //   235: ifle -> 242
+/*     */     //   238: iconst_1
+/*     */     //   239: goto -> 243
+/*     */     //   242: iconst_0
+/*     */     //   243: istore #17
+/*     */     //   245: aload_3
+/*     */     //   246: iload_2
+/*     */     //   247: invokevirtual getReferenceTo : (I)Lcom/hypixel/hytale/component/Ref;
+/*     */     //   250: astore #18
+/*     */     //   252: aload_1
+/*     */     //   253: aload #18
+/*     */     //   255: invokestatic isReadyToSleep : (Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/component/Ref;)Z
+/*     */     //   258: istore #19
+/*     */     //   260: new com/hypixel/hytale/protocol/packets/world/UpdateSleepState
+/*     */     //   263: dup
+/*     */     //   264: iload #17
+/*     */     //   266: iconst_0
+/*     */     //   267: aload #9
+/*     */     //   269: iload #19
+/*     */     //   271: ifeq -> 282
+/*     */     //   274: aload_0
+/*     */     //   275: aload_1
+/*     */     //   276: invokevirtual createSleepMultiplayer : (Lcom/hypixel/hytale/component/Store;)Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;
+/*     */     //   279: goto -> 283
+/*     */     //   282: aconst_null
+/*     */     //   283: invokespecial <init> : (ZZLcom/hypixel/hytale/protocol/packets/world/SleepClock;Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;)V
+/*     */     //   286: goto -> 308
+/*     */     //   289: aload #10
+/*     */     //   291: checkcast com/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$Slumber
+/*     */     //   294: astore #15
+/*     */     //   296: new com/hypixel/hytale/protocol/packets/world/UpdateSleepState
+/*     */     //   299: dup
+/*     */     //   300: iconst_1
+/*     */     //   301: iconst_1
+/*     */     //   302: aload #9
+/*     */     //   304: aconst_null
+/*     */     //   305: invokespecial <init> : (ZZLcom/hypixel/hytale/protocol/packets/world/SleepClock;Lcom/hypixel/hytale/protocol/packets/world/SleepMultiplayer;)V
+/*     */     //   308: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #62	-> 0
-/*     */     //   #63	-> 12
-/*     */     //   #64	-> 24
-/*     */     //   #66	-> 31
-/*     */     //   #67	-> 44
-/*     */     //   #69	-> 51
-/*     */     //   #71	-> 77
-/*     */     //   #72	-> 138
-/*     */     //   #73	-> 151
-/*     */     //   #74	-> 164
-/*     */     //   #75	-> 171
-/*     */     //   #77	-> 190
-/*     */     //   #78	-> 206
-/*     */     //   #80	-> 225
-/*     */     //   #81	-> 232
-/*     */     //   #83	-> 240
-/*     */     //   #85	-> 269
-/*     */     //   #71	-> 288
+/*     */     //   #66	-> 0
+/*     */     //   #67	-> 12
+/*     */     //   #68	-> 24
+/*     */     //   #70	-> 31
+/*     */     //   #71	-> 44
+/*     */     //   #73	-> 63
+/*     */     //   #75	-> 70
+/*     */     //   #77	-> 96
+/*     */     //   #78	-> 158
+/*     */     //   #79	-> 171
+/*     */     //   #80	-> 184
+/*     */     //   #81	-> 191
+/*     */     //   #83	-> 210
+/*     */     //   #84	-> 226
+/*     */     //   #86	-> 245
+/*     */     //   #87	-> 252
+/*     */     //   #89	-> 260
+/*     */     //   #91	-> 289
+/*     */     //   #77	-> 308
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
-/*     */     //   66	8	10	slumber	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber;
-/*     */     //   145	6	12	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$FullyAwake;
-/*     */     //   158	6	13	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$MorningWakeUp;
-/*     */     //   206	63	15	elapsedMs	J
-/*     */     //   225	44	17	grayFade	Z
-/*     */     //   232	37	18	ref	Lcom/hypixel/hytale/component/Ref;
-/*     */     //   240	29	19	readyToSleep	Z
-/*     */     //   171	98	14	noddingOff	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$NoddingOff;
-/*     */     //   276	12	15	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$Slumber;
-/*     */     //   0	289	0	this	Lcom/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem;
-/*     */     //   0	289	1	store	Lcom/hypixel/hytale/component/Store;
-/*     */     //   0	289	2	index	I
-/*     */     //   0	289	3	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk;
-/*     */     //   12	277	4	world	Lcom/hypixel/hytale/server/core/universe/world/World;
-/*     */     //   24	265	5	worldSomnolence	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSomnolence;
-/*     */     //   31	258	6	worldSleepState	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSleep;
-/*     */     //   44	245	7	playerSomnolence	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSomnolence;
-/*     */     //   51	238	8	playerSleepState	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep;
-/*     */     //   77	212	9	clock	Lcom/hypixel/hytale/protocol/packets/world/SleepClock;
+/*     */     //   85	8	10	slumber	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSlumber;
+/*     */     //   165	6	12	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$FullyAwake;
+/*     */     //   178	6	13	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$MorningWakeUp;
+/*     */     //   226	63	15	elapsedMs	J
+/*     */     //   245	44	17	grayFade	Z
+/*     */     //   252	37	18	ref	Lcom/hypixel/hytale/component/Ref;
+/*     */     //   260	29	19	readyToSleep	Z
+/*     */     //   191	98	14	noddingOff	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$NoddingOff;
+/*     */     //   296	12	15	ignored	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep$Slumber;
+/*     */     //   0	309	0	this	Lcom/hypixel/hytale/builtin/beds/sleep/systems/player/UpdateSleepPacketSystem;
+/*     */     //   0	309	1	store	Lcom/hypixel/hytale/component/Store;
+/*     */     //   0	309	2	index	I
+/*     */     //   0	309	3	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk;
+/*     */     //   12	297	4	world	Lcom/hypixel/hytale/server/core/universe/world/World;
+/*     */     //   24	285	5	worldSomnolence	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSomnolence;
+/*     */     //   31	278	6	worldSleepState	Lcom/hypixel/hytale/builtin/beds/sleep/resources/WorldSleep;
+/*     */     //   44	265	7	playerSomnolenceComponent	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSomnolence;
+/*     */     //   70	239	8	playerSleepState	Lcom/hypixel/hytale/builtin/beds/sleep/components/PlayerSleep;
+/*     */     //   96	213	9	clock	Lcom/hypixel/hytale/protocol/packets/world/SleepClock;
 /*     */     // Local variable type table:
 /*     */     //   start	length	slot	name	signature
-/*     */     //   232	37	18	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
-/*     */     //   0	289	1	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
-/*     */     //   0	289	3	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   252	37	18	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   0	309	1	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   0	309	3	archetypeChunk	Lcom/hypixel/hytale/component/ArchetypeChunk<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -250,38 +265,38 @@
 /*     */ 
 /*     */   
 /*     */   @Nullable
-/*     */   private SleepMultiplayer createSleepMultiplayer(Store<EntityStore> store) {
-/*  91 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/*  92 */     List<PlayerRef> playerRefs = new ArrayList<>(world.getPlayerRefs());
-/*  93 */     if (playerRefs.size() <= 1) {
-/*  94 */       return null;
+/*     */   private SleepMultiplayer createSleepMultiplayer(@Nonnull Store<EntityStore> store) {
+/*  97 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  98 */     List<PlayerRef> playerRefs = new ArrayList<>(world.getPlayerRefs());
+/*  99 */     if (playerRefs.size() <= 1) {
+/* 100 */       return null;
 /*     */     }
 /*     */     
-/*  97 */     playerRefs.sort(Comparator.comparingLong(ref -> (ref.getUuid().hashCode() + world.hashCode())));
+/* 103 */     playerRefs.sort(Comparator.comparingLong(ref -> (ref.getUuid().hashCode() + world.hashCode())));
 /*     */     
-/*  99 */     int sleepersCount = 0;
-/* 100 */     int awakeCount = 0;
+/* 105 */     int sleepersCount = 0;
+/* 106 */     int awakeCount = 0;
 /*     */     
-/* 102 */     List<UUID> awakeSampleList = new ArrayList<>(playerRefs.size());
-/* 103 */     for (PlayerRef playerRef : playerRefs) {
-/* 104 */       Ref<EntityStore> ref = playerRef.getReference();
-/* 105 */       boolean readyToSleep = StartSlumberSystem.isReadyToSleep((ComponentAccessor)store, ref);
-/* 106 */       if (readyToSleep) {
-/* 107 */         sleepersCount++; continue;
+/* 108 */     List<UUID> awakeSampleList = new ArrayList<>(playerRefs.size());
+/* 109 */     for (PlayerRef playerRef : playerRefs) {
+/* 110 */       Ref<EntityStore> ref = playerRef.getReference();
+/* 111 */       boolean readyToSleep = StartSlumberSystem.isReadyToSleep((ComponentAccessor)store, ref);
+/* 112 */       if (readyToSleep) {
+/* 113 */         sleepersCount++; continue;
 /*     */       } 
-/* 109 */       awakeCount++;
-/* 110 */       awakeSampleList.add(playerRef.getUuid());
+/* 115 */       awakeCount++;
+/* 116 */       awakeSampleList.add(playerRef.getUuid());
 /*     */     } 
 /*     */ 
 /*     */     
-/* 114 */     UUID[] awakeSample = (awakeSampleList.size() > 5) ? EMPTY_UUIDS : (UUID[])awakeSampleList.toArray(x$0 -> new UUID[x$0]);
+/* 120 */     UUID[] awakeSample = (awakeSampleList.size() > 5) ? EMPTY_UUIDS : (UUID[])awakeSampleList.toArray(x$0 -> new UUID[x$0]);
 /*     */     
-/* 116 */     return new SleepMultiplayer(sleepersCount, awakeCount, awakeSample);
+/* 122 */     return new SleepMultiplayer(sleepersCount, awakeCount, awakeSample);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\player\UpdateSleepPacketSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\player\UpdateSleepPacketSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

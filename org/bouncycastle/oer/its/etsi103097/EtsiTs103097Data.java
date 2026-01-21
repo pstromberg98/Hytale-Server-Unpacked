@@ -24,7 +24,7 @@ public class EtsiTs103097Data extends Ieee1609Dot2Data {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\oer\its\etsi103097\EtsiTs103097Data.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\oer\its\etsi103097\EtsiTs103097Data.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

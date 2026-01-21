@@ -4,34 +4,36 @@
 /*    */ import com.hypixel.hytale.component.Resource;
 /*    */ import com.hypixel.hytale.component.ResourceType;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nonnull;
+/*    */ import javax.annotation.Nullable;
 /*    */ 
-/*    */ public class WorldSomnolence implements Resource<EntityStore> {
+/*    */ public class WorldSomnolence
+/*    */   implements Resource<EntityStore> {
 /*    */   public static ResourceType<EntityStore, WorldSomnolence> getResourceType() {
-/* 11 */     return BedsPlugin.getInstance().getWorldSomnolenceResourceType();
+/* 13 */     return BedsPlugin.getInstance().getWorldSomnolenceResourceType();
 /*    */   }
 /*    */   
-/* 14 */   private WorldSleep state = WorldSleep.Awake.INSTANCE;
+/* 16 */   private WorldSleep state = WorldSleep.Awake.INSTANCE;
 /*    */   
 /*    */   public WorldSleep getState() {
-/* 17 */     return this.state;
+/* 19 */     return this.state;
 /*    */   }
 /*    */   
-/*    */   public void setState(WorldSleep state) {
-/* 21 */     this.state = state;
+/*    */   public void setState(@Nonnull WorldSleep state) {
+/* 23 */     this.state = state;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   @NullableDecl
+/*    */   @Nullable
 /*    */   public Resource<EntityStore> clone() {
-/* 27 */     WorldSomnolence clone = new WorldSomnolence();
-/* 28 */     clone.state = this.state;
-/* 29 */     return clone;
+/* 29 */     WorldSomnolence clone = new WorldSomnolence();
+/* 30 */     clone.state = this.state;
+/* 31 */     return clone;
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\resources\WorldSomnolence.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\resources\WorldSomnolence.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -113,7 +113,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\protocol\RootInteractionSettings.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\protocol\RootInteractionSettings.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

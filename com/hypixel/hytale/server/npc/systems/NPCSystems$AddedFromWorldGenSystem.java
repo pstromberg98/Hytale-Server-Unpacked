@@ -262,57 +262,56 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class AddedFromWorldGenSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 270 */   private final ComponentType<EntityStore, NPCEntity> npcComponentType = NPCEntity.getComponentType();
+/* 269 */   private final ComponentType<EntityStore, NPCEntity> npcComponentType = NPCEntity.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 276 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
+/* 275 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 282 */   private final ComponentType<EntityStore, FromWorldGen> fromWorldGenComponentType = FromWorldGen.getComponentType();
+/* 281 */   private final ComponentType<EntityStore, FromWorldGen> fromWorldGenComponentType = FromWorldGen.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 288 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)this.fromWorldGenComponentType });
+/* 287 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)this.fromWorldGenComponentType });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 293 */     return this.query;
+/* 292 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 299 */     return EntityModule.get().getPreClearMarkersGroup();
+/* 298 */     return EntityModule.get().getPreClearMarkersGroup();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 305 */     FromWorldGen fromWorldGenComponent = (FromWorldGen)holder.getComponent(this.fromWorldGenComponentType);
-/* 306 */     assert fromWorldGenComponent != null;
+/* 304 */     FromWorldGen fromWorldGenComponent = (FromWorldGen)holder.getComponent(this.fromWorldGenComponentType);
+/* 305 */     assert fromWorldGenComponent != null;
 /*     */     
-/* 308 */     holder.putComponent(this.worldGenIdComponentType, (Component)new WorldGenId(fromWorldGenComponent.getWorldGenId()));
+/* 307 */     holder.putComponent(this.worldGenIdComponentType, (Component)new WorldGenId(fromWorldGenComponent.getWorldGenId()));
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedFromWorldGenSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedFromWorldGenSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

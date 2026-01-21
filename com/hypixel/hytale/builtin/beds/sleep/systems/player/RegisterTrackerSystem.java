@@ -9,29 +9,30 @@
 /*    */ import com.hypixel.hytale.component.system.HolderSystem;
 /*    */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+/*    */ import javax.annotation.Nonnull;
+/*    */ import javax.annotation.Nullable;
 /*    */ 
 /*    */ public class RegisterTrackerSystem
-/*    */   extends HolderSystem<EntityStore> {
-/*    */   public void onEntityAdd(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl AddReason reason, @NonNullDecl Store<EntityStore> store) {
-/* 18 */     holder.ensureComponent(SleepTracker.getComponentType());
+/*    */   extends HolderSystem<EntityStore>
+/*    */ {
+/*    */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
+/* 19 */     holder.ensureComponent(SleepTracker.getComponentType());
 /*    */   }
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   public void onEntityRemoved(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl RemoveReason reason, @NonNullDecl Store<EntityStore> store) {}
+/*    */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   @NullableDecl
+/*    */   @Nullable
 /*    */   public Query<EntityStore> getQuery() {
-/* 29 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 30 */     return (Query<EntityStore>)PlayerRef.getComponentType();
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\player\RegisterTrackerSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\beds\sleep\systems\player\RegisterTrackerSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

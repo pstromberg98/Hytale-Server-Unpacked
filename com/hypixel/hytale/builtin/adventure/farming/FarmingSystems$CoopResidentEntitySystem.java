@@ -21,7 +21,10 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import java.util.UUID;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+/*     */ import javax.annotation.Nonnull;
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -466,89 +469,89 @@
 /*     */ public class CoopResidentEntitySystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
-/* 469 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 472 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 473 */     return (Query)componentType;
+/* 476 */     return (Query)componentType;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public void onEntityAdded(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl AddReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {}
+/*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public void onEntityRemove(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl RemoveReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 483 */     if (reason == RemoveReason.UNLOAD) {
+/*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 486 */     if (reason == RemoveReason.UNLOAD) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 487 */     UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
-/* 488 */     if (uuidComponent == null) {
+/* 490 */     UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+/* 491 */     if (uuidComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 492 */     UUID uuid = uuidComponent.getUuid();
+/* 495 */     UUID uuid = uuidComponent.getUuid();
 /*     */     
-/* 494 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
-/* 495 */     if (coopResidentComponent == null) {
+/* 497 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
+/* 498 */     if (coopResidentComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 499 */     Vector3i coopPosition = coopResidentComponent.getCoopLocation();
-/* 500 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 502 */     Vector3i coopPosition = coopResidentComponent.getCoopLocation();
+/* 503 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
 /*     */     
-/* 502 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
-/* 503 */     WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
-/* 504 */     if (chunk == null) {
+/* 505 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
+/* 506 */     WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
+/* 507 */     if (chunk == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 508 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
-/* 509 */     if (chunkReference == null || !chunkReference.isValid()) {
+/* 511 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
+/* 512 */     if (chunkReference == null || !chunkReference.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 513 */     Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 516 */     Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */     
-/* 515 */     ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
-/* 516 */     if (chunkColumnComponent == null) {
+/* 518 */     ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
+/* 519 */     if (chunkColumnComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 520 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
-/* 521 */     if (blockChunkComponent == null) {
+/* 523 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
+/* 524 */     if (blockChunkComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 525 */     Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
-/* 526 */     if (sectionRef == null || !sectionRef.isValid()) {
+/* 528 */     Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
+/* 529 */     if (sectionRef == null || !sectionRef.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 530 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
-/* 531 */     if (blockComponentChunk == null) {
+/* 533 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
+/* 534 */     if (blockComponentChunk == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 535 */     int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
-/* 536 */     Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
-/* 537 */     if (coopEntityReference == null) {
+/* 538 */     int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
+/* 539 */     Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
+/* 540 */     if (coopEntityReference == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 541 */     CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
-/* 542 */     if (coop == null) {
+/* 544 */     CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
+/* 545 */     if (coop == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 546 */     coop.handleResidentDespawn(uuid);
+/* 549 */     coop.handleResidentDespawn(uuid);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$CoopResidentEntitySystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems$CoopResidentEntitySystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

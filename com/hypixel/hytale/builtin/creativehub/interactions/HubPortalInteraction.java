@@ -40,10 +40,9 @@
 /*     */ import java.util.logging.Level;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ public class HubPortalInteraction extends SimpleInstantInteraction {
-/*  46 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/*  45 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -72,7 +71,7 @@
 /*     */ 
 /*     */   
 /*     */   static {
-/*  75 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HubPortalInteraction.class, HubPortalInteraction::new, SimpleInstantInteraction.CODEC).documentation("Teleports the **Player** to a permanent world, creating it if required.")).appendInherited(new KeyedCodec("WorldName", (Codec)Codec.STRING), (o, i) -> o.worldName = i, o -> o.worldName, (o, p) -> o.worldName = p.worldName).documentation("The name of the permanent world to teleport to.").addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("WorldGenType", (Codec)Codec.STRING), (o, i) -> o.worldGenType = i, o -> o.worldGenType, (o, p) -> o.worldGenType = p.worldGenType).documentation("The world generator type to use when creating the world (e.g., 'Flat', 'Hytale'). Mutually exclusive with InstanceTemplate.").add()).appendInherited(new KeyedCodec("InstanceTemplate", (Codec)Codec.STRING), (o, i) -> o.instanceTemplate = i, o -> o.instanceTemplate, (o, p) -> o.instanceTemplate = p.instanceTemplate).documentation("Instance asset to use as template for creating the permanent world. Mutually exclusive with WorldGenType.").add()).build();
+/*  74 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HubPortalInteraction.class, HubPortalInteraction::new, SimpleInstantInteraction.CODEC).documentation("Teleports the **Player** to a permanent world, creating it if required.")).appendInherited(new KeyedCodec("WorldName", (Codec)Codec.STRING), (o, i) -> o.worldName = i, o -> o.worldName, (o, p) -> o.worldName = p.worldName).documentation("The name of the permanent world to teleport to.").addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("WorldGenType", (Codec)Codec.STRING), (o, i) -> o.worldGenType = i, o -> o.worldGenType, (o, p) -> o.worldGenType = p.worldGenType).documentation("The world generator type to use when creating the world (e.g., 'Flat', 'Hytale'). Mutually exclusive with InstanceTemplate.").add()).appendInherited(new KeyedCodec("InstanceTemplate", (Codec)Codec.STRING), (o, i) -> o.instanceTemplate = i, o -> o.instanceTemplate, (o, p) -> o.instanceTemplate = p.instanceTemplate).documentation("Instance asset to use as template for creating the permanent world. Mutually exclusive with WorldGenType.").add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -80,55 +79,55 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   @NonNullDecl
+/*     */   @Nonnull
 /*     */   public WaitForDataFrom getWaitForDataFrom() {
-/*  85 */     return WaitForDataFrom.Server;
+/*  84 */     return WaitForDataFrom.Server;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
-/*  90 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
-/*  91 */     Ref<EntityStore> ref = context.getEntity();
+/*  89 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+/*  90 */     Ref<EntityStore> ref = context.getEntity();
 /*     */     
-/*  93 */     Player playerComponent = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
-/*  94 */     if (playerComponent == null || playerComponent.isWaitingForClientReady()) {
+/*  92 */     Player playerComponent = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
+/*  93 */     if (playerComponent == null || playerComponent.isWaitingForClientReady()) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */     
-/*  99 */     Archetype<EntityStore> archetype = commandBuffer.getArchetype(ref);
-/* 100 */     if (archetype.contains(Teleport.getComponentType()) || archetype.contains(PendingTeleport.getComponentType())) {
+/*  98 */     Archetype<EntityStore> archetype = commandBuffer.getArchetype(ref);
+/*  99 */     if (archetype.contains(Teleport.getComponentType()) || archetype.contains(PendingTeleport.getComponentType())) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 104 */     World currentWorld = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/* 105 */     Universe universe = Universe.get();
+/* 103 */     World currentWorld = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 104 */     Universe universe = Universe.get();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/* 111 */     World targetWorld = universe.getWorld(this.worldName);
+/* 110 */     World targetWorld = universe.getWorld(this.worldName);
 /*     */     
-/* 113 */     if (targetWorld != null) {
+/* 112 */     if (targetWorld != null) {
 /*     */       
-/* 115 */       teleportToLoadedWorld(ref, (ComponentAccessor<EntityStore>)commandBuffer, targetWorld, playerComponent);
+/* 114 */       teleportToLoadedWorld(ref, (ComponentAccessor<EntityStore>)commandBuffer, targetWorld, playerComponent);
 /*     */     } else {
 /*     */       CompletableFuture<World> worldFuture;
 /*     */       
-/* 119 */       if (this.instanceTemplate != null) {
-/* 120 */         worldFuture = CreativeHubPlugin.get().spawnPermanentWorldFromTemplate(this.instanceTemplate, this.worldName);
-/* 121 */       } else if (universe.isWorldLoadable(this.worldName)) {
-/* 122 */         worldFuture = universe.loadWorld(this.worldName);
+/* 118 */       if (this.instanceTemplate != null) {
+/* 119 */         worldFuture = CreativeHubPlugin.get().spawnPermanentWorldFromTemplate(this.instanceTemplate, this.worldName);
+/* 120 */       } else if (universe.isWorldLoadable(this.worldName)) {
+/* 121 */         worldFuture = universe.loadWorld(this.worldName);
 /*     */       } else {
-/* 124 */         worldFuture = universe.addWorld(this.worldName, this.worldGenType, null);
-/* 125 */         worldFuture.thenAccept(world -> {
+/* 123 */         worldFuture = universe.addWorld(this.worldName, this.worldGenType, null);
+/* 124 */         worldFuture.thenAccept(world -> {
 /*     */               if (world.getWorldConfig().getDisplayName() == null) {
 /*     */                 world.getWorldConfig().setDisplayName(WorldConfig.formatDisplayName(this.worldName));
 /*     */               }
 /*     */             });
 /*     */       } 
-/* 131 */       teleportToLoadingWorld(ref, (ComponentAccessor<EntityStore>)commandBuffer, worldFuture, currentWorld, playerComponent);
+/* 130 */       teleportToLoadingWorld(ref, (ComponentAccessor<EntityStore>)commandBuffer, worldFuture, currentWorld, playerComponent);
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -141,22 +140,23 @@
 /*     */   
 /*     */   private void teleportToLoadedWorld(@Nonnull Ref<EntityStore> playerRef, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull World targetWorld, @Nonnull Player playerComponent) {
 /*     */     Transform spawnPoint;
-/* 144 */     Map<String, PlayerWorldData> perWorldData = playerComponent.getPlayerConfigData().getPerWorldData();
-/* 145 */     PlayerWorldData worldData = perWorldData.get(targetWorld.getName());
+/* 143 */     Map<String, PlayerWorldData> perWorldData = playerComponent.getPlayerConfigData().getPerWorldData();
+/* 144 */     PlayerWorldData worldData = perWorldData.get(targetWorld.getName());
 /*     */ 
 /*     */     
-/* 148 */     if (worldData != null && worldData.getLastPosition() != null) {
-/* 149 */       spawnPoint = worldData.getLastPosition();
+/* 147 */     if (worldData != null && worldData.getLastPosition() != null) {
+/* 148 */       spawnPoint = worldData.getLastPosition();
 /*     */     } else {
-/* 151 */       UUIDComponent uuidComponent = (UUIDComponent)componentAccessor.getComponent(playerRef, UUIDComponent.getComponentType());
-/* 152 */       assert uuidComponent != null;
-/* 153 */       ISpawnProvider spawnProvider = targetWorld.getWorldConfig().getSpawnProvider();
-/* 154 */       spawnPoint = (spawnProvider != null) ? spawnProvider.getSpawnPoint(targetWorld, uuidComponent.getUuid()) : new Transform();
+/* 150 */       UUIDComponent uuidComponent = (UUIDComponent)componentAccessor.getComponent(playerRef, UUIDComponent.getComponentType());
+/* 151 */       assert uuidComponent != null;
+/* 152 */       ISpawnProvider spawnProvider = targetWorld.getWorldConfig().getSpawnProvider();
+/* 153 */       spawnPoint = (spawnProvider != null) ? spawnProvider.getSpawnPoint(targetWorld, uuidComponent.getUuid()) : new Transform();
 /*     */     } 
 /*     */ 
 /*     */ 
 /*     */     
-/* 159 */     componentAccessor.addComponent(playerRef, Teleport.getComponentType(), (Component)new Teleport(targetWorld, spawnPoint));
+/* 158 */     Teleport teleportComponent = Teleport.createForPlayer(targetWorld, spawnPoint);
+/* 159 */     componentAccessor.addComponent(playerRef, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -229,7 +229,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\creativehub\interactions\HubPortalInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\creativehub\interactions\HubPortalInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

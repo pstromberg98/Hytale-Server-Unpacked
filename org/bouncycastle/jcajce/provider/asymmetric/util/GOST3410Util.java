@@ -32,7 +32,7 @@ public class GOST3410Util {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetri\\util\GOST3410Util.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\provider\asymmetri\\util\GOST3410Util.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

@@ -189,7 +189,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class AddedFromExternalSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
@@ -203,34 +202,34 @@
 /*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public AddedFromExternalSystem(@Nonnull ComponentType<EntityStore, NPCEntity> npcComponentType) {
-/* 206 */     this.npcComponentType = npcComponentType;
-/* 207 */     this.transformComponentType = TransformComponent.getComponentType();
-/* 208 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, NPCSystems.AddedSystem.class));
-/* 209 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)Query.or(new Query[] { (Query)FromWorldGen.getComponentType(), (Query)FromPrefab.getComponentType() }) });
+/* 205 */     this.npcComponentType = npcComponentType;
+/* 206 */     this.transformComponentType = TransformComponent.getComponentType();
+/* 207 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, NPCSystems.AddedSystem.class));
+/* 208 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)Query.or(new Query[] { (Query)FromWorldGen.getComponentType(), (Query)FromPrefab.getComponentType() }) });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 214 */     WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
+/* 213 */     WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
 /*     */     
-/* 216 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
-/* 217 */     assert npcComponent != null;
+/* 215 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
+/* 216 */     assert npcComponent != null;
 /*     */     
-/* 219 */     Archetype<EntityStore> archetype = store.getArchetype(ref);
-/* 220 */     boolean fromWorldGen = archetype.contains(FromWorldGen.getComponentType());
+/* 218 */     Archetype<EntityStore> archetype = store.getArchetype(ref);
+/* 219 */     boolean fromWorldGen = archetype.contains(FromWorldGen.getComponentType());
 /*     */     
-/* 222 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, this.transformComponentType);
-/* 223 */     assert transformComponent != null;
+/* 221 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, this.transformComponentType);
+/* 222 */     assert transformComponent != null;
 /*     */     
-/* 225 */     npcComponent.getLeashPoint().assign(transformComponent.getPosition());
-/* 226 */     Vector3f bodyRotation = transformComponent.getRotation();
-/* 227 */     npcComponent.setLeashHeading(bodyRotation.getYaw());
-/* 228 */     npcComponent.setLeashPitch(bodyRotation.getPitch());
-/* 229 */     npcComponent.setSpawnInstant(worldTimeResource.getGameTime());
-/* 230 */     npcComponent.getRole().onLoadFromWorldGenOrPrefab(ref, npcComponent, (ComponentAccessor)commandBuffer);
+/* 224 */     npcComponent.getLeashPoint().assign(transformComponent.getPosition());
+/* 225 */     Vector3f bodyRotation = transformComponent.getRotation();
+/* 226 */     npcComponent.setLeashHeading(bodyRotation.getYaw());
+/* 227 */     npcComponent.setLeashPitch(bodyRotation.getPitch());
+/* 228 */     npcComponent.setSpawnInstant(worldTimeResource.getGameTime());
+/* 229 */     npcComponent.getRole().onLoadFromWorldGenOrPrefab(ref, npcComponent, (ComponentAccessor)commandBuffer);
 /*     */     
-/* 232 */     if (fromWorldGen) {
-/* 233 */       commandBuffer.tryRemoveComponent(ref, Frozen.getComponentType());
+/* 231 */     if (fromWorldGen) {
+/* 232 */       commandBuffer.tryRemoveComponent(ref, Frozen.getComponentType());
 /*     */     }
 /*     */   }
 /*     */ 
@@ -242,24 +241,24 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 245 */     return this.query;
+/* 244 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 251 */     return this.dependencies;
+/* 250 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 257 */     return EntityModule.get().getPreClearMarkersGroup();
+/* 256 */     return EntityModule.get().getPreClearMarkersGroup();
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedFromExternalSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddedFromExternalSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

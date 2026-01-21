@@ -6,7 +6,7 @@ public interface QuadObjectDoublePredicate<T, U, V, R> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\function\predicate\QuadObjectDoublePredicate.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\function\predicate\QuadObjectDoublePredicate.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

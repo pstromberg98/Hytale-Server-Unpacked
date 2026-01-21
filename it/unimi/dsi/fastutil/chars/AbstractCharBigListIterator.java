@@ -4,7 +4,7 @@ package it.unimi.dsi.fastutil.chars;
 public abstract class AbstractCharBigListIterator extends AbstractCharBidirectionalIterator implements CharBigListIterator {}
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\i\\unimi\dsi\fastutil\chars\AbstractCharBigListIterator.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\i\\unimi\dsi\fastutil\chars\AbstractCharBigListIterator.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

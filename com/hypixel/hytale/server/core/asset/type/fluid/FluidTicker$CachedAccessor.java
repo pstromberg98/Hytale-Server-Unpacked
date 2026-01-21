@@ -606,53 +606,55 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class CachedAccessor
 /*     */   extends AbstractCachedAccessor
 /*     */   implements FluidTicker.Accessor
 /*     */ {
-/* 613 */   private static final ThreadLocal<CachedAccessor> THREAD_LOCAL = ThreadLocal.withInitial(CachedAccessor::new);
+/* 615 */   private static final ThreadLocal<CachedAccessor> THREAD_LOCAL = ThreadLocal.withInitial(CachedAccessor::new);
 /*     */   
 /*     */   private static final int FLUID_COMPONENT = 0;
 /*     */   private static final int BLOCK_COMPONENT = 1;
 /*     */   
 /*     */   protected CachedAccessor() {
-/* 619 */     super(2);
+/* 621 */     super(2);
 /*     */   }
 /*     */   private CommandBuffer<ChunkStore> commandBuffer; public FluidSection selfFluidSection; public BlockSection selfBlockSection;
 /*     */   @Nonnull
 /*     */   public static CachedAccessor of(CommandBuffer<ChunkStore> commandBuffer, @Nonnull FluidSection section, BlockSection blockSection, int radius) {
-/* 624 */     CachedAccessor accessor = THREAD_LOCAL.get();
-/* 625 */     accessor.init(commandBuffer, section, blockSection, radius);
-/* 626 */     accessor.insertSectionComponent(0, (Component)section, section.getX(), section.getY(), section.getZ());
-/* 627 */     accessor.insertSectionComponent(1, (Component)blockSection, section.getX(), section.getY(), section.getZ());
-/* 628 */     return accessor;
+/* 626 */     CachedAccessor accessor = THREAD_LOCAL.get();
+/* 627 */     accessor.init(commandBuffer, section, blockSection, radius);
+/* 628 */     accessor.insertSectionComponent(0, (Component)section, section.getX(), section.getY(), section.getZ());
+/* 629 */     accessor.insertSectionComponent(1, (Component)blockSection, section.getX(), section.getY(), section.getZ());
+/* 630 */     return accessor;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private void init(CommandBuffer<ChunkStore> commandBuffer, @Nonnull FluidSection section, BlockSection blockSection, int radius) {
-/* 635 */     init((ComponentAccessor)commandBuffer, section.getX(), section.getY(), section.getZ(), radius);
-/* 636 */     this.commandBuffer = commandBuffer;
-/* 637 */     this.selfFluidSection = section;
-/* 638 */     this.selfBlockSection = blockSection;
+/* 637 */     init((ComponentAccessor)commandBuffer, section.getX(), section.getY(), section.getZ(), radius);
+/* 638 */     this.commandBuffer = commandBuffer;
+/* 639 */     this.selfFluidSection = section;
+/* 640 */     this.selfBlockSection = blockSection;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public FluidSection getFluidSection(int cx, int cy, int cz) {
-/* 643 */     return (FluidSection)getComponentSection(cx, cy, cz, 0, FluidSection.getComponentType());
+/* 645 */     return (FluidSection)getComponentSection(cx, cy, cz, 0, FluidSection.getComponentType());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public BlockSection getBlockSection(int cx, int cy, int cz) {
-/* 648 */     return (BlockSection)getComponentSection(cx, cy, cz, 1, BlockSection.getComponentType());
+/* 650 */     return (BlockSection)getComponentSection(cx, cy, cz, 1, BlockSection.getComponentType());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void setBlock(int x, int y, int z, int blockId) {
-/* 653 */     Ref<ChunkStore> chunk = getChunk(ChunkUtil.chunkCoordinate(x), ChunkUtil.chunkCoordinate(z));
-/* 654 */     if (chunk == null || !chunk.isValid())
-/* 655 */       return;  this.commandBuffer.run(store -> {
+/* 655 */     Ref<ChunkStore> chunk = getChunk(ChunkUtil.chunkCoordinate(x), ChunkUtil.chunkCoordinate(z));
+/* 656 */     if (chunk == null || !chunk.isValid())
+/* 657 */       return;  this.commandBuffer.run(store -> {
 /*     */           if (!chunk.isValid())
 /*     */             return; 
 /*     */           WorldChunk wc = (WorldChunk)store.getComponent(chunk, WorldChunk.getComponentType());
@@ -664,7 +666,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\FluidTicker$CachedAccessor.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\asset\type\fluid\FluidTicker$CachedAccessor.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

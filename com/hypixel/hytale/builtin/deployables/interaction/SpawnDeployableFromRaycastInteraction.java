@@ -37,7 +37,6 @@
 /*     */ import java.util.Map;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -60,7 +59,7 @@
 /*     */   private DeployableConfig config;
 /*     */   
 /*     */   static {
-/*  63 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(SpawnDeployableFromRaycastInteraction.class, SpawnDeployableFromRaycastInteraction::new, SimpleInstantInteraction.CODEC).append(new KeyedCodec("Config", (Codec)DeployableConfig.CODEC), (i, s) -> i.config = s, i -> i.config).addValidator(Validators.nonNull()).add()).append(new KeyedCodec("PreviewStatConditions", (Codec)new Object2FloatMapCodec((Codec)Codec.STRING, it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap::new)), (changeStatInteraction, stringObject2DoubleMap) -> changeStatInteraction.unknownEntityStats = stringObject2DoubleMap, changeStatInteraction -> changeStatInteraction.unknownEntityStats).addValidator((Validator)EntityStatType.VALIDATOR_CACHE.getMapKeyValidator()).documentation("Modifiers to apply to EntityStats.").add()).appendInherited(new KeyedCodec("MaxPlacementDistance", (Codec)Codec.FLOAT), (o, i) -> o.maxPlacementDistance = i.floatValue(), o -> Float.valueOf(o.maxPlacementDistance), (i, o) -> i.maxPlacementDistance = o.maxPlacementDistance).documentation("The max distance at which the player can deploy the deployable.").add()).afterDecode(SpawnDeployableFromRaycastInteraction::processConfig)).build();
+/*  62 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(SpawnDeployableFromRaycastInteraction.class, SpawnDeployableFromRaycastInteraction::new, SimpleInstantInteraction.CODEC).append(new KeyedCodec("Config", (Codec)DeployableConfig.CODEC), (i, s) -> i.config = s, i -> i.config).addValidator(Validators.nonNull()).add()).append(new KeyedCodec("PreviewStatConditions", (Codec)new Object2FloatMapCodec((Codec)Codec.STRING, it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap::new)), (changeStatInteraction, stringObject2DoubleMap) -> changeStatInteraction.unknownEntityStats = stringObject2DoubleMap, changeStatInteraction -> changeStatInteraction.unknownEntityStats).addValidator((Validator)EntityStatType.VALIDATOR_CACHE.getMapKeyValidator()).documentation("Modifiers to apply to EntityStats.").add()).appendInherited(new KeyedCodec("MaxPlacementDistance", (Codec)Codec.FLOAT), (o, i) -> o.maxPlacementDistance = i.floatValue(), o -> Float.valueOf(o.maxPlacementDistance), (i, o) -> i.maxPlacementDistance = o.maxPlacementDistance).documentation("The max distance at which the player can deploy the deployable.").add()).afterDecode(SpawnDeployableFromRaycastInteraction::processConfig)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -86,8 +85,8 @@
 /*     */ 
 /*     */   
 /*     */   private void processConfig() {
-/*  89 */     if (this.unknownEntityStats != null) {
-/*  90 */       this.entityStats = EntityStatsModule.resolveEntityStats(this.unknownEntityStats);
+/*  88 */     if (this.unknownEntityStats != null) {
+/*  89 */       this.entityStats = EntityStatsModule.resolveEntityStats(this.unknownEntityStats);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -98,55 +97,55 @@
 /*     */ 
 /*     */   
 /*     */   private static boolean isSurface(@Nonnull Vector3f normal) {
-/* 101 */     return (normal.x == 0.0F && (normal.y - 1.0F) < 0.01D && normal.z == 0.0F);
+/* 100 */     return (normal.x == 0.0F && (normal.y - 1.0F) < 0.01D && normal.z == 0.0F);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean needsRemoteSync() {
-/* 106 */     return true;
+/* 105 */     return true;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   @NonNullDecl
+/*     */   @Nonnull
 /*     */   public WaitForDataFrom getWaitForDataFrom() {
-/* 112 */     return WaitForDataFrom.Client;
+/* 111 */     return WaitForDataFrom.Client;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
-/* 117 */     Ref<EntityStore> entityRef = context.getOwningEntity();
-/* 118 */     Store<EntityStore> store = entityRef.getStore();
+/* 116 */     Ref<EntityStore> entityRef = context.getOwningEntity();
+/* 117 */     Store<EntityStore> store = entityRef.getStore();
 /*     */     
-/* 120 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
-/* 121 */     assert commandBuffer != null;
+/* 119 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+/* 120 */     assert commandBuffer != null;
 /*     */     
-/* 123 */     InteractionSyncData clientState = context.getClientState();
-/* 124 */     assert clientState != null;
+/* 122 */     InteractionSyncData clientState = context.getClientState();
+/* 123 */     assert clientState != null;
 /*     */     
-/* 126 */     if (!canAfford(context.getEntity(), (ComponentAccessor<EntityStore>)commandBuffer)) {
-/* 127 */       (context.getState()).state = InteractionState.Failed;
+/* 125 */     if (!canAfford(context.getEntity(), (ComponentAccessor<EntityStore>)commandBuffer)) {
+/* 126 */       (context.getState()).state = InteractionState.Failed;
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 131 */     Position raycastHit = clientState.raycastHit;
-/* 132 */     if (raycastHit == null) {
-/* 133 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(entityRef, TransformComponent.getComponentType());
-/* 134 */       assert transformComponent != null;
+/* 130 */     Position raycastHit = clientState.raycastHit;
+/* 131 */     if (raycastHit == null) {
+/* 132 */       TransformComponent transformComponent = (TransformComponent)store.getComponent(entityRef, TransformComponent.getComponentType());
+/* 133 */       assert transformComponent != null;
 /*     */       
-/* 136 */       Vector3d position = transformComponent.getPosition();
-/* 137 */       raycastHit = new Position((float)position.x, (float)position.y, (float)position.z);
+/* 135 */       Vector3d position = transformComponent.getPosition();
+/* 136 */       raycastHit = new Position((float)position.x, (float)position.y, (float)position.z);
 /*     */     } 
 /*     */     
-/* 140 */     Vector3f raycastNormal = clientState.raycastNormal;
-/* 141 */     float correctedRaycastDistance = clientState.raycastDistance;
+/* 139 */     Vector3f raycastNormal = clientState.raycastNormal;
+/* 140 */     float correctedRaycastDistance = clientState.raycastDistance;
 /*     */     
-/* 143 */     Vector3f spawnPosition = new Vector3f((float)raycastHit.x, (float)raycastHit.y, (float)raycastHit.z);
-/* 144 */     Vector3f norm = new Vector3f(raycastNormal.x, raycastNormal.y, raycastNormal.z);
+/* 142 */     Vector3f spawnPosition = new Vector3f((float)raycastHit.x, (float)raycastHit.y, (float)raycastHit.z);
+/* 143 */     Vector3f norm = new Vector3f(raycastNormal.x, raycastNormal.y, raycastNormal.z);
 /*     */     
-/* 146 */     if (correctedRaycastDistance > 0.0F && correctedRaycastDistance <= this.maxPlacementDistance && (this.config.getAllowPlaceOnWalls() || isSurface(norm))) {
-/* 147 */       Direction attackerRot = clientState.attackerRot;
-/* 148 */       Vector3f rot = new Vector3f(0.0F, attackerRot.yaw, 0.0F);
-/* 149 */       DeployablesUtils.spawnDeployable(commandBuffer, store, this.config, entityRef, new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z), rot, "UP");
+/* 145 */     if (correctedRaycastDistance > 0.0F && correctedRaycastDistance <= this.maxPlacementDistance && (this.config.getAllowPlaceOnWalls() || isSurface(norm))) {
+/* 146 */       Direction attackerRot = clientState.attackerRot;
+/* 147 */       Vector3f rot = new Vector3f(0.0F, attackerRot.yaw, 0.0F);
+/* 148 */       DeployablesUtils.spawnDeployable(commandBuffer, store, this.config, entityRef, new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z), rot, "UP");
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -158,43 +157,43 @@
 /*     */ 
 /*     */   
 /*     */   protected boolean canAfford(@Nonnull Ref<EntityStore> entityRef, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 161 */     if (this.entityStats == null || this.entityStats.isEmpty()) {
-/* 162 */       return true;
+/* 160 */     if (this.entityStats == null || this.entityStats.isEmpty()) {
+/* 161 */       return true;
 /*     */     }
 /*     */     
-/* 165 */     EntityStatMap entityStatMapComponent = (EntityStatMap)componentAccessor.getComponent(entityRef, EntityStatMap.getComponentType());
-/* 166 */     if (entityStatMapComponent == null) {
-/* 167 */       return false;
+/* 164 */     EntityStatMap entityStatMapComponent = (EntityStatMap)componentAccessor.getComponent(entityRef, EntityStatMap.getComponentType());
+/* 165 */     if (entityStatMapComponent == null) {
+/* 166 */       return false;
 /*     */     }
 /*     */     
-/* 170 */     for (ObjectIterator<Int2FloatMap.Entry> objectIterator = this.entityStats.int2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Int2FloatMap.Entry cost = objectIterator.next();
-/* 171 */       EntityStatValue stat = entityStatMapComponent.get(cost.getIntKey());
-/* 172 */       if (stat == null || stat.get() < cost.getFloatValue()) {
-/* 173 */         return false;
+/* 169 */     for (ObjectIterator<Int2FloatMap.Entry> objectIterator = this.entityStats.int2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Int2FloatMap.Entry cost = objectIterator.next();
+/* 170 */       EntityStatValue stat = entityStatMapComponent.get(cost.getIntKey());
+/* 171 */       if (stat == null || stat.get() < cost.getFloatValue()) {
+/* 172 */         return false;
 /*     */       } }
 /*     */ 
 /*     */     
-/* 177 */     return true;
+/* 176 */     return true;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   @NonNullDecl
+/*     */   @Nonnull
 /*     */   protected Interaction generatePacket() {
-/* 183 */     return (Interaction)new com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction();
+/* 182 */     return (Interaction)new com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void configurePacket(Interaction packet) {
-/* 188 */     super.configurePacket(packet);
-/* 189 */     com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction p = (com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction)packet;
-/* 190 */     p.deployableConfig = this.config.toPacket();
-/* 191 */     p.maxDistance = this.maxPlacementDistance;
-/* 192 */     p.costs = (Map)this.entityStats;
+/* 187 */     super.configurePacket(packet);
+/* 188 */     com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction p = (com.hypixel.hytale.protocol.SpawnDeployableFromRaycastInteraction)packet;
+/* 189 */     p.deployableConfig = this.config.toPacket();
+/* 190 */     p.maxDistance = this.maxPlacementDistance;
+/* 191 */     p.costs = (Map)this.entityStats;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\deployables\interaction\SpawnDeployableFromRaycastInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\deployables\interaction\SpawnDeployableFromRaycastInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

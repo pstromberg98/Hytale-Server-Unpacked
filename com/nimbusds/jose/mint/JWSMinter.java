@@ -10,7 +10,7 @@ public interface JWSMinter<C extends com.nimbusds.jose.proc.SecurityContext> {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\nimbusds\jose\mint\JWSMinter.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\nimbusds\jose\mint\JWSMinter.class
  * Java compiler version: 7 (51.0)
  * JD-Core Version:       1.1.3
  */

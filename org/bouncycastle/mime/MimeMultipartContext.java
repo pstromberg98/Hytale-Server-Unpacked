@@ -7,7 +7,7 @@ public interface MimeMultipartContext extends MimeContext {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\mime\MimeMultipartContext.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\mime\MimeMultipartContext.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

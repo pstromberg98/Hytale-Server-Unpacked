@@ -69,7 +69,6 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
 /*    */ class EmptyChunkLoader
 /*    */   implements IChunkLoader
 /*    */ {
@@ -77,18 +76,18 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public CompletableFuture<Holder<ChunkStore>> loadHolder(int x, int z) {
-/* 80 */     return CompletableFuture.completedFuture(null);
+/* 79 */     return CompletableFuture.completedFuture(null);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public LongSet getIndexes() {
-/* 86 */     return (LongSet)LongSets.EMPTY_SET;
+/* 85 */     return (LongSet)LongSets.EMPTY_SET;
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\EmptyChunkStorageProvider$EmptyChunkLoader.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\provider\EmptyChunkStorageProvider$EmptyChunkLoader.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

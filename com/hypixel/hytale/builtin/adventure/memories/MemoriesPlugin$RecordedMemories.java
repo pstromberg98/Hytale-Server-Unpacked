@@ -306,19 +306,39 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class RecordedMemories
 /*     */ {
 /*     */   public static final BuilderCodec<RecordedMemories> CODEC;
 /*     */   
 /*     */   static {
-/* 314 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(RecordedMemories.class, RecordedMemories::new).append(new KeyedCodec("Memories", (Codec)new ArrayCodec((Codec)Memory.CODEC, x$0 -> new Memory[x$0])), (recordedMemories, memories) -> { if (memories == null) return;  Collections.addAll(recordedMemories.memories, memories); }recordedMemories -> (Memory[])recordedMemories.memories.toArray(())).add()).build();
+/* 334 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(RecordedMemories.class, RecordedMemories::new).append(new KeyedCodec("Memories", (Codec)new ArrayCodec((Codec)Memory.CODEC, x$0 -> new Memory[x$0])), (recordedMemories, memories) -> { if (memories == null) return;  Collections.addAll(recordedMemories.memories, memories); }recordedMemories -> (Memory[])recordedMemories.memories.toArray(())).add()).build();
 /*     */   }
-/* 316 */   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-/* 317 */   private final Set<Memory> memories = new HashSet<>();
+/* 336 */   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+/* 337 */   private final Set<Memory> memories = new HashSet<>();
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\MemoriesPlugin$RecordedMemories.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\memories\MemoriesPlugin$RecordedMemories.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -40,20 +40,21 @@
 /* 40 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
 /* 41 */     assert headRotationComponent != null;
 /*    */     
-/* 43 */     Vector3d position = transformComponent.getPosition().clone();
-/* 44 */     Vector3f headRotation = headRotationComponent.getRotation().clone();
+/* 43 */     Vector3d previousPos = transformComponent.getPosition().clone();
+/* 44 */     Vector3f previousHeadRotation = headRotationComponent.getRotation().clone();
 /*    */     
 /* 46 */     TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
-/* 47 */     teleportHistoryComponent.append(world, position, headRotation, "Home");
+/* 47 */     teleportHistoryComponent.append(world, previousPos, previousHeadRotation, "Home");
 /*    */     
 /* 49 */     Transform homeTransform = Player.getRespawnPosition(ref, world.getName(), (ComponentAccessor)store);
-/* 50 */     store.addComponent(ref, Teleport.getComponentType(), (Component)new Teleport(null, homeTransform));
-/* 51 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_SELF_HOME);
+/* 50 */     Teleport teleportComponent = Teleport.createForPlayer(null, homeTransform);
+/* 51 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 52 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_SELF_HOME);
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportHomeCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\teleport\commands\teleport\TeleportHomeCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

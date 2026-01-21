@@ -30,7 +30,7 @@ public class PKCS12KeyWithParameters extends PKCS12Key implements PBEKey {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\jcajce\PKCS12KeyWithParameters.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\jcajce\PKCS12KeyWithParameters.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

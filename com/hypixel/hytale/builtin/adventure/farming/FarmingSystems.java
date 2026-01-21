@@ -34,50 +34,48 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.chunk.section.ChunkSection;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*     */ import com.hypixel.hytale.server.core.util.TargetUtil;
 /*     */ import java.time.Instant;
 /*     */ import java.util.List;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*     */ 
 /*     */ public class FarmingSystems {
 /*     */   public static class OnSoilAdded extends RefSystem<ChunkStore> {
-/*  46 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
-/*  47 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
-/*  48 */           (Query)TilledSoilBlock.getComponentType()
+/*  44 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
+/*  45 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
+/*  46 */           (Query)TilledSoilBlock.getComponentType()
 /*     */         });
 /*     */ 
 /*     */     
 /*     */     public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/*  53 */       TilledSoilBlock soil = (TilledSoilBlock)commandBuffer.getComponent(ref, TilledSoilBlock.getComponentType());
-/*  54 */       assert soil != null;
-/*  55 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/*  56 */       assert info != null;
+/*  51 */       TilledSoilBlock soil = (TilledSoilBlock)commandBuffer.getComponent(ref, TilledSoilBlock.getComponentType());
+/*  52 */       assert soil != null;
+/*  53 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/*  54 */       assert info != null;
 /*     */       
-/*  58 */       if (!soil.isPlanted()) {
-/*  59 */         int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/*  60 */         int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/*  61 */         int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/*  56 */       if (!soil.isPlanted()) {
+/*  57 */         int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/*  58 */         int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/*  59 */         int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */         
-/*  63 */         assert info.getChunkRef() != null;
-/*  64 */         BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/*  65 */         assert blockChunk != null;
-/*  66 */         BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/*  61 */         assert info.getChunkRef() != null;
+/*  62 */         BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/*  63 */         assert blockChunk != null;
+/*  64 */         BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*     */ 
 /*     */         
-/*  69 */         Instant decayTime = soil.getDecayTime();
-/*  70 */         if (decayTime == null) {
+/*  67 */         Instant decayTime = soil.getDecayTime();
+/*  68 */         if (decayTime == null) {
 /*     */ 
 /*     */           
-/*  73 */           BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
-/*  74 */           FarmingSystems.updateSoilDecayTime(commandBuffer, soil, blockType);
+/*  71 */           BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
+/*  72 */           FarmingSystems.updateSoilDecayTime(commandBuffer, soil, blockType);
 /*     */         } 
-/*  76 */         if (decayTime == null) {
+/*  74 */         if (decayTime == null) {
 /*     */           return;
 /*     */         }
 /*     */         
-/*  80 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
+/*  78 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
 /*     */       } 
 /*     */     }
 /*     */ 
@@ -89,15 +87,15 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/*  92 */       return QUERY;
+/*  90 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class OnFarmBlockAdded
 /*     */     extends RefSystem<ChunkStore> {
-/*  98 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
-/*  99 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
-/* 100 */           (Query)FarmingBlock.getComponentType()
+/*  96 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
+/*  97 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
+/*  98 */           (Query)FarmingBlock.getComponentType()
 /*     */         });
 /*     */ 
 /*     */ 
@@ -156,16 +154,16 @@
 /*     */       //   61: dup
 /*     */       //   62: invokespecial <init> : ()V
 /*     */       //   65: athrow
-/*     */       //   66: aload #5
-/*     */       //   68: invokevirtual getLastTickGameTime : ()Ljava/time/Instant;
-/*     */       //   71: ifnonnull -> 479
-/*     */       //   74: aload #4
-/*     */       //   76: aload #6
-/*     */       //   78: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
-/*     */       //   81: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */       //   84: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */       //   87: checkcast com/hypixel/hytale/server/core/universe/world/chunk/BlockChunk
-/*     */       //   90: astore #7
+/*     */       //   66: aload #4
+/*     */       //   68: aload #6
+/*     */       //   70: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
+/*     */       //   73: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */       //   76: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */       //   79: checkcast com/hypixel/hytale/server/core/universe/world/chunk/BlockChunk
+/*     */       //   82: astore #7
+/*     */       //   84: aload #5
+/*     */       //   86: invokevirtual getLastTickGameTime : ()Ljava/time/Instant;
+/*     */       //   89: ifnonnull -> 483
 /*     */       //   92: aload #7
 /*     */       //   94: aload #6
 /*     */       //   96: invokevirtual getIndex : ()I
@@ -204,288 +202,296 @@
 /*     */       //   182: checkcast com/hypixel/hytale/server/core/modules/time/WorldTimeResource
 /*     */       //   185: invokevirtual getGameTime : ()Ljava/time/Instant;
 /*     */       //   188: invokevirtual setLastTickGameTime : (Ljava/time/Instant;)V
-/*     */       //   191: aload #9
-/*     */       //   193: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
-/*     */       //   196: invokevirtual getStages : ()Ljava/util/Map;
-/*     */       //   199: ifnull -> 479
-/*     */       //   202: aload #9
-/*     */       //   204: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
-/*     */       //   207: invokevirtual getStages : ()Ljava/util/Map;
-/*     */       //   210: aload #9
-/*     */       //   212: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
-/*     */       //   215: invokevirtual getStartingStageSet : ()Ljava/lang/String;
-/*     */       //   218: invokeinterface get : (Ljava/lang/Object;)Ljava/lang/Object;
-/*     */       //   223: checkcast [Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
-/*     */       //   226: astore #10
-/*     */       //   228: aload #10
-/*     */       //   230: ifnull -> 479
+/*     */       //   191: aload #7
+/*     */       //   193: invokevirtual markNeedsSaving : ()V
+/*     */       //   196: aload #9
+/*     */       //   198: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
+/*     */       //   201: invokevirtual getStages : ()Ljava/util/Map;
+/*     */       //   204: ifnull -> 483
+/*     */       //   207: aload #9
+/*     */       //   209: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
+/*     */       //   212: invokevirtual getStages : ()Ljava/util/Map;
+/*     */       //   215: aload #9
+/*     */       //   217: invokevirtual getFarming : ()Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingData;
+/*     */       //   220: invokevirtual getStartingStageSet : ()Ljava/lang/String;
+/*     */       //   223: invokeinterface get : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */       //   228: checkcast [Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
+/*     */       //   231: astore #10
 /*     */       //   233: aload #10
-/*     */       //   235: arraylength
-/*     */       //   236: ifle -> 479
-/*     */       //   239: iconst_0
-/*     */       //   240: istore #11
-/*     */       //   242: iconst_0
-/*     */       //   243: istore #12
-/*     */       //   245: iload #12
-/*     */       //   247: aload #10
-/*     */       //   249: arraylength
-/*     */       //   250: if_icmpge -> 405
-/*     */       //   253: aload #10
-/*     */       //   255: iload #12
-/*     */       //   257: aaload
-/*     */       //   258: astore #13
-/*     */       //   260: aload #13
-/*     */       //   262: dup
-/*     */       //   263: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
-/*     */       //   266: pop
-/*     */       //   267: astore #14
-/*     */       //   269: iconst_0
-/*     */       //   270: istore #15
-/*     */       //   272: aload #14
-/*     */       //   274: iload #15
-/*     */       //   276: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
-/*     */       //   281: lookupswitch default -> 399, 0 -> 308, 1 -> 345
-/*     */       //   308: aload #14
-/*     */       //   310: checkcast com/hypixel/hytale/builtin/adventure/farming/config/stages/BlockTypeFarmingStageData
-/*     */       //   313: astore #16
-/*     */       //   315: aload #16
-/*     */       //   317: invokevirtual getBlock : ()Ljava/lang/String;
-/*     */       //   320: aload #9
-/*     */       //   322: invokevirtual getId : ()Ljava/lang/String;
-/*     */       //   325: invokevirtual equals : (Ljava/lang/Object;)Z
-/*     */       //   328: ifeq -> 399
-/*     */       //   331: aload #5
-/*     */       //   333: iload #12
-/*     */       //   335: i2f
-/*     */       //   336: invokevirtual setGrowthProgress : (F)V
-/*     */       //   339: iconst_1
-/*     */       //   340: istore #11
-/*     */       //   342: goto -> 399
-/*     */       //   345: aload #14
-/*     */       //   347: checkcast com/hypixel/hytale/builtin/adventure/farming/config/stages/BlockStateFarmingStageData
-/*     */       //   350: astore #17
-/*     */       //   352: aload #9
-/*     */       //   354: aload #17
-/*     */       //   356: invokevirtual getState : ()Ljava/lang/String;
-/*     */       //   359: invokevirtual getBlockForState : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
-/*     */       //   362: astore #18
-/*     */       //   364: aload #18
-/*     */       //   366: ifnull -> 396
-/*     */       //   369: aload #18
-/*     */       //   371: invokevirtual getId : ()Ljava/lang/String;
-/*     */       //   374: aload #9
-/*     */       //   376: invokevirtual getId : ()Ljava/lang/String;
-/*     */       //   379: invokevirtual equals : (Ljava/lang/Object;)Z
-/*     */       //   382: ifeq -> 396
-/*     */       //   385: aload #5
-/*     */       //   387: iload #12
-/*     */       //   389: i2f
-/*     */       //   390: invokevirtual setGrowthProgress : (F)V
-/*     */       //   393: iconst_1
-/*     */       //   394: istore #11
-/*     */       //   396: goto -> 399
-/*     */       //   399: iinc #12, 1
-/*     */       //   402: goto -> 245
-/*     */       //   405: iload #11
-/*     */       //   407: ifne -> 479
-/*     */       //   410: aload #4
-/*     */       //   412: aload #6
-/*     */       //   414: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
-/*     */       //   417: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */       //   420: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */       //   423: checkcast com/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn
-/*     */       //   426: aload #6
-/*     */       //   428: invokevirtual getIndex : ()I
-/*     */       //   431: invokestatic yFromBlockInColumn : (I)I
-/*     */       //   434: invokestatic chunkCoordinate : (I)I
-/*     */       //   437: invokevirtual getSection : (I)Lcom/hypixel/hytale/component/Ref;
-/*     */       //   440: astore #12
-/*     */       //   442: aload #10
-/*     */       //   444: iconst_0
-/*     */       //   445: aaload
-/*     */       //   446: aload #4
-/*     */       //   448: aload #12
-/*     */       //   450: aload_1
-/*     */       //   451: aload #6
-/*     */       //   453: invokevirtual getIndex : ()I
-/*     */       //   456: invokestatic xFromBlockInColumn : (I)I
-/*     */       //   459: aload #6
-/*     */       //   461: invokevirtual getIndex : ()I
-/*     */       //   464: invokestatic yFromBlockInColumn : (I)I
-/*     */       //   467: aload #6
-/*     */       //   469: invokevirtual getIndex : ()I
-/*     */       //   472: invokestatic zFromBlockInColumn : (I)I
-/*     */       //   475: aconst_null
-/*     */       //   476: invokevirtual apply : (Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/Ref;IIILcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;)V
-/*     */       //   479: aload #5
-/*     */       //   481: invokevirtual getLastTickGameTime : ()Ljava/time/Instant;
-/*     */       //   484: ifnonnull -> 520
-/*     */       //   487: aload #5
-/*     */       //   489: aload_3
-/*     */       //   490: invokevirtual getExternalData : ()Ljava/lang/Object;
-/*     */       //   493: checkcast com/hypixel/hytale/server/core/universe/world/storage/ChunkStore
-/*     */       //   496: invokevirtual getWorld : ()Lcom/hypixel/hytale/server/core/universe/world/World;
-/*     */       //   499: invokevirtual getEntityStore : ()Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;
-/*     */       //   502: invokevirtual getStore : ()Lcom/hypixel/hytale/component/Store;
-/*     */       //   505: invokestatic getResourceType : ()Lcom/hypixel/hytale/component/ResourceType;
-/*     */       //   508: invokevirtual getResource : (Lcom/hypixel/hytale/component/ResourceType;)Lcom/hypixel/hytale/component/Resource;
-/*     */       //   511: checkcast com/hypixel/hytale/server/core/modules/time/WorldTimeResource
-/*     */       //   514: invokevirtual getGameTime : ()Ljava/time/Instant;
-/*     */       //   517: invokevirtual setLastTickGameTime : (Ljava/time/Instant;)V
-/*     */       //   520: aload #6
-/*     */       //   522: invokevirtual getIndex : ()I
-/*     */       //   525: invokestatic xFromBlockInColumn : (I)I
-/*     */       //   528: istore #7
-/*     */       //   530: aload #6
-/*     */       //   532: invokevirtual getIndex : ()I
-/*     */       //   535: invokestatic yFromBlockInColumn : (I)I
-/*     */       //   538: istore #8
-/*     */       //   540: aload #6
-/*     */       //   542: invokevirtual getIndex : ()I
-/*     */       //   545: invokestatic zFromBlockInColumn : (I)I
-/*     */       //   548: istore #9
-/*     */       //   550: aload #4
-/*     */       //   552: aload #6
-/*     */       //   554: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
-/*     */       //   557: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */       //   560: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */       //   563: checkcast com/hypixel/hytale/server/core/universe/world/chunk/BlockComponentChunk
-/*     */       //   566: astore #10
-/*     */       //   568: getstatic com/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded.$assertionsDisabled : Z
-/*     */       //   571: ifne -> 587
-/*     */       //   574: aload #10
-/*     */       //   576: ifnonnull -> 587
-/*     */       //   579: new java/lang/AssertionError
-/*     */       //   582: dup
-/*     */       //   583: invokespecial <init> : ()V
-/*     */       //   586: athrow
-/*     */       //   587: aload #4
-/*     */       //   589: aload #6
-/*     */       //   591: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
-/*     */       //   594: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */       //   597: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */       //   600: checkcast com/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn
-/*     */       //   603: astore #11
-/*     */       //   605: getstatic com/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded.$assertionsDisabled : Z
-/*     */       //   608: ifne -> 624
-/*     */       //   611: aload #11
-/*     */       //   613: ifnonnull -> 624
-/*     */       //   616: new java/lang/AssertionError
-/*     */       //   619: dup
-/*     */       //   620: invokespecial <init> : ()V
-/*     */       //   623: athrow
-/*     */       //   624: aload #11
-/*     */       //   626: iload #8
-/*     */       //   628: invokestatic chunkCoordinate : (I)I
-/*     */       //   631: invokevirtual getSection : (I)Lcom/hypixel/hytale/component/Ref;
-/*     */       //   634: astore #12
-/*     */       //   636: aload #4
-/*     */       //   638: aload #12
-/*     */       //   640: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */       //   643: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */       //   646: checkcast com/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection
-/*     */       //   649: astore #13
-/*     */       //   651: aload #4
-/*     */       //   653: aload #13
-/*     */       //   655: aload #12
-/*     */       //   657: aload_1
-/*     */       //   658: aload #5
-/*     */       //   660: iload #7
-/*     */       //   662: iload #8
-/*     */       //   664: iload #9
-/*     */       //   666: iconst_1
-/*     */       //   667: invokestatic tickFarming : (Lcom/hypixel/hytale/component/CommandBuffer;Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/builtin/adventure/farming/states/FarmingBlock;IIIZ)V
-/*     */       //   670: return
+/*     */       //   235: ifnull -> 483
+/*     */       //   238: aload #10
+/*     */       //   240: arraylength
+/*     */       //   241: ifle -> 483
+/*     */       //   244: iconst_0
+/*     */       //   245: istore #11
+/*     */       //   247: iconst_0
+/*     */       //   248: istore #12
+/*     */       //   250: iload #12
+/*     */       //   252: aload #10
+/*     */       //   254: arraylength
+/*     */       //   255: if_icmpge -> 409
+/*     */       //   258: aload #10
+/*     */       //   260: iload #12
+/*     */       //   262: aaload
+/*     */       //   263: astore #13
+/*     */       //   265: aload #13
+/*     */       //   267: dup
+/*     */       //   268: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */       //   271: pop
+/*     */       //   272: astore #14
+/*     */       //   274: iconst_0
+/*     */       //   275: istore #15
+/*     */       //   277: aload #14
+/*     */       //   279: iload #15
+/*     */       //   281: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
+/*     */       //   286: lookupswitch default -> 403, 0 -> 312, 1 -> 349
+/*     */       //   312: aload #14
+/*     */       //   314: checkcast com/hypixel/hytale/builtin/adventure/farming/config/stages/BlockTypeFarmingStageData
+/*     */       //   317: astore #16
+/*     */       //   319: aload #16
+/*     */       //   321: invokevirtual getBlock : ()Ljava/lang/String;
+/*     */       //   324: aload #9
+/*     */       //   326: invokevirtual getId : ()Ljava/lang/String;
+/*     */       //   329: invokevirtual equals : (Ljava/lang/Object;)Z
+/*     */       //   332: ifeq -> 403
+/*     */       //   335: aload #5
+/*     */       //   337: iload #12
+/*     */       //   339: i2f
+/*     */       //   340: invokevirtual setGrowthProgress : (F)V
+/*     */       //   343: iconst_1
+/*     */       //   344: istore #11
+/*     */       //   346: goto -> 403
+/*     */       //   349: aload #14
+/*     */       //   351: checkcast com/hypixel/hytale/builtin/adventure/farming/config/stages/BlockStateFarmingStageData
+/*     */       //   354: astore #17
+/*     */       //   356: aload #9
+/*     */       //   358: aload #17
+/*     */       //   360: invokevirtual getState : ()Ljava/lang/String;
+/*     */       //   363: invokevirtual getBlockForState : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
+/*     */       //   366: astore #18
+/*     */       //   368: aload #18
+/*     */       //   370: ifnull -> 400
+/*     */       //   373: aload #18
+/*     */       //   375: invokevirtual getId : ()Ljava/lang/String;
+/*     */       //   378: aload #9
+/*     */       //   380: invokevirtual getId : ()Ljava/lang/String;
+/*     */       //   383: invokevirtual equals : (Ljava/lang/Object;)Z
+/*     */       //   386: ifeq -> 400
+/*     */       //   389: aload #5
+/*     */       //   391: iload #12
+/*     */       //   393: i2f
+/*     */       //   394: invokevirtual setGrowthProgress : (F)V
+/*     */       //   397: iconst_1
+/*     */       //   398: istore #11
+/*     */       //   400: goto -> 403
+/*     */       //   403: iinc #12, 1
+/*     */       //   406: goto -> 250
+/*     */       //   409: iload #11
+/*     */       //   411: ifne -> 483
+/*     */       //   414: aload #4
+/*     */       //   416: aload #6
+/*     */       //   418: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
+/*     */       //   421: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */       //   424: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */       //   427: checkcast com/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn
+/*     */       //   430: aload #6
+/*     */       //   432: invokevirtual getIndex : ()I
+/*     */       //   435: invokestatic yFromBlockInColumn : (I)I
+/*     */       //   438: invokestatic chunkCoordinate : (I)I
+/*     */       //   441: invokevirtual getSection : (I)Lcom/hypixel/hytale/component/Ref;
+/*     */       //   444: astore #12
+/*     */       //   446: aload #10
+/*     */       //   448: iconst_0
+/*     */       //   449: aaload
+/*     */       //   450: aload #4
+/*     */       //   452: aload #12
+/*     */       //   454: aload_1
+/*     */       //   455: aload #6
+/*     */       //   457: invokevirtual getIndex : ()I
+/*     */       //   460: invokestatic xFromBlockInColumn : (I)I
+/*     */       //   463: aload #6
+/*     */       //   465: invokevirtual getIndex : ()I
+/*     */       //   468: invokestatic yFromBlockInColumn : (I)I
+/*     */       //   471: aload #6
+/*     */       //   473: invokevirtual getIndex : ()I
+/*     */       //   476: invokestatic zFromBlockInColumn : (I)I
+/*     */       //   479: aconst_null
+/*     */       //   480: invokevirtual apply : (Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/Ref;IIILcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;)V
+/*     */       //   483: aload #5
+/*     */       //   485: invokevirtual getLastTickGameTime : ()Ljava/time/Instant;
+/*     */       //   488: ifnonnull -> 529
+/*     */       //   491: aload #5
+/*     */       //   493: aload_3
+/*     */       //   494: invokevirtual getExternalData : ()Ljava/lang/Object;
+/*     */       //   497: checkcast com/hypixel/hytale/server/core/universe/world/storage/ChunkStore
+/*     */       //   500: invokevirtual getWorld : ()Lcom/hypixel/hytale/server/core/universe/world/World;
+/*     */       //   503: invokevirtual getEntityStore : ()Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;
+/*     */       //   506: invokevirtual getStore : ()Lcom/hypixel/hytale/component/Store;
+/*     */       //   509: invokestatic getResourceType : ()Lcom/hypixel/hytale/component/ResourceType;
+/*     */       //   512: invokevirtual getResource : (Lcom/hypixel/hytale/component/ResourceType;)Lcom/hypixel/hytale/component/Resource;
+/*     */       //   515: checkcast com/hypixel/hytale/server/core/modules/time/WorldTimeResource
+/*     */       //   518: invokevirtual getGameTime : ()Ljava/time/Instant;
+/*     */       //   521: invokevirtual setLastTickGameTime : (Ljava/time/Instant;)V
+/*     */       //   524: aload #7
+/*     */       //   526: invokevirtual markNeedsSaving : ()V
+/*     */       //   529: aload #6
+/*     */       //   531: invokevirtual getIndex : ()I
+/*     */       //   534: invokestatic xFromBlockInColumn : (I)I
+/*     */       //   537: istore #8
+/*     */       //   539: aload #6
+/*     */       //   541: invokevirtual getIndex : ()I
+/*     */       //   544: invokestatic yFromBlockInColumn : (I)I
+/*     */       //   547: istore #9
+/*     */       //   549: aload #6
+/*     */       //   551: invokevirtual getIndex : ()I
+/*     */       //   554: invokestatic zFromBlockInColumn : (I)I
+/*     */       //   557: istore #10
+/*     */       //   559: aload #4
+/*     */       //   561: aload #6
+/*     */       //   563: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
+/*     */       //   566: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */       //   569: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */       //   572: checkcast com/hypixel/hytale/server/core/universe/world/chunk/BlockComponentChunk
+/*     */       //   575: astore #11
+/*     */       //   577: getstatic com/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded.$assertionsDisabled : Z
+/*     */       //   580: ifne -> 596
+/*     */       //   583: aload #11
+/*     */       //   585: ifnonnull -> 596
+/*     */       //   588: new java/lang/AssertionError
+/*     */       //   591: dup
+/*     */       //   592: invokespecial <init> : ()V
+/*     */       //   595: athrow
+/*     */       //   596: aload #4
+/*     */       //   598: aload #6
+/*     */       //   600: invokevirtual getChunkRef : ()Lcom/hypixel/hytale/component/Ref;
+/*     */       //   603: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */       //   606: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */       //   609: checkcast com/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn
+/*     */       //   612: astore #12
+/*     */       //   614: getstatic com/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded.$assertionsDisabled : Z
+/*     */       //   617: ifne -> 633
+/*     */       //   620: aload #12
+/*     */       //   622: ifnonnull -> 633
+/*     */       //   625: new java/lang/AssertionError
+/*     */       //   628: dup
+/*     */       //   629: invokespecial <init> : ()V
+/*     */       //   632: athrow
+/*     */       //   633: aload #12
+/*     */       //   635: iload #9
+/*     */       //   637: invokestatic chunkCoordinate : (I)I
+/*     */       //   640: invokevirtual getSection : (I)Lcom/hypixel/hytale/component/Ref;
+/*     */       //   643: astore #13
+/*     */       //   645: aload #4
+/*     */       //   647: aload #13
+/*     */       //   649: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */       //   652: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */       //   655: checkcast com/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection
+/*     */       //   658: astore #14
+/*     */       //   660: aload #4
+/*     */       //   662: aload #7
+/*     */       //   664: aload #14
+/*     */       //   666: aload #13
+/*     */       //   668: aload_1
+/*     */       //   669: aload #5
+/*     */       //   671: iload #8
+/*     */       //   673: iload #9
+/*     */       //   675: iload #10
+/*     */       //   677: iconst_1
+/*     */       //   678: invokestatic tickFarming : (Lcom/hypixel/hytale/component/CommandBuffer;Lcom/hypixel/hytale/server/core/universe/world/chunk/BlockChunk;Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/builtin/adventure/farming/states/FarmingBlock;IIIZ)V
+/*     */       //   681: return
 /*     */       // Line number table:
 /*     */       //   Java source line number -> byte code offset
-/*     */       //   #105	-> 0
-/*     */       //   #106	-> 14
-/*     */       //   #107	-> 33
-/*     */       //   #108	-> 47
-/*     */       //   #111	-> 66
-/*     */       //   #112	-> 74
-/*     */       //   #113	-> 92
-/*     */       //   #114	-> 96
-/*     */       //   #115	-> 104
-/*     */       //   #116	-> 112
-/*     */       //   #113	-> 118
-/*     */       //   #118	-> 123
-/*     */       //   #119	-> 136
-/*     */       //   #120	-> 145
-/*     */       //   #122	-> 158
-/*     */       //   #124	-> 191
-/*     */       //   #125	-> 202
-/*     */       //   #126	-> 228
-/*     */       //   #128	-> 239
-/*     */       //   #129	-> 242
-/*     */       //   #130	-> 253
-/*     */       //   #131	-> 260
-/*     */       //   #132	-> 308
-/*     */       //   #133	-> 315
-/*     */       //   #134	-> 331
-/*     */       //   #135	-> 339
-/*     */       //   #138	-> 345
-/*     */       //   #139	-> 352
-/*     */       //   #140	-> 364
-/*     */       //   #141	-> 385
-/*     */       //   #142	-> 393
-/*     */       //   #144	-> 396
-/*     */       //   #129	-> 399
-/*     */       //   #150	-> 405
-/*     */       //   #151	-> 410
-/*     */       //   #152	-> 442
-/*     */       //   #153	-> 453
-/*     */       //   #154	-> 461
-/*     */       //   #155	-> 469
-/*     */       //   #152	-> 476
-/*     */       //   #162	-> 479
-/*     */       //   #163	-> 487
-/*     */       //   #166	-> 520
-/*     */       //   #167	-> 530
-/*     */       //   #168	-> 540
-/*     */       //   #170	-> 550
-/*     */       //   #171	-> 568
-/*     */       //   #172	-> 587
-/*     */       //   #173	-> 605
-/*     */       //   #174	-> 624
-/*     */       //   #175	-> 636
-/*     */       //   #177	-> 651
-/*     */       //   #178	-> 670
+/*     */       //   #103	-> 0
+/*     */       //   #104	-> 14
+/*     */       //   #105	-> 33
+/*     */       //   #106	-> 47
+/*     */       //   #109	-> 66
+/*     */       //   #110	-> 84
+/*     */       //   #111	-> 92
+/*     */       //   #112	-> 96
+/*     */       //   #113	-> 104
+/*     */       //   #114	-> 112
+/*     */       //   #111	-> 118
+/*     */       //   #116	-> 123
+/*     */       //   #117	-> 136
+/*     */       //   #118	-> 145
+/*     */       //   #120	-> 158
+/*     */       //   #121	-> 191
+/*     */       //   #123	-> 196
+/*     */       //   #124	-> 207
+/*     */       //   #125	-> 233
+/*     */       //   #127	-> 244
+/*     */       //   #128	-> 247
+/*     */       //   #129	-> 258
+/*     */       //   #130	-> 265
+/*     */       //   #131	-> 312
+/*     */       //   #132	-> 319
+/*     */       //   #133	-> 335
+/*     */       //   #134	-> 343
+/*     */       //   #137	-> 349
+/*     */       //   #138	-> 356
+/*     */       //   #139	-> 368
+/*     */       //   #140	-> 389
+/*     */       //   #141	-> 397
+/*     */       //   #143	-> 400
+/*     */       //   #128	-> 403
+/*     */       //   #149	-> 409
+/*     */       //   #150	-> 414
+/*     */       //   #151	-> 446
+/*     */       //   #152	-> 457
+/*     */       //   #153	-> 465
+/*     */       //   #154	-> 473
+/*     */       //   #151	-> 480
+/*     */       //   #161	-> 483
+/*     */       //   #162	-> 491
+/*     */       //   #163	-> 524
+/*     */       //   #166	-> 529
+/*     */       //   #167	-> 539
+/*     */       //   #168	-> 549
+/*     */       //   #170	-> 559
+/*     */       //   #171	-> 577
+/*     */       //   #172	-> 596
+/*     */       //   #173	-> 614
+/*     */       //   #174	-> 633
+/*     */       //   #175	-> 645
+/*     */       //   #177	-> 660
+/*     */       //   #178	-> 681
 /*     */       // Local variable table:
 /*     */       //   start	length	slot	name	descriptor
-/*     */       //   315	30	16	data	Lcom/hypixel/hytale/builtin/adventure/farming/config/stages/BlockTypeFarmingStageData;
-/*     */       //   364	32	18	stateBlockType	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
-/*     */       //   352	47	17	data	Lcom/hypixel/hytale/builtin/adventure/farming/config/stages/BlockStateFarmingStageData;
-/*     */       //   260	139	13	stage	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
-/*     */       //   245	160	12	i	I
-/*     */       //   442	37	12	sectionRef	Lcom/hypixel/hytale/component/Ref;
-/*     */       //   242	237	11	found	Z
-/*     */       //   228	251	10	stages	[Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
-/*     */       //   92	387	7	blockChunk	Lcom/hypixel/hytale/server/core/universe/world/chunk/BlockChunk;
-/*     */       //   123	356	8	blockId	I
-/*     */       //   136	343	9	blockType	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
-/*     */       //   0	671	0	this	Lcom/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded;
-/*     */       //   0	671	1	ref	Lcom/hypixel/hytale/component/Ref;
-/*     */       //   0	671	2	reason	Lcom/hypixel/hytale/component/AddReason;
-/*     */       //   0	671	3	store	Lcom/hypixel/hytale/component/Store;
-/*     */       //   0	671	4	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer;
-/*     */       //   14	657	5	farmingBlock	Lcom/hypixel/hytale/builtin/adventure/farming/states/FarmingBlock;
-/*     */       //   47	624	6	info	Lcom/hypixel/hytale/server/core/modules/block/BlockModule$BlockStateInfo;
-/*     */       //   530	141	7	x	I
-/*     */       //   540	131	8	y	I
-/*     */       //   550	121	9	z	I
-/*     */       //   568	103	10	blockComponentChunk	Lcom/hypixel/hytale/server/core/universe/world/chunk/BlockComponentChunk;
-/*     */       //   605	66	11	column	Lcom/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn;
-/*     */       //   636	35	12	section	Lcom/hypixel/hytale/component/Ref;
-/*     */       //   651	20	13	blockSection	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection;
+/*     */       //   319	30	16	data	Lcom/hypixel/hytale/builtin/adventure/farming/config/stages/BlockTypeFarmingStageData;
+/*     */       //   368	32	18	stateBlockType	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
+/*     */       //   356	47	17	data	Lcom/hypixel/hytale/builtin/adventure/farming/config/stages/BlockStateFarmingStageData;
+/*     */       //   265	138	13	stage	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
+/*     */       //   250	159	12	i	I
+/*     */       //   446	37	12	sectionRef	Lcom/hypixel/hytale/component/Ref;
+/*     */       //   247	236	11	found	Z
+/*     */       //   233	250	10	stages	[Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/farming/FarmingStageData;
+/*     */       //   123	360	8	blockId	I
+/*     */       //   136	347	9	blockType	Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/BlockType;
+/*     */       //   0	682	0	this	Lcom/hypixel/hytale/builtin/adventure/farming/FarmingSystems$OnFarmBlockAdded;
+/*     */       //   0	682	1	ref	Lcom/hypixel/hytale/component/Ref;
+/*     */       //   0	682	2	reason	Lcom/hypixel/hytale/component/AddReason;
+/*     */       //   0	682	3	store	Lcom/hypixel/hytale/component/Store;
+/*     */       //   0	682	4	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer;
+/*     */       //   14	668	5	farmingBlock	Lcom/hypixel/hytale/builtin/adventure/farming/states/FarmingBlock;
+/*     */       //   47	635	6	info	Lcom/hypixel/hytale/server/core/modules/block/BlockModule$BlockStateInfo;
+/*     */       //   84	598	7	blockChunk	Lcom/hypixel/hytale/server/core/universe/world/chunk/BlockChunk;
+/*     */       //   539	143	8	x	I
+/*     */       //   549	133	9	y	I
+/*     */       //   559	123	10	z	I
+/*     */       //   577	105	11	blockComponentChunk	Lcom/hypixel/hytale/server/core/universe/world/chunk/BlockComponentChunk;
+/*     */       //   614	68	12	column	Lcom/hypixel/hytale/server/core/universe/world/chunk/ChunkColumn;
+/*     */       //   645	37	13	section	Lcom/hypixel/hytale/component/Ref;
+/*     */       //   660	22	14	blockSection	Lcom/hypixel/hytale/server/core/universe/world/chunk/section/BlockSection;
 /*     */       // Local variable type table:
 /*     */       //   start	length	slot	name	signature
-/*     */       //   442	37	12	sectionRef	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
-/*     */       //   0	671	1	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
-/*     */       //   0	671	3	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
-/*     */       //   0	671	4	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
-/*     */       //   636	35	12	section	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
+/*     */       //   446	37	12	sectionRef	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
+/*     */       //   0	682	1	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
+/*     */       //   0	682	3	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
+/*     */       //   0	682	4	commandBuffer	Lcom/hypixel/hytale/component/CommandBuffer<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
+/*     */       //   645	37	13	section	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/ChunkStore;>;
 /*     */     }
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -538,6 +544,7 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
@@ -558,21 +565,24 @@
 /*     */         return; 
 /* 202 */       ChunkSection section = (ChunkSection)archetypeChunk.getComponent(index, ChunkSection.getComponentType());
 /* 203 */       assert section != null;
+/* 204 */       if (section.getChunkColumnReference() == null || !section.getChunkColumnReference().isValid())
+/*     */         return; 
+/* 206 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)commandBuffer.getComponent(section.getChunkColumnReference(), BlockComponentChunk.getComponentType());
+/* 207 */       assert blockComponentChunk != null;
 /*     */       
-/* 205 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)commandBuffer.getComponent(section.getChunkColumnReference(), BlockComponentChunk.getComponentType());
-/* 206 */       assert blockComponentChunk != null;
-/*     */       
-/* 208 */       Ref<ChunkStore> ref = archetypeChunk.getReferenceTo(index);
+/* 209 */       Ref<ChunkStore> ref = archetypeChunk.getReferenceTo(index);
+/* 210 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(section.getChunkColumnReference(), BlockChunk.getComponentType());
+/* 211 */       assert blockChunk != null;
 /*     */ 
 /*     */       
-/* 211 */       blocks.forEachTicking(blockComponentChunk, commandBuffer, section.getY(), (blockComponentChunk1, commandBuffer1, localX, localY, localZ, blockId) -> {
+/* 214 */       blocks.forEachTicking(blockComponentChunk, commandBuffer, section.getY(), (blockComponentChunk1, commandBuffer1, localX, localY, localZ, blockId) -> {
 /*     */             Ref<ChunkStore> blockRef = blockComponentChunk1.getEntityReference(ChunkUtil.indexBlockInColumn(localX, localY, localZ));
 /*     */             if (blockRef == null) {
 /*     */               return BlockTickStrategy.IGNORED;
 /*     */             }
 /*     */             FarmingBlock farming = (FarmingBlock)commandBuffer1.getComponent(blockRef, FarmingBlock.getComponentType());
 /*     */             if (farming != null) {
-/*     */               FarmingUtil.tickFarming(commandBuffer1, blocks, ref, blockRef, farming, localX, localY, localZ, false);
+/*     */               FarmingUtil.tickFarming(commandBuffer1, blockChunk, blocks, ref, blockRef, farming, localX, localY, localZ, false);
 /*     */               return BlockTickStrategy.SLEEP;
 /*     */             } 
 /*     */             TilledSoilBlock soil = (TilledSoilBlock)commandBuffer1.getComponent(blockRef, TilledSoilBlock.getComponentType());
@@ -592,120 +602,120 @@
 /*     */ 
 /*     */     
 /*     */     private static void tickSoil(CommandBuffer<ChunkStore> commandBuffer, BlockComponentChunk blockComponentChunk, Ref<ChunkStore> blockRef, TilledSoilBlock soilBlock) {
-/* 238 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
-/* 239 */       assert info != null;
+/* 241 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
+/* 242 */       assert info != null;
 /*     */       
-/* 241 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 242 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 243 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 244 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 245 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 246 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 245 */       if (y >= 320)
+/* 248 */       if (y >= 320)
 /*     */         return; 
-/* 247 */       int checkIndex = ChunkUtil.indexBlockInColumn(x, y + 1, z);
-/* 248 */       Ref<ChunkStore> aboveBlockRef = blockComponentChunk.getEntityReference(checkIndex);
+/* 250 */       int checkIndex = ChunkUtil.indexBlockInColumn(x, y + 1, z);
+/* 251 */       Ref<ChunkStore> aboveBlockRef = blockComponentChunk.getEntityReference(checkIndex);
 /*     */       
-/* 250 */       boolean hasCrop = false;
-/* 251 */       if (aboveBlockRef != null) {
-/* 252 */         FarmingBlock farmingBlock = (FarmingBlock)commandBuffer.getComponent(aboveBlockRef, FarmingBlock.getComponentType());
-/* 253 */         hasCrop = (farmingBlock != null);
+/* 253 */       boolean hasCrop = false;
+/* 254 */       if (aboveBlockRef != null) {
+/* 255 */         FarmingBlock farmingBlock = (FarmingBlock)commandBuffer.getComponent(aboveBlockRef, FarmingBlock.getComponentType());
+/* 256 */         hasCrop = (farmingBlock != null);
 /*     */       } 
 /*     */       
-/* 256 */       assert info.getChunkRef() != null;
-/* 257 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 258 */       assert blockChunk != null;
-/* 259 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/* 259 */       assert info.getChunkRef() != null;
+/* 260 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 261 */       assert blockChunk != null;
+/* 262 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*     */       
-/* 261 */       BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
-/* 262 */       Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
+/* 264 */       BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
+/* 265 */       Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
 /*     */       
-/* 264 */       Instant decayTime = soilBlock.getDecayTime();
+/* 267 */       Instant decayTime = soilBlock.getDecayTime();
 /*     */ 
 /*     */       
-/* 267 */       if (soilBlock.isPlanted() && !hasCrop) {
-/* 268 */         if (!FarmingSystems.updateSoilDecayTime(commandBuffer, soilBlock, blockType))
-/* 269 */           return;  if (decayTime != null) {
-/* 270 */           blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
+/* 270 */       if (soilBlock.isPlanted() && !hasCrop) {
+/* 271 */         if (!FarmingSystems.updateSoilDecayTime(commandBuffer, soilBlock, blockType))
+/* 272 */           return;  if (decayTime != null) {
+/* 273 */           blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
 /*     */         }
-/* 272 */       } else if (!soilBlock.isPlanted() && !hasCrop) {
+/* 275 */       } else if (!soilBlock.isPlanted() && !hasCrop) {
 /*     */         
-/* 274 */         if (decayTime == null || !decayTime.isAfter(currentTime)) {
-/* 275 */           assert info.getChunkRef() != null;
+/* 277 */         if (decayTime == null || !decayTime.isAfter(currentTime)) {
+/* 278 */           assert info.getChunkRef() != null;
 /*     */           
-/* 277 */           if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null)
-/* 278 */             return;  FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
-/* 279 */           String str = soilConfig.getTargetBlock();
-/* 280 */           if (str == null)
+/* 280 */           if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null)
+/* 281 */             return;  FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
+/* 282 */           String str = soilConfig.getTargetBlock();
+/* 283 */           if (str == null)
 /*     */             return; 
-/* 282 */           int targetBlockId = BlockType.getAssetMap().getIndex(str);
-/* 283 */           if (targetBlockId == Integer.MIN_VALUE)
-/* 284 */             return;  BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
+/* 285 */           int targetBlockId = BlockType.getAssetMap().getIndex(str);
+/* 286 */           if (targetBlockId == Integer.MIN_VALUE)
+/* 287 */             return;  BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
 /*     */           
-/* 286 */           int rotation = blockSection.getRotationIndex(x, y, z);
+/* 289 */           int rotation = blockSection.getRotationIndex(x, y, z);
 /*     */           
-/* 288 */           WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
-/* 289 */           commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 0));
+/* 291 */           WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
+/* 292 */           commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 0));
 /*     */ 
 /*     */           
 /*     */           return;
 /*     */         } 
-/* 294 */       } else if (hasCrop) {
-/* 295 */         soilBlock.setDecayTime(null);
+/* 297 */       } else if (hasCrop) {
+/* 298 */         soilBlock.setDecayTime(null);
 /*     */       } 
 /*     */       
-/* 298 */       String targetBlock = soilBlock.computeBlockType(currentTime, blockType);
-/* 299 */       if (targetBlock != null && !targetBlock.equals(blockType.getId())) {
-/* 300 */         WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
-/* 301 */         int rotation = blockSection.getRotationIndex(x, y, z);
-/* 302 */         int targetBlockId = BlockType.getAssetMap().getIndex(targetBlock);
-/* 303 */         BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
-/* 304 */         commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 2));
+/* 301 */       String targetBlock = soilBlock.computeBlockType(currentTime, blockType);
+/* 302 */       if (targetBlock != null && !targetBlock.equals(blockType.getId())) {
+/* 303 */         WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
+/* 304 */         int rotation = blockSection.getRotationIndex(x, y, z);
+/* 305 */         int targetBlockId = BlockType.getAssetMap().getIndex(targetBlock);
+/* 306 */         BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
+/* 307 */         commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 2));
 /*     */       } 
 /*     */ 
 /*     */ 
 /*     */       
-/* 309 */       soilBlock.setPlanted(hasCrop);
+/* 312 */       soilBlock.setPlanted(hasCrop);
 /*     */     }
 /*     */     
 /*     */     private static void tickCoop(CommandBuffer<ChunkStore> commandBuffer, BlockComponentChunk blockComponentChunk, Ref<ChunkStore> blockRef, CoopBlock coopBlock) {
-/* 313 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
-/* 314 */       assert info != null;
+/* 316 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
+/* 317 */       assert info != null;
 /*     */       
-/* 316 */       Store<EntityStore> store = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
-/* 317 */       WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
-/* 318 */       FarmingCoopAsset coopAsset = coopBlock.getCoopAsset();
-/* 319 */       if (coopAsset == null)
+/* 319 */       Store<EntityStore> store = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
+/* 320 */       WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
+/* 321 */       FarmingCoopAsset coopAsset = coopBlock.getCoopAsset();
+/* 322 */       if (coopAsset == null)
 /*     */         return; 
-/* 321 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 322 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 323 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 324 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 325 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 326 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 325 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 326 */       assert blockChunk != null;
+/* 328 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 329 */       assert blockChunk != null;
 /*     */       
-/* 328 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
-/* 329 */       assert column != null;
-/* 330 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 331 */       assert sectionRef != null;
-/* 332 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
-/* 333 */       assert blockSection != null;
-/* 334 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
-/* 335 */       assert chunkSection != null;
+/* 331 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
+/* 332 */       assert column != null;
+/* 333 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 334 */       assert sectionRef != null;
+/* 335 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
+/* 336 */       assert blockSection != null;
+/* 337 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
+/* 338 */       assert chunkSection != null;
 /*     */       
-/* 337 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
-/* 338 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
-/* 339 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
+/* 340 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
+/* 341 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
+/* 342 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
 /*     */       
-/* 341 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
-/* 342 */       WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(worldX, worldZ));
-/* 343 */       double blockRotation = chunk.getRotation(worldX, worldY, worldZ).yaw().getRadians();
-/* 344 */       Vector3d spawnOffset = (new Vector3d()).assign(coopAsset.getResidentSpawnOffset()).rotateY((float)blockRotation);
-/* 345 */       Vector3i coopLocation = new Vector3i(worldX, worldY, worldZ);
+/* 344 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
+/* 345 */       WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(worldX, worldZ));
+/* 346 */       double blockRotation = chunk.getRotation(worldX, worldY, worldZ).yaw().getRadians();
+/* 347 */       Vector3d spawnOffset = (new Vector3d()).assign(coopAsset.getResidentSpawnOffset()).rotateY((float)blockRotation);
+/* 348 */       Vector3i coopLocation = new Vector3i(worldX, worldY, worldZ);
 /*     */ 
 /*     */       
-/* 348 */       boolean tryCapture = coopAsset.getCaptureWildNPCsInRange();
-/* 349 */       float captureRange = coopAsset.getWildCaptureRadius();
-/* 350 */       if (tryCapture && captureRange >= 0.0F) {
-/* 351 */         world.execute(() -> {
+/* 351 */       boolean tryCapture = coopAsset.getCaptureWildNPCsInRange();
+/* 352 */       float captureRange = coopAsset.getWildCaptureRadius();
+/* 353 */       if (tryCapture && captureRange >= 0.0F) {
+/* 354 */         world.execute(() -> {
 /*     */               List<Ref<EntityStore>> entities = TargetUtil.getAllEntitiesInSphere(coopLocation.toVector3d(), captureRange, (ComponentAccessor)store);
 /*     */ 
 /*     */ 
@@ -717,10 +727,10 @@
 /*     */       }
 /*     */ 
 /*     */       
-/* 363 */       if (coopBlock.shouldResidentsBeInCoop(worldTimeResource)) {
-/* 364 */         world.execute(() -> coopBlock.ensureNoResidentsInWorld(store));
+/* 366 */       if (coopBlock.shouldResidentsBeInCoop(worldTimeResource)) {
+/* 367 */         world.execute(() -> coopBlock.ensureNoResidentsInWorld(store));
 /*     */       } else {
-/* 366 */         world.execute(() -> {
+/* 369 */         world.execute(() -> {
 /*     */               coopBlock.ensureSpawnResidentsInWorld(world, store, coopLocation.toVector3d(), spawnOffset);
 /*     */               
 /*     */               coopBlock.generateProduceToInventory(worldTimeResource);
@@ -733,211 +743,211 @@
 /*     */               chunk.setBlockInteractionState(blockPos, currentBlockType, coopBlock.hasProduce() ? "Produce_Ready" : "default");
 /*     */             });
 /*     */       } 
-/* 379 */       Instant nextTickInstant = coopBlock.getNextScheduledTick(worldTimeResource);
-/* 380 */       if (nextTickInstant != null) {
-/* 381 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), nextTickInstant);
+/* 382 */       Instant nextTickInstant = coopBlock.getNextScheduledTick(worldTimeResource);
+/* 383 */       if (nextTickInstant != null) {
+/* 384 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), nextTickInstant);
 /*     */       }
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 388 */       return QUERY;
+/* 391 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class OnCoopAdded
 /*     */     extends RefSystem<ChunkStore> {
-/* 394 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
-/* 395 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
-/* 396 */           (Query)CoopBlock.getComponentType()
+/* 397 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
+/* 398 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
+/* 399 */           (Query)CoopBlock.getComponentType()
 /*     */         });
 /*     */ 
 /*     */     
-/*     */     public void onEntityAdded(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl AddReason reason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
-/* 401 */       CoopBlock coopBlock = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
-/* 402 */       if (coopBlock == null)
+/*     */     public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
+/* 404 */       CoopBlock coopBlock = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
+/* 405 */       if (coopBlock == null)
 /*     */         return; 
-/* 404 */       WorldTimeResource worldTimeResource = (WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
+/* 407 */       WorldTimeResource worldTimeResource = (WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
 /*     */       
-/* 406 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 407 */       assert info != null;
+/* 409 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 410 */       assert info != null;
 /*     */       
-/* 409 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 410 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 411 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 412 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 413 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 414 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 413 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 414 */       assert blockChunk != null;
-/* 415 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/* 416 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 417 */       assert blockChunk != null;
+/* 418 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*     */       
-/* 417 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), coopBlock.getNextScheduledTick(worldTimeResource));
+/* 420 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), coopBlock.getNextScheduledTick(worldTimeResource));
 /*     */     }
 /*     */ 
 /*     */     
-/*     */     public void onEntityRemove(@NonNullDecl Ref<ChunkStore> ref, @NonNullDecl RemoveReason reason, @NonNullDecl Store<ChunkStore> store, @NonNullDecl CommandBuffer<ChunkStore> commandBuffer) {
-/* 422 */       if (reason == RemoveReason.UNLOAD) {
+/*     */     public void onEntityRemove(@Nonnull Ref<ChunkStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
+/* 425 */       if (reason == RemoveReason.UNLOAD) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 426 */       CoopBlock coop = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
-/* 427 */       if (coop == null) {
+/* 429 */       CoopBlock coop = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
+/* 430 */       if (coop == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 431 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 432 */       assert info != null;
+/* 434 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 435 */       assert info != null;
 /*     */       
-/* 434 */       Store<EntityStore> entityStore = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
+/* 437 */       Store<EntityStore> entityStore = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
 /*     */       
-/* 436 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 437 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 438 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 439 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 440 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 441 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 440 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 441 */       assert blockChunk != null;
+/* 443 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 444 */       assert blockChunk != null;
 /*     */       
-/* 443 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
-/* 444 */       assert column != null;
-/* 445 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 446 */       assert sectionRef != null;
-/* 447 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
-/* 448 */       assert blockSection != null;
-/* 449 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
-/* 450 */       assert chunkSection != null;
+/* 446 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
+/* 447 */       assert column != null;
+/* 448 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 449 */       assert sectionRef != null;
+/* 450 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
+/* 451 */       assert blockSection != null;
+/* 452 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
+/* 453 */       assert chunkSection != null;
 /*     */       
-/* 452 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
-/* 453 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
-/* 454 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
+/* 455 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
+/* 456 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
+/* 457 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
 /*     */       
-/* 456 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
-/* 457 */       WorldTimeResource worldTimeResource = (WorldTimeResource)world.getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
-/* 458 */       coop.handleBlockBroken(world, worldTimeResource, entityStore, worldX, worldY, worldZ);
+/* 459 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
+/* 460 */       WorldTimeResource worldTimeResource = (WorldTimeResource)world.getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
+/* 461 */       coop.handleBlockBroken(world, worldTimeResource, entityStore, worldX, worldY, worldZ);
 /*     */     }
 /*     */ 
 /*     */     
-/*     */     @NullableDecl
+/*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 464 */       return QUERY;
+/* 467 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class CoopResidentEntitySystem extends RefSystem<EntityStore> {
-/* 469 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 472 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */     
 /*     */     public Query<EntityStore> getQuery() {
-/* 473 */       return (Query)componentType;
+/* 476 */       return (Query)componentType;
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */     
-/*     */     public void onEntityAdded(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl AddReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {}
+/*     */     public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}
 /*     */ 
 /*     */ 
 /*     */     
-/*     */     public void onEntityRemove(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl RemoveReason reason, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 483 */       if (reason == RemoveReason.UNLOAD) {
+/*     */     public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 486 */       if (reason == RemoveReason.UNLOAD) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 487 */       UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
-/* 488 */       if (uuidComponent == null) {
+/* 490 */       UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+/* 491 */       if (uuidComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 492 */       UUID uuid = uuidComponent.getUuid();
+/* 495 */       UUID uuid = uuidComponent.getUuid();
 /*     */       
-/* 494 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
-/* 495 */       if (coopResidentComponent == null) {
+/* 497 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
+/* 498 */       if (coopResidentComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 499 */       Vector3i coopPosition = coopResidentComponent.getCoopLocation();
-/* 500 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 502 */       Vector3i coopPosition = coopResidentComponent.getCoopLocation();
+/* 503 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
 /*     */       
-/* 502 */       long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
-/* 503 */       WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
-/* 504 */       if (chunk == null) {
+/* 505 */       long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
+/* 506 */       WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
+/* 507 */       if (chunk == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 508 */       Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
-/* 509 */       if (chunkReference == null || !chunkReference.isValid()) {
+/* 511 */       Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
+/* 512 */       if (chunkReference == null || !chunkReference.isValid()) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 513 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 516 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */       
-/* 515 */       ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
-/* 516 */       if (chunkColumnComponent == null) {
+/* 518 */       ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
+/* 519 */       if (chunkColumnComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 520 */       BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
-/* 521 */       if (blockChunkComponent == null) {
+/* 523 */       BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
+/* 524 */       if (blockChunkComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 525 */       Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
-/* 526 */       if (sectionRef == null || !sectionRef.isValid()) {
+/* 528 */       Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
+/* 529 */       if (sectionRef == null || !sectionRef.isValid()) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 530 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
-/* 531 */       if (blockComponentChunk == null) {
+/* 533 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
+/* 534 */       if (blockComponentChunk == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 535 */       int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
-/* 536 */       Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
-/* 537 */       if (coopEntityReference == null) {
+/* 538 */       int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
+/* 539 */       Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
+/* 540 */       if (coopEntityReference == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 541 */       CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
-/* 542 */       if (coop == null) {
+/* 544 */       CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
+/* 545 */       if (coop == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 546 */       coop.handleResidentDespawn(uuid);
+/* 549 */       coop.handleResidentDespawn(uuid);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class CoopResidentTicking
 /*     */     extends EntityTickingSystem<EntityStore> {
-/* 552 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 555 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */     
 /*     */     public Query<EntityStore> getQuery() {
-/* 556 */       return (Query)componentType;
+/* 559 */       return (Query)componentType;
 /*     */     }
 /*     */ 
 /*     */     
-/*     */     public void tick(float dt, int index, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-/* 561 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
-/* 562 */       if (coopResidentComponent == null) {
+/*     */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 564 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
+/* 565 */       if (coopResidentComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 566 */       if (coopResidentComponent.getMarkedForDespawn()) {
-/* 567 */         commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 569 */       if (coopResidentComponent.getMarkedForDespawn()) {
+/* 570 */         commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */       }
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   private static boolean updateSoilDecayTime(CommandBuffer<ChunkStore> commandBuffer, TilledSoilBlock soilBlock, BlockType blockType) {
-/* 573 */     if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null) return false; 
-/* 574 */     FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
-/* 575 */     Rangef range = soilConfig.getLifetime();
-/* 576 */     if (range == null) return false;
+/* 576 */     if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null) return false; 
+/* 577 */     FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
+/* 578 */     Rangef range = soilConfig.getLifetime();
+/* 579 */     if (range == null) return false;
 /*     */     
-/* 578 */     double baseDuration = range.min + (range.max - range.min) * ThreadLocalRandom.current().nextDouble();
+/* 581 */     double baseDuration = range.min + (range.max - range.min) * ThreadLocalRandom.current().nextDouble();
 /*     */     
-/* 580 */     Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
-/* 581 */     Instant endTime = currentTime.plus(Math.round(baseDuration), ChronoUnit.SECONDS);
-/* 582 */     soilBlock.setDecayTime(endTime);
-/* 583 */     return true;
+/* 583 */     Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
+/* 584 */     Instant endTime = currentTime.plus(Math.round(baseDuration), ChronoUnit.SECONDS);
+/* 585 */     soilBlock.setDecayTime(endTime);
+/* 586 */     return true;
 /*     */   }
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
@@ -945,13 +955,13 @@
 /*     */     extends BlockModule.MigrationSystem
 /*     */   {
 /*     */     public void onEntityAdd(@Nonnull Holder<ChunkStore> holder, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store) {
-/* 591 */       FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
-/* 592 */       FarmingBlock farming = new FarmingBlock();
-/* 593 */       farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
-/* 594 */       farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
-/* 595 */       farming.setSpreadRate(oldState.getSpreadRate());
-/* 596 */       holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
-/* 597 */       holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 594 */       FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 595 */       FarmingBlock farming = new FarmingBlock();
+/* 596 */       farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
+/* 597 */       farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
+/* 598 */       farming.setSpreadRate(oldState.getSpreadRate());
+/* 599 */       holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
+/* 600 */       holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
 /*     */     }
 /*     */ 
 /*     */ 
@@ -962,13 +972,13 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 608 */       return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
+/* 611 */       return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
 /*     */     }
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\adventure\farming\FarmingSystems.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

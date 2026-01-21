@@ -2,7 +2,6 @@
 /*    */ 
 /*    */ import com.hypixel.hytale.server.core.Message;
 /*    */ import com.hypixel.hytale.server.core.command.system.CommandContext;
-/*    */ import com.hypixel.hytale.server.core.command.system.arguments.system.Argument;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 /*    */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgumentType;
@@ -14,6 +13,7 @@
 /*    */ import java.util.Set;
 /*    */ import java.util.UUID;
 /*    */ import javax.annotation.Nonnull;
+/*    */ 
 /*    */ 
 /*    */ public class OpRemoveCommand
 /*    */   extends CommandBase
@@ -46,19 +46,19 @@
 /* 46 */     String opGroup = "OP";
 /*    */ 
 /*    */     
-/* 49 */     String rawInput = context.getInput((Argument)this.playerArg)[0];
-/* 50 */     Message displayMessage = Message.raw(rawInput).bold(true);
+/* 49 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
+/* 50 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
+/* 51 */     Message displayMessage = Message.raw(displayName).bold(true);
 /*    */     
-/* 52 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
-/* 53 */     if (groups.contains("OP")) {
-/* 54 */       permissionsModule.removeUserFromGroup(uuid, "OP");
-/* 55 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED
-/* 56 */           .param("username", displayMessage));
+/* 53 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
+/* 54 */     if (groups.contains("OP")) {
+/* 55 */       permissionsModule.removeUserFromGroup(uuid, "OP");
+/* 56 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED
+/* 57 */           .param("username", displayMessage));
 /*    */ 
 /*    */       
-/* 59 */       PlayerRef oppedPlayerRef = Universe.get().getPlayer(uuid);
-/* 60 */       if (oppedPlayerRef != null) {
-/* 61 */         oppedPlayerRef.sendMessage(MESSAGE_COMMANDS_OP_REMOVED_TARGET);
+/* 60 */       if (playerRef != null) {
+/* 61 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_REMOVED_TARGET);
 /*    */       }
 /*    */     } else {
 /* 64 */       context.sendMessage(MESSAGE_COMMANDS_OP_NOT_OP
@@ -68,7 +68,7 @@
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpRemoveCommand.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\permissions\commands\op\OpRemoveCommand.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

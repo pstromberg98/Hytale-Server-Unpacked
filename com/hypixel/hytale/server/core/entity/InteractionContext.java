@@ -733,58 +733,71 @@
 /*     */             }
 /* 734 */           } else if (prioPrimary < prioSecondary) {
 /* 735 */             selectedInventory = -5;
+/*     */           } else {
+/*     */             
+/* 738 */             if (type == InteractionType.Primary && 
+/* 739 */               !primary.getItem().getInteractions().containsKey(InteractionType.Primary))
+/*     */             {
+/* 741 */               selectedInventory = -5;
+/*     */             }
+/*     */             
+/* 744 */             if (type == InteractionType.Secondary && 
+/* 745 */               !primary.getItem().getInteractions().containsKey(InteractionType.Secondary))
+/*     */             {
+/* 747 */               selectedInventory = -5;
+/*     */             }
 /*     */           } 
 /*     */         } 
 /*     */ 
 /*     */         
-/* 740 */         if (selectedInventory == -5) {
-/* 741 */           return new InteractionContext(manager, ref, -5, entityInventory
+/* 753 */         if (selectedInventory == -5) {
+/* 754 */           return new InteractionContext(manager, ref, -5, entityInventory
 /*     */ 
 /*     */ 
 /*     */               
-/* 745 */               .getUtility(), entityInventory
-/* 746 */               .getActiveUtilitySlot(), entityInventory
-/* 747 */               .getUtilityItem());
+/* 758 */               .getUtility(), entityInventory
+/* 759 */               .getActiveUtilitySlot(), entityInventory
+/* 760 */               .getUtilityItem());
 /*     */         }
 /*     */         
-/* 750 */         return new InteractionContext(manager, ref, -1, entityInventory
+/* 763 */         return new InteractionContext(manager, ref, -1, entityInventory
 /*     */ 
 /*     */ 
 /*     */             
-/* 754 */             .getHotbar(), entityInventory
-/* 755 */             .getActiveHotbarSlot(), entityInventory
-/* 756 */             .getItemInHand());
+/* 767 */             .getHotbar(), entityInventory
+/* 768 */             .getActiveHotbarSlot(), entityInventory
+/* 769 */             .getItemInHand());
 /*     */     } 
 /*     */ 
 /*     */     
-/* 760 */     return new InteractionContext(manager, ref, -1, entityInventory
+/* 773 */     return new InteractionContext(manager, ref, -1, entityInventory
 /*     */ 
 /*     */ 
 /*     */         
-/* 764 */         .getHotbar(), entityInventory
-/* 765 */         .getActiveHotbarSlot(), entityInventory
-/* 766 */         .getItemInHand());
+/* 777 */         .getHotbar(), entityInventory
+/* 778 */         .getActiveHotbarSlot(), entityInventory
+/* 779 */         .getItemInHand());
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public static InteractionContext withoutEntity() {
-/* 773 */     return new InteractionContext(null, null, -1, null, (byte)-1, null);
+/* 786 */     return new InteractionContext(null, null, -1, null, (byte)-1, null);
 /*     */   } @Deprecated
 /*     */   @FunctionalInterface
 /*     */   public static interface SnapshotProvider { EntitySnapshot getSnapshot(CommandBuffer<EntityStore> param1CommandBuffer, Ref<EntityStore> param1Ref, int param1Int); } @Nullable
 /*     */   private static Map<String, String> defaultGetVars(@Nonnull InteractionContext c) {
-/* 778 */     Item item = c.originalItemType;
-/* 779 */     if (item != null) {
-/* 780 */       return item.getInteractionVars();
+/* 791 */     Item item = c.originalItemType;
+/* 792 */     if (item != null) {
+/* 793 */       return item.getInteractionVars();
 /*     */     }
-/* 782 */     return null;
+/* 795 */     return null;
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\InteractionContext.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\entity\InteractionContext.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

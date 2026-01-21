@@ -20,7 +20,6 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import java.util.function.Supplier;
 /*    */ import javax.annotation.Nonnull;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*    */ 
 /*    */ 
 /*    */ 
@@ -32,7 +31,7 @@
 /*    */   private DeployableConfig config;
 /*    */   
 /*    */   static {
-/* 35 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(SpawnDeployableAtHitLocationInteraction.class, SpawnDeployableAtHitLocationInteraction::new, SimpleInstantInteraction.CODEC).append(new KeyedCodec("Config", (Codec)DeployableConfig.CODEC), (i, s) -> i.config = s, i -> i.config).addValidator(Validators.nonNull()).add()).build();
+/* 34 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(SpawnDeployableAtHitLocationInteraction.class, SpawnDeployableAtHitLocationInteraction::new, SimpleInstantInteraction.CODEC).append(new KeyedCodec("Config", (Codec)DeployableConfig.CODEC), (i, s) -> i.config = s, i -> i.config).addValidator(Validators.nonNull()).add()).build();
 /*    */   }
 /*    */ 
 /*    */ 
@@ -41,33 +40,33 @@
 /*    */ 
 /*    */   
 /*    */   public boolean needsRemoteSync() {
-/* 44 */     return false;
+/* 43 */     return false;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   protected void firstRun(@NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
-/* 49 */     InteractionChain contextChain = context.getChain();
-/* 50 */     assert contextChain != null;
+/*    */   protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/* 48 */     InteractionChain contextChain = context.getChain();
+/* 49 */     assert contextChain != null;
 /*    */     
-/* 52 */     InteractionChainData chainData = contextChain.getChainData();
-/* 53 */     Vector3f hitLocation = chainData.hitLocation;
-/* 54 */     if (hitLocation == null)
+/* 51 */     InteractionChainData chainData = contextChain.getChainData();
+/* 52 */     Vector3f hitLocation = chainData.hitLocation;
+/* 53 */     if (hitLocation == null)
 /*    */       return; 
-/* 56 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
-/* 57 */     assert commandBuffer != null;
+/* 55 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+/* 56 */     assert commandBuffer != null;
 /*    */     
-/* 59 */     Store<EntityStore> store = commandBuffer.getStore();
-/* 60 */     Vector3f hitNormal = chainData.hitNormal;
-/* 61 */     Vector3f hitNormalVec = new Vector3f(hitNormal.x, hitNormal.y, hitNormal.z);
-/* 62 */     DeployablesUtils.spawnDeployable(commandBuffer, store, this.config, context
-/* 63 */         .getEntity(), new Vector3f(hitLocation.x, hitLocation.y, hitLocation.z), 
-/* 64 */         MathUtil.getRotationForHitNormal(hitNormalVec), 
-/* 65 */         MathUtil.getNameForHitNormal(hitNormalVec));
+/* 58 */     Store<EntityStore> store = commandBuffer.getStore();
+/* 59 */     Vector3f hitNormal = chainData.hitNormal;
+/* 60 */     Vector3f hitNormalVec = new Vector3f(hitNormal.x, hitNormal.y, hitNormal.z);
+/* 61 */     DeployablesUtils.spawnDeployable(commandBuffer, store, this.config, context
+/* 62 */         .getEntity(), new Vector3f(hitLocation.x, hitLocation.y, hitLocation.z), 
+/* 63 */         MathUtil.getRotationForHitNormal(hitNormalVec), 
+/* 64 */         MathUtil.getNameForHitNormal(hitNormalVec));
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\builtin\deployables\interaction\SpawnDeployableAtHitLocationInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\deployables\interaction\SpawnDeployableAtHitLocationInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

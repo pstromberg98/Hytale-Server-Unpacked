@@ -590,7 +590,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class TargetedDamage
 /*     */ {
 /*     */   public static final BuilderCodec<TargetedDamage> CODEC;
@@ -602,7 +601,7 @@
 /*     */   protected String next;
 /*     */   
 /*     */   static {
-/* 605 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(TargetedDamage.class, TargetedDamage::new).appendInherited(new KeyedCodec("DamageCalculator", (Codec)DamageCalculator.CODEC), (i, a) -> i.damageCalculator = a, i -> i.damageCalculator, (i, parent) -> i.damageCalculator = parent.damageCalculator).add()).appendInherited(new KeyedCodec("TargetEntityEffects", (Codec)new MapCodec((Codec)TargetEntityEffect.CODEC, java.util.HashMap::new)), (i, map) -> i.targetEntityEffects = map, i -> i.targetEntityEffects, (i, parent) -> i.targetEntityEffects = parent.targetEntityEffects).add()).appendInherited(new KeyedCodec("DamageEffects", (Codec)DamageEffects.CODEC), (i, o) -> i.damageEffects = o, i -> i.damageEffects, (i, parent) -> i.damageEffects = parent.damageEffects).add()).appendInherited(new KeyedCodec("Next", Interaction.CHILD_ASSET_CODEC), (interaction, s) -> interaction.next = s, interaction -> interaction.next, (interaction, parent) -> interaction.next = parent.next).documentation("The interactions to run when this interaction succeeds.").addValidatorLate(() -> Interaction.VALIDATOR_CACHE.getValidator().late()).add()).build();
+/* 604 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(TargetedDamage.class, TargetedDamage::new).appendInherited(new KeyedCodec("DamageCalculator", (Codec)DamageCalculator.CODEC), (i, a) -> i.damageCalculator = a, i -> i.damageCalculator, (i, parent) -> i.damageCalculator = parent.damageCalculator).add()).appendInherited(new KeyedCodec("TargetEntityEffects", (Codec)new MapCodec((Codec)TargetEntityEffect.CODEC, java.util.HashMap::new)), (i, map) -> i.targetEntityEffects = map, i -> i.targetEntityEffects, (i, parent) -> i.targetEntityEffects = parent.targetEntityEffects).add()).appendInherited(new KeyedCodec("DamageEffects", (Codec)DamageEffects.CODEC), (i, o) -> i.damageEffects = o, i -> i.damageEffects, (i, parent) -> i.damageEffects = parent.damageEffects).add()).appendInherited(new KeyedCodec("Next", Interaction.CHILD_ASSET_CODEC), (interaction, s) -> interaction.next = s, interaction -> interaction.next, (interaction, parent) -> interaction.next = parent.next).documentation("The interactions to run when this interaction succeeds.").addValidatorLate(() -> Interaction.VALIDATOR_CACHE.getValidator().late()).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -613,18 +612,18 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public com.hypixel.hytale.protocol.TargetedDamage toTargetedDamagePacket() {
-/* 616 */     return new com.hypixel.hytale.protocol.TargetedDamage(this.index, this.damageEffects.toPacket(), Interaction.getInteractionIdOrUnknown(this.next));
+/* 615 */     return new com.hypixel.hytale.protocol.TargetedDamage(this.index, this.damageEffects.toPacket(), Interaction.getInteractionIdOrUnknown(this.next));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 622 */     return "TargetedDamage{damageCalculator=" + String.valueOf(this.damageCalculator) + ", targetEntityEffects=" + String.valueOf(this.targetEntityEffects) + ", damageEffects=" + String.valueOf(this.damageEffects) + ", next='" + this.next + "'}";
+/* 621 */     return "TargetedDamage{damageCalculator=" + String.valueOf(this.damageCalculator) + ", targetEntityEffects=" + String.valueOf(this.targetEntityEffects) + ", damageEffects=" + String.valueOf(this.damageEffects) + ", next='" + this.next + "'}";
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$TargetedDamage.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\server\DamageEntityInteraction$TargetedDamage.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -7,8 +7,6 @@
 /*    */ import com.hypixel.hytale.server.core.entity.InteractionContext;
 /*    */ import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
 /*    */ import javax.annotation.Nonnull;
-/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -17,11 +15,11 @@
 /*    */ public abstract class SimpleInstantInteraction
 /*    */   extends SimpleInteraction
 /*    */ {
-/* 20 */   public static final BuilderCodec<SimpleInstantInteraction> CODEC = BuilderCodec.abstractBuilder(SimpleInstantInteraction.class, SimpleInteraction.CODEC)
-/* 21 */     .build();
+/* 18 */   public static final BuilderCodec<SimpleInstantInteraction> CODEC = BuilderCodec.abstractBuilder(SimpleInstantInteraction.class, SimpleInteraction.CODEC)
+/* 19 */     .build();
 /*    */   
 /*    */   public SimpleInstantInteraction(String id) {
-/* 24 */     super(id);
+/* 22 */     super(id);
 /*    */   }
 /*    */ 
 /*    */ 
@@ -29,24 +27,24 @@
 /*    */   protected SimpleInstantInteraction() {}
 /*    */ 
 /*    */   
-/*    */   protected final void tick0(boolean firstRun, float time, @NonNullDecl InteractionType type, @Nonnull InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
-/* 33 */     if (!firstRun)
+/*    */   protected final void tick0(boolean firstRun, float time, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/* 31 */     if (!firstRun)
 /*    */       return; 
-/* 35 */     firstRun(type, context, cooldownHandler);
-/* 36 */     super.tick0(firstRun, time, type, context, cooldownHandler);
+/* 33 */     firstRun(type, context, cooldownHandler);
+/* 34 */     super.tick0(firstRun, time, type, context, cooldownHandler);
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   protected void simulateTick0(boolean firstRun, float time, @NonNullDecl InteractionType type, @Nonnull InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
-/* 41 */     if (!firstRun)
+/*    */   protected void simulateTick0(boolean firstRun, float time, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/* 39 */     if (!firstRun)
 /*    */       return; 
-/* 43 */     simulateFirstRun(type, context, cooldownHandler);
+/* 41 */     simulateFirstRun(type, context, cooldownHandler);
 /*    */ 
 /*    */     
-/* 46 */     if (getWaitForDataFrom() == WaitForDataFrom.Server && context.getServerState() != null && (context.getServerState()).state == InteractionState.Failed) {
-/* 47 */       (context.getState()).state = InteractionState.Failed;
+/* 44 */     if (getWaitForDataFrom() == WaitForDataFrom.Server && context.getServerState() != null && (context.getServerState()).state == InteractionState.Failed) {
+/* 45 */       (context.getState()).state = InteractionState.Failed;
 /*    */     }
-/* 49 */     super.tick0(firstRun, time, type, context, cooldownHandler);
+/* 47 */     super.tick0(firstRun, time, type, context, cooldownHandler);
 /*    */   }
 /*    */ 
 /*    */ 
@@ -57,17 +55,17 @@
 /*    */ 
 /*    */   
 /*    */   protected void simulateFirstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
-/* 60 */     firstRun(type, context, cooldownHandler);
+/* 58 */     firstRun(type, context, cooldownHandler);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public String toString() {
-/* 65 */     return "SimpleInstantInteraction{} " + super.toString();
+/* 63 */     return "SimpleInstantInteraction{} " + super.toString();
 /*    */   }
 /*    */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\SimpleInstantInteraction.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\interaction\interaction\config\SimpleInstantInteraction.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

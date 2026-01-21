@@ -127,57 +127,54 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class Ticking
 /*     */   extends TickingSystem<ChunkStore>
 /*     */   implements RunWhenPausedSystem<ChunkStore>
 /*     */ {
 /*     */   @Nonnull
 /*     */   public Set<Dependency<ChunkStore>> getDependencies() {
-/* 139 */     return RootDependency.lastSet();
+/* 136 */     return RootDependency.lastSet();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int systemIndex, @Nonnull Store<ChunkStore> store) {
-/* 144 */     ChunkSavingSystems.Data data = (ChunkSavingSystems.Data)store.getResource(ChunkStore.SAVE_RESOURCE);
-/* 145 */     if (!data.isSaving || !((ChunkStore)store.getExternalData()).getWorld().getWorldConfig().canSaveChunks()) {
+/* 141 */     ChunkSavingSystems.Data data = (ChunkSavingSystems.Data)store.getResource(ChunkStore.SAVE_RESOURCE);
+/* 142 */     if (!data.isSaving || !((ChunkStore)store.getExternalData()).getWorld().getWorldConfig().canSaveChunks()) {
 /*     */       return;
 /*     */     }
-/* 148 */     data.chunkSavingFutures.removeIf(CompletableFuture::isDone);
+/* 145 */     data.chunkSavingFutures.removeIf(CompletableFuture::isDone);
 /*     */ 
 /*     */     
-/* 151 */     if (data.checkTimer(dt))
+/* 148 */     if (data.checkTimer(dt))
 /*     */     {
-/* 153 */       store.forEachChunk(ChunkSavingSystems.QUERY, ChunkSavingSystems::tryQueueSync);
+/* 150 */       store.forEachChunk(ChunkSavingSystems.QUERY, ChunkSavingSystems::tryQueueSync);
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/* 159 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
-/* 160 */     IChunkSaver saver = ((ChunkStore)store.getExternalData()).getSaver();
+/* 156 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
+/* 157 */     IChunkSaver saver = ((ChunkStore)store.getExternalData()).getSaver();
 /*     */     
-/* 162 */     int parallelSaves = ForkJoinPool.commonPool().getParallelism();
-/* 163 */     for (int i = 0; i < parallelSaves; i++) {
-/* 164 */       Ref<ChunkStore> reference = data.poll();
-/* 165 */       if (reference == null)
+/* 159 */     int parallelSaves = ForkJoinPool.commonPool().getParallelism();
+/* 160 */     for (int i = 0; i < parallelSaves; i++) {
+/* 161 */       Ref<ChunkStore> reference = data.poll();
+/* 162 */       if (reference == null)
 /*     */         break; 
-/* 167 */       if (!reference.isValid()) {
-/* 168 */         ChunkSavingSystems.LOGGER.at(Level.FINEST).log("Chunk reference in queue is for a chunk that has been removed!");
+/* 164 */       if (!reference.isValid()) {
+/* 165 */         ChunkSavingSystems.LOGGER.at(Level.FINEST).log("Chunk reference in queue is for a chunk that has been removed!");
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 172 */       WorldChunk chunk = (WorldChunk)store.getComponent(reference, ChunkSavingSystems.WORLD_CHUNK_COMPONENT_TYPE);
-/* 173 */       chunk.setSaving(true);
+/* 169 */       WorldChunk chunk = (WorldChunk)store.getComponent(reference, ChunkSavingSystems.WORLD_CHUNK_COMPONENT_TYPE);
+/* 170 */       chunk.setSaving(true);
 /*     */       
-/* 175 */       Holder<ChunkStore> holder = store.copySerializableEntity(reference);
+/* 172 */       Holder<ChunkStore> holder = store.copySerializableEntity(reference);
 /*     */       
-/* 177 */       data.toSaveTotal.getAndIncrement();
-/* 178 */       data.chunkSavingFutures.add(CompletableFuture.supplyAsync(() -> saver.saveHolder(chunk.getX(), chunk.getZ(), holder))
-/* 179 */           .thenCompose(Function.identity())
-/* 180 */           .whenCompleteAsync((aVoid, throwable) -> {
+/* 174 */       data.toSaveTotal.getAndIncrement();
+/* 175 */       data.chunkSavingFutures.add(CompletableFuture.supplyAsync(() -> saver.saveHolder(chunk.getX(), chunk.getZ(), holder))
+/* 176 */           .thenCompose(Function.identity())
+/* 177 */           .whenCompleteAsync((aVoid, throwable) -> {
 /*     */               if (throwable != null) {
 /*     */                 ((HytaleLogger.Api)ChunkSavingSystems.LOGGER.at(Level.SEVERE).withCause(throwable)).log("Failed to save chunk (%d, %d):", chunk.getX(), chunk.getZ());
 /*     */               } else {
@@ -192,7 +189,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\component\ChunkSavingSystems$Ticking.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\cor\\universe\world\storage\component\ChunkSavingSystems$Ticking.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

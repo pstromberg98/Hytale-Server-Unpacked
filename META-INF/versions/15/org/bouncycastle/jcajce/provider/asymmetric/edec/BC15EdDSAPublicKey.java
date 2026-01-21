@@ -37,7 +37,7 @@ class BC15EdDSAPublicKey extends BCEdDSAPublicKey implements EdECPublicKey {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\META-INF\versions\15\org\bouncycastle\jcajce\provider\asymmetric\edec\BC15EdDSAPublicKey.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\META-INF\versions\15\org\bouncycastle\jcajce\provider\asymmetric\edec\BC15EdDSAPublicKey.class
  * Java compiler version: 15 (59.0)
  * JD-Core Version:       1.1.3
  */

@@ -50,7 +50,7 @@ public class Pfx extends ASN1Object implements PKCSObjectIdentifiers {
 }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\org\bouncycastle\asn1\pkcs\Pfx.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\org\bouncycastle\asn1\pkcs\Pfx.class
  * Java compiler version: 8 (52.0)
  * JD-Core Version:       1.1.3
  */

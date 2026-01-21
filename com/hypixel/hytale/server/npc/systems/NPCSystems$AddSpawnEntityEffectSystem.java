@@ -118,7 +118,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class AddSpawnEntityEffectSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
@@ -126,35 +125,35 @@
 /*     */   private final ComponentType<EntityStore, NPCEntity> npcComponentType;
 /*     */   
 /*     */   public AddSpawnEntityEffectSystem(@Nonnull ComponentType<EntityStore, NPCEntity> npcComponentType) {
-/* 129 */     this.npcComponentType = npcComponentType;
+/* 128 */     this.npcComponentType = npcComponentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 134 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
-/* 135 */     assert npcComponent != null;
+/* 133 */     NPCEntity npcComponent = (NPCEntity)store.getComponent(ref, this.npcComponentType);
+/* 134 */     assert npcComponent != null;
 /*     */     
-/* 137 */     EffectControllerComponent effectController = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
-/* 138 */     assert effectController != null;
+/* 136 */     EffectControllerComponent effectController = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
+/* 137 */     assert effectController != null;
 /*     */     
-/* 140 */     Role role = npcComponent.getRole();
+/* 139 */     Role role = npcComponent.getRole();
 /*     */ 
 /*     */     
-/* 143 */     if (role == null) {
-/* 144 */       ((HytaleLogger.Api)((HytaleLogger.Api)NPCPlugin.get().getLogger().atSevere()).withCause(new IllegalStateException("NPC has no role or role index in onLoad!"))).log();
-/* 145 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
+/* 142 */     if (role == null) {
+/* 143 */       ((HytaleLogger.Api)((HytaleLogger.Api)NPCPlugin.get().getLogger().atSevere()).withCause(new IllegalStateException("NPC has no role or role index in onLoad!"))).log();
+/* 144 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 149 */     String balanceAssetId = role.getBalanceAsset();
-/* 150 */     if (balanceAssetId == null)
+/* 148 */     String balanceAssetId = role.getBalanceAsset();
+/* 149 */     if (balanceAssetId == null)
 /*     */       return; 
-/* 152 */     BalanceAsset balanceAsset = (BalanceAsset)BalanceAsset.getAssetMap().getAsset(balanceAssetId);
-/* 153 */     String entityEffectId = balanceAsset.getEntityEffect();
-/* 154 */     if (entityEffectId == null)
+/* 151 */     BalanceAsset balanceAsset = (BalanceAsset)BalanceAsset.getAssetMap().getAsset(balanceAssetId);
+/* 152 */     String entityEffectId = balanceAsset.getEntityEffect();
+/* 153 */     if (entityEffectId == null)
 /*     */       return; 
-/* 156 */     EntityEffect entityEffect = (EntityEffect)EntityEffect.getAssetMap().getAsset(entityEffectId);
-/* 157 */     effectController.addEffect(ref, entityEffect, (ComponentAccessor)commandBuffer);
+/* 155 */     EntityEffect entityEffect = (EntityEffect)EntityEffect.getAssetMap().getAsset(entityEffectId);
+/* 156 */     effectController.addEffect(ref, entityEffect, (ComponentAccessor)commandBuffer);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -164,12 +163,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 167 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)EffectControllerComponent.getComponentType() });
+/* 166 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)this.npcComponentType, (Query)EffectControllerComponent.getComponentType() });
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddSpawnEntityEffectSystem.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\systems\NPCSystems$AddSpawnEntityEffectSystem.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

@@ -326,7 +326,7 @@
 /*     */   
 /*     */   private void sendInteractionHintToPlayer(@Nonnull Ref<EntityStore> entityRef, @Nonnull Ref<EntityStore> playerReference, @Nonnull String hint, @Nonnull Store<EntityStore> store) {
 /* 328 */     EntityTrackerSystems.EntityViewer viewerComponent = (EntityTrackerSystems.EntityViewer)store.getComponent(playerReference, EntityTrackerSystems.EntityViewer.getComponentType());
-/* 329 */     if (viewerComponent == null) {
+/* 329 */     if (viewerComponent == null || !viewerComponent.visible.contains(entityRef)) {
 /*     */       return;
 /*     */     }
 /*     */     
@@ -372,7 +372,7 @@
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\npc\role\support\StateSupport.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\npc\role\support\StateSupport.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */

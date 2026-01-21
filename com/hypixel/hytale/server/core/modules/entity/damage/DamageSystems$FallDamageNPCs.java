@@ -19,8 +19,6 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -889,85 +887,85 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 892 */     return DamageModule.get().getGatherDamageGroup();
+/* 890 */     return DamageModule.get().getGatherDamageGroup();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 898 */     return DamageSystems.NPCS_QUERY;
+/* 896 */     return DamageSystems.NPCS_QUERY;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void tick(float dt, int systemIndex, @NonNullDecl Store<EntityStore> store) {
-/* 903 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 904 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
+/*     */   public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
+/* 901 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 902 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 908 */     super.tick(dt, systemIndex, store);
+/* 906 */     super.tick(dt, systemIndex, store);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 913 */     LivingEntity entity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
-/* 914 */     assert entity != null;
+/* 911 */     LivingEntity entity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
+/* 912 */     assert entity != null;
 /*     */     
-/* 916 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)archetypeChunk.getComponent(index, MovementStatesComponent.getComponentType());
-/* 917 */     assert movementStatesComponent != null;
+/* 914 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)archetypeChunk.getComponent(index, MovementStatesComponent.getComponentType());
+/* 915 */     assert movementStatesComponent != null;
 /*     */     
-/* 919 */     MovementStates movementStates = movementStatesComponent.getMovementStates();
+/* 917 */     MovementStates movementStates = movementStatesComponent.getMovementStates();
 /*     */     
-/* 921 */     if (movementStates.onGround && entity.getCurrentFallDistance() > 0.0D) {
-/* 922 */       Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
-/* 923 */       assert velocityComponent != null;
+/* 919 */     if (movementStates.onGround && entity.getCurrentFallDistance() > 0.0D) {
+/* 920 */       Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
+/* 921 */       assert velocityComponent != null;
 /*     */       
-/* 925 */       double yVelocity = Math.abs(velocityComponent.getVelocity().getY());
-/* 926 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/* 927 */       int movementConfigIndex = world.getGameplayConfig().getPlayerConfig().getMovementConfigIndex();
-/* 928 */       MovementConfig movementConfig = (MovementConfig)MovementConfig.getAssetMap().getAsset(movementConfigIndex);
-/* 929 */       float minFallSpeedToEngageRoll = movementConfig.getMinFallSpeedToEngageRoll();
+/* 923 */       double yVelocity = Math.abs(velocityComponent.getVelocity().getY());
+/* 924 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 925 */       int movementConfigIndex = world.getGameplayConfig().getPlayerConfig().getMovementConfigIndex();
+/* 926 */       MovementConfig movementConfig = (MovementConfig)MovementConfig.getAssetMap().getAsset(movementConfigIndex);
+/* 927 */       float minFallSpeedToEngageRoll = movementConfig.getMinFallSpeedToEngageRoll();
 /*     */       
-/* 931 */       if (yVelocity > minFallSpeedToEngageRoll && !movementStates.inFluid) {
-/* 932 */         EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, EntityStatMap.getComponentType());
-/* 933 */         assert entityStatMapComponent != null;
+/* 929 */       if (yVelocity > minFallSpeedToEngageRoll && !movementStates.inFluid) {
+/* 930 */         EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, EntityStatMap.getComponentType());
+/* 931 */         assert entityStatMapComponent != null;
 /*     */         
-/* 935 */         double damagePercentage = Math.pow(0.5799999833106995D * (yVelocity - minFallSpeedToEngageRoll), 2.0D) + 10.0D;
-/* 936 */         EntityStatValue healthStatValue = entityStatMapComponent.get(DefaultEntityStatTypes.getHealth());
-/* 937 */         assert healthStatValue != null;
+/* 933 */         double damagePercentage = Math.pow(0.5799999833106995D * (yVelocity - minFallSpeedToEngageRoll), 2.0D) + 10.0D;
+/* 934 */         EntityStatValue healthStatValue = entityStatMapComponent.get(DefaultEntityStatTypes.getHealth());
+/* 935 */         assert healthStatValue != null;
 /*     */         
-/* 939 */         float maxHealth = healthStatValue.getMax();
-/* 940 */         double healthModifier = maxHealth / 100.0D;
-/* 941 */         int damageInt = (int)Math.floor(healthModifier * damagePercentage);
+/* 937 */         float maxHealth = healthStatValue.getMax();
+/* 938 */         double healthModifier = maxHealth / 100.0D;
+/* 939 */         int damageInt = (int)Math.floor(healthModifier * damagePercentage);
 /*     */ 
 /*     */         
-/* 944 */         if (movementStates.rolling) {
-/* 945 */           if (yVelocity <= movementConfig.getMaxFallSpeedRollFullMitigation()) {
-/* 946 */             damageInt = 0;
-/* 947 */           } else if (yVelocity <= movementConfig.getMaxFallSpeedToEngageRoll()) {
-/* 948 */             damageInt = (int)(damageInt * (1.0D - movementConfig.getFallDamagePartialMitigationPercent() / 100.0D));
+/* 942 */         if (movementStates.rolling) {
+/* 943 */           if (yVelocity <= movementConfig.getMaxFallSpeedRollFullMitigation()) {
+/* 944 */             damageInt = 0;
+/* 945 */           } else if (yVelocity <= movementConfig.getMaxFallSpeedToEngageRoll()) {
+/* 946 */             damageInt = (int)(damageInt * (1.0D - movementConfig.getFallDamagePartialMitigationPercent() / 100.0D));
 /*     */           } 
 /*     */         }
 /*     */         
-/* 952 */         if (damageInt > 0) {
-/* 953 */           assert DamageCause.FALL != null;
-/* 954 */           Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.FALL, damageInt);
-/* 955 */           DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
+/* 950 */         if (damageInt > 0) {
+/* 951 */           assert DamageCause.FALL != null;
+/* 952 */           Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.FALL, damageInt);
+/* 953 */           DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
 /*     */         } 
 /*     */       } 
 /*     */       
-/* 959 */       entity.setCurrentFallDistance(0.0D);
+/* 957 */       entity.setCurrentFallDistance(0.0D);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 965 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 963 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ }
 
 
-/* Location:              D:\Workspace\Hytale\Modding\TestMod\app\libs\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$FallDamageNPCs.class
+/* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\server\core\modules\entity\damage\DamageSystems$FallDamageNPCs.class
  * Java compiler version: 21 (65.0)
  * JD-Core Version:       1.1.3
  */
