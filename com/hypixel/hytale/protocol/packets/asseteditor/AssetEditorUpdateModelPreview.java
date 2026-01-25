@@ -52,17 +52,17 @@
 /*     */   public static AssetEditorUpdateModelPreview deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  53 */     AssetEditorUpdateModelPreview obj = new AssetEditorUpdateModelPreview();
 /*  54 */     byte nullBits = buf.getByte(offset);
-/*  55 */     if ((nullBits & 0x8) != 0) obj.camera = AssetEditorPreviewCameraSettings.deserialize(buf, offset + 1);
+/*  55 */     if ((nullBits & 0x1) != 0) obj.camera = AssetEditorPreviewCameraSettings.deserialize(buf, offset + 1);
 /*     */     
-/*  57 */     if ((nullBits & 0x1) != 0) {
+/*  57 */     if ((nullBits & 0x2) != 0) {
 /*  58 */       int varPos0 = offset + 42 + buf.getIntLE(offset + 30);
 /*  59 */       obj.assetPath = AssetPath.deserialize(buf, varPos0);
 /*     */     } 
-/*  61 */     if ((nullBits & 0x2) != 0) {
+/*  61 */     if ((nullBits & 0x4) != 0) {
 /*  62 */       int varPos1 = offset + 42 + buf.getIntLE(offset + 34);
 /*  63 */       obj.model = Model.deserialize(buf, varPos1);
 /*     */     } 
-/*  65 */     if ((nullBits & 0x4) != 0) {
+/*  65 */     if ((nullBits & 0x8) != 0) {
 /*  66 */       int varPos2 = offset + 42 + buf.getIntLE(offset + 38);
 /*  67 */       obj.block = BlockType.deserialize(buf, varPos2);
 /*     */     } 
@@ -73,19 +73,19 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  74 */     byte nullBits = buf.getByte(offset);
 /*  75 */     int maxEnd = 42;
-/*  76 */     if ((nullBits & 0x1) != 0) {
+/*  76 */     if ((nullBits & 0x2) != 0) {
 /*  77 */       int fieldOffset0 = buf.getIntLE(offset + 30);
 /*  78 */       int pos0 = offset + 42 + fieldOffset0;
 /*  79 */       pos0 += AssetPath.computeBytesConsumed(buf, pos0);
 /*  80 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  82 */     if ((nullBits & 0x2) != 0) {
+/*  82 */     if ((nullBits & 0x4) != 0) {
 /*  83 */       int fieldOffset1 = buf.getIntLE(offset + 34);
 /*  84 */       int pos1 = offset + 42 + fieldOffset1;
 /*  85 */       pos1 += Model.computeBytesConsumed(buf, pos1);
 /*  86 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/*  88 */     if ((nullBits & 0x4) != 0) {
+/*  88 */     if ((nullBits & 0x8) != 0) {
 /*  89 */       int fieldOffset2 = buf.getIntLE(offset + 38);
 /*  90 */       int pos2 = offset + 42 + fieldOffset2;
 /*  91 */       pos2 += BlockType.computeBytesConsumed(buf, pos2);
@@ -99,10 +99,10 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 100 */     int startPos = buf.writerIndex();
 /* 101 */     byte nullBits = 0;
-/* 102 */     if (this.assetPath != null) nullBits = (byte)(nullBits | 0x1); 
-/* 103 */     if (this.model != null) nullBits = (byte)(nullBits | 0x2); 
-/* 104 */     if (this.block != null) nullBits = (byte)(nullBits | 0x4); 
-/* 105 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x8); 
+/* 102 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x1); 
+/* 103 */     if (this.assetPath != null) nullBits = (byte)(nullBits | 0x2); 
+/* 104 */     if (this.model != null) nullBits = (byte)(nullBits | 0x4); 
+/* 105 */     if (this.block != null) nullBits = (byte)(nullBits | 0x8); 
 /* 106 */     buf.writeByte(nullBits);
 /*     */     
 /* 108 */     if (this.camera != null) { this.camera.serialize(buf); } else { buf.writeZero(29); }
@@ -153,7 +153,7 @@
 /* 153 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 156 */     if ((nullBits & 0x1) != 0) {
+/* 156 */     if ((nullBits & 0x2) != 0) {
 /* 157 */       int assetPathOffset = buffer.getIntLE(offset + 30);
 /* 158 */       if (assetPathOffset < 0) {
 /* 159 */         return ValidationResult.error("Invalid offset for AssetPath");
@@ -169,7 +169,7 @@
 /* 169 */       pos += AssetPath.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 172 */     if ((nullBits & 0x2) != 0) {
+/* 172 */     if ((nullBits & 0x4) != 0) {
 /* 173 */       int modelOffset = buffer.getIntLE(offset + 34);
 /* 174 */       if (modelOffset < 0) {
 /* 175 */         return ValidationResult.error("Invalid offset for Model");
@@ -185,7 +185,7 @@
 /* 185 */       pos += Model.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 188 */     if ((nullBits & 0x4) != 0) {
+/* 188 */     if ((nullBits & 0x8) != 0) {
 /* 189 */       int blockOffset = buffer.getIntLE(offset + 38);
 /* 190 */       if (blockOffset < 0) {
 /* 191 */         return ValidationResult.error("Invalid offset for Block");

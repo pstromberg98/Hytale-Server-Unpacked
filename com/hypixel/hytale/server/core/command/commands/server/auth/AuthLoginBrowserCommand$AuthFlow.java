@@ -32,27 +32,23 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */ class AuthFlow
 /*    */   extends OAuthBrowserFlow
 /*    */ {
 /*    */   public void onFlowInfo(String authUrl) {
-/* 43 */     AbstractCommand.LOGGER.at(Level.INFO).log("Starting OAuth browser flow...");
-/* 44 */     AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
-/* 45 */     AbstractCommand.LOGGER.at(Level.INFO).log("Please open this URL in your browser to authenticate:");
-/* 46 */     AbstractCommand.LOGGER.at(Level.INFO).log("%s", authUrl);
-/* 47 */     AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
+/* 39 */     AbstractCommand.LOGGER.at(Level.INFO).log("Starting OAuth browser flow...");
+/* 40 */     AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
+/* 41 */     AbstractCommand.LOGGER.at(Level.INFO).log("Please open this URL in your browser to authenticate:");
+/* 42 */     AbstractCommand.LOGGER.at(Level.INFO).log("%s", authUrl);
+/* 43 */     AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
 /*    */ 
 /*    */     
-/* 50 */     if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
+/* 46 */     if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
 /*    */       try {
-/* 52 */         Desktop.getDesktop().browse(new URI(authUrl));
-/* 53 */         AbstractCommand.LOGGER.at(Level.INFO).log("Browser opened automatically.");
-/* 54 */       } catch (Exception e) {
-/* 55 */         AbstractCommand.LOGGER.at(Level.INFO).log("Could not open browser automatically. Please open the URL manually.");
+/* 48 */         Desktop.getDesktop().browse(new URI(authUrl));
+/* 49 */         AbstractCommand.LOGGER.at(Level.INFO).log("Browser opened automatically.");
+/* 50 */       } catch (Exception e) {
+/* 51 */         AbstractCommand.LOGGER.at(Level.INFO).log("Could not open browser automatically. Please open the URL manually.");
 /*    */       }  
 /*    */   }
 /*    */ }

@@ -116,47 +116,46 @@
 /* 116 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.ResetPlayerRespawnSystem());
 /* 117 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.ClearEntityEffectsRespawnSystem());
 /* 118 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.ClearInteractionsRespawnSystem());
-/* 119 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.RespawnControllerRespawnSystem());
-/* 120 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.CheckBrokenItemsRespawnSystem());
+/* 119 */     entityStoreRegistry.registerSystem((ISystem)new RespawnSystems.CheckBrokenItemsRespawnSystem());
 /*     */     
-/* 122 */     entityStoreRegistry.registerSystem((ISystem)new DamageCalculatorSystems.SequenceModifier());
+/* 121 */     entityStoreRegistry.registerSystem((ISystem)new DamageCalculatorSystems.SequenceModifier());
 /*     */     
-/* 124 */     getCommandRegistry().registerCommand((AbstractCommand)new DesyncDamageCommand());
+/* 123 */     getCommandRegistry().registerCommand((AbstractCommand)new DesyncDamageCommand());
 /*     */   }
 /*     */   
 /*     */   public ComponentType<EntityStore, DeathComponent> getDeathComponentType() {
-/* 128 */     return this.deathComponentType;
+/* 127 */     return this.deathComponentType;
 /*     */   }
 /*     */   
 /*     */   public ComponentType<EntityStore, DeferredCorpseRemoval> getDeferredCorpseRemovalComponentType() {
-/* 132 */     return this.deferredCorpseRemovalComponentType;
+/* 131 */     return this.deferredCorpseRemovalComponentType;
 /*     */   }
 /*     */   
 /*     */   public SystemGroup<EntityStore> getGatherDamageGroup() {
-/* 136 */     return this.gatherDamageGroup;
+/* 135 */     return this.gatherDamageGroup;
 /*     */   }
 /*     */   
 /*     */   public SystemGroup<EntityStore> getFilterDamageGroup() {
-/* 140 */     return this.filterDamageGroup;
+/* 139 */     return this.filterDamageGroup;
 /*     */   }
 /*     */   
 /*     */   public SystemGroup<EntityStore> getInspectDamageGroup() {
-/* 144 */     return this.inspectDamageGroup;
+/* 143 */     return this.inspectDamageGroup;
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public static class OrderGatherFilter
 /*     */     implements ISystem<EntityStore>
 /*     */   {
-/* 151 */     private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemGroupDependency(Order.AFTER, 
-/* 152 */           DamageModule.get().getGatherDamageGroup()), new SystemGroupDependency(Order.BEFORE, 
-/* 153 */           DamageModule.get().getFilterDamageGroup()));
+/* 150 */     private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemGroupDependency(Order.AFTER, 
+/* 151 */           DamageModule.get().getGatherDamageGroup()), new SystemGroupDependency(Order.BEFORE, 
+/* 152 */           DamageModule.get().getFilterDamageGroup()));
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public Set<Dependency<EntityStore>> getDependencies() {
-/* 159 */       return this.dependencies;
+/* 158 */       return this.dependencies;
 /*     */     }
 /*     */   }
 /*     */ }

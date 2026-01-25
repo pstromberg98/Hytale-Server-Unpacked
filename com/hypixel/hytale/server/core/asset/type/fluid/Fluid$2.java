@@ -175,18 +175,13 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ class null
 /*     */   extends Fluid
 /*     */ {
 /*     */   null(String id) {
-/* 187 */     super(id);
-/* 188 */     this.unknown = true;
-/* 189 */     processConfig();
+/* 182 */     super(id);
+/* 183 */     this.unknown = true;
+/* 184 */     processConfig();
 /*     */   }
 /*     */ }
 

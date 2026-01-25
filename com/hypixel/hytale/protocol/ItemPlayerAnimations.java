@@ -49,18 +49,18 @@
 /*     */   public static ItemPlayerAnimations deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  50 */     ItemPlayerAnimations obj = new ItemPlayerAnimations();
 /*  51 */     byte nullBits = buf.getByte(offset);
-/*  52 */     if ((nullBits & 0x4) != 0) obj.wiggleWeights = WiggleWeights.deserialize(buf, offset + 1); 
-/*  53 */     if ((nullBits & 0x10) != 0) obj.pullbackConfig = ItemPullbackConfiguration.deserialize(buf, offset + 41); 
+/*  52 */     if ((nullBits & 0x1) != 0) obj.wiggleWeights = WiggleWeights.deserialize(buf, offset + 1); 
+/*  53 */     if ((nullBits & 0x2) != 0) obj.pullbackConfig = ItemPullbackConfiguration.deserialize(buf, offset + 41); 
 /*  54 */     obj.useFirstPersonOverride = (buf.getByte(offset + 90) != 0);
 /*     */     
-/*  56 */     if ((nullBits & 0x1) != 0) {
+/*  56 */     if ((nullBits & 0x4) != 0) {
 /*  57 */       int varPos0 = offset + 103 + buf.getIntLE(offset + 91);
 /*  58 */       int idLen = VarInt.peek(buf, varPos0);
 /*  59 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  60 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  61 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  63 */     if ((nullBits & 0x2) != 0) {
+/*  63 */     if ((nullBits & 0x8) != 0) {
 /*  64 */       int varPos1 = offset + 103 + buf.getIntLE(offset + 95);
 /*  65 */       int animationsCount = VarInt.peek(buf, varPos1);
 /*  66 */       if (animationsCount < 0) throw ProtocolException.negativeLength("Animations", animationsCount); 
@@ -81,7 +81,7 @@
 /*  81 */           throw ProtocolException.duplicateKey("animations", key); 
 /*     */       } 
 /*     */     } 
-/*  84 */     if ((nullBits & 0x8) != 0) {
+/*  84 */     if ((nullBits & 0x10) != 0) {
 /*  85 */       int varPos2 = offset + 103 + buf.getIntLE(offset + 99);
 /*  86 */       obj.camera = CameraSettings.deserialize(buf, varPos2);
 /*     */     } 
@@ -92,20 +92,20 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  93 */     byte nullBits = buf.getByte(offset);
 /*  94 */     int maxEnd = 103;
-/*  95 */     if ((nullBits & 0x1) != 0) {
+/*  95 */     if ((nullBits & 0x4) != 0) {
 /*  96 */       int fieldOffset0 = buf.getIntLE(offset + 91);
 /*  97 */       int pos0 = offset + 103 + fieldOffset0;
 /*  98 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  99 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 101 */     if ((nullBits & 0x2) != 0) {
+/* 101 */     if ((nullBits & 0x8) != 0) {
 /* 102 */       int fieldOffset1 = buf.getIntLE(offset + 95);
 /* 103 */       int pos1 = offset + 103 + fieldOffset1;
 /* 104 */       int dictLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
 /* 105 */       for (int i = 0; i < dictLen; ) { int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl; pos1 += ItemAnimation.computeBytesConsumed(buf, pos1); i++; }
 /* 106 */        if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 108 */     if ((nullBits & 0x8) != 0) {
+/* 108 */     if ((nullBits & 0x10) != 0) {
 /* 109 */       int fieldOffset2 = buf.getIntLE(offset + 99);
 /* 110 */       int pos2 = offset + 103 + fieldOffset2;
 /* 111 */       pos2 += CameraSettings.computeBytesConsumed(buf, pos2);
@@ -118,11 +118,11 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 119 */     int startPos = buf.writerIndex();
 /* 120 */     byte nullBits = 0;
-/* 121 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 122 */     if (this.animations != null) nullBits = (byte)(nullBits | 0x2); 
-/* 123 */     if (this.wiggleWeights != null) nullBits = (byte)(nullBits | 0x4); 
-/* 124 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x8); 
-/* 125 */     if (this.pullbackConfig != null) nullBits = (byte)(nullBits | 0x10); 
+/* 121 */     if (this.wiggleWeights != null) nullBits = (byte)(nullBits | 0x1); 
+/* 122 */     if (this.pullbackConfig != null) nullBits = (byte)(nullBits | 0x2); 
+/* 123 */     if (this.id != null) nullBits = (byte)(nullBits | 0x4); 
+/* 124 */     if (this.animations != null) nullBits = (byte)(nullBits | 0x8); 
+/* 125 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x10); 
 /* 126 */     buf.writeByte(nullBits);
 /*     */     
 /* 128 */     if (this.wiggleWeights != null) { this.wiggleWeights.serialize(buf); } else { buf.writeZero(40); }
@@ -179,7 +179,7 @@
 /* 179 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 182 */     if ((nullBits & 0x1) != 0) {
+/* 182 */     if ((nullBits & 0x4) != 0) {
 /* 183 */       int idOffset = buffer.getIntLE(offset + 91);
 /* 184 */       if (idOffset < 0) {
 /* 185 */         return ValidationResult.error("Invalid offset for Id");
@@ -202,7 +202,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 205 */     if ((nullBits & 0x2) != 0) {
+/* 205 */     if ((nullBits & 0x8) != 0) {
 /* 206 */       int animationsOffset = buffer.getIntLE(offset + 95);
 /* 207 */       if (animationsOffset < 0) {
 /* 208 */         return ValidationResult.error("Invalid offset for Animations");
@@ -237,7 +237,7 @@
 /*     */     } 
 /*     */ 
 /*     */     
-/* 240 */     if ((nullBits & 0x8) != 0) {
+/* 240 */     if ((nullBits & 0x10) != 0) {
 /* 241 */       int cameraOffset = buffer.getIntLE(offset + 99);
 /* 242 */       if (cameraOffset < 0) {
 /* 243 */         return ValidationResult.error("Invalid offset for Camera");

@@ -391,6 +391,29 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class CacheEntryMetricData
 /*     */ {
 /*     */   @Nonnull
@@ -399,7 +422,7 @@
 /*     */   private IndexedStorageFile value;
 /*     */   
 /*     */   static {
-/* 402 */     CODEC = (Codec<CacheEntryMetricData>)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CacheEntryMetricData.class, CacheEntryMetricData::new).append(new KeyedCodec("Key", (Codec)Codec.LONG), (entry, o) -> entry.key = o.longValue(), entry -> Long.valueOf(entry.key)).add()).append(new KeyedCodec("File", (Codec)IndexedStorageFile.METRICS_REGISTRY), (entry, o) -> entry.value = o, entry -> entry.value).add()).build();
+/* 425 */     CODEC = (Codec<CacheEntryMetricData>)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(CacheEntryMetricData.class, CacheEntryMetricData::new).append(new KeyedCodec("Key", (Codec)Codec.LONG), (entry, o) -> entry.key = o.longValue(), entry -> Long.valueOf(entry.key)).add()).append(new KeyedCodec("File", (Codec)IndexedStorageFile.METRICS_REGISTRY), (entry, o) -> entry.value = o, entry -> entry.value).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -419,8 +442,8 @@
 /*     */ 
 /*     */   
 /*     */   public CacheEntryMetricData(@Nonnull Long2ObjectMap.Entry<IndexedStorageFile> entry) {
-/* 422 */     this.key = entry.getLongKey();
-/* 423 */     this.value = (IndexedStorageFile)entry.getValue();
+/* 445 */     this.key = entry.getLongKey();
+/* 446 */     this.value = (IndexedStorageFile)entry.getValue();
 /*     */   }
 /*     */ }
 

@@ -109,17 +109,17 @@
 /*      */   public static Weather deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  110 */     Weather obj = new Weather();
 /*  111 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 4);
-/*  112 */     if ((nullBits[3] & 0x1) != 0) obj.fog = NearFar.deserialize(buf, offset + 4); 
-/*  113 */     if ((nullBits[3] & 0x2) != 0) obj.fogOptions = FogOptions.deserialize(buf, offset + 12);
+/*  112 */     if ((nullBits[0] & 0x1) != 0) obj.fog = NearFar.deserialize(buf, offset + 4); 
+/*  113 */     if ((nullBits[0] & 0x2) != 0) obj.fogOptions = FogOptions.deserialize(buf, offset + 12);
 /*      */     
-/*  115 */     if ((nullBits[0] & 0x1) != 0) {
+/*  115 */     if ((nullBits[0] & 0x4) != 0) {
 /*  116 */       int varPos0 = offset + 126 + buf.getIntLE(offset + 30);
 /*  117 */       int idLen = VarInt.peek(buf, varPos0);
 /*  118 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  119 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  120 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*      */     } 
-/*  122 */     if ((nullBits[0] & 0x2) != 0) {
+/*  122 */     if ((nullBits[0] & 0x8) != 0) {
 /*  123 */       int varPos1 = offset + 126 + buf.getIntLE(offset + 34);
 /*  124 */       int tagIndexesCount = VarInt.peek(buf, varPos1);
 /*  125 */       if (tagIndexesCount < 0) throw ProtocolException.negativeLength("TagIndexes", tagIndexesCount); 
@@ -132,14 +132,14 @@
 /*  132 */         obj.tagIndexes[i] = buf.getIntLE(varPos1 + varIntLen + i * 4);
 /*      */       }
 /*      */     } 
-/*  135 */     if ((nullBits[0] & 0x4) != 0) {
+/*  135 */     if ((nullBits[0] & 0x10) != 0) {
 /*  136 */       int varPos2 = offset + 126 + buf.getIntLE(offset + 38);
 /*  137 */       int starsLen = VarInt.peek(buf, varPos2);
 /*  138 */       if (starsLen < 0) throw ProtocolException.negativeLength("Stars", starsLen); 
 /*  139 */       if (starsLen > 4096000) throw ProtocolException.stringTooLong("Stars", starsLen, 4096000); 
 /*  140 */       obj.stars = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*      */     } 
-/*  142 */     if ((nullBits[0] & 0x8) != 0) {
+/*  142 */     if ((nullBits[0] & 0x20) != 0) {
 /*  143 */       int varPos3 = offset + 126 + buf.getIntLE(offset + 42);
 /*  144 */       int moonsCount = VarInt.peek(buf, varPos3);
 /*  145 */       if (moonsCount < 0) throw ProtocolException.negativeLength("Moons", moonsCount); 
@@ -159,7 +159,7 @@
 /*  159 */           throw ProtocolException.duplicateKey("moons", Integer.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  162 */     if ((nullBits[0] & 0x10) != 0) {
+/*  162 */     if ((nullBits[0] & 0x40) != 0) {
 /*  163 */       int varPos4 = offset + 126 + buf.getIntLE(offset + 46);
 /*  164 */       int cloudsCount = VarInt.peek(buf, varPos4);
 /*  165 */       if (cloudsCount < 0) throw ProtocolException.negativeLength("Clouds", cloudsCount); 
@@ -174,7 +174,7 @@
 /*  174 */         elemPos += Cloud.computeBytesConsumed(buf, elemPos);
 /*      */       } 
 /*      */     } 
-/*  177 */     if ((nullBits[0] & 0x20) != 0) {
+/*  177 */     if ((nullBits[0] & 0x80) != 0) {
 /*  178 */       int varPos5 = offset + 126 + buf.getIntLE(offset + 50);
 /*  179 */       int sunlightDampingMultiplierCount = VarInt.peek(buf, varPos5);
 /*  180 */       if (sunlightDampingMultiplierCount < 0) throw ProtocolException.negativeLength("SunlightDampingMultiplier", sunlightDampingMultiplierCount); 
@@ -189,7 +189,7 @@
 /*  189 */           throw ProtocolException.duplicateKey("sunlightDampingMultiplier", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  192 */     if ((nullBits[0] & 0x40) != 0) {
+/*  192 */     if ((nullBits[1] & 0x1) != 0) {
 /*  193 */       int varPos6 = offset + 126 + buf.getIntLE(offset + 54);
 /*  194 */       int sunlightColorsCount = VarInt.peek(buf, varPos6);
 /*  195 */       if (sunlightColorsCount < 0) throw ProtocolException.negativeLength("SunlightColors", sunlightColorsCount); 
@@ -205,7 +205,7 @@
 /*  205 */           throw ProtocolException.duplicateKey("sunlightColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  208 */     if ((nullBits[0] & 0x80) != 0) {
+/*  208 */     if ((nullBits[1] & 0x2) != 0) {
 /*  209 */       int varPos7 = offset + 126 + buf.getIntLE(offset + 58);
 /*  210 */       int skyTopColorsCount = VarInt.peek(buf, varPos7);
 /*  211 */       if (skyTopColorsCount < 0) throw ProtocolException.negativeLength("SkyTopColors", skyTopColorsCount); 
@@ -221,7 +221,7 @@
 /*  221 */           throw ProtocolException.duplicateKey("skyTopColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  224 */     if ((nullBits[1] & 0x1) != 0) {
+/*  224 */     if ((nullBits[1] & 0x4) != 0) {
 /*  225 */       int varPos8 = offset + 126 + buf.getIntLE(offset + 62);
 /*  226 */       int skyBottomColorsCount = VarInt.peek(buf, varPos8);
 /*  227 */       if (skyBottomColorsCount < 0) throw ProtocolException.negativeLength("SkyBottomColors", skyBottomColorsCount); 
@@ -237,7 +237,7 @@
 /*  237 */           throw ProtocolException.duplicateKey("skyBottomColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  240 */     if ((nullBits[1] & 0x2) != 0) {
+/*  240 */     if ((nullBits[1] & 0x8) != 0) {
 /*  241 */       int varPos9 = offset + 126 + buf.getIntLE(offset + 66);
 /*  242 */       int skySunsetColorsCount = VarInt.peek(buf, varPos9);
 /*  243 */       if (skySunsetColorsCount < 0) throw ProtocolException.negativeLength("SkySunsetColors", skySunsetColorsCount); 
@@ -253,7 +253,7 @@
 /*  253 */           throw ProtocolException.duplicateKey("skySunsetColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  256 */     if ((nullBits[1] & 0x4) != 0) {
+/*  256 */     if ((nullBits[1] & 0x10) != 0) {
 /*  257 */       int varPos10 = offset + 126 + buf.getIntLE(offset + 70);
 /*  258 */       int sunColorsCount = VarInt.peek(buf, varPos10);
 /*  259 */       if (sunColorsCount < 0) throw ProtocolException.negativeLength("SunColors", sunColorsCount); 
@@ -269,7 +269,7 @@
 /*  269 */           throw ProtocolException.duplicateKey("sunColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  272 */     if ((nullBits[1] & 0x8) != 0) {
+/*  272 */     if ((nullBits[1] & 0x20) != 0) {
 /*  273 */       int varPos11 = offset + 126 + buf.getIntLE(offset + 74);
 /*  274 */       int sunScalesCount = VarInt.peek(buf, varPos11);
 /*  275 */       if (sunScalesCount < 0) throw ProtocolException.negativeLength("SunScales", sunScalesCount); 
@@ -284,7 +284,7 @@
 /*  284 */           throw ProtocolException.duplicateKey("sunScales", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  287 */     if ((nullBits[1] & 0x10) != 0) {
+/*  287 */     if ((nullBits[1] & 0x40) != 0) {
 /*  288 */       int varPos12 = offset + 126 + buf.getIntLE(offset + 78);
 /*  289 */       int sunGlowColorsCount = VarInt.peek(buf, varPos12);
 /*  290 */       if (sunGlowColorsCount < 0) throw ProtocolException.negativeLength("SunGlowColors", sunGlowColorsCount); 
@@ -300,7 +300,7 @@
 /*  300 */           throw ProtocolException.duplicateKey("sunGlowColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  303 */     if ((nullBits[1] & 0x20) != 0) {
+/*  303 */     if ((nullBits[1] & 0x80) != 0) {
 /*  304 */       int varPos13 = offset + 126 + buf.getIntLE(offset + 82);
 /*  305 */       int moonColorsCount = VarInt.peek(buf, varPos13);
 /*  306 */       if (moonColorsCount < 0) throw ProtocolException.negativeLength("MoonColors", moonColorsCount); 
@@ -316,7 +316,7 @@
 /*  316 */           throw ProtocolException.duplicateKey("moonColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  319 */     if ((nullBits[1] & 0x40) != 0) {
+/*  319 */     if ((nullBits[2] & 0x1) != 0) {
 /*  320 */       int varPos14 = offset + 126 + buf.getIntLE(offset + 86);
 /*  321 */       int moonScalesCount = VarInt.peek(buf, varPos14);
 /*  322 */       if (moonScalesCount < 0) throw ProtocolException.negativeLength("MoonScales", moonScalesCount); 
@@ -331,7 +331,7 @@
 /*  331 */           throw ProtocolException.duplicateKey("moonScales", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  334 */     if ((nullBits[1] & 0x80) != 0) {
+/*  334 */     if ((nullBits[2] & 0x2) != 0) {
 /*  335 */       int varPos15 = offset + 126 + buf.getIntLE(offset + 90);
 /*  336 */       int moonGlowColorsCount = VarInt.peek(buf, varPos15);
 /*  337 */       if (moonGlowColorsCount < 0) throw ProtocolException.negativeLength("MoonGlowColors", moonGlowColorsCount); 
@@ -347,7 +347,7 @@
 /*  347 */           throw ProtocolException.duplicateKey("moonGlowColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  350 */     if ((nullBits[2] & 0x1) != 0) {
+/*  350 */     if ((nullBits[2] & 0x4) != 0) {
 /*  351 */       int varPos16 = offset + 126 + buf.getIntLE(offset + 94);
 /*  352 */       int fogColorsCount = VarInt.peek(buf, varPos16);
 /*  353 */       if (fogColorsCount < 0) throw ProtocolException.negativeLength("FogColors", fogColorsCount); 
@@ -363,7 +363,7 @@
 /*  363 */           throw ProtocolException.duplicateKey("fogColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  366 */     if ((nullBits[2] & 0x2) != 0) {
+/*  366 */     if ((nullBits[2] & 0x8) != 0) {
 /*  367 */       int varPos17 = offset + 126 + buf.getIntLE(offset + 98);
 /*  368 */       int fogHeightFalloffsCount = VarInt.peek(buf, varPos17);
 /*  369 */       if (fogHeightFalloffsCount < 0) throw ProtocolException.negativeLength("FogHeightFalloffs", fogHeightFalloffsCount); 
@@ -378,7 +378,7 @@
 /*  378 */           throw ProtocolException.duplicateKey("fogHeightFalloffs", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  381 */     if ((nullBits[2] & 0x4) != 0) {
+/*  381 */     if ((nullBits[2] & 0x10) != 0) {
 /*  382 */       int varPos18 = offset + 126 + buf.getIntLE(offset + 102);
 /*  383 */       int fogDensitiesCount = VarInt.peek(buf, varPos18);
 /*  384 */       if (fogDensitiesCount < 0) throw ProtocolException.negativeLength("FogDensities", fogDensitiesCount); 
@@ -393,14 +393,14 @@
 /*  393 */           throw ProtocolException.duplicateKey("fogDensities", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  396 */     if ((nullBits[2] & 0x8) != 0) {
+/*  396 */     if ((nullBits[2] & 0x20) != 0) {
 /*  397 */       int varPos19 = offset + 126 + buf.getIntLE(offset + 106);
 /*  398 */       int screenEffectLen = VarInt.peek(buf, varPos19);
 /*  399 */       if (screenEffectLen < 0) throw ProtocolException.negativeLength("ScreenEffect", screenEffectLen); 
 /*  400 */       if (screenEffectLen > 4096000) throw ProtocolException.stringTooLong("ScreenEffect", screenEffectLen, 4096000); 
 /*  401 */       obj.screenEffect = PacketIO.readVarString(buf, varPos19, PacketIO.UTF8);
 /*      */     } 
-/*  403 */     if ((nullBits[2] & 0x10) != 0) {
+/*  403 */     if ((nullBits[2] & 0x40) != 0) {
 /*  404 */       int varPos20 = offset + 126 + buf.getIntLE(offset + 110);
 /*  405 */       int screenEffectColorsCount = VarInt.peek(buf, varPos20);
 /*  406 */       if (screenEffectColorsCount < 0) throw ProtocolException.negativeLength("ScreenEffectColors", screenEffectColorsCount); 
@@ -416,7 +416,7 @@
 /*  416 */           throw ProtocolException.duplicateKey("screenEffectColors", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  419 */     if ((nullBits[2] & 0x20) != 0) {
+/*  419 */     if ((nullBits[2] & 0x80) != 0) {
 /*  420 */       int varPos21 = offset + 126 + buf.getIntLE(offset + 114);
 /*  421 */       int colorFiltersCount = VarInt.peek(buf, varPos21);
 /*  422 */       if (colorFiltersCount < 0) throw ProtocolException.negativeLength("ColorFilters", colorFiltersCount); 
@@ -432,7 +432,7 @@
 /*  432 */           throw ProtocolException.duplicateKey("colorFilters", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  435 */     if ((nullBits[2] & 0x40) != 0) {
+/*  435 */     if ((nullBits[3] & 0x1) != 0) {
 /*  436 */       int varPos22 = offset + 126 + buf.getIntLE(offset + 118);
 /*  437 */       int waterTintsCount = VarInt.peek(buf, varPos22);
 /*  438 */       if (waterTintsCount < 0) throw ProtocolException.negativeLength("WaterTints", waterTintsCount); 
@@ -448,7 +448,7 @@
 /*  448 */           throw ProtocolException.duplicateKey("waterTints", Float.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  451 */     if ((nullBits[2] & 0x80) != 0) {
+/*  451 */     if ((nullBits[3] & 0x2) != 0) {
 /*  452 */       int varPos23 = offset + 126 + buf.getIntLE(offset + 122);
 /*  453 */       obj.particle = WeatherParticle.deserialize(buf, varPos23);
 /*      */     } 
@@ -459,164 +459,164 @@
 /*      */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  460 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 4);
 /*  461 */     int maxEnd = 126;
-/*  462 */     if ((nullBits[0] & 0x1) != 0) {
+/*  462 */     if ((nullBits[0] & 0x4) != 0) {
 /*  463 */       int fieldOffset0 = buf.getIntLE(offset + 30);
 /*  464 */       int pos0 = offset + 126 + fieldOffset0;
 /*  465 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  466 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*      */     } 
-/*  468 */     if ((nullBits[0] & 0x2) != 0) {
+/*  468 */     if ((nullBits[0] & 0x8) != 0) {
 /*  469 */       int fieldOffset1 = buf.getIntLE(offset + 34);
 /*  470 */       int pos1 = offset + 126 + fieldOffset1;
 /*  471 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + arrLen * 4;
 /*  472 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*      */     } 
-/*  474 */     if ((nullBits[0] & 0x4) != 0) {
+/*  474 */     if ((nullBits[0] & 0x10) != 0) {
 /*  475 */       int fieldOffset2 = buf.getIntLE(offset + 38);
 /*  476 */       int pos2 = offset + 126 + fieldOffset2;
 /*  477 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /*  478 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*      */     } 
-/*  480 */     if ((nullBits[0] & 0x8) != 0) {
+/*  480 */     if ((nullBits[0] & 0x20) != 0) {
 /*  481 */       int fieldOffset3 = buf.getIntLE(offset + 42);
 /*  482 */       int pos3 = offset + 126 + fieldOffset3;
 /*  483 */       int dictLen = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3);
 /*  484 */       for (int i = 0; i < dictLen; ) { pos3 += 4; int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl; i++; }
 /*  485 */        if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*      */     } 
-/*  487 */     if ((nullBits[0] & 0x10) != 0) {
+/*  487 */     if ((nullBits[0] & 0x40) != 0) {
 /*  488 */       int fieldOffset4 = buf.getIntLE(offset + 46);
 /*  489 */       int pos4 = offset + 126 + fieldOffset4;
 /*  490 */       int arrLen = VarInt.peek(buf, pos4); pos4 += VarInt.length(buf, pos4);
 /*  491 */       for (int i = 0; i < arrLen; ) { pos4 += Cloud.computeBytesConsumed(buf, pos4); i++; }
 /*  492 */        if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*      */     } 
-/*  494 */     if ((nullBits[0] & 0x20) != 0) {
+/*  494 */     if ((nullBits[0] & 0x80) != 0) {
 /*  495 */       int fieldOffset5 = buf.getIntLE(offset + 50);
 /*  496 */       int pos5 = offset + 126 + fieldOffset5;
 /*  497 */       int dictLen = VarInt.peek(buf, pos5); pos5 += VarInt.length(buf, pos5);
 /*  498 */       for (int i = 0; i < dictLen; ) { pos5 += 4; pos5 += 4; i++; }
 /*  499 */        if (pos5 - offset > maxEnd) maxEnd = pos5 - offset; 
 /*      */     } 
-/*  501 */     if ((nullBits[0] & 0x40) != 0) {
+/*  501 */     if ((nullBits[1] & 0x1) != 0) {
 /*  502 */       int fieldOffset6 = buf.getIntLE(offset + 54);
 /*  503 */       int pos6 = offset + 126 + fieldOffset6;
 /*  504 */       int dictLen = VarInt.peek(buf, pos6); pos6 += VarInt.length(buf, pos6);
 /*  505 */       for (int i = 0; i < dictLen; ) { pos6 += 4; pos6 += Color.computeBytesConsumed(buf, pos6); i++; }
 /*  506 */        if (pos6 - offset > maxEnd) maxEnd = pos6 - offset; 
 /*      */     } 
-/*  508 */     if ((nullBits[0] & 0x80) != 0) {
+/*  508 */     if ((nullBits[1] & 0x2) != 0) {
 /*  509 */       int fieldOffset7 = buf.getIntLE(offset + 58);
 /*  510 */       int pos7 = offset + 126 + fieldOffset7;
 /*  511 */       int dictLen = VarInt.peek(buf, pos7); pos7 += VarInt.length(buf, pos7);
 /*  512 */       for (int i = 0; i < dictLen; ) { pos7 += 4; pos7 += ColorAlpha.computeBytesConsumed(buf, pos7); i++; }
 /*  513 */        if (pos7 - offset > maxEnd) maxEnd = pos7 - offset; 
 /*      */     } 
-/*  515 */     if ((nullBits[1] & 0x1) != 0) {
+/*  515 */     if ((nullBits[1] & 0x4) != 0) {
 /*  516 */       int fieldOffset8 = buf.getIntLE(offset + 62);
 /*  517 */       int pos8 = offset + 126 + fieldOffset8;
 /*  518 */       int dictLen = VarInt.peek(buf, pos8); pos8 += VarInt.length(buf, pos8);
 /*  519 */       for (int i = 0; i < dictLen; ) { pos8 += 4; pos8 += ColorAlpha.computeBytesConsumed(buf, pos8); i++; }
 /*  520 */        if (pos8 - offset > maxEnd) maxEnd = pos8 - offset; 
 /*      */     } 
-/*  522 */     if ((nullBits[1] & 0x2) != 0) {
+/*  522 */     if ((nullBits[1] & 0x8) != 0) {
 /*  523 */       int fieldOffset9 = buf.getIntLE(offset + 66);
 /*  524 */       int pos9 = offset + 126 + fieldOffset9;
 /*  525 */       int dictLen = VarInt.peek(buf, pos9); pos9 += VarInt.length(buf, pos9);
 /*  526 */       for (int i = 0; i < dictLen; ) { pos9 += 4; pos9 += ColorAlpha.computeBytesConsumed(buf, pos9); i++; }
 /*  527 */        if (pos9 - offset > maxEnd) maxEnd = pos9 - offset; 
 /*      */     } 
-/*  529 */     if ((nullBits[1] & 0x4) != 0) {
+/*  529 */     if ((nullBits[1] & 0x10) != 0) {
 /*  530 */       int fieldOffset10 = buf.getIntLE(offset + 70);
 /*  531 */       int pos10 = offset + 126 + fieldOffset10;
 /*  532 */       int dictLen = VarInt.peek(buf, pos10); pos10 += VarInt.length(buf, pos10);
 /*  533 */       for (int i = 0; i < dictLen; ) { pos10 += 4; pos10 += Color.computeBytesConsumed(buf, pos10); i++; }
 /*  534 */        if (pos10 - offset > maxEnd) maxEnd = pos10 - offset; 
 /*      */     } 
-/*  536 */     if ((nullBits[1] & 0x8) != 0) {
+/*  536 */     if ((nullBits[1] & 0x20) != 0) {
 /*  537 */       int fieldOffset11 = buf.getIntLE(offset + 74);
 /*  538 */       int pos11 = offset + 126 + fieldOffset11;
 /*  539 */       int dictLen = VarInt.peek(buf, pos11); pos11 += VarInt.length(buf, pos11);
 /*  540 */       for (int i = 0; i < dictLen; ) { pos11 += 4; pos11 += 4; i++; }
 /*  541 */        if (pos11 - offset > maxEnd) maxEnd = pos11 - offset; 
 /*      */     } 
-/*  543 */     if ((nullBits[1] & 0x10) != 0) {
+/*  543 */     if ((nullBits[1] & 0x40) != 0) {
 /*  544 */       int fieldOffset12 = buf.getIntLE(offset + 78);
 /*  545 */       int pos12 = offset + 126 + fieldOffset12;
 /*  546 */       int dictLen = VarInt.peek(buf, pos12); pos12 += VarInt.length(buf, pos12);
 /*  547 */       for (int i = 0; i < dictLen; ) { pos12 += 4; pos12 += ColorAlpha.computeBytesConsumed(buf, pos12); i++; }
 /*  548 */        if (pos12 - offset > maxEnd) maxEnd = pos12 - offset; 
 /*      */     } 
-/*  550 */     if ((nullBits[1] & 0x20) != 0) {
+/*  550 */     if ((nullBits[1] & 0x80) != 0) {
 /*  551 */       int fieldOffset13 = buf.getIntLE(offset + 82);
 /*  552 */       int pos13 = offset + 126 + fieldOffset13;
 /*  553 */       int dictLen = VarInt.peek(buf, pos13); pos13 += VarInt.length(buf, pos13);
 /*  554 */       for (int i = 0; i < dictLen; ) { pos13 += 4; pos13 += ColorAlpha.computeBytesConsumed(buf, pos13); i++; }
 /*  555 */        if (pos13 - offset > maxEnd) maxEnd = pos13 - offset; 
 /*      */     } 
-/*  557 */     if ((nullBits[1] & 0x40) != 0) {
+/*  557 */     if ((nullBits[2] & 0x1) != 0) {
 /*  558 */       int fieldOffset14 = buf.getIntLE(offset + 86);
 /*  559 */       int pos14 = offset + 126 + fieldOffset14;
 /*  560 */       int dictLen = VarInt.peek(buf, pos14); pos14 += VarInt.length(buf, pos14);
 /*  561 */       for (int i = 0; i < dictLen; ) { pos14 += 4; pos14 += 4; i++; }
 /*  562 */        if (pos14 - offset > maxEnd) maxEnd = pos14 - offset; 
 /*      */     } 
-/*  564 */     if ((nullBits[1] & 0x80) != 0) {
+/*  564 */     if ((nullBits[2] & 0x2) != 0) {
 /*  565 */       int fieldOffset15 = buf.getIntLE(offset + 90);
 /*  566 */       int pos15 = offset + 126 + fieldOffset15;
 /*  567 */       int dictLen = VarInt.peek(buf, pos15); pos15 += VarInt.length(buf, pos15);
 /*  568 */       for (int i = 0; i < dictLen; ) { pos15 += 4; pos15 += ColorAlpha.computeBytesConsumed(buf, pos15); i++; }
 /*  569 */        if (pos15 - offset > maxEnd) maxEnd = pos15 - offset; 
 /*      */     } 
-/*  571 */     if ((nullBits[2] & 0x1) != 0) {
+/*  571 */     if ((nullBits[2] & 0x4) != 0) {
 /*  572 */       int fieldOffset16 = buf.getIntLE(offset + 94);
 /*  573 */       int pos16 = offset + 126 + fieldOffset16;
 /*  574 */       int dictLen = VarInt.peek(buf, pos16); pos16 += VarInt.length(buf, pos16);
 /*  575 */       for (int i = 0; i < dictLen; ) { pos16 += 4; pos16 += Color.computeBytesConsumed(buf, pos16); i++; }
 /*  576 */        if (pos16 - offset > maxEnd) maxEnd = pos16 - offset; 
 /*      */     } 
-/*  578 */     if ((nullBits[2] & 0x2) != 0) {
+/*  578 */     if ((nullBits[2] & 0x8) != 0) {
 /*  579 */       int fieldOffset17 = buf.getIntLE(offset + 98);
 /*  580 */       int pos17 = offset + 126 + fieldOffset17;
 /*  581 */       int dictLen = VarInt.peek(buf, pos17); pos17 += VarInt.length(buf, pos17);
 /*  582 */       for (int i = 0; i < dictLen; ) { pos17 += 4; pos17 += 4; i++; }
 /*  583 */        if (pos17 - offset > maxEnd) maxEnd = pos17 - offset; 
 /*      */     } 
-/*  585 */     if ((nullBits[2] & 0x4) != 0) {
+/*  585 */     if ((nullBits[2] & 0x10) != 0) {
 /*  586 */       int fieldOffset18 = buf.getIntLE(offset + 102);
 /*  587 */       int pos18 = offset + 126 + fieldOffset18;
 /*  588 */       int dictLen = VarInt.peek(buf, pos18); pos18 += VarInt.length(buf, pos18);
 /*  589 */       for (int i = 0; i < dictLen; ) { pos18 += 4; pos18 += 4; i++; }
 /*  590 */        if (pos18 - offset > maxEnd) maxEnd = pos18 - offset; 
 /*      */     } 
-/*  592 */     if ((nullBits[2] & 0x8) != 0) {
+/*  592 */     if ((nullBits[2] & 0x20) != 0) {
 /*  593 */       int fieldOffset19 = buf.getIntLE(offset + 106);
 /*  594 */       int pos19 = offset + 126 + fieldOffset19;
 /*  595 */       int sl = VarInt.peek(buf, pos19); pos19 += VarInt.length(buf, pos19) + sl;
 /*  596 */       if (pos19 - offset > maxEnd) maxEnd = pos19 - offset; 
 /*      */     } 
-/*  598 */     if ((nullBits[2] & 0x10) != 0) {
+/*  598 */     if ((nullBits[2] & 0x40) != 0) {
 /*  599 */       int fieldOffset20 = buf.getIntLE(offset + 110);
 /*  600 */       int pos20 = offset + 126 + fieldOffset20;
 /*  601 */       int dictLen = VarInt.peek(buf, pos20); pos20 += VarInt.length(buf, pos20);
 /*  602 */       for (int i = 0; i < dictLen; ) { pos20 += 4; pos20 += ColorAlpha.computeBytesConsumed(buf, pos20); i++; }
 /*  603 */        if (pos20 - offset > maxEnd) maxEnd = pos20 - offset; 
 /*      */     } 
-/*  605 */     if ((nullBits[2] & 0x20) != 0) {
+/*  605 */     if ((nullBits[2] & 0x80) != 0) {
 /*  606 */       int fieldOffset21 = buf.getIntLE(offset + 114);
 /*  607 */       int pos21 = offset + 126 + fieldOffset21;
 /*  608 */       int dictLen = VarInt.peek(buf, pos21); pos21 += VarInt.length(buf, pos21);
 /*  609 */       for (int i = 0; i < dictLen; ) { pos21 += 4; pos21 += Color.computeBytesConsumed(buf, pos21); i++; }
 /*  610 */        if (pos21 - offset > maxEnd) maxEnd = pos21 - offset; 
 /*      */     } 
-/*  612 */     if ((nullBits[2] & 0x40) != 0) {
+/*  612 */     if ((nullBits[3] & 0x1) != 0) {
 /*  613 */       int fieldOffset22 = buf.getIntLE(offset + 118);
 /*  614 */       int pos22 = offset + 126 + fieldOffset22;
 /*  615 */       int dictLen = VarInt.peek(buf, pos22); pos22 += VarInt.length(buf, pos22);
 /*  616 */       for (int i = 0; i < dictLen; ) { pos22 += 4; pos22 += Color.computeBytesConsumed(buf, pos22); i++; }
 /*  617 */        if (pos22 - offset > maxEnd) maxEnd = pos22 - offset; 
 /*      */     } 
-/*  619 */     if ((nullBits[2] & 0x80) != 0) {
+/*  619 */     if ((nullBits[3] & 0x2) != 0) {
 /*  620 */       int fieldOffset23 = buf.getIntLE(offset + 122);
 /*  621 */       int pos23 = offset + 126 + fieldOffset23;
 /*  622 */       pos23 += WeatherParticle.computeBytesConsumed(buf, pos23);
@@ -629,32 +629,32 @@
 /*      */   public void serialize(@Nonnull ByteBuf buf) {
 /*  630 */     int startPos = buf.writerIndex();
 /*  631 */     byte[] nullBits = new byte[4];
-/*  632 */     if (this.id != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
-/*  633 */     if (this.tagIndexes != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/*  634 */     if (this.stars != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/*  635 */     if (this.moons != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/*  636 */     if (this.clouds != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/*  637 */     if (this.sunlightDampingMultiplier != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/*  638 */     if (this.sunlightColors != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/*  639 */     if (this.skyTopColors != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/*  640 */     if (this.skyBottomColors != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
-/*  641 */     if (this.skySunsetColors != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
-/*  642 */     if (this.sunColors != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
-/*  643 */     if (this.sunScales != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
-/*  644 */     if (this.sunGlowColors != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
-/*  645 */     if (this.moonColors != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
-/*  646 */     if (this.moonScales != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
-/*  647 */     if (this.moonGlowColors != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
-/*  648 */     if (this.fogColors != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
-/*  649 */     if (this.fogHeightFalloffs != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
-/*  650 */     if (this.fogDensities != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
-/*  651 */     if (this.screenEffect != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
-/*  652 */     if (this.screenEffectColors != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
-/*  653 */     if (this.colorFilters != null) nullBits[2] = (byte)(nullBits[2] | 0x20); 
-/*  654 */     if (this.waterTints != null) nullBits[2] = (byte)(nullBits[2] | 0x40); 
-/*  655 */     if (this.particle != null) nullBits[2] = (byte)(nullBits[2] | 0x80); 
-/*  656 */     if (this.fog != null) nullBits[3] = (byte)(nullBits[3] | 0x1); 
-/*  657 */     if (this.fogOptions != null) nullBits[3] = (byte)(nullBits[3] | 0x2); 
+/*  632 */     if (this.fog != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
+/*  633 */     if (this.fogOptions != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
+/*  634 */     if (this.id != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/*  635 */     if (this.tagIndexes != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/*  636 */     if (this.stars != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/*  637 */     if (this.moons != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/*  638 */     if (this.clouds != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/*  639 */     if (this.sunlightDampingMultiplier != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/*  640 */     if (this.sunlightColors != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/*  641 */     if (this.skyTopColors != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
+/*  642 */     if (this.skyBottomColors != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
+/*  643 */     if (this.skySunsetColors != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
+/*  644 */     if (this.sunColors != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
+/*  645 */     if (this.sunScales != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
+/*  646 */     if (this.sunGlowColors != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
+/*  647 */     if (this.moonColors != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
+/*  648 */     if (this.moonScales != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
+/*  649 */     if (this.moonGlowColors != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
+/*  650 */     if (this.fogColors != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
+/*  651 */     if (this.fogHeightFalloffs != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
+/*  652 */     if (this.fogDensities != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
+/*  653 */     if (this.screenEffect != null) nullBits[2] = (byte)(nullBits[2] | 0x20); 
+/*  654 */     if (this.screenEffectColors != null) nullBits[2] = (byte)(nullBits[2] | 0x40); 
+/*  655 */     if (this.colorFilters != null) nullBits[2] = (byte)(nullBits[2] | 0x80); 
+/*  656 */     if (this.waterTints != null) nullBits[3] = (byte)(nullBits[3] | 0x1); 
+/*  657 */     if (this.particle != null) nullBits[3] = (byte)(nullBits[3] | 0x2); 
 /*  658 */     buf.writeBytes(nullBits);
 /*      */     
 /*  660 */     if (this.fog != null) { this.fog.serialize(buf); } else { buf.writeZero(8); }
@@ -902,7 +902,7 @@
 /*      */     
 /*  903 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 4);
 /*      */     
-/*  905 */     if ((nullBits[0] & 0x1) != 0) {
+/*  905 */     if ((nullBits[0] & 0x4) != 0) {
 /*  906 */       int idOffset = buffer.getIntLE(offset + 30);
 /*  907 */       if (idOffset < 0) {
 /*  908 */         return ValidationResult.error("Invalid offset for Id");
@@ -925,7 +925,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/*  928 */     if ((nullBits[0] & 0x2) != 0) {
+/*  928 */     if ((nullBits[0] & 0x8) != 0) {
 /*  929 */       int tagIndexesOffset = buffer.getIntLE(offset + 34);
 /*  930 */       if (tagIndexesOffset < 0) {
 /*  931 */         return ValidationResult.error("Invalid offset for TagIndexes");
@@ -948,7 +948,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/*  951 */     if ((nullBits[0] & 0x4) != 0) {
+/*  951 */     if ((nullBits[0] & 0x10) != 0) {
 /*  952 */       int starsOffset = buffer.getIntLE(offset + 38);
 /*  953 */       if (starsOffset < 0) {
 /*  954 */         return ValidationResult.error("Invalid offset for Stars");
@@ -971,7 +971,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/*  974 */     if ((nullBits[0] & 0x8) != 0) {
+/*  974 */     if ((nullBits[0] & 0x20) != 0) {
 /*  975 */       int moonsOffset = buffer.getIntLE(offset + 42);
 /*  976 */       if (moonsOffset < 0) {
 /*  977 */         return ValidationResult.error("Invalid offset for Moons");
@@ -1008,7 +1008,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1011 */     if ((nullBits[0] & 0x10) != 0) {
+/* 1011 */     if ((nullBits[0] & 0x40) != 0) {
 /* 1012 */       int cloudsOffset = buffer.getIntLE(offset + 46);
 /* 1013 */       if (cloudsOffset < 0) {
 /* 1014 */         return ValidationResult.error("Invalid offset for Clouds");
@@ -1034,7 +1034,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1037 */     if ((nullBits[0] & 0x20) != 0) {
+/* 1037 */     if ((nullBits[0] & 0x80) != 0) {
 /* 1038 */       int sunlightDampingMultiplierOffset = buffer.getIntLE(offset + 50);
 /* 1039 */       if (sunlightDampingMultiplierOffset < 0) {
 /* 1040 */         return ValidationResult.error("Invalid offset for SunlightDampingMultiplier");
@@ -1063,7 +1063,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1066 */     if ((nullBits[0] & 0x40) != 0) {
+/* 1066 */     if ((nullBits[1] & 0x1) != 0) {
 /* 1067 */       int sunlightColorsOffset = buffer.getIntLE(offset + 54);
 /* 1068 */       if (sunlightColorsOffset < 0) {
 /* 1069 */         return ValidationResult.error("Invalid offset for SunlightColors");
@@ -1090,7 +1090,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1093 */     if ((nullBits[0] & 0x80) != 0) {
+/* 1093 */     if ((nullBits[1] & 0x2) != 0) {
 /* 1094 */       int skyTopColorsOffset = buffer.getIntLE(offset + 58);
 /* 1095 */       if (skyTopColorsOffset < 0) {
 /* 1096 */         return ValidationResult.error("Invalid offset for SkyTopColors");
@@ -1117,7 +1117,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1120 */     if ((nullBits[1] & 0x1) != 0) {
+/* 1120 */     if ((nullBits[1] & 0x4) != 0) {
 /* 1121 */       int skyBottomColorsOffset = buffer.getIntLE(offset + 62);
 /* 1122 */       if (skyBottomColorsOffset < 0) {
 /* 1123 */         return ValidationResult.error("Invalid offset for SkyBottomColors");
@@ -1144,7 +1144,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1147 */     if ((nullBits[1] & 0x2) != 0) {
+/* 1147 */     if ((nullBits[1] & 0x8) != 0) {
 /* 1148 */       int skySunsetColorsOffset = buffer.getIntLE(offset + 66);
 /* 1149 */       if (skySunsetColorsOffset < 0) {
 /* 1150 */         return ValidationResult.error("Invalid offset for SkySunsetColors");
@@ -1171,7 +1171,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1174 */     if ((nullBits[1] & 0x4) != 0) {
+/* 1174 */     if ((nullBits[1] & 0x10) != 0) {
 /* 1175 */       int sunColorsOffset = buffer.getIntLE(offset + 70);
 /* 1176 */       if (sunColorsOffset < 0) {
 /* 1177 */         return ValidationResult.error("Invalid offset for SunColors");
@@ -1198,7 +1198,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1201 */     if ((nullBits[1] & 0x8) != 0) {
+/* 1201 */     if ((nullBits[1] & 0x20) != 0) {
 /* 1202 */       int sunScalesOffset = buffer.getIntLE(offset + 74);
 /* 1203 */       if (sunScalesOffset < 0) {
 /* 1204 */         return ValidationResult.error("Invalid offset for SunScales");
@@ -1227,7 +1227,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1230 */     if ((nullBits[1] & 0x10) != 0) {
+/* 1230 */     if ((nullBits[1] & 0x40) != 0) {
 /* 1231 */       int sunGlowColorsOffset = buffer.getIntLE(offset + 78);
 /* 1232 */       if (sunGlowColorsOffset < 0) {
 /* 1233 */         return ValidationResult.error("Invalid offset for SunGlowColors");
@@ -1254,7 +1254,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1257 */     if ((nullBits[1] & 0x20) != 0) {
+/* 1257 */     if ((nullBits[1] & 0x80) != 0) {
 /* 1258 */       int moonColorsOffset = buffer.getIntLE(offset + 82);
 /* 1259 */       if (moonColorsOffset < 0) {
 /* 1260 */         return ValidationResult.error("Invalid offset for MoonColors");
@@ -1281,7 +1281,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1284 */     if ((nullBits[1] & 0x40) != 0) {
+/* 1284 */     if ((nullBits[2] & 0x1) != 0) {
 /* 1285 */       int moonScalesOffset = buffer.getIntLE(offset + 86);
 /* 1286 */       if (moonScalesOffset < 0) {
 /* 1287 */         return ValidationResult.error("Invalid offset for MoonScales");
@@ -1310,7 +1310,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1313 */     if ((nullBits[1] & 0x80) != 0) {
+/* 1313 */     if ((nullBits[2] & 0x2) != 0) {
 /* 1314 */       int moonGlowColorsOffset = buffer.getIntLE(offset + 90);
 /* 1315 */       if (moonGlowColorsOffset < 0) {
 /* 1316 */         return ValidationResult.error("Invalid offset for MoonGlowColors");
@@ -1337,7 +1337,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1340 */     if ((nullBits[2] & 0x1) != 0) {
+/* 1340 */     if ((nullBits[2] & 0x4) != 0) {
 /* 1341 */       int fogColorsOffset = buffer.getIntLE(offset + 94);
 /* 1342 */       if (fogColorsOffset < 0) {
 /* 1343 */         return ValidationResult.error("Invalid offset for FogColors");
@@ -1364,7 +1364,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1367 */     if ((nullBits[2] & 0x2) != 0) {
+/* 1367 */     if ((nullBits[2] & 0x8) != 0) {
 /* 1368 */       int fogHeightFalloffsOffset = buffer.getIntLE(offset + 98);
 /* 1369 */       if (fogHeightFalloffsOffset < 0) {
 /* 1370 */         return ValidationResult.error("Invalid offset for FogHeightFalloffs");
@@ -1393,7 +1393,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1396 */     if ((nullBits[2] & 0x4) != 0) {
+/* 1396 */     if ((nullBits[2] & 0x10) != 0) {
 /* 1397 */       int fogDensitiesOffset = buffer.getIntLE(offset + 102);
 /* 1398 */       if (fogDensitiesOffset < 0) {
 /* 1399 */         return ValidationResult.error("Invalid offset for FogDensities");
@@ -1422,7 +1422,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1425 */     if ((nullBits[2] & 0x8) != 0) {
+/* 1425 */     if ((nullBits[2] & 0x20) != 0) {
 /* 1426 */       int screenEffectOffset = buffer.getIntLE(offset + 106);
 /* 1427 */       if (screenEffectOffset < 0) {
 /* 1428 */         return ValidationResult.error("Invalid offset for ScreenEffect");
@@ -1445,7 +1445,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1448 */     if ((nullBits[2] & 0x10) != 0) {
+/* 1448 */     if ((nullBits[2] & 0x40) != 0) {
 /* 1449 */       int screenEffectColorsOffset = buffer.getIntLE(offset + 110);
 /* 1450 */       if (screenEffectColorsOffset < 0) {
 /* 1451 */         return ValidationResult.error("Invalid offset for ScreenEffectColors");
@@ -1472,7 +1472,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1475 */     if ((nullBits[2] & 0x20) != 0) {
+/* 1475 */     if ((nullBits[2] & 0x80) != 0) {
 /* 1476 */       int colorFiltersOffset = buffer.getIntLE(offset + 114);
 /* 1477 */       if (colorFiltersOffset < 0) {
 /* 1478 */         return ValidationResult.error("Invalid offset for ColorFilters");
@@ -1499,7 +1499,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1502 */     if ((nullBits[2] & 0x40) != 0) {
+/* 1502 */     if ((nullBits[3] & 0x1) != 0) {
 /* 1503 */       int waterTintsOffset = buffer.getIntLE(offset + 118);
 /* 1504 */       if (waterTintsOffset < 0) {
 /* 1505 */         return ValidationResult.error("Invalid offset for WaterTints");
@@ -1526,7 +1526,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1529 */     if ((nullBits[2] & 0x80) != 0) {
+/* 1529 */     if ((nullBits[3] & 0x2) != 0) {
 /* 1530 */       int particleOffset = buffer.getIntLE(offset + 122);
 /* 1531 */       if (particleOffset < 0) {
 /* 1532 */         return ValidationResult.error("Invalid offset for Particle");

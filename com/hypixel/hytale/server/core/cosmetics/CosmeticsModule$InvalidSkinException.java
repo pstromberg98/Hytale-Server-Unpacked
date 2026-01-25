@@ -1,6 +1,6 @@
 /*     */ package com.hypixel.hytale.server.core.cosmetics;
 /*     */ 
-/*     */ 
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -318,9 +318,23 @@
 /*     */ public class InvalidSkinException
 /*     */   extends Exception
 /*     */ {
-/*     */   public InvalidSkinException(String message) {
-/* 322 */     super(message);
+/*     */   private final String partType;
+/*     */   private final String partId;
+/*     */   
+/*     */   public InvalidSkinException(String partType, @Nullable String partId) {
+/* 325 */     super(formatMessage(partType, partId));
+/* 326 */     this.partType = partType;
+/* 327 */     this.partId = partId;
 /*     */   }
+/*     */   
+/*     */   private static String formatMessage(String partType, @Nullable String partId) {
+/* 331 */     return (partId == null) ? ("Missing required " + partType) : ("Unknown " + 
+/* 332 */       partType + ": " + partId);
+/*     */   }
+/*     */   
+/* 335 */   public String getPartType() { return this.partType; } @Nullable
+/* 336 */   public String getPartId() { return this.partId; }
+/*     */ 
 /*     */ }
 
 

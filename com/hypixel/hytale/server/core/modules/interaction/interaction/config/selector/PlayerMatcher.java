@@ -11,22 +11,32 @@
 /*    */ import java.util.function.Supplier;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
-/*    */ public class PlayerMatcher extends SelectInteraction.EntityMatcher {
-/* 15 */   public static final BuilderCodec<PlayerMatcher> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(PlayerMatcher.class, PlayerMatcher::new, BASE_CODEC)
-/* 16 */     .documentation("Matches only players"))
-/* 17 */     .build();
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ public class PlayerMatcher
+/*    */   extends SelectInteraction.EntityMatcher
+/*    */ {
+/*    */   @Nonnull
+/* 23 */   public static final BuilderCodec<PlayerMatcher> CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(PlayerMatcher.class, PlayerMatcher::new, BASE_CODEC)
+/* 24 */     .documentation("Matches only players"))
+/* 25 */     .build();
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */   
-/*    */   public boolean test0(Ref<EntityStore> attacker, @Nonnull Ref<EntityStore> target, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 21 */     return commandBuffer.getArchetype(target).contains(Player.getComponentType());
+/*    */   public boolean test0(@Nonnull Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> targetRef, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 31 */     return commandBuffer.getArchetype(targetRef).contains(Player.getComponentType());
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public EntityMatcher toPacket() {
-/* 27 */     EntityMatcher packet = super.toPacket();
-/* 28 */     packet.type = EntityMatcherType.Player;
-/* 29 */     return packet;
+/* 37 */     EntityMatcher packet = super.toPacket();
+/* 38 */     packet.type = EntityMatcherType.Player;
+/* 39 */     return packet;
 /*    */   }
 /*    */ }
 

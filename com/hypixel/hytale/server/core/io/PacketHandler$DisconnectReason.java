@@ -762,6 +762,41 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class DisconnectReason
 /*     */ {
 /*     */   @Nullable
@@ -771,12 +806,12 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public String getServerDisconnectReason() {
-/* 774 */     return this.serverDisconnectReason;
+/* 809 */     return this.serverDisconnectReason;
 /*     */   }
 /*     */   
 /*     */   public void setServerDisconnectReason(String serverDisconnectReason) {
-/* 778 */     this.serverDisconnectReason = serverDisconnectReason;
-/* 779 */     this.clientDisconnectType = null;
+/* 813 */     this.serverDisconnectReason = serverDisconnectReason;
+/* 814 */     this.clientDisconnectType = null;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -787,18 +822,18 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public DisconnectType getClientDisconnectType() {
-/* 790 */     return this.clientDisconnectType;
+/* 825 */     return this.clientDisconnectType;
 /*     */   }
 /*     */   
 /*     */   public void setClientDisconnectType(DisconnectType clientDisconnectType) {
-/* 794 */     this.clientDisconnectType = clientDisconnectType;
-/* 795 */     this.serverDisconnectReason = null;
+/* 829 */     this.clientDisconnectType = clientDisconnectType;
+/* 830 */     this.serverDisconnectReason = null;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 801 */     return "DisconnectReason{serverDisconnectReason='" + this.serverDisconnectReason + "', clientDisconnectType=" + String.valueOf(this.clientDisconnectType) + "}";
+/* 836 */     return "DisconnectReason{serverDisconnectReason='" + this.serverDisconnectReason + "', clientDisconnectType=" + String.valueOf(this.clientDisconnectType) + "}";
 /*     */   }
 /*     */ }
 

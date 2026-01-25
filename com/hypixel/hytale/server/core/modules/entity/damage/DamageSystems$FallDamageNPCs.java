@@ -878,6 +878,15 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class FallDamageNPCs
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -887,80 +896,80 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 890 */     return DamageModule.get().getGatherDamageGroup();
+/* 899 */     return DamageModule.get().getGatherDamageGroup();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 896 */     return DamageSystems.NPCS_QUERY;
+/* 905 */     return DamageSystems.NPCS_QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
-/* 901 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 902 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
+/* 910 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 911 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 906 */     super.tick(dt, systemIndex, store);
+/* 915 */     super.tick(dt, systemIndex, store);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 911 */     LivingEntity entity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
-/* 912 */     assert entity != null;
+/* 920 */     LivingEntity entity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
+/* 921 */     assert entity != null;
 /*     */     
-/* 914 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)archetypeChunk.getComponent(index, MovementStatesComponent.getComponentType());
-/* 915 */     assert movementStatesComponent != null;
+/* 923 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)archetypeChunk.getComponent(index, MovementStatesComponent.getComponentType());
+/* 924 */     assert movementStatesComponent != null;
 /*     */     
-/* 917 */     MovementStates movementStates = movementStatesComponent.getMovementStates();
+/* 926 */     MovementStates movementStates = movementStatesComponent.getMovementStates();
 /*     */     
-/* 919 */     if (movementStates.onGround && entity.getCurrentFallDistance() > 0.0D) {
-/* 920 */       Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
-/* 921 */       assert velocityComponent != null;
+/* 928 */     if (movementStates.onGround && entity.getCurrentFallDistance() > 0.0D) {
+/* 929 */       Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
+/* 930 */       assert velocityComponent != null;
 /*     */       
-/* 923 */       double yVelocity = Math.abs(velocityComponent.getVelocity().getY());
-/* 924 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/* 925 */       int movementConfigIndex = world.getGameplayConfig().getPlayerConfig().getMovementConfigIndex();
-/* 926 */       MovementConfig movementConfig = (MovementConfig)MovementConfig.getAssetMap().getAsset(movementConfigIndex);
-/* 927 */       float minFallSpeedToEngageRoll = movementConfig.getMinFallSpeedToEngageRoll();
+/* 932 */       double yVelocity = Math.abs(velocityComponent.getVelocity().getY());
+/* 933 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 934 */       int movementConfigIndex = world.getGameplayConfig().getPlayerConfig().getMovementConfigIndex();
+/* 935 */       MovementConfig movementConfig = (MovementConfig)MovementConfig.getAssetMap().getAsset(movementConfigIndex);
+/* 936 */       float minFallSpeedToEngageRoll = movementConfig.getMinFallSpeedToEngageRoll();
 /*     */       
-/* 929 */       if (yVelocity > minFallSpeedToEngageRoll && !movementStates.inFluid) {
-/* 930 */         EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, EntityStatMap.getComponentType());
-/* 931 */         assert entityStatMapComponent != null;
+/* 938 */       if (yVelocity > minFallSpeedToEngageRoll && !movementStates.inFluid) {
+/* 939 */         EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, EntityStatMap.getComponentType());
+/* 940 */         assert entityStatMapComponent != null;
 /*     */         
-/* 933 */         double damagePercentage = Math.pow(0.5799999833106995D * (yVelocity - minFallSpeedToEngageRoll), 2.0D) + 10.0D;
-/* 934 */         EntityStatValue healthStatValue = entityStatMapComponent.get(DefaultEntityStatTypes.getHealth());
-/* 935 */         assert healthStatValue != null;
+/* 942 */         double damagePercentage = Math.pow(0.5799999833106995D * (yVelocity - minFallSpeedToEngageRoll), 2.0D) + 10.0D;
+/* 943 */         EntityStatValue healthStatValue = entityStatMapComponent.get(DefaultEntityStatTypes.getHealth());
+/* 944 */         assert healthStatValue != null;
 /*     */         
-/* 937 */         float maxHealth = healthStatValue.getMax();
-/* 938 */         double healthModifier = maxHealth / 100.0D;
-/* 939 */         int damageInt = (int)Math.floor(healthModifier * damagePercentage);
+/* 946 */         float maxHealth = healthStatValue.getMax();
+/* 947 */         double healthModifier = maxHealth / 100.0D;
+/* 948 */         int damageInt = (int)Math.floor(healthModifier * damagePercentage);
 /*     */ 
 /*     */         
-/* 942 */         if (movementStates.rolling) {
-/* 943 */           if (yVelocity <= movementConfig.getMaxFallSpeedRollFullMitigation()) {
-/* 944 */             damageInt = 0;
-/* 945 */           } else if (yVelocity <= movementConfig.getMaxFallSpeedToEngageRoll()) {
-/* 946 */             damageInt = (int)(damageInt * (1.0D - movementConfig.getFallDamagePartialMitigationPercent() / 100.0D));
+/* 951 */         if (movementStates.rolling) {
+/* 952 */           if (yVelocity <= movementConfig.getMaxFallSpeedRollFullMitigation()) {
+/* 953 */             damageInt = 0;
+/* 954 */           } else if (yVelocity <= movementConfig.getMaxFallSpeedToEngageRoll()) {
+/* 955 */             damageInt = (int)(damageInt * (1.0D - movementConfig.getFallDamagePartialMitigationPercent() / 100.0D));
 /*     */           } 
 /*     */         }
 /*     */         
-/* 950 */         if (damageInt > 0) {
-/* 951 */           assert DamageCause.FALL != null;
-/* 952 */           Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.FALL, damageInt);
-/* 953 */           DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
+/* 959 */         if (damageInt > 0) {
+/* 960 */           assert DamageCause.FALL != null;
+/* 961 */           Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.FALL, damageInt);
+/* 962 */           DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
 /*     */         } 
 /*     */       } 
 /*     */       
-/* 957 */       entity.setCurrentFallDistance(0.0D);
+/* 966 */       entity.setCurrentFallDistance(0.0D);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 963 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 972 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ }
 

@@ -190,9 +190,11 @@
 /*     */   public AssetPack findAssetPackForPath(Path path) {
 /* 191 */     path = path.toAbsolutePath().normalize();
 /* 192 */     for (AssetPack pack : this.assetPacks) {
-/* 193 */       if (path.startsWith(pack.getRoot())) return pack; 
+/*     */       
+/* 194 */       if (path.getFileSystem() == pack.getRoot().getFileSystem() && 
+/* 195 */         path.startsWith(pack.getRoot())) return pack; 
 /*     */     } 
-/* 195 */     return null;
+/* 197 */     return null;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -200,8 +202,8 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isAssetPathImmutable(@Nonnull Path path) {
-/* 203 */     AssetPack pack = findAssetPackForPath(path);
-/* 204 */     return (pack != null && pack.isImmutable());
+/* 205 */     AssetPack pack = findAssetPackForPath(path);
+/* 206 */     return (pack != null && pack.isImmutable());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -213,36 +215,36 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private PluginManifest loadPackManifest(Path packPath) throws IOException {
-/* 216 */     if (packPath.getFileName().toString().toLowerCase().endsWith(".zip"))
-/* 217 */     { FileSystem fs = FileSystems.newFileSystem(packPath, (ClassLoader)null); 
-/* 218 */       try { Path manifestPath = fs.getPath("manifest.json", new String[0]);
-/* 219 */         if (Files.exists(manifestPath, new java.nio.file.LinkOption[0]))
-/* 220 */         { BufferedReader reader = Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8); 
-/* 221 */           try { char[] buffer = RawJsonReader.READ_BUFFER.get();
-/* 222 */             RawJsonReader rawJsonReader = new RawJsonReader(reader, buffer);
-/* 223 */             ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
-/* 224 */             PluginManifest manifest = (PluginManifest)PluginManifest.CODEC.decodeJson(rawJsonReader, extraInfo);
-/* 225 */             extraInfo.getValidationResults().logOrThrowValidatorExceptions(getLogger());
-/* 226 */             PluginManifest pluginManifest1 = manifest;
-/* 227 */             if (reader != null) reader.close();
+/* 218 */     if (packPath.getFileName().toString().toLowerCase().endsWith(".zip"))
+/* 219 */     { FileSystem fs = FileSystems.newFileSystem(packPath, (ClassLoader)null); 
+/* 220 */       try { Path manifestPath = fs.getPath("manifest.json", new String[0]);
+/* 221 */         if (Files.exists(manifestPath, new java.nio.file.LinkOption[0]))
+/* 222 */         { BufferedReader reader = Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8); 
+/* 223 */           try { char[] buffer = RawJsonReader.READ_BUFFER.get();
+/* 224 */             RawJsonReader rawJsonReader = new RawJsonReader(reader, buffer);
+/* 225 */             ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
+/* 226 */             PluginManifest manifest = (PluginManifest)PluginManifest.CODEC.decodeJson(rawJsonReader, extraInfo);
+/* 227 */             extraInfo.getValidationResults().logOrThrowValidatorExceptions(getLogger());
+/* 228 */             PluginManifest pluginManifest1 = manifest;
+/* 229 */             if (reader != null) reader.close();
 /*     */             
-/* 229 */             if (fs != null) fs.close();  return pluginManifest1; } catch (Throwable throwable) { if (reader != null) try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  }  if (fs != null) fs.close();  } catch (Throwable throwable) { if (fs != null)
-/* 230 */           try { fs.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  } else if (Files.isDirectory(packPath, new java.nio.file.LinkOption[0]))
+/* 231 */             if (fs != null) fs.close();  return pluginManifest1; } catch (Throwable throwable) { if (reader != null) try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  }  if (fs != null) fs.close();  } catch (Throwable throwable) { if (fs != null)
+/* 232 */           try { fs.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  } else if (Files.isDirectory(packPath, new java.nio.file.LinkOption[0]))
 /*     */     
-/* 232 */     { Path manifestPath = packPath.resolve("manifest.json");
-/* 233 */       if (Files.exists(manifestPath, new java.nio.file.LinkOption[0])) {
-/* 234 */         FileReader reader = new FileReader(manifestPath.toFile(), StandardCharsets.UTF_8); 
-/* 235 */         try { char[] buffer = RawJsonReader.READ_BUFFER.get();
-/* 236 */           RawJsonReader rawJsonReader = new RawJsonReader(reader, buffer);
-/* 237 */           ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
-/* 238 */           PluginManifest manifest = (PluginManifest)PluginManifest.CODEC.decodeJson(rawJsonReader, extraInfo);
-/* 239 */           extraInfo.getValidationResults().logOrThrowValidatorExceptions(getLogger());
-/* 240 */           PluginManifest pluginManifest1 = manifest;
-/* 241 */           reader.close(); return pluginManifest1; } catch (Throwable throwable) { try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }
+/* 234 */     { Path manifestPath = packPath.resolve("manifest.json");
+/* 235 */       if (Files.exists(manifestPath, new java.nio.file.LinkOption[0])) {
+/* 236 */         FileReader reader = new FileReader(manifestPath.toFile(), StandardCharsets.UTF_8); 
+/* 237 */         try { char[] buffer = RawJsonReader.READ_BUFFER.get();
+/* 238 */           RawJsonReader rawJsonReader = new RawJsonReader(reader, buffer);
+/* 239 */           ExtraInfo extraInfo = ExtraInfo.THREAD_LOCAL.get();
+/* 240 */           PluginManifest manifest = (PluginManifest)PluginManifest.CODEC.decodeJson(rawJsonReader, extraInfo);
+/* 241 */           extraInfo.getValidationResults().logOrThrowValidatorExceptions(getLogger());
+/* 242 */           PluginManifest pluginManifest1 = manifest;
+/* 243 */           reader.close(); return pluginManifest1; } catch (Throwable throwable) { try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }
 /*     */            throw throwable; }
 /*     */       
 /*     */       }  }
-/* 245 */      return null;
+/* 247 */      return null;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -251,16 +253,16 @@
 /*     */ 
 /*     */   
 /*     */   private void loadPacksFromDirectory(Path modsPath) {
-/* 254 */     if (!Files.isDirectory(modsPath, new java.nio.file.LinkOption[0]))
+/* 256 */     if (!Files.isDirectory(modsPath, new java.nio.file.LinkOption[0]))
 /*     */       return; 
-/* 256 */     getLogger().at(Level.INFO).log("Loading packs from directory: %s", modsPath); 
-/* 257 */     try { DirectoryStream<Path> stream = Files.newDirectoryStream(modsPath); 
-/* 258 */       try { for (Path packPath : stream) {
-/* 259 */           if (packPath.getFileName() == null || packPath.getFileName().toString().toLowerCase().endsWith(".jar"))
-/* 260 */             continue;  loadAndRegisterPack(packPath);
+/* 258 */     getLogger().at(Level.INFO).log("Loading packs from directory: %s", modsPath); 
+/* 259 */     try { DirectoryStream<Path> stream = Files.newDirectoryStream(modsPath); 
+/* 260 */       try { for (Path packPath : stream) {
+/* 261 */           if (packPath.getFileName() == null || packPath.getFileName().toString().toLowerCase().endsWith(".jar"))
+/* 262 */             continue;  loadAndRegisterPack(packPath);
 /*     */         } 
-/* 262 */         if (stream != null) stream.close();  } catch (Throwable throwable) { if (stream != null) try { stream.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  } catch (IOException e)
-/* 263 */     { ((HytaleLogger.Api)getLogger().at(Level.SEVERE).withCause(e)).log("Failed to load mods from: %s", modsPath); }
+/* 264 */         if (stream != null) stream.close();  } catch (Throwable throwable) { if (stream != null) try { stream.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }   throw throwable; }  } catch (IOException e)
+/* 265 */     { ((HytaleLogger.Api)getLogger().at(Level.SEVERE).withCause(e)).log("Failed to load mods from: %s", modsPath); }
 /*     */   
 /*     */   }
 /*     */ 
@@ -274,203 +276,203 @@
 /*     */   private void loadAndRegisterPack(Path packPath) {
 /*     */     PluginManifest manifest;
 /*     */     try {
-/* 277 */       manifest = loadPackManifest(packPath);
-/* 278 */       if (manifest == null) {
-/* 279 */         getLogger().at(Level.WARNING).log("Skipping pack at %s: missing or invalid manifest.json", packPath.getFileName());
+/* 279 */       manifest = loadPackManifest(packPath);
+/* 280 */       if (manifest == null) {
+/* 281 */         getLogger().at(Level.WARNING).log("Skipping pack at %s: missing or invalid manifest.json", packPath.getFileName());
 /*     */         return;
 /*     */       } 
-/* 282 */     } catch (Exception e) {
-/* 283 */       ((HytaleLogger.Api)getLogger().at(Level.WARNING).withCause(e)).log("Failed to load manifest for pack at %s", packPath);
+/* 284 */     } catch (Exception e) {
+/* 285 */       ((HytaleLogger.Api)getLogger().at(Level.WARNING).withCause(e)).log("Failed to load manifest for pack at %s", packPath);
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 288 */     PluginIdentifier packIdentifier = new PluginIdentifier(manifest);
+/* 290 */     PluginIdentifier packIdentifier = new PluginIdentifier(manifest);
 /*     */ 
 /*     */     
-/* 291 */     HytaleServerConfig.ModConfig modConfig = (HytaleServerConfig.ModConfig)HytaleServer.get().getConfig().getModConfig().get(packIdentifier);
-/* 292 */     boolean enabled = (modConfig == null || modConfig.getEnabled() == null || modConfig.getEnabled().booleanValue());
+/* 293 */     HytaleServerConfig.ModConfig modConfig = (HytaleServerConfig.ModConfig)HytaleServer.get().getConfig().getModConfig().get(packIdentifier);
+/* 294 */     boolean enabled = (modConfig == null || modConfig.getEnabled() == null || modConfig.getEnabled().booleanValue());
 /*     */     
-/* 294 */     String packId = packIdentifier.toString();
-/* 295 */     if (enabled) {
-/* 296 */       registerPack(packId, packPath, manifest);
-/* 297 */       getLogger().at(Level.INFO).log("Loaded pack: %s from %s", packId, packPath.getFileName());
+/* 296 */     String packId = packIdentifier.toString();
+/* 297 */     if (enabled) {
+/* 298 */       registerPack(packId, packPath, manifest);
+/* 299 */       getLogger().at(Level.INFO).log("Loaded pack: %s from %s", packId, packPath.getFileName());
 /*     */     } else {
-/* 299 */       getLogger().at(Level.INFO).log("Skipped disabled pack: %s", packId);
+/* 301 */       getLogger().at(Level.INFO).log("Skipped disabled pack: %s", packId);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void registerPack(@Nonnull String name, @Nonnull Path path, @Nonnull PluginManifest manifest) {
-/* 304 */     Path absolutePath = path.toAbsolutePath().normalize();
-/* 305 */     Path packLocation = absolutePath;
-/* 306 */     FileSystem fileSystem = null;
-/* 307 */     boolean isImmutable = false;
+/* 306 */     Path absolutePath = path.toAbsolutePath().normalize();
+/* 307 */     Path packLocation = absolutePath;
+/* 308 */     FileSystem fileSystem = null;
+/* 309 */     boolean isImmutable = false;
 /*     */ 
 /*     */     
-/* 310 */     String lowerFileName = absolutePath.getFileName().toString().toLowerCase();
-/* 311 */     if (lowerFileName.endsWith(".zip") || lowerFileName.endsWith(".jar")) {
+/* 312 */     String lowerFileName = absolutePath.getFileName().toString().toLowerCase();
+/* 313 */     if (lowerFileName.endsWith(".zip") || lowerFileName.endsWith(".jar")) {
 /*     */       try {
-/* 313 */         fileSystem = FileSystems.newFileSystem(absolutePath, (ClassLoader)null);
-/* 314 */         absolutePath = fileSystem.getPath("", new String[0]).toAbsolutePath().normalize();
-/* 315 */         isImmutable = true;
-/* 316 */       } catch (IOException e) {
-/* 317 */         throw SneakyThrow.sneakyThrow(e);
+/* 315 */         fileSystem = FileSystems.newFileSystem(absolutePath, (ClassLoader)null);
+/* 316 */         absolutePath = fileSystem.getPath("", new String[0]).toAbsolutePath().normalize();
+/* 317 */         isImmutable = true;
+/* 318 */       } catch (IOException e) {
+/* 319 */         throw SneakyThrow.sneakyThrow(e);
 /*     */       } 
 /*     */     } else {
 /*     */       
-/* 321 */       isImmutable = Files.isRegularFile(absolutePath.resolve("CommonAssetsIndex.hashes"), new java.nio.file.LinkOption[0]);
+/* 323 */       isImmutable = Files.isRegularFile(absolutePath.resolve("CommonAssetsIndex.hashes"), new java.nio.file.LinkOption[0]);
 /*     */     } 
 /*     */     
-/* 324 */     AssetPack pack = new AssetPack(packLocation, name, absolutePath, fileSystem, isImmutable, manifest);
-/* 325 */     this.assetPacks.add(pack);
+/* 326 */     AssetPack pack = new AssetPack(packLocation, name, absolutePath, fileSystem, isImmutable, manifest);
+/* 327 */     this.assetPacks.add(pack);
 /*     */     
-/* 327 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
+/* 329 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
 /*     */     try {
-/* 329 */       if (!this.hasLoaded)
+/* 331 */       if (!this.hasLoaded)
 /*     */         return; 
-/* 331 */       HytaleServer.get().getEventBus()
-/* 332 */         .dispatchFor(AssetPackRegisterEvent.class)
-/* 333 */         .dispatch((IBaseEvent)new AssetPackRegisterEvent(pack));
+/* 333 */       HytaleServer.get().getEventBus()
+/* 334 */         .dispatchFor(AssetPackRegisterEvent.class)
+/* 335 */         .dispatch((IBaseEvent)new AssetPackRegisterEvent(pack));
 /*     */     } finally {
-/* 335 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
+/* 337 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void unregisterPack(@Nonnull String name) {
-/* 340 */     AssetPack pack = getAssetPack(name);
-/* 341 */     if (pack == null) {
-/* 342 */       getLogger().at(Level.WARNING).log("Tried to unregister non-existent asset pack: %s", name);
+/* 342 */     AssetPack pack = getAssetPack(name);
+/* 343 */     if (pack == null) {
+/* 344 */       getLogger().at(Level.WARNING).log("Tried to unregister non-existent asset pack: %s", name);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 346 */     this.assetPacks.remove(pack);
+/* 348 */     this.assetPacks.remove(pack);
 /*     */     
-/* 348 */     if (pack.getFileSystem() != null) {
+/* 350 */     if (pack.getFileSystem() != null) {
 /*     */       try {
-/* 350 */         pack.getFileSystem().close();
-/* 351 */       } catch (IOException e) {
-/* 352 */         throw SneakyThrow.sneakyThrow(e);
+/* 352 */         pack.getFileSystem().close();
+/* 353 */       } catch (IOException e) {
+/* 354 */         throw SneakyThrow.sneakyThrow(e);
 /*     */       } 
 /*     */     }
 /*     */     
-/* 356 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
+/* 358 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
 /*     */     try {
-/* 358 */       HytaleServer.get().getEventBus()
-/* 359 */         .dispatchFor(AssetPackUnregisterEvent.class)
-/* 360 */         .dispatch((IBaseEvent)new AssetPackUnregisterEvent(pack));
+/* 360 */       HytaleServer.get().getEventBus()
+/* 361 */         .dispatchFor(AssetPackUnregisterEvent.class)
+/* 362 */         .dispatch((IBaseEvent)new AssetPackUnregisterEvent(pack));
 /*     */     } finally {
-/* 362 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
+/* 364 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public AssetPack getAssetPack(@Nonnull String name) {
-/* 367 */     for (AssetPack pack : this.assetPacks) {
-/* 368 */       if (name.equals(pack.getName())) return pack; 
+/* 369 */     for (AssetPack pack : this.assetPacks) {
+/* 370 */       if (name.equals(pack.getName())) return pack; 
 /*     */     } 
-/* 370 */     return null;
+/* 372 */     return null;
 /*     */   }
 /*     */   
 /*     */   private void onRemoveStore(@Nonnull RemoveAssetStoreEvent event) {
-/* 374 */     AssetStore<?, ? extends JsonAssetWithMap<?, ? extends AssetMap<?, ?>>, ? extends AssetMap<?, ? extends JsonAssetWithMap<?, ?>>> assetStore = event.getAssetStore();
-/* 375 */     String path = assetStore.getPath();
-/* 376 */     if (path == null)
+/* 376 */     AssetStore<?, ? extends JsonAssetWithMap<?, ? extends AssetMap<?, ?>>, ? extends AssetMap<?, ? extends JsonAssetWithMap<?, ?>>> assetStore = event.getAssetStore();
+/* 377 */     String path = assetStore.getPath();
+/* 378 */     if (path == null)
 /*     */       return; 
-/* 378 */     for (AssetPack pack : this.assetPacks) {
-/* 379 */       if (pack.isImmutable())
+/* 380 */     for (AssetPack pack : this.assetPacks) {
+/* 381 */       if (pack.isImmutable())
 /*     */         continue; 
-/* 381 */       Path assetsPath = pack.getRoot().resolve("Server").resolve(path);
-/* 382 */       if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
-/* 383 */         assetStore.removeFileMonitor(assetsPath);
+/* 383 */       Path assetsPath = pack.getRoot().resolve("Server").resolve(path);
+/* 384 */       if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
+/* 385 */         assetStore.removeFileMonitor(assetsPath);
 /*     */       }
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   private void onNewStore(@Nonnull RegisterAssetStoreEvent event) {
-/* 390 */     if (!AssetRegistry.HAS_INIT)
-/* 391 */       return;  this.pendingAssetStores.add(event.getAssetStore());
+/* 392 */     if (!AssetRegistry.HAS_INIT)
+/* 393 */       return;  this.pendingAssetStores.add(event.getAssetStore());
 /*     */   }
 /*     */   
 /*     */   public void initPendingStores() {
-/* 395 */     for (int i = 0; i < this.pendingAssetStores.size(); i++) {
-/* 396 */       initStore(this.pendingAssetStores.get(i));
+/* 397 */     for (int i = 0; i < this.pendingAssetStores.size(); i++) {
+/* 398 */       initStore(this.pendingAssetStores.get(i));
 /*     */     }
-/* 398 */     this.pendingAssetStores.clear();
+/* 400 */     this.pendingAssetStores.clear();
 /*     */   }
 /*     */   
 /*     */   private void initStore(@Nonnull AssetStore<?, ?, ?> assetStore) {
-/* 402 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
+/* 404 */     AssetRegistry.ASSET_LOCK.writeLock().lock();
 /*     */     try {
-/* 404 */       List<?> preAddedAssets = assetStore.getPreAddedAssets();
-/* 405 */       if (preAddedAssets != null && !preAddedAssets.isEmpty()) {
+/* 406 */       List<?> preAddedAssets = assetStore.getPreAddedAssets();
+/* 407 */       if (preAddedAssets != null && !preAddedAssets.isEmpty()) {
 /*     */         
-/* 407 */         AssetLoadResult loadResult = assetStore.loadAssets("Hytale:Hytale", preAddedAssets);
-/* 408 */         if (loadResult.hasFailed()) throw new RuntimeException("Failed to load asset store: " + String.valueOf(assetStore.getAssetClass()));
+/* 409 */         AssetLoadResult loadResult = assetStore.loadAssets("Hytale:Hytale", preAddedAssets);
+/* 410 */         if (loadResult.hasFailed()) throw new RuntimeException("Failed to load asset store: " + String.valueOf(assetStore.getAssetClass()));
 /*     */       
 /*     */       } 
-/* 411 */       for (AssetPack pack : this.assetPacks) {
-/* 412 */         Path serverAssetDirectory = pack.getRoot().resolve("Server");
-/* 413 */         String path = assetStore.getPath();
-/* 414 */         if (path != null) {
-/* 415 */           Path assetsPath = serverAssetDirectory.resolve(path);
-/* 416 */           if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
-/* 417 */             AssetLoadResult<?, ? extends JsonAssetWithMap<?, ? extends AssetMap<?, ?>>> loadResult = assetStore.loadAssetsFromDirectory(pack.getName(), assetsPath);
-/* 418 */             if (loadResult.hasFailed()) throw new RuntimeException("Failed to load asset store: " + String.valueOf(assetStore.getAssetClass())); 
+/* 413 */       for (AssetPack pack : this.assetPacks) {
+/* 414 */         Path serverAssetDirectory = pack.getRoot().resolve("Server");
+/* 415 */         String path = assetStore.getPath();
+/* 416 */         if (path != null) {
+/* 417 */           Path assetsPath = serverAssetDirectory.resolve(path);
+/* 418 */           if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
+/* 419 */             AssetLoadResult<?, ? extends JsonAssetWithMap<?, ? extends AssetMap<?, ?>>> loadResult = assetStore.loadAssetsFromDirectory(pack.getName(), assetsPath);
+/* 420 */             if (loadResult.hasFailed()) throw new RuntimeException("Failed to load asset store: " + String.valueOf(assetStore.getAssetClass())); 
 /*     */           } else {
-/* 420 */             getLogger().at(Level.SEVERE).log("Path for %s isn't a directory or doesn't exist: %s", assetStore.getAssetClass().getSimpleName(), assetsPath);
+/* 422 */             getLogger().at(Level.SEVERE).log("Path for %s isn't a directory or doesn't exist: %s", assetStore.getAssetClass().getSimpleName(), assetsPath);
 /*     */           } 
 /*     */         } 
 /*     */         
-/* 424 */         assetStore.validateCodecDefaults();
-/* 425 */         if (path != null) {
-/* 426 */           Path assetsPath = serverAssetDirectory.resolve(path);
-/* 427 */           if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
-/* 428 */             assetStore.addFileMonitor(pack.getName(), assetsPath);
+/* 426 */         assetStore.validateCodecDefaults();
+/* 427 */         if (path != null) {
+/* 428 */           Path assetsPath = serverAssetDirectory.resolve(path);
+/* 429 */           if (Files.isDirectory(assetsPath, new java.nio.file.LinkOption[0])) {
+/* 430 */             assetStore.addFileMonitor(pack.getName(), assetsPath);
 /*     */           }
 /*     */         } 
 /*     */       } 
-/* 432 */     } catch (IOException e) {
-/* 433 */       throw SneakyThrow.sneakyThrow(e);
+/* 434 */     } catch (IOException e) {
+/* 435 */       throw SneakyThrow.sneakyThrow(e);
 /*     */     } finally {
-/* 435 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
+/* 437 */       AssetRegistry.ASSET_LOCK.writeLock().unlock();
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   private static void validateWorldGen(@Nonnull LoadAssetEvent event) {
-/* 441 */     if (!Options.getOptionSet().has(Options.VALIDATE_WORLD_GEN))
-/* 442 */       return;  long start = System.nanoTime();
+/* 443 */     if (!Options.getOptionSet().has(Options.VALIDATE_WORLD_GEN))
+/* 444 */       return;  long start = System.nanoTime();
 /*     */     
 /*     */     try {
-/* 445 */       IWorldGenProvider provider = (IWorldGenProvider)IWorldGenProvider.CODEC.getDefault();
+/* 447 */       IWorldGenProvider provider = (IWorldGenProvider)IWorldGenProvider.CODEC.getDefault();
 /*     */ 
 /*     */       
-/* 448 */       IWorldGen generator = provider.getGenerator();
+/* 450 */       IWorldGen generator = provider.getGenerator();
 /*     */ 
 /*     */       
-/* 451 */       generator.getDefaultSpawnProvider(0);
+/* 453 */       generator.getDefaultSpawnProvider(0);
 /*     */       
-/* 453 */       if (generator instanceof ValidatableWorldGen) {
-/* 454 */         boolean valid = ((ValidatableWorldGen)generator).validate();
-/* 455 */         if (!valid) event.failed(true, "failed to validate world gen");
+/* 455 */       if (generator instanceof ValidatableWorldGen) {
+/* 456 */         boolean valid = ((ValidatableWorldGen)generator).validate();
+/* 457 */         if (!valid) event.failed(true, "failed to validate world gen");
 /*     */       
 /*     */       } 
-/* 458 */       if (generator instanceof IWorldMapProvider) { IWorldMapProvider worldMapProvider = (IWorldMapProvider)generator;
-/* 459 */         IWorldMap worldMap = worldMapProvider.getGenerator(null);
+/* 460 */       if (generator instanceof IWorldMapProvider) { IWorldMapProvider worldMapProvider = (IWorldMapProvider)generator;
+/* 461 */         IWorldMap worldMap = worldMapProvider.getGenerator(null);
 /*     */ 
 /*     */         
-/* 462 */         worldMap.getWorldMapSettings(); }
+/* 464 */         worldMap.getWorldMapSettings(); }
 /*     */     
-/* 464 */     } catch (WorldGenLoadException e) {
-/* 465 */       ((HytaleLogger.Api)HytaleLogger.getLogger().at(Level.SEVERE).withCause((Throwable)e)).log("Failed to load default world gen!");
-/* 466 */       HytaleLogger.getLogger().at(Level.SEVERE).log("\n" + e.getTraceMessage("\n"));
-/* 467 */       event.failed(true, "failed to validate world gen: " + e.getTraceMessage(" -> "));
-/* 468 */     } catch (Throwable e) {
-/* 469 */       ((HytaleLogger.Api)HytaleLogger.getLogger().at(Level.SEVERE).withCause(e)).log("Failed to load default world gen!");
-/* 470 */       event.failed(true, "failed to validate world gen");
+/* 466 */     } catch (WorldGenLoadException e) {
+/* 467 */       ((HytaleLogger.Api)HytaleLogger.getLogger().at(Level.SEVERE).withCause((Throwable)e)).log("Failed to load default world gen!");
+/* 468 */       HytaleLogger.getLogger().at(Level.SEVERE).log("\n" + e.getTraceMessage("\n"));
+/* 469 */       event.failed(true, "failed to validate world gen: " + e.getTraceMessage(" -> "));
+/* 470 */     } catch (Throwable e) {
+/* 471 */       ((HytaleLogger.Api)HytaleLogger.getLogger().at(Level.SEVERE).withCause(e)).log("Failed to load default world gen!");
+/* 472 */       event.failed(true, "failed to validate world gen");
 /*     */     } 
 /*     */     
-/* 473 */     HytaleLogger.getLogger().at(Level.INFO).log("Validate world gen phase completed! Boot time %s, Took %s", FormatUtil.nanosToString(System.nanoTime() - event.getBootStart()), FormatUtil.nanosToString(System.nanoTime() - start));
+/* 475 */     HytaleLogger.getLogger().at(Level.INFO).log("Validate world gen phase completed! Boot time %s, Took %s", FormatUtil.nanosToString(System.nanoTime() - event.getBootStart()), FormatUtil.nanosToString(System.nanoTime() - start));
 /*     */   }
 /*     */ }
 

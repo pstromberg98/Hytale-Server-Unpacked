@@ -30,7 +30,6 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
 /*    */ public class PlayerSetup
 /*    */   extends HolderSystem<EntityStore>
 /*    */ {
@@ -39,31 +38,31 @@
 /*    */   private final Query<EntityStore> query;
 /*    */   
 /*    */   public PlayerSetup(ComponentType<EntityStore, Repulsion> componentType, ComponentType<EntityStore, Player> playerComponentType) {
-/* 42 */     this.componentType = componentType;
-/* 43 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)playerComponentType, (Query)Query.not((Query)componentType) });
+/* 41 */     this.componentType = componentType;
+/* 42 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)playerComponentType, (Query)Query.not((Query)componentType) });
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public Query<EntityStore> getQuery() {
-/* 49 */     return this.query;
+/* 48 */     return this.query;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 54 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 53 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*    */     
-/* 56 */     int repulsionConfigIndex = world.getGameplayConfig().getPlayerConfig().getRepulsionConfigIndex();
-/* 57 */     if (repulsionConfigIndex == -1) {
-/* 58 */       if (holder.getComponent(this.componentType) != null) {
-/* 59 */         holder.removeComponent(this.componentType);
+/* 55 */     int repulsionConfigIndex = world.getGameplayConfig().getPlayerConfig().getRepulsionConfigIndex();
+/* 56 */     if (repulsionConfigIndex == -1) {
+/* 57 */       if (holder.getComponent(this.componentType) != null) {
+/* 58 */         holder.removeComponent(this.componentType);
 /*    */       }
 /*    */     } else {
-/* 62 */       RepulsionConfig repulsion = (RepulsionConfig)RepulsionConfig.getAssetMap().getAsset(repulsionConfigIndex);
-/* 63 */       if (holder.getComponent(this.componentType) != null) {
-/* 64 */         holder.removeComponent(this.componentType);
+/* 61 */       RepulsionConfig repulsion = (RepulsionConfig)RepulsionConfig.getAssetMap().getAsset(repulsionConfigIndex);
+/* 62 */       if (holder.getComponent(this.componentType) != null) {
+/* 63 */         holder.removeComponent(this.componentType);
 /*    */       }
-/* 66 */       holder.addComponent(this.componentType, new Repulsion(repulsion));
+/* 65 */       holder.addComponent(this.componentType, new Repulsion(repulsion));
 /*    */     } 
 /*    */   }
 /*    */   

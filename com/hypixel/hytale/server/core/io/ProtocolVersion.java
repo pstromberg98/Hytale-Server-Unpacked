@@ -9,14 +9,14 @@
 /*    */ 
 /*    */ public class ProtocolVersion
 /*    */ {
-/*    */   private final String hash;
+/*    */   private final int crc;
 /*    */   
-/*    */   public ProtocolVersion(String hash) {
-/* 15 */     this.hash = hash;
+/*    */   public ProtocolVersion(int crc) {
+/* 15 */     this.crc = crc;
 /*    */   }
 /*    */   
-/*    */   public String getHash() {
-/* 19 */     return this.hash;
+/*    */   public int getCrc() {
+/* 19 */     return this.crc;
 /*    */   }
 /*    */ 
 /*    */   
@@ -26,19 +26,18 @@
 /*    */     
 /* 27 */     ProtocolVersion that = (ProtocolVersion)o;
 /*    */     
-/* 29 */     return (this.hash != null) ? this.hash.equals(that.hash) : ((that.hash == null));
+/* 29 */     return (this.crc == that.crc);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public int hashCode() {
-/* 34 */     int result = 31 * ((this.hash != null) ? this.hash.hashCode() : 0);
-/* 35 */     return result;
+/* 34 */     return 31 * this.crc;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 41 */     return "ProtocolVersion{hash='" + this.hash + "'}";
+/* 40 */     return "ProtocolVersion{crc=" + this.crc + "}";
 /*    */   }
 /*    */ }
 

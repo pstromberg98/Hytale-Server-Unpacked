@@ -9,6 +9,7 @@
 /*    */ import java.util.ArrayList;
 /*    */ import java.util.List;
 /*    */ import javax.annotation.Nonnull;
+/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 /*    */ 
 /*    */ public class QueueProp
 /*    */   extends Prop {
@@ -17,20 +18,26 @@
 /*    */   @Nonnull
 /*    */   private final ContextDependency contextDependency;
 /*    */   @Nonnull
+/*    */   private final Bounds3i readBounds_voxelGrid;
+/*    */   @Nonnull
 /*    */   private final Bounds3i writeBounds_voxelGrid;
 /*    */   
 /*    */   public QueueProp(@Nonnull List<Prop> propsQueue) {
-/* 23 */     this.props = new ArrayList<>(propsQueue);
+/* 26 */     this.props = new ArrayList<>(propsQueue);
+/* 27 */     this.readBounds_voxelGrid = new Bounds3i();
+/* 28 */     this.writeBounds_voxelGrid = new Bounds3i();
 /*    */     
-/* 25 */     Vector3i writeRange = new Vector3i();
-/* 26 */     Vector3i readRange = new Vector3i();
-/* 27 */     for (Prop prop : propsQueue) {
-/* 28 */       writeRange = Vector3i.max(writeRange, prop.getContextDependency().getWriteRange());
-/* 29 */       readRange = Vector3i.max(readRange, prop.getContextDependency().getReadRange());
+/* 30 */     Vector3i writeRange = new Vector3i();
+/* 31 */     Vector3i readRange = new Vector3i();
+/* 32 */     for (Prop prop : propsQueue) {
+/* 33 */       writeRange = Vector3i.max(writeRange, prop.getContextDependency().getWriteRange());
+/* 34 */       readRange = Vector3i.max(readRange, prop.getContextDependency().getReadRange());
+/*    */       
+/* 36 */       this.readBounds_voxelGrid.encompass(prop.getReadBounds_voxelGrid());
+/* 37 */       this.writeBounds_voxelGrid.encompass(prop.getWriteBounds_voxelGrid());
 /*    */     } 
 /*    */     
-/* 32 */     this.contextDependency = new ContextDependency(readRange, writeRange);
-/* 33 */     this.writeBounds_voxelGrid = this.contextDependency.getTotalPropBounds_voxelGrid();
+/* 40 */     this.contextDependency = new ContextDependency(readRange, writeRange);
 /*    */   }
 /*    */ 
 /*    */ 
@@ -38,35 +45,41 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public ScanResult scan(@Nonnull Vector3i position, @Nonnull VoxelSpace<Material> materialSpace, @Nonnull WorkerIndexer.Id id) {
-/* 41 */     QueueScanResult queueScanResult = new QueueScanResult();
-/* 42 */     for (Prop prop : this.props) {
-/* 43 */       ScanResult propScanResult = prop.scan(position, materialSpace, id);
-/* 44 */       if (propScanResult.isNegative())
+/* 48 */     QueueScanResult queueScanResult = new QueueScanResult();
+/* 49 */     for (Prop prop : this.props) {
+/* 50 */       ScanResult propScanResult = prop.scan(position, materialSpace, id);
+/* 51 */       if (propScanResult.isNegative())
 /*    */         continue; 
-/* 46 */       queueScanResult.propScanResult = propScanResult;
-/* 47 */       queueScanResult.prop = prop;
-/* 48 */       return queueScanResult;
+/* 53 */       queueScanResult.propScanResult = propScanResult;
+/* 54 */       queueScanResult.prop = prop;
+/* 55 */       return queueScanResult;
 /*    */     } 
-/* 50 */     return queueScanResult;
+/* 57 */     return queueScanResult;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void place(@Nonnull Prop.Context context) {
-/* 55 */     QueueScanResult conditionalScanResult = QueueScanResult.cast(context.scanResult);
-/* 56 */     if (conditionalScanResult.isNegative())
-/* 57 */       return;  conditionalScanResult.prop.place(context);
+/* 62 */     QueueScanResult conditionalScanResult = QueueScanResult.cast(context.scanResult);
+/* 63 */     if (conditionalScanResult.isNegative())
+/* 64 */       return;  conditionalScanResult.prop.place(context);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public ContextDependency getContextDependency() {
-/* 63 */     return this.contextDependency.clone();
+/* 70 */     return this.contextDependency.clone();
+/*    */   }
+/*    */ 
+/*    */   
+/*    */   @NonNullDecl
+/*    */   public Bounds3i getReadBounds_voxelGrid() {
+/* 76 */     return this.readBounds_voxelGrid;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/*    */   public Bounds3i getWriteBounds() {
-/* 69 */     return this.writeBounds_voxelGrid;
+/*    */   public Bounds3i getWriteBounds_voxelGrid() {
+/* 82 */     return this.writeBounds_voxelGrid;
 /*    */   }
 /*    */   
 /*    */   private static class QueueScanResult implements ScanResult {
@@ -75,15 +88,15 @@
 /*    */     
 /*    */     @Nonnull
 /*    */     public static QueueScanResult cast(ScanResult scanResult) {
-/* 78 */       if (!(scanResult instanceof QueueScanResult)) {
-/* 79 */         throw new IllegalArgumentException("The provided ScanResult isn't compatible with this prop.");
+/* 91 */       if (!(scanResult instanceof QueueScanResult)) {
+/* 92 */         throw new IllegalArgumentException("The provided ScanResult isn't compatible with this prop.");
 /*    */       }
-/* 81 */       return (QueueScanResult)scanResult;
+/* 94 */       return (QueueScanResult)scanResult;
 /*    */     }
 /*    */ 
 /*    */     
 /*    */     public boolean isNegative() {
-/* 86 */       return (this.propScanResult == null || this.propScanResult.isNegative());
+/* 99 */       return (this.propScanResult == null || this.propScanResult.isNegative());
 /*    */     }
 /*    */   }
 /*    */ }

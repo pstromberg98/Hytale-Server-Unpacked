@@ -80,7 +80,7 @@
 /*    */           String commandDisplay = String.join(" ", (CharSequence[])processCommand);
 /*    */           
 /*    */           try {
-/*    */             context.sendMessage(Message.translation("server.commands.update.running").param("cmd", commandDisplay));
+/*    */             context.sendMessage(Message.translation("server.commands.git.running").param("cmd", commandDisplay));
 /*    */             
 /*    */             Process process = (new ProcessBuilder(processCommand)).directory(gitPath.toFile()).start();
 /*    */             
@@ -92,18 +92,18 @@
 /*    */               String line;
 /*    */               
 /*    */               while ((line = reader.readLine()) != null) {
-/*    */                 context.sendMessage(Message.translation("server.commands.update.runningStdOut").param("cmd", commandDisplay).param("line", line));
+/*    */                 context.sendMessage(Message.translation("server.commands.git.runningStdOut").param("cmd", commandDisplay).param("line", line));
 /*    */               }
 /*    */               reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
 /*    */               while ((line = reader.readLine()) != null) {
-/*    */                 context.sendMessage(Message.translation("server.commands.update.runningStdErr").param("cmd", commandDisplay).param("line", line));
+/*    */                 context.sendMessage(Message.translation("server.commands.git.runningStdErr").param("cmd", commandDisplay).param("line", line));
 /*    */               }
-/*    */               context.sendMessage(Message.translation("server.commands.update.done").param("cmd", commandDisplay));
+/*    */               context.sendMessage(Message.translation("server.commands.git.done").param("cmd", commandDisplay));
 /* :2 */             } catch (InterruptedException e) {
 /*    */               Thread.currentThread().interrupt();
 /*    */             } 
 /* :5 */           } catch (IOException e) {
-/*    */             context.sendMessage(Message.translation("server.commands.update.failed").param("cmd", commandDisplay).param("msg", e.getMessage()));
+/*    */             context.sendMessage(Message.translation("server.commands.git.failed").param("cmd", commandDisplay).param("msg", e.getMessage()));
 /*    */           } 
 /*    */         });
 /*    */   }

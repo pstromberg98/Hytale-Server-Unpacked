@@ -396,6 +396,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ final class CanSpawnPortal
 /*     */   extends Record
 /*     */   implements PortalDeviceSummonPage.State
@@ -414,7 +416,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #423	-> 0
+/*     */     //   #425	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$CanSpawnPortal;
@@ -427,7 +429,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #423	-> 0
+/*     */     //   #425	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$CanSpawnPortal;
@@ -441,7 +443,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #423	-> 0
+/*     */     //   #425	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$CanSpawnPortal;
@@ -449,7 +451,7 @@
 /*     */   }
 /*     */   
 /*     */   private CanSpawnPortal(PortalKey portalKey, PortalType portalType, WorldChunk worldChunk, BlockModule.BlockStateInfo blockState, PortalDevice portalDevice, PortalGameplayConfig portalGameplayConfig) {
-/* 423 */     this.portalKey = portalKey; this.portalType = portalType; this.worldChunk = worldChunk; this.blockState = blockState; this.portalDevice = portalDevice; this.portalGameplayConfig = portalGameplayConfig; } public PortalKey portalKey() { return this.portalKey; } public PortalType portalType() { return this.portalType; } public WorldChunk worldChunk() { return this.worldChunk; } public BlockModule.BlockStateInfo blockState() { return this.blockState; } public PortalDevice portalDevice() { return this.portalDevice; } public PortalGameplayConfig portalGameplayConfig() { return this.portalGameplayConfig; }
+/* 425 */     this.portalKey = portalKey; this.portalType = portalType; this.worldChunk = worldChunk; this.blockState = blockState; this.portalDevice = portalDevice; this.portalGameplayConfig = portalGameplayConfig; } public PortalKey portalKey() { return this.portalKey; } public PortalType portalType() { return this.portalType; } public WorldChunk worldChunk() { return this.worldChunk; } public BlockModule.BlockStateInfo blockState() { return this.blockState; } public PortalDevice portalDevice() { return this.portalDevice; } public PortalGameplayConfig portalGameplayConfig() { return this.portalGameplayConfig; }
 /*     */ 
 /*     */ }
 

@@ -137,7 +137,7 @@
 /*     */   extends UpdateAssetsCommand.UpdateAssetsGitCommand
 /*     */ {
 /*     */   public UpdateAssetsResetCommand() {
-/* 140 */     super("reset", "server.commands.update.assets.reset.desc");
+/* 140 */     super("reset", "server.commands.git.assets.reset.desc");
 /*     */   }
 /*     */ 
 /*     */   

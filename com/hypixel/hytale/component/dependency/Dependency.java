@@ -8,6 +8,21 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public abstract class Dependency<ECS_TYPE>
 /*    */ {
 /*    */   @Nonnull
@@ -15,23 +30,37 @@
 /*    */   protected final int priority;
 /*    */   
 /*    */   public Dependency(@Nonnull Order order, int priority) {
-/* 18 */     this.order = order;
-/* 19 */     this.priority = priority;
+/* 33 */     this.order = order;
+/* 34 */     this.priority = priority;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   public Dependency(@Nonnull Order order, @Nonnull OrderPriority priority) {
-/* 23 */     this.order = order;
-/* 24 */     this.priority = priority.getValue();
+/* 44 */     this.order = order;
+/* 45 */     this.priority = priority.getValue();
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public Order getOrder() {
-/* 29 */     return this.order;
+/* 53 */     return this.order;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   public int getPriority() {
-/* 33 */     return this.priority;
+/* 60 */     return this.priority;
 /*    */   }
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -40,15 +69,18 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   public abstract void resolveGraphEdge(@Nonnull ComponentRegistry<ECS_TYPE> paramComponentRegistry, @Nonnull ISystem<ECS_TYPE> paramISystem, @Nonnull DependencyGraph<ECS_TYPE> paramDependencyGraph);
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 51 */     return "Dependency{order=" + String.valueOf(this.order) + "}";
+/* 83 */     return "Dependency{order=" + String.valueOf(this.order) + ", priority=" + this.priority + "}";
 /*    */   }
 /*    */ }
 

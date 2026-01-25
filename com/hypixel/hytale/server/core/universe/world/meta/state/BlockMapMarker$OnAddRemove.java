@@ -70,65 +70,66 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class OnAddRemove
 /*     */   extends RefSystem<ChunkStore>
 /*     */ {
-/*  76 */   private static final ComponentType<ChunkStore, BlockMapMarker> COMPONENT_TYPE = BlockMapMarker.getComponentType();
-/*  77 */   private static final ResourceType<ChunkStore, BlockMapMarkersResource> BLOCK_MAP_MARKERS_RESOURCE_TYPE = BlockMapMarkersResource.getResourceType();
+/*  77 */   private static final ComponentType<ChunkStore, BlockMapMarker> COMPONENT_TYPE = BlockMapMarker.getComponentType();
+/*  78 */   private static final ResourceType<ChunkStore, BlockMapMarkersResource> BLOCK_MAP_MARKERS_RESOURCE_TYPE = BlockMapMarkersResource.getResourceType();
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/*  81 */     BlockModule.BlockStateInfo blockInfo = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/*  82 */     assert blockInfo != null;
-/*  83 */     Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
-/*  84 */     if (!chunkRef.isValid()) {
+/*  82 */     BlockModule.BlockStateInfo blockInfo = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/*  83 */     assert blockInfo != null;
+/*  84 */     Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+/*  85 */     if (!chunkRef.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */     
-/*  89 */     BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(chunkRef, BlockChunk.getComponentType());
-/*  90 */     assert blockChunk != null;
+/*  90 */     BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(chunkRef, BlockChunk.getComponentType());
+/*  91 */     assert blockChunk != null;
 /*     */     
-/*  92 */     BlockMapMarker blockMapMarker = (BlockMapMarker)commandBuffer.getComponent(ref, COMPONENT_TYPE);
-/*  93 */     assert blockMapMarker != null;
+/*  93 */     BlockMapMarker blockMapMarker = (BlockMapMarker)commandBuffer.getComponent(ref, COMPONENT_TYPE);
+/*  94 */     assert blockMapMarker != null;
 /*     */     
-/*  95 */     WorldChunk wc = (WorldChunk)commandBuffer.getComponent(chunkRef, WorldChunk.getComponentType());
+/*  96 */     WorldChunk wc = (WorldChunk)commandBuffer.getComponent(chunkRef, WorldChunk.getComponentType());
 /*     */ 
 /*     */ 
 /*     */     
-/*  99 */     Vector3i blockPosition = new Vector3i(ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())), ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()), ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex())));
+/* 100 */     Vector3i blockPosition = new Vector3i(ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())), ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()), ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex())));
 /*     */ 
 /*     */     
-/* 102 */     BlockMapMarkersResource resource = (BlockMapMarkersResource)commandBuffer.getResource(BLOCK_MAP_MARKERS_RESOURCE_TYPE);
-/* 103 */     resource.addMarker(blockPosition, blockMapMarker.getName(), blockMapMarker.getIcon());
+/* 103 */     BlockMapMarkersResource resource = (BlockMapMarkersResource)commandBuffer.getResource(BLOCK_MAP_MARKERS_RESOURCE_TYPE);
+/* 104 */     resource.addMarker(blockPosition, blockMapMarker.getName(), blockMapMarker.getIcon());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<ChunkStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 108 */     if (reason != RemoveReason.REMOVE)
+/* 109 */     if (reason != RemoveReason.REMOVE)
 /*     */       return; 
-/* 110 */     BlockModule.BlockStateInfo blockInfo = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 111 */     assert blockInfo != null;
-/* 112 */     Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
-/* 113 */     if (!chunkRef.isValid()) {
+/* 111 */     BlockModule.BlockStateInfo blockInfo = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 112 */     assert blockInfo != null;
+/* 113 */     Ref<ChunkStore> chunkRef = blockInfo.getChunkRef();
+/* 114 */     if (!chunkRef.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 117 */     WorldChunk wc = (WorldChunk)commandBuffer.getComponent(chunkRef, WorldChunk.getComponentType());
+/* 118 */     WorldChunk wc = (WorldChunk)commandBuffer.getComponent(chunkRef, WorldChunk.getComponentType());
 /*     */ 
 /*     */ 
 /*     */     
-/* 121 */     Vector3i blockPosition = new Vector3i(ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())), ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()), ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex())));
+/* 122 */     Vector3i blockPosition = new Vector3i(ChunkUtil.worldCoordFromLocalCoord(wc.getX(), ChunkUtil.xFromBlockInColumn(blockInfo.getIndex())), ChunkUtil.yFromBlockInColumn(blockInfo.getIndex()), ChunkUtil.worldCoordFromLocalCoord(wc.getZ(), ChunkUtil.zFromBlockInColumn(blockInfo.getIndex())));
 /*     */ 
 /*     */     
-/* 124 */     BlockMapMarkersResource resource = (BlockMapMarkersResource)commandBuffer.getResource(BLOCK_MAP_MARKERS_RESOURCE_TYPE);
-/* 125 */     resource.removeMarker(blockPosition);
+/* 125 */     BlockMapMarkersResource resource = (BlockMapMarkersResource)commandBuffer.getResource(BLOCK_MAP_MARKERS_RESOURCE_TYPE);
+/* 126 */     resource.removeMarker(blockPosition);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public Query<ChunkStore> getQuery() {
-/* 131 */     return (Query)COMPONENT_TYPE;
+/* 132 */     return (Query)COMPONENT_TYPE;
 /*     */   }
 /*     */ }
 

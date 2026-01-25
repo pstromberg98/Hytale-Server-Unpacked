@@ -65,18 +65,18 @@
 /*  65 */     byte nullBits = buf.getByte(offset);
 /*  66 */     obj.clientTimestamp = buf.getLongLE(offset + 1);
 /*  67 */     obj.activeSlot = buf.getIntLE(offset + 9);
-/*  68 */     if ((nullBits & 0x2) != 0) obj.screenPoint = Vector2f.deserialize(buf, offset + 13); 
-/*  69 */     if ((nullBits & 0x4) != 0) obj.mouseButton = MouseButtonEvent.deserialize(buf, offset + 21); 
-/*  70 */     if ((nullBits & 0x10) != 0) obj.worldInteraction = WorldInteraction.deserialize(buf, offset + 24);
+/*  68 */     if ((nullBits & 0x1) != 0) obj.screenPoint = Vector2f.deserialize(buf, offset + 13); 
+/*  69 */     if ((nullBits & 0x2) != 0) obj.mouseButton = MouseButtonEvent.deserialize(buf, offset + 21); 
+/*  70 */     if ((nullBits & 0x4) != 0) obj.worldInteraction = WorldInteraction.deserialize(buf, offset + 24);
 /*     */     
-/*  72 */     if ((nullBits & 0x1) != 0) {
+/*  72 */     if ((nullBits & 0x8) != 0) {
 /*  73 */       int varPos0 = offset + 52 + buf.getIntLE(offset + 44);
 /*  74 */       int itemInHandIdLen = VarInt.peek(buf, varPos0);
 /*  75 */       if (itemInHandIdLen < 0) throw ProtocolException.negativeLength("ItemInHandId", itemInHandIdLen); 
 /*  76 */       if (itemInHandIdLen > 4096000) throw ProtocolException.stringTooLong("ItemInHandId", itemInHandIdLen, 4096000); 
 /*  77 */       obj.itemInHandId = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  79 */     if ((nullBits & 0x8) != 0) {
+/*  79 */     if ((nullBits & 0x10) != 0) {
 /*  80 */       int varPos1 = offset + 52 + buf.getIntLE(offset + 48);
 /*  81 */       obj.mouseMotion = MouseMotionEvent.deserialize(buf, varPos1);
 /*     */     } 
@@ -87,13 +87,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  88 */     byte nullBits = buf.getByte(offset);
 /*  89 */     int maxEnd = 52;
-/*  90 */     if ((nullBits & 0x1) != 0) {
+/*  90 */     if ((nullBits & 0x8) != 0) {
 /*  91 */       int fieldOffset0 = buf.getIntLE(offset + 44);
 /*  92 */       int pos0 = offset + 52 + fieldOffset0;
 /*  93 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  94 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  96 */     if ((nullBits & 0x8) != 0) {
+/*  96 */     if ((nullBits & 0x10) != 0) {
 /*  97 */       int fieldOffset1 = buf.getIntLE(offset + 48);
 /*  98 */       int pos1 = offset + 52 + fieldOffset1;
 /*  99 */       pos1 += MouseMotionEvent.computeBytesConsumed(buf, pos1);
@@ -107,11 +107,11 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 108 */     int startPos = buf.writerIndex();
 /* 109 */     byte nullBits = 0;
-/* 110 */     if (this.itemInHandId != null) nullBits = (byte)(nullBits | 0x1); 
-/* 111 */     if (this.screenPoint != null) nullBits = (byte)(nullBits | 0x2); 
-/* 112 */     if (this.mouseButton != null) nullBits = (byte)(nullBits | 0x4); 
-/* 113 */     if (this.mouseMotion != null) nullBits = (byte)(nullBits | 0x8); 
-/* 114 */     if (this.worldInteraction != null) nullBits = (byte)(nullBits | 0x10); 
+/* 110 */     if (this.screenPoint != null) nullBits = (byte)(nullBits | 0x1); 
+/* 111 */     if (this.mouseButton != null) nullBits = (byte)(nullBits | 0x2); 
+/* 112 */     if (this.worldInteraction != null) nullBits = (byte)(nullBits | 0x4); 
+/* 113 */     if (this.itemInHandId != null) nullBits = (byte)(nullBits | 0x8); 
+/* 114 */     if (this.mouseMotion != null) nullBits = (byte)(nullBits | 0x10); 
 /* 115 */     buf.writeByte(nullBits);
 /*     */     
 /* 117 */     buf.writeLongLE(this.clientTimestamp);
@@ -157,7 +157,7 @@
 /* 157 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 160 */     if ((nullBits & 0x1) != 0) {
+/* 160 */     if ((nullBits & 0x8) != 0) {
 /* 161 */       int itemInHandIdOffset = buffer.getIntLE(offset + 44);
 /* 162 */       if (itemInHandIdOffset < 0) {
 /* 163 */         return ValidationResult.error("Invalid offset for ItemInHandId");
@@ -180,7 +180,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 183 */     if ((nullBits & 0x8) != 0) {
+/* 183 */     if ((nullBits & 0x10) != 0) {
 /* 184 */       int mouseMotionOffset = buffer.getIntLE(offset + 48);
 /* 185 */       if (mouseMotionOffset < 0) {
 /* 186 */         return ValidationResult.error("Invalid offset for MouseMotion");

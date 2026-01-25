@@ -10,7 +10,6 @@
 /*    */ import com.hypixel.hytale.server.core.Message;
 /*    */ import com.hypixel.hytale.server.core.command.system.CommandContext;
 /*    */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
-/*    */ import com.hypixel.hytale.server.core.entity.entities.Player;
 /*    */ import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 /*    */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 /*    */ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
@@ -18,6 +17,7 @@
 /*    */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*    */ import java.util.concurrent.Executor;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ public class TeleportHomeCommand extends AbstractPlayerCommand {
@@ -46,10 +46,7 @@
 /* 46 */     TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
 /* 47 */     teleportHistoryComponent.append(world, previousPos, previousHeadRotation, "Home");
 /*    */     
-/* 49 */     Transform homeTransform = Player.getRespawnPosition(ref, world.getName(), (ComponentAccessor)store);
-/* 50 */     Teleport teleportComponent = Teleport.createForPlayer(null, homeTransform);
-/* 51 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
-/* 52 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_SELF_HOME);
+/* 49 */     Player.getRespawnPosition(ref, world.getName(), (ComponentAccessor)store).thenAcceptAsync(homeTransform -> { Teleport teleportComponent = Teleport.createForPlayer(null, homeTransform); store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent); context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_SELF_HOME); }(Executor)world);
 /*    */   }
 /*    */ }
 

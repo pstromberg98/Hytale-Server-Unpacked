@@ -427,41 +427,151 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public abstract class EntityMatcher
 /*     */   implements NetworkSerializable<EntityMatcher>
 /*     */ {
-/* 433 */   public static final CodecMapCodec<EntityMatcher> CODEC = new CodecMapCodec("Type");
+/*     */   @Nonnull
+/* 516 */   public static final CodecMapCodec<EntityMatcher> CODEC = new CodecMapCodec("Type");
+/*     */ 
 /*     */ 
 /*     */   
+/*     */   @Nonnull
 /*     */   public static final BuilderCodec<EntityMatcher> BASE_CODEC;
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   protected boolean invert;
 /*     */ 
 /*     */ 
-/*     */   
-/*     */   static {
-/* 444 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(EntityMatcher.class).appendInherited(new KeyedCodec("Invert", (Codec)Codec.BOOLEAN), (o, i) -> o.invert = i.booleanValue(), o -> Boolean.valueOf(o.invert), (o, p) -> o.invert = p.invert).documentation("Inverts the result of the matcher").add()).build();
-/*     */   }
 /*     */ 
 /*     */   
-/*     */   public final boolean test(Ref<EntityStore> attacker, Ref<EntityStore> target, CommandBuffer<EntityStore> commandBuffer) {
-/* 449 */     return test0(attacker, target, commandBuffer) ^ this.invert;
+/*     */   static {
+/* 531 */     BASE_CODEC = ((BuilderCodec.Builder)BuilderCodec.abstractBuilder(EntityMatcher.class).appendInherited(new KeyedCodec("Invert", (Codec)Codec.BOOLEAN), (o, i) -> o.invert = i.booleanValue(), o -> Boolean.valueOf(o.invert), (o, p) -> o.invert = p.invert).documentation("Inverts the result of the matcher").add()).build();
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public final boolean test(@Nonnull Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> targetRef, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 549 */     return test0(sourceRef, targetRef, commandBuffer) ^ this.invert;
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public EntityMatcher toPacket() {
-/* 457 */     EntityMatcher packet = new EntityMatcher();
+/* 567 */     EntityMatcher packet = new EntityMatcher();
 /*     */     
-/* 459 */     packet.type = EntityMatcherType.Server;
-/* 460 */     packet.invert = this.invert;
-/* 461 */     return packet;
+/* 569 */     packet.type = EntityMatcherType.Server;
+/* 570 */     packet.invert = this.invert;
+/* 571 */     return packet;
 /*     */   }
 /*     */   
-/*     */   public abstract boolean test0(Ref<EntityStore> paramRef1, Ref<EntityStore> paramRef2, CommandBuffer<EntityStore> paramCommandBuffer);
+/*     */   public abstract boolean test0(@Nonnull Ref<EntityStore> paramRef1, @Nonnull Ref<EntityStore> paramRef2, @Nonnull CommandBuffer<EntityStore> paramCommandBuffer);
 /*     */ }
 
 

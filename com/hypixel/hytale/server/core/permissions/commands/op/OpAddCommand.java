@@ -19,49 +19,45 @@
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 22 */   private static final Message MESSAGE_COMMANDS_OP_ADDED = Message.translation("server.commands.op.added");
-/*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_OP_ADDED_TARGET = Message.translation("server.commands.op.added.target");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_OP_ALREADY = Message.translation("server.commands.op.already");
+/* 22 */   private static final Message MESSAGE_COMMANDS_OP_ADDED_TARGET = Message.translation("server.commands.op.added.target");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 32 */   private final RequiredArg<UUID> playerArg = withRequiredArg("player", "server.commands.op.add.player.desc", (ArgumentType)ArgTypes.PLAYER_UUID);
+/* 28 */   private final RequiredArg<UUID> playerArg = withRequiredArg("player", "server.commands.op.add.player.desc", (ArgumentType)ArgTypes.PLAYER_UUID);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public OpAddCommand() {
-/* 38 */     super("add", "server.commands.op.add.desc");
-/* 39 */     requirePermission(HytalePermissions.fromCommand("op.add"));
+/* 34 */     super("add", "server.commands.op.add.desc");
+/* 35 */     requirePermission(HytalePermissions.fromCommand("op.add"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 44 */     UUID uuid = (UUID)this.playerArg.get(context);
-/* 45 */     PermissionsModule permissionsModule = PermissionsModule.get();
-/* 46 */     String opGroup = "OP";
+/* 40 */     UUID uuid = (UUID)this.playerArg.get(context);
+/* 41 */     PermissionsModule permissionsModule = PermissionsModule.get();
+/* 42 */     String opGroup = "OP";
 /*    */ 
 /*    */     
-/* 49 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
-/* 50 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
-/* 51 */     Message displayMessage = Message.raw(displayName).bold(true);
+/* 45 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
+/* 46 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
+/* 47 */     Message displayMessage = Message.raw(displayName).bold(true);
 /*    */     
-/* 53 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
-/* 54 */     if (groups.contains("OP")) {
-/* 55 */       context.sendMessage(MESSAGE_COMMANDS_OP_ALREADY
-/* 56 */           .param("username", displayMessage));
+/* 49 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
+/* 50 */     if (groups.contains("OP")) {
+/* 51 */       context.sendMessage(Message.translation("server.commands.op.already")
+/* 52 */           .param("username", displayMessage));
 /*    */     } else {
-/* 58 */       permissionsModule.addUserToGroup(uuid, "OP");
-/* 59 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED
-/* 60 */           .param("username", displayMessage));
+/* 54 */       permissionsModule.addUserToGroup(uuid, "OP");
+/* 55 */       context.sendMessage(Message.translation("server.commands.op.added")
+/* 56 */           .param("username", displayMessage));
 /*    */ 
 /*    */       
-/* 63 */       if (playerRef != null)
-/* 64 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_ADDED_TARGET); 
+/* 59 */       if (playerRef != null)
+/* 60 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_ADDED_TARGET); 
 /*    */     } 
 /*    */   }
 /*    */ }

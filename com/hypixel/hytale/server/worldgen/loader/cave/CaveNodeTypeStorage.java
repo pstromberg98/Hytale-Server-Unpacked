@@ -67,11 +67,16 @@
 /* 67 */     Path file = this.caveFolder.resolve(String.format("%s.node.json", new Object[] { name.replace(".", File.separator) })); 
 /* 68 */     try { JsonReader reader = new JsonReader(Files.newBufferedReader(file)); 
 /* 69 */       try { JsonObject caveNodeJson = JsonParser.parseReader(reader).getAsJsonObject();
-/*    */         
-/* 71 */         CaveNodeType caveNodeType = (new CaveNodeTypeJsonLoader(this.seed, this.dataFolder, (JsonElement)caveNodeJson, name, this, this.zoneContext)).load();
-/* 72 */         reader.close(); return caveNodeType; } catch (Throwable throwable) { try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }  throw throwable; }  } catch (Throwable e)
-/* 73 */     { throw new Error(String.format("Error while loading CaveNodeType %s for world generator from %s", new Object[] { name, file.toString() }), e); }
+/* 70 */         CaveNodeType caveNodeType = loadCaveNodeType(name, caveNodeJson);
+/* 71 */         reader.close(); return caveNodeType; } catch (Throwable throwable) { try { reader.close(); } catch (Throwable throwable1) { throwable.addSuppressed(throwable1); }  throw throwable; }  } catch (Throwable e)
+/* 72 */     { throw new Error(String.format("Error while loading CaveNodeType %s for world generator from %s", new Object[] { name, file.toString() }), e); }
 /*    */   
+/*    */   }
+/*    */   
+/*    */   @Nonnull
+/*    */   public CaveNodeType loadCaveNodeType(@Nonnull String name, @Nonnull JsonObject json) {
+/* 78 */     return (new CaveNodeTypeJsonLoader(this.seed, this.dataFolder, (JsonElement)json, name, this, this.zoneContext))
+/* 79 */       .load();
 /*    */   }
 /*    */   
 /*    */   public static interface Constants {

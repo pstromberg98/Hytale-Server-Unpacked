@@ -10,25 +10,22 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class WeatherResetCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
-/*    */   @Nonnull
-/* 17 */   private static final Message MESSAGE_COMMANDS_WEATHER_RESET_FORCED_WEATHER_RESET = Message.translation("server.commands.weather.reset.forcedWeatherReset");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
 /*    */   public WeatherResetCommand() {
-/* 23 */     super("reset", "server.commands.weather.reset.desc");
-/* 24 */     addAliases(new String[] { "clear" });
+/* 20 */     super("reset", "server.commands.weather.reset.desc");
+/* 21 */     addAliases(new String[] { "clear" });
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 29 */     WeatherSetCommand.setForcedWeather(world, null, (ComponentAccessor<EntityStore>)store);
-/* 30 */     context.sendMessage(MESSAGE_COMMANDS_WEATHER_RESET_FORCED_WEATHER_RESET
-/* 31 */         .param("worldName", world.getName()));
+/* 26 */     WeatherSetCommand.setForcedWeather(world, null, (ComponentAccessor<EntityStore>)store);
+/* 27 */     context.sendMessage(Message.translation("server.commands.weather.reset.forcedWeatherReset")
+/* 28 */         .param("worldName", world.getName()));
 /*    */   }
 /*    */ }
 

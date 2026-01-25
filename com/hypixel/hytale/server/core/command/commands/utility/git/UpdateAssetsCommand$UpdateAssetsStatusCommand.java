@@ -119,7 +119,7 @@
 /*     */   extends UpdateAssetsCommand.UpdateAssetsGitCommand
 /*     */ {
 /*     */   public UpdateAssetsStatusCommand() {
-/* 122 */     super("status", "server.commands.update.assets.status.desc");
+/* 122 */     super("status", "server.commands.git.assets.status.desc");
 /*     */   }
 /*     */ 
 /*     */   

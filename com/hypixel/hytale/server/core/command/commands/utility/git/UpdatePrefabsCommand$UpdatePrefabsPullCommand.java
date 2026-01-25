@@ -167,17 +167,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class UpdatePrefabsPullCommand
 /*     */   extends UpdatePrefabsCommand.UpdatePrefabsGitCommand
 /*     */ {
 /*     */   public UpdatePrefabsPullCommand() {
-/* 174 */     super("pull", "server.commands.update.prefabs.pull.desc");
+/* 178 */     super("pull", "server.commands.git.prefabs.pull.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 180 */     return new String[][] { { "git", "pull" }, { "git", "submodule", "foreach", "git", "pull" } };
+/* 184 */     return new String[][] { { "git", "pull" }, { "git", "submodule", "foreach", "git", "pull" } };
 /*     */   }
 /*     */ }
 

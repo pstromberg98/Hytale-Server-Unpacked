@@ -934,106 +934,138 @@
 /*  934 */     this.builderManager.forceValidation(builderIndex);
 /*      */   }
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */   
 /*      */   @Nullable
-/*      */   public Pair<Ref<EntityStore>, NPCEntity> spawnEntity(@Nonnull Store<EntityStore> store, int roleIndex, @Nonnull Vector3d position, Vector3f rotation, Model spawnModel, TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn) {
-/*  940 */     return spawnEntity(store, roleIndex, position, rotation, spawnModel, (TriConsumer<NPCEntity, Holder<EntityStore>, Store<EntityStore>>)null, postSpawn);
+/*      */   public Pair<Ref<EntityStore>, NPCEntity> spawnEntity(@Nonnull Store<EntityStore> store, int roleIndex, @Nonnull Vector3d position, @Nullable Vector3f rotation, @Nullable Model spawnModel, @Nullable TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn) {
+/*  955 */     return spawnEntity(store, roleIndex, position, rotation, spawnModel, (TriConsumer<NPCEntity, Holder<EntityStore>, Store<EntityStore>>)null, postSpawn);
 /*      */   }
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ 
 /*      */   
 /*      */   @Nullable
 /*      */   public Pair<Ref<EntityStore>, NPCEntity> spawnEntity(@Nonnull Store<EntityStore> store, int roleIndex, @Nonnull Vector3d position, @Nullable Vector3f rotation, @Nullable Model spawnModel, @Nullable TriConsumer<NPCEntity, Holder<EntityStore>, Store<EntityStore>> preAddToWorld, @Nullable TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn) {
-/*  946 */     WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
-/*  947 */     NPCEntity npcComponent = new NPCEntity();
-/*  948 */     npcComponent.setSpawnInstant(worldTimeResource.getGameTime());
+/*  978 */     WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
+/*  979 */     NPCEntity npcComponent = new NPCEntity();
+/*  980 */     npcComponent.setSpawnInstant(worldTimeResource.getGameTime());
 /*      */     
-/*  950 */     if (rotation == null) {
-/*  951 */       rotation = NULL_ROTATION;
+/*  982 */     if (rotation == null) {
+/*  983 */       rotation = NULL_ROTATION;
 /*      */     }
 /*      */     
-/*  954 */     npcComponent.saveLeashInformation(position, rotation);
+/*  986 */     npcComponent.saveLeashInformation(position, rotation);
 /*      */     
-/*  956 */     String roleName = getName(roleIndex);
-/*  957 */     if (roleName == null) {
-/*  958 */       get().getLogger().at(Level.WARNING).log("Unable to spawn entity with invalid role index: %s!", roleIndex);
-/*  959 */       return null;
+/*  988 */     String roleName = getName(roleIndex);
+/*  989 */     if (roleName == null) {
+/*  990 */       get().getLogger().at(Level.WARNING).log("Unable to spawn entity with invalid role index: %s!", roleIndex);
+/*  991 */       return null;
 /*      */     } 
 /*      */     
-/*  962 */     npcComponent.setRoleName(roleName);
-/*  963 */     npcComponent.setRoleIndex(roleIndex);
+/*  994 */     npcComponent.setRoleName(roleName);
+/*  995 */     npcComponent.setRoleIndex(roleIndex);
 /*      */     
-/*  965 */     Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-/*  966 */     holder.addComponent(NPCEntity.getComponentType(), (Component)npcComponent);
-/*  967 */     holder.addComponent(TransformComponent.getComponentType(), (Component)new TransformComponent(position, rotation));
-/*  968 */     holder.addComponent(HeadRotation.getComponentType(), (Component)new HeadRotation(rotation));
+/*  997 */     Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+/*  998 */     holder.addComponent(NPCEntity.getComponentType(), (Component)npcComponent);
+/*  999 */     holder.addComponent(TransformComponent.getComponentType(), (Component)new TransformComponent(position, rotation));
+/* 1000 */     holder.addComponent(HeadRotation.getComponentType(), (Component)new HeadRotation(rotation));
 /*      */     
-/*  970 */     DisplayNameComponent displayNameComponent = new DisplayNameComponent(Message.raw(roleName));
-/*  971 */     holder.addComponent(DisplayNameComponent.getComponentType(), (Component)displayNameComponent);
+/* 1002 */     DisplayNameComponent displayNameComponent = new DisplayNameComponent(Message.raw(roleName));
+/* 1003 */     holder.addComponent(DisplayNameComponent.getComponentType(), (Component)displayNameComponent);
 /*      */     
-/*  973 */     holder.ensureComponent(UUIDComponent.getComponentType());
-/*  974 */     if (spawnModel != null) {
-/*  975 */       npcComponent.setInitialModelScale(spawnModel.getScale());
-/*  976 */       holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(spawnModel));
-/*  977 */       holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(spawnModel.toReference()));
-/*      */     } 
-/*      */ 
-/*      */     
-/*  981 */     if (preAddToWorld != null) preAddToWorld.accept(npcComponent, holder, store);
-/*      */ 
-/*      */ 
-/*      */     
-/*  985 */     Ref<EntityStore> ref = store.addEntity(holder, AddReason.SPAWN);
-/*  986 */     if (ref == null) {
-/*  987 */       get().getLogger().at(Level.WARNING).log("Unable to handle non-spawned entity: %s!", getName(roleIndex));
-/*  988 */       return null;
+/* 1005 */     holder.ensureComponent(UUIDComponent.getComponentType());
+/* 1006 */     if (spawnModel != null) {
+/* 1007 */       npcComponent.setInitialModelScale(spawnModel.getScale());
+/* 1008 */       holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(spawnModel));
+/* 1009 */       holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(spawnModel.toReference()));
 /*      */     } 
 /*      */ 
 /*      */     
-/*  992 */     if (postSpawn != null) postSpawn.accept(npcComponent, ref, store);
+/* 1013 */     if (preAddToWorld != null) preAddToWorld.accept(npcComponent, holder, store);
+/*      */ 
+/*      */ 
 /*      */     
-/*  994 */     return Pair.of(ref, npcComponent);
+/* 1017 */     Ref<EntityStore> ref = store.addEntity(holder, AddReason.SPAWN);
+/* 1018 */     if (ref == null) {
+/* 1019 */       get().getLogger().at(Level.WARNING).log("Unable to handle non-spawned entity: %s!", getName(roleIndex));
+/* 1020 */       return null;
+/*      */     } 
+/*      */ 
+/*      */     
+/* 1024 */     if (postSpawn != null) postSpawn.accept(npcComponent, ref, store);
+/*      */     
+/* 1026 */     return Pair.of(ref, npcComponent);
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public BuilderInfo prepareRoleBuilderInfo(int roleIndex) {
 /*      */     BuilderInfo builderInfo;
 /*      */     try {
-/* 1001 */       builderInfo = this.builderManager.getCachedBuilderInfo(roleIndex, Role.class);
-/* 1002 */       if (this.validateBuilder) {
-/* 1003 */         if (!builderInfo.isValidated()) {
-/* 1004 */           this.builderManager.validateBuilder(builderInfo);
+/* 1033 */       builderInfo = this.builderManager.getCachedBuilderInfo(roleIndex, Role.class);
+/* 1034 */       if (this.validateBuilder) {
+/* 1035 */         if (!builderInfo.isValidated()) {
+/* 1036 */           this.builderManager.validateBuilder(builderInfo);
 /*      */         }
-/* 1006 */         if (!builderInfo.isValid()) {
-/* 1007 */           throw new SkipSentryException(new IllegalStateException("Builder " + builderInfo.getKeyName() + " failed validation!"));
+/* 1038 */         if (!builderInfo.isValid()) {
+/* 1039 */           throw new SkipSentryException(new IllegalStateException("Builder " + builderInfo.getKeyName() + " failed validation!"));
 /*      */         }
 /*      */       } 
-/* 1010 */     } catch (RuntimeException e) {
-/* 1011 */       throw new SkipSentryException(new RuntimeException(String.format("Cannot use role template '%s' (%s): %s", new Object[] { getName(roleIndex), Integer.valueOf(roleIndex), e.getMessage() }), e));
+/* 1042 */     } catch (RuntimeException e) {
+/* 1043 */       throw new SkipSentryException(new RuntimeException(String.format("Cannot use role template '%s' (%s): %s", new Object[] { getName(roleIndex), Integer.valueOf(roleIndex), e.getMessage() }), e));
 /*      */     } 
-/* 1013 */     return builderInfo;
+/* 1045 */     return builderInfo;
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public static Role buildRole(@Nonnull Builder<Role> roleBuilder, @Nonnull BuilderInfo builderInfo, @Nonnull BuilderSupport builderSupport, int roleIndex) {
 /*      */     Role role;
 /*      */     try {
-/* 1020 */       StdScope scope = roleBuilder.getBuilderParameters().createScope();
-/* 1021 */       builderSupport.setScope((Scope)scope);
-/* 1022 */       builderSupport.setGlobalScope((Scope)scope);
-/* 1023 */       role = (Role)roleBuilder.build(builderSupport);
-/* 1024 */       role.postRoleBuilt(builderSupport);
-/* 1025 */     } catch (Throwable e) {
-/* 1026 */       builderInfo.setNeedsReload();
-/* 1027 */       throw new SkipSentryException(e);
+/* 1052 */       StdScope scope = roleBuilder.getBuilderParameters().createScope();
+/* 1053 */       builderSupport.setScope((Scope)scope);
+/* 1054 */       builderSupport.setGlobalScope((Scope)scope);
+/* 1055 */       role = (Role)roleBuilder.build(builderSupport);
+/* 1056 */       role.postRoleBuilt(builderSupport);
+/* 1057 */     } catch (Throwable e) {
+/* 1058 */       builderInfo.setNeedsReload();
+/* 1059 */       throw new SkipSentryException(e);
 /*      */     } 
 /*      */     
-/* 1030 */     role.setRoleIndex(roleIndex, builderInfo.getKeyName());
-/* 1031 */     return role;
+/* 1062 */     role.setRoleIndex(roleIndex, builderInfo.getKeyName());
+/* 1063 */     return role;
 /*      */   }
 /*      */   
 /*      */   protected void onModelsChanged(@Nonnull LoadedAssetsEvent<String, ModelAsset, DefaultAssetMap<String, ModelAsset>> event) {
-/* 1035 */     Map<String, ModelAsset> loadedModelAssets = event.getLoadedAssets();
-/* 1036 */     Universe.get().getWorlds().values().forEach(world -> world.execute(()));
+/* 1067 */     Map<String, ModelAsset> loadedModelAssets = event.getLoadedAssets();
+/* 1068 */     Universe.get().getWorlds().values().forEach(world -> world.execute(()));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1052,44 +1084,44 @@
 /*      */ 
 /*      */   
 /*      */   protected void generateDescriptors() {
-/* 1055 */     getLogger().at(Level.INFO).log("===== Generating descriptors for NPC!");
-/* 1056 */     this.builderDescriptors = this.builderManager.generateDescriptors();
+/* 1087 */     getLogger().at(Level.INFO).log("===== Generating descriptors for NPC!");
+/* 1088 */     this.builderDescriptors = this.builderManager.generateDescriptors();
 /*      */   }
 /*      */   
 /*      */   protected void saveDescriptors() {
-/* 1060 */     getLogger().at(Level.INFO).log("===== Saving descriptors for NPC!");
-/* 1061 */     Path path = Path.of("npc_descriptors.json", new String[0]);
-/* 1062 */     BuilderManager.saveDescriptors(this.builderDescriptors, path);
-/* 1063 */     getLogger().at(Level.INFO).log("Saved NPC descriptors to: %s", path);
+/* 1092 */     getLogger().at(Level.INFO).log("===== Saving descriptors for NPC!");
+/* 1093 */     Path path = Path.of("npc_descriptors.json", new String[0]);
+/* 1094 */     BuilderManager.saveDescriptors(this.builderDescriptors, path);
+/* 1095 */     getLogger().at(Level.INFO).log("Saved NPC descriptors to: %s", path);
 /*      */   }
 /*      */   
 /*      */   public BuilderManager getBuilderManager() {
-/* 1067 */     return this.builderManager;
+/* 1099 */     return this.builderManager;
 /*      */   }
 /*      */   
 /*      */   public int getMaxBlackboardBlockCountPerType() {
-/* 1071 */     return this.maxBlackboardBlockCountPerType;
+/* 1103 */     return this.maxBlackboardBlockCountPerType;
 /*      */   }
 /*      */   
 /*      */   public boolean isLogFailingTestErrors() {
-/* 1075 */     return this.logFailingTestErrors;
+/* 1107 */     return this.logFailingTestErrors;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean startRoleBenchmark(double seconds, @Nonnull Consumer<Int2ObjectMap<TimeDistributionRecorder>> onFinished) {
-/* 1080 */     this.benchmarkLock.lock();
+/* 1112 */     this.benchmarkLock.lock();
 /*      */     try {
-/* 1082 */       if (isBenchmarking()) return false; 
-/* 1083 */       this.roleTickDistribution = (Int2ObjectMap<TimeDistributionRecorder>)new Int2ObjectOpenHashMap();
-/* 1084 */       this.roleTickDistributionAll = new TimeDistributionRecorder(0.01D, 1.0E-5D);
-/* 1085 */       this.roleTickDistribution.put(-1, this.roleTickDistributionAll);
+/* 1114 */       if (isBenchmarking()) return false; 
+/* 1115 */       this.roleTickDistribution = (Int2ObjectMap<TimeDistributionRecorder>)new Int2ObjectOpenHashMap();
+/* 1116 */       this.roleTickDistributionAll = new TimeDistributionRecorder(0.01D, 1.0E-5D);
+/* 1117 */       this.roleTickDistribution.put(-1, this.roleTickDistributionAll);
 /*      */     } finally {
-/* 1087 */       this.benchmarkLock.unlock();
+/* 1119 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */     
-/* 1090 */     (new CompletableFuture())
-/* 1091 */       .completeOnTimeout(null, Math.round(seconds * 1000.0D), TimeUnit.MILLISECONDS)
-/* 1092 */       .thenRunAsync(() -> {
+/* 1122 */     (new CompletableFuture())
+/* 1123 */       .completeOnTimeout(null, Math.round(seconds * 1000.0D), TimeUnit.MILLISECONDS)
+/* 1124 */       .thenRunAsync(() -> {
 /*      */           Int2ObjectMap<TimeDistributionRecorder> distribution = this.roleTickDistribution;
 /*      */           this.benchmarkLock.lock();
 /*      */           try {
@@ -1100,39 +1132,39 @@
 /*      */           } 
 /*      */           onFinished.accept(distribution);
 /*      */         });
-/* 1103 */     return true;
+/* 1135 */     return true;
 /*      */   }
 /*      */   
 /*      */   public void collectRoleTick(int roleIndex, long nanos) {
-/* 1107 */     if (!this.benchmarkLock.tryLock())
+/* 1139 */     if (!this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1109 */       if (this.roleTickDistribution != null) {
-/* 1110 */         ((TimeDistributionRecorder)this.roleTickDistribution.computeIfAbsent(roleIndex, i -> new TimeDistributionRecorder(0.01D, 1.0E-5D))).recordNanos(nanos);
-/* 1111 */         this.roleTickDistributionAll.recordNanos(nanos);
+/* 1141 */       if (this.roleTickDistribution != null) {
+/* 1142 */         ((TimeDistributionRecorder)this.roleTickDistribution.computeIfAbsent(roleIndex, i -> new TimeDistributionRecorder(0.01D, 1.0E-5D))).recordNanos(nanos);
+/* 1143 */         this.roleTickDistributionAll.recordNanos(nanos);
 /*      */       } 
 /*      */     } finally {
-/* 1114 */       this.benchmarkLock.unlock();
+/* 1146 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public boolean isBenchmarkingRole() {
-/* 1119 */     return (this.roleTickDistribution != null);
+/* 1151 */     return (this.roleTickDistribution != null);
 /*      */   }
 /*      */   
 /*      */   public boolean startSensorSupportBenchmark(double seconds, @Nonnull Consumer<Int2ObjectMap<SensorSupportBenchmark>> onFinished) {
-/* 1123 */     this.benchmarkLock.lock();
+/* 1155 */     this.benchmarkLock.lock();
 /*      */     try {
-/* 1125 */       if (isBenchmarking()) return false; 
-/* 1126 */       this.roleSensorSupportDistribution = (Int2ObjectMap<SensorSupportBenchmark>)new Int2ObjectOpenHashMap();
-/* 1127 */       this.roleSensorSupportDistributionAll = new SensorSupportBenchmark();
-/* 1128 */       this.roleSensorSupportDistribution.put(-1, this.roleSensorSupportDistributionAll);
+/* 1157 */       if (isBenchmarking()) return false; 
+/* 1158 */       this.roleSensorSupportDistribution = (Int2ObjectMap<SensorSupportBenchmark>)new Int2ObjectOpenHashMap();
+/* 1159 */       this.roleSensorSupportDistributionAll = new SensorSupportBenchmark();
+/* 1160 */       this.roleSensorSupportDistribution.put(-1, this.roleSensorSupportDistributionAll);
 /*      */     } finally {
-/* 1130 */       this.benchmarkLock.unlock();
+/* 1162 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */     
-/* 1133 */     (new CompletableFuture())
-/* 1134 */       .completeOnTimeout(null, Math.round(seconds * 1000.0D), TimeUnit.MILLISECONDS)
-/* 1135 */       .thenRunAsync(() -> {
+/* 1165 */     (new CompletableFuture())
+/* 1166 */       .completeOnTimeout(null, Math.round(seconds * 1000.0D), TimeUnit.MILLISECONDS)
+/* 1167 */       .thenRunAsync(() -> {
 /*      */           Int2ObjectMap<SensorSupportBenchmark> distribution = this.roleSensorSupportDistribution;
 /*      */           this.benchmarkLock.lock();
 /*      */           try {
@@ -1143,153 +1175,153 @@
 /*      */           } 
 /*      */           onFinished.accept(distribution);
 /*      */         });
-/* 1146 */     return true;
+/* 1178 */     return true;
 /*      */   }
 /*      */   
 /*      */   public boolean isBenchmarkingSensorSupport() {
-/* 1150 */     return (this.roleSensorSupportDistributionAll != null);
+/* 1182 */     return (this.roleSensorSupportDistributionAll != null);
 /*      */   }
 /*      */   
 /*      */   protected boolean isBenchmarking() {
-/* 1154 */     return (isBenchmarkingRole() || isBenchmarkingSensorSupport());
+/* 1186 */     return (isBenchmarkingRole() || isBenchmarkingSensorSupport());
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportPlayerList(int roleIndex, long getNanos, double maxPlayerDistanceSorted, double maxPlayerDistance, double maxPlayerDistanceAvoidance, int numPlayers) {
-/* 1158 */     if (!this.benchmarkLock.tryLock())
+/* 1190 */     if (!this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1160 */       if (this.roleSensorSupportDistribution != null) {
-/* 1161 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectPlayerList(getNanos, maxPlayerDistanceSorted, maxPlayerDistance, maxPlayerDistanceAvoidance, numPlayers);
-/* 1162 */         this.roleSensorSupportDistributionAll.collectPlayerList(getNanos, maxPlayerDistanceSorted, maxPlayerDistance, maxPlayerDistanceAvoidance, numPlayers);
+/* 1192 */       if (this.roleSensorSupportDistribution != null) {
+/* 1193 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectPlayerList(getNanos, maxPlayerDistanceSorted, maxPlayerDistance, maxPlayerDistanceAvoidance, numPlayers);
+/* 1194 */         this.roleSensorSupportDistributionAll.collectPlayerList(getNanos, maxPlayerDistanceSorted, maxPlayerDistance, maxPlayerDistanceAvoidance, numPlayers);
 /*      */       } 
 /*      */     } finally {
-/* 1165 */       this.benchmarkLock.unlock();
+/* 1197 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportEntityList(int roleIndex, long getNanos, double maxEntityDistanceSorted, double maxEntityDistance, double maxEntityDistanceAvoidance, int numEntities) {
-/* 1170 */     if (!this.benchmarkLock.tryLock())
+/* 1202 */     if (!this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1172 */       if (this.roleSensorSupportDistribution != null) {
-/* 1173 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectEntityList(getNanos, maxEntityDistanceSorted, maxEntityDistance, maxEntityDistanceAvoidance, numEntities);
-/* 1174 */         this.roleSensorSupportDistributionAll.collectEntityList(getNanos, maxEntityDistanceSorted, maxEntityDistance, maxEntityDistanceAvoidance, numEntities);
+/* 1204 */       if (this.roleSensorSupportDistribution != null) {
+/* 1205 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectEntityList(getNanos, maxEntityDistanceSorted, maxEntityDistance, maxEntityDistanceAvoidance, numEntities);
+/* 1206 */         this.roleSensorSupportDistributionAll.collectEntityList(getNanos, maxEntityDistanceSorted, maxEntityDistance, maxEntityDistanceAvoidance, numEntities);
 /*      */       } 
 /*      */     } finally {
-/* 1177 */       this.benchmarkLock.unlock();
+/* 1209 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportLosTest(int roleIndex, boolean cacheHit, long time) {
-/* 1182 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
+/* 1214 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1184 */       if (this.roleSensorSupportDistribution != null) {
-/* 1185 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectLosTest(cacheHit, time);
-/* 1186 */         this.roleSensorSupportDistributionAll.collectLosTest(cacheHit, time);
+/* 1216 */       if (this.roleSensorSupportDistribution != null) {
+/* 1217 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectLosTest(cacheHit, time);
+/* 1218 */         this.roleSensorSupportDistributionAll.collectLosTest(cacheHit, time);
 /*      */       } 
 /*      */     } finally {
-/* 1189 */       this.benchmarkLock.unlock();
+/* 1221 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportInverseLosTest(int roleIndex, boolean cacheHit) {
-/* 1194 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
+/* 1226 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1196 */       if (this.roleSensorSupportDistribution != null) {
-/* 1197 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectInverseLosTest(cacheHit);
-/* 1198 */         this.roleSensorSupportDistributionAll.collectInverseLosTest(cacheHit);
+/* 1228 */       if (this.roleSensorSupportDistribution != null) {
+/* 1229 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectInverseLosTest(cacheHit);
+/* 1230 */         this.roleSensorSupportDistributionAll.collectInverseLosTest(cacheHit);
 /*      */       } 
 /*      */     } finally {
-/* 1201 */       this.benchmarkLock.unlock();
+/* 1233 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportFriendlyBlockingTest(int roleIndex, boolean cacheHit) {
-/* 1206 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
+/* 1238 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1208 */       if (this.roleSensorSupportDistribution != null) {
-/* 1209 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectFriendlyBlockingTest(cacheHit);
-/* 1210 */         this.roleSensorSupportDistributionAll.collectFriendlyBlockingTest(cacheHit);
+/* 1240 */       if (this.roleSensorSupportDistribution != null) {
+/* 1241 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).collectFriendlyBlockingTest(cacheHit);
+/* 1242 */         this.roleSensorSupportDistributionAll.collectFriendlyBlockingTest(cacheHit);
 /*      */       } 
 /*      */     } finally {
-/* 1213 */       this.benchmarkLock.unlock();
+/* 1245 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void collectSensorSupportTickDone(int roleIndex) {
-/* 1218 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
+/* 1250 */     if (!isBenchmarkingSensorSupport() || !this.benchmarkLock.tryLock())
 /*      */       return;  try {
-/* 1220 */       if (this.roleSensorSupportDistribution != null) {
-/* 1221 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).tickDone();
-/* 1222 */         this.roleSensorSupportDistributionAll.tickDone();
+/* 1252 */       if (this.roleSensorSupportDistribution != null) {
+/* 1253 */         ((SensorSupportBenchmark)this.roleSensorSupportDistribution.computeIfAbsent(roleIndex, i -> new SensorSupportBenchmark())).tickDone();
+/* 1254 */         this.roleSensorSupportDistributionAll.tickDone();
 /*      */       } 
 /*      */     } finally {
-/* 1225 */       this.benchmarkLock.unlock();
+/* 1257 */       this.benchmarkLock.unlock();
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public <T> NPCPlugin registerCoreComponentType(String name, @Nonnull Supplier<Builder<T>> builder) {
-/* 1231 */     BuilderFactory<T> factory = this.builderManager.getFactory(((Builder)builder.get()).category());
-/* 1232 */     factory.add(name, builder);
-/* 1233 */     return this;
+/* 1263 */     BuilderFactory<T> factory = this.builderManager.getFactory(((Builder)builder.get()).category());
+/* 1264 */     factory.add(name, builder);
+/* 1265 */     return this;
 /*      */   }
 /*      */   
 /*      */   public void setRoleBuilderNeedsReload(Builder<?> builder) {
-/* 1237 */     BuilderInfo builderInfo = getBuilderInfo(builder);
-/* 1238 */     Objects.requireNonNull(builderInfo, "Have builder but can't get builderInfo for it");
-/* 1239 */     builderInfo.setNeedsReload();
+/* 1269 */     BuilderInfo builderInfo = getBuilderInfo(builder);
+/* 1270 */     Objects.requireNonNull(builderInfo, "Have builder but can't get builderInfo for it");
+/* 1271 */     builderInfo.setNeedsReload();
 /*      */   }
 /*      */   
 /*      */   protected void registerCoreFactories() {
-/* 1243 */     BuilderFactory<Role> roleFactory = new BuilderFactory(Role.class, "Type");
-/* 1244 */     roleFactory.add("Generic", com.hypixel.hytale.server.npc.role.builders.BuilderRole::new);
-/* 1245 */     roleFactory.add("Abstract", com.hypixel.hytale.server.npc.role.builders.BuilderRoleAbstract::new);
-/* 1246 */     roleFactory.add("Variant", com.hypixel.hytale.server.npc.role.builders.BuilderRoleVariant::new);
-/* 1247 */     this.builderManager.registerFactory(roleFactory);
+/* 1275 */     BuilderFactory<Role> roleFactory = new BuilderFactory(Role.class, "Type");
+/* 1276 */     roleFactory.add("Generic", com.hypixel.hytale.server.npc.role.builders.BuilderRole::new);
+/* 1277 */     roleFactory.add("Abstract", com.hypixel.hytale.server.npc.role.builders.BuilderRoleAbstract::new);
+/* 1278 */     roleFactory.add("Variant", com.hypixel.hytale.server.npc.role.builders.BuilderRoleVariant::new);
+/* 1279 */     this.builderManager.registerFactory(roleFactory);
 /*      */     
-/* 1249 */     BuilderFactory<MotionController> motionControllerFactory = new BuilderFactory(MotionController.class, "Type");
-/* 1250 */     motionControllerFactory.add("Walk", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerWalk::new);
-/* 1251 */     motionControllerFactory.add("Fly", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerFly::new);
-/* 1252 */     motionControllerFactory.add("Dive", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerDive::new);
-/* 1253 */     this.builderManager.registerFactory(motionControllerFactory);
+/* 1281 */     BuilderFactory<MotionController> motionControllerFactory = new BuilderFactory(MotionController.class, "Type");
+/* 1282 */     motionControllerFactory.add("Walk", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerWalk::new);
+/* 1283 */     motionControllerFactory.add("Fly", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerFly::new);
+/* 1284 */     motionControllerFactory.add("Dive", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerDive::new);
+/* 1285 */     this.builderManager.registerFactory(motionControllerFactory);
 /*      */     
-/* 1255 */     BuilderFactory<Map<String, MotionController>> motionControllerMapFactory = new BuilderFactory(BuilderMotionControllerMapUtil.CLASS_REFERENCE, "Type", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerMap::new);
-/* 1256 */     this.builderManager.registerFactory(motionControllerMapFactory);
+/* 1287 */     BuilderFactory<Map<String, MotionController>> motionControllerMapFactory = new BuilderFactory(BuilderMotionControllerMapUtil.CLASS_REFERENCE, "Type", com.hypixel.hytale.server.npc.movement.controllers.builders.BuilderMotionControllerMap::new);
+/* 1288 */     this.builderManager.registerFactory(motionControllerMapFactory);
 /*      */     
-/* 1258 */     BuilderFactory<ActionList> actionListFactory = new BuilderFactory(ActionList.class, "Type", com.hypixel.hytale.server.npc.instructions.builders.BuilderActionList::new);
-/* 1259 */     this.builderManager.registerFactory(actionListFactory);
+/* 1290 */     BuilderFactory<ActionList> actionListFactory = new BuilderFactory(ActionList.class, "Type", com.hypixel.hytale.server.npc.instructions.builders.BuilderActionList::new);
+/* 1291 */     this.builderManager.registerFactory(actionListFactory);
 /*      */     
-/* 1261 */     BuilderFactory<Instruction> instructionFactory = new BuilderFactory(Instruction.class, "Type", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstruction::new);
-/* 1262 */     instructionFactory.add("Random", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstructionRandomized::new);
-/* 1263 */     instructionFactory.add("Reference", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstructionReference::new);
-/* 1264 */     this.builderManager.registerFactory(instructionFactory);
+/* 1293 */     BuilderFactory<Instruction> instructionFactory = new BuilderFactory(Instruction.class, "Type", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstruction::new);
+/* 1294 */     instructionFactory.add("Random", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstructionRandomized::new);
+/* 1295 */     instructionFactory.add("Reference", com.hypixel.hytale.server.npc.instructions.builders.BuilderInstructionReference::new);
+/* 1296 */     this.builderManager.registerFactory(instructionFactory);
 /*      */     
-/* 1266 */     BuilderFactory<TransientPathDefinition> transientPathFactory = new BuilderFactory(TransientPathDefinition.class, "Type", com.hypixel.hytale.server.npc.path.builders.BuilderTransientPathDefinition::new);
-/* 1267 */     this.builderManager.registerFactory(transientPathFactory);
+/* 1298 */     BuilderFactory<TransientPathDefinition> transientPathFactory = new BuilderFactory(TransientPathDefinition.class, "Type", com.hypixel.hytale.server.npc.path.builders.BuilderTransientPathDefinition::new);
+/* 1299 */     this.builderManager.registerFactory(transientPathFactory);
 /*      */     
-/* 1269 */     BuilderFactory<RelativeWaypointDefinition> relativeWaypointFactory = new BuilderFactory(RelativeWaypointDefinition.class, "Type", com.hypixel.hytale.server.npc.path.builders.BuilderRelativeWaypointDefinition::new);
-/* 1270 */     this.builderManager.registerFactory(relativeWaypointFactory);
+/* 1301 */     BuilderFactory<RelativeWaypointDefinition> relativeWaypointFactory = new BuilderFactory(RelativeWaypointDefinition.class, "Type", com.hypixel.hytale.server.npc.path.builders.BuilderRelativeWaypointDefinition::new);
+/* 1302 */     this.builderManager.registerFactory(relativeWaypointFactory);
 /*      */     
-/* 1272 */     BuilderFactory<WeightedAction> weightedActionFactory = new BuilderFactory(WeightedAction.class, "Type", com.hypixel.hytale.server.npc.corecomponents.builders.BuilderWeightedAction::new);
-/* 1273 */     this.builderManager.registerFactory(weightedActionFactory);
+/* 1304 */     BuilderFactory<WeightedAction> weightedActionFactory = new BuilderFactory(WeightedAction.class, "Type", com.hypixel.hytale.server.npc.corecomponents.builders.BuilderWeightedAction::new);
+/* 1305 */     this.builderManager.registerFactory(weightedActionFactory);
 /*      */     
-/* 1275 */     BuilderFactory<BuilderValueToParameterMapping.ValueToParameterMapping> valueToParameterMappingFactory = new BuilderFactory(BuilderValueToParameterMapping.ValueToParameterMapping.class, "Type", BuilderValueToParameterMapping::new);
+/* 1307 */     BuilderFactory<BuilderValueToParameterMapping.ValueToParameterMapping> valueToParameterMappingFactory = new BuilderFactory(BuilderValueToParameterMapping.ValueToParameterMapping.class, "Type", BuilderValueToParameterMapping::new);
 /*      */     
-/* 1277 */     this.builderManager.registerFactory(valueToParameterMappingFactory);
+/* 1309 */     this.builderManager.registerFactory(valueToParameterMappingFactory);
 /*      */     
-/* 1279 */     StateTransitionController.registerFactories(this.builderManager);
+/* 1311 */     StateTransitionController.registerFactories(this.builderManager);
 /*      */     
-/* 1281 */     this.builderManager.registerFactory(new BuilderFactory(BodyMotion.class, "Type"));
-/* 1282 */     this.builderManager.registerFactory(new BuilderFactory(HeadMotion.class, "Type"));
-/* 1283 */     this.builderManager.registerFactory(new BuilderFactory(Action.class, "Type"));
-/* 1284 */     this.builderManager.registerFactory(new BuilderFactory(Sensor.class, "Type"));
-/* 1285 */     this.builderManager.registerFactory(new BuilderFactory(IEntityFilter.class, "Type"));
-/* 1286 */     this.builderManager.registerFactory(new BuilderFactory(ISensorEntityPrioritiser.class, "Type"));
-/* 1287 */     this.builderManager.registerFactory(new BuilderFactory(ISensorEntityCollector.class, "Type"));
+/* 1313 */     this.builderManager.registerFactory(new BuilderFactory(BodyMotion.class, "Type"));
+/* 1314 */     this.builderManager.registerFactory(new BuilderFactory(HeadMotion.class, "Type"));
+/* 1315 */     this.builderManager.registerFactory(new BuilderFactory(Action.class, "Type"));
+/* 1316 */     this.builderManager.registerFactory(new BuilderFactory(Sensor.class, "Type"));
+/* 1317 */     this.builderManager.registerFactory(new BuilderFactory(IEntityFilter.class, "Type"));
+/* 1318 */     this.builderManager.registerFactory(new BuilderFactory(ISensorEntityPrioritiser.class, "Type"));
+/* 1319 */     this.builderManager.registerFactory(new BuilderFactory(ISensorEntityCollector.class, "Type"));
 /*      */   }
 /*      */   
 /*      */   protected static void onBalanceAssetsChanged(@Nonnull LoadedAssetsEvent<String, BalanceAsset, DefaultAssetMap<String, BalanceAsset>> event) {
-/* 1291 */     Map<String, BalanceAsset> loadedAssets = event.getLoadedAssets();
-/* 1292 */     Universe.get().getWorlds().forEach((name, world) -> world.execute(()));
+/* 1323 */     Map<String, BalanceAsset> loadedAssets = event.getLoadedAssets();
+/* 1324 */     Universe.get().getWorlds().forEach((name, world) -> world.execute(()));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1308,8 +1340,8 @@
 /*      */ 
 /*      */   
 /*      */   protected static void onBalanceAssetsRemoved(@Nonnull RemovedAssetsEvent<String, BalanceAsset, DefaultAssetMap<String, BalanceAsset>> event) {
-/* 1311 */     Set<String> removedAssets = event.getRemovedAssets();
-/* 1312 */     Universe.get().getWorlds().forEach((name, world) -> world.execute(()));
+/* 1343 */     Set<String> removedAssets = event.getRemovedAssets();
+/* 1344 */     Universe.get().getWorlds().forEach((name, world) -> world.execute(()));
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1371,15 +1403,15 @@
 /*      */ 
 /*      */     
 /*      */     static {
-/* 1374 */       CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(NPCConfig.class, NPCConfig::new).append(new KeyedCodec("Descriptors", (Codec)Codec.BOOLEAN), (o, i) -> o.generateDescriptors = i.booleanValue(), o -> Boolean.valueOf(o.generateDescriptors)).add()).append(new KeyedCodec("DescriptorsFile", (Codec)Codec.BOOLEAN), (o, i) -> o.generateDescriptorsFile = i.booleanValue(), o -> Boolean.valueOf(o.generateDescriptorsFile)).add()).append(new KeyedCodec("AutoReload", (Codec)Codec.BOOLEAN), (o, i) -> o.autoReload = i.booleanValue(), o -> Boolean.valueOf(o.autoReload)).add()).append(new KeyedCodec("ValidateBuilders", (Codec)Codec.BOOLEAN), (o, i) -> o.validateBuilder = i.booleanValue(), o -> Boolean.valueOf(o.validateBuilder)).add()).append(new KeyedCodec("MaxBlackboardBlockType", (Codec)Codec.INTEGER), (o, i) -> o.maxBlackboardBlockType = i.intValue(), o -> Integer.valueOf(o.maxBlackboardBlockType)).add()).append(new KeyedCodec("LogFailingTestErrors", (Codec)Codec.BOOLEAN), (o, i) -> o.logFailingTestErrors = i.booleanValue(), o -> Boolean.valueOf(o.logFailingTestErrors)).add()).append(new KeyedCodec("PresetCoverageTestNPCs", (Codec)Codec.STRING_ARRAY), (o, i) -> o.presetCoverageTestNPCs = i, o -> o.presetCoverageTestNPCs).add()).build();
+/* 1406 */       CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(NPCConfig.class, NPCConfig::new).append(new KeyedCodec("Descriptors", (Codec)Codec.BOOLEAN), (o, i) -> o.generateDescriptors = i.booleanValue(), o -> Boolean.valueOf(o.generateDescriptors)).add()).append(new KeyedCodec("DescriptorsFile", (Codec)Codec.BOOLEAN), (o, i) -> o.generateDescriptorsFile = i.booleanValue(), o -> Boolean.valueOf(o.generateDescriptorsFile)).add()).append(new KeyedCodec("AutoReload", (Codec)Codec.BOOLEAN), (o, i) -> o.autoReload = i.booleanValue(), o -> Boolean.valueOf(o.autoReload)).add()).append(new KeyedCodec("ValidateBuilders", (Codec)Codec.BOOLEAN), (o, i) -> o.validateBuilder = i.booleanValue(), o -> Boolean.valueOf(o.validateBuilder)).add()).append(new KeyedCodec("MaxBlackboardBlockType", (Codec)Codec.INTEGER), (o, i) -> o.maxBlackboardBlockType = i.intValue(), o -> Integer.valueOf(o.maxBlackboardBlockType)).add()).append(new KeyedCodec("LogFailingTestErrors", (Codec)Codec.BOOLEAN), (o, i) -> o.logFailingTestErrors = i.booleanValue(), o -> Boolean.valueOf(o.logFailingTestErrors)).add()).append(new KeyedCodec("PresetCoverageTestNPCs", (Codec)Codec.STRING_ARRAY), (o, i) -> o.presetCoverageTestNPCs = i, o -> o.presetCoverageTestNPCs).add()).build();
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     private boolean autoReload = true;
 /*      */     private boolean validateBuilder = true;
-/* 1380 */     private int maxBlackboardBlockType = 20;
+/* 1412 */     private int maxBlackboardBlockType = 20;
 /*      */     private boolean logFailingTestErrors;
-/* 1382 */     private String[] presetCoverageTestNPCs = new String[] { "Test_Bird", "Test_Block_Sensor", "Test_Attack_Bow", "Test_Combat_Sensor_Sheep", "Test_Bow_Charge", "Test_OffHand_Swap", "Test_Patrol_Path", "Test_Flock_Mixed#4", "Test_Group_Sheep", "Test_Attack_Flying_Ranged", "Test_Interaction_Complete_Task", "Test_Hotbar_Weapon_Swap", "Test_Inventory_Contents", "Test_Dive_Flee", "Test_Jumping", "Test_Walk_Leave", "Test_Walk_Seek", "Test_Watch", "Test_Chained_Path", "Test_Spawn_Action", "Test_State_Evaluator_Toggle", "Test_State_Evaluator_Sleep", "Test_Alarm", "Test_Timer_Repeating", "Test_Action_Model_Attachment", "Test_Animation_State_Change", "Test_Block_Change", "Test_Crouch", "Test_Drop_Item", "Test_Entity_Damage_Event", "Test_Hover_Parrot", "Test_In_Water", "Test_Light_Sensor", "Test_Model_Change", "Test_Particle_Emotions", "Test_Place_Blocks", "Test_Position_Adjustment_Wrapper", "Test_Probe", "Test_Sensor_Age", "Test_Sensor_DroppedItem", "Test_Shoot_At_Block", "Test_Species_Attitude", "Test_Standing_On_Block_Sensor", "Test_Teleport", "Test_Throw_NPC", "Test_Trigger_Spawners", "Test_Weather_Sensor", "Test_Bird_Land" };
+/* 1414 */     private String[] presetCoverageTestNPCs = new String[] { "Test_Bird", "Test_Block_Sensor", "Test_Attack_Bow", "Test_Combat_Sensor_Sheep", "Test_Bow_Charge", "Test_OffHand_Swap", "Test_Patrol_Path", "Test_Flock_Mixed#4", "Test_Group_Sheep", "Test_Attack_Flying_Ranged", "Test_Interaction_Complete_Task", "Test_Hotbar_Weapon_Swap", "Test_Inventory_Contents", "Test_Dive_Flee", "Test_Jumping", "Test_Walk_Leave", "Test_Walk_Seek", "Test_Watch", "Test_Chained_Path", "Test_Spawn_Action", "Test_State_Evaluator_Toggle", "Test_State_Evaluator_Sleep", "Test_Alarm", "Test_Timer_Repeating", "Test_Action_Model_Attachment", "Test_Animation_State_Change", "Test_Block_Change", "Test_Crouch", "Test_Drop_Item", "Test_Entity_Damage_Event", "Test_Hover_Parrot", "Test_In_Water", "Test_Light_Sensor", "Test_Model_Change", "Test_Particle_Emotions", "Test_Place_Blocks", "Test_Position_Adjustment_Wrapper", "Test_Probe", "Test_Sensor_Age", "Test_Sensor_DroppedItem", "Test_Shoot_At_Block", "Test_Species_Attitude", "Test_Standing_On_Block_Sensor", "Test_Teleport", "Test_Throw_NPC", "Test_Trigger_Spawners", "Test_Weather_Sensor", "Test_Bird_Land" };
 /*      */ 
 /*      */ 
 /*      */ 
@@ -1391,37 +1423,37 @@
 /*      */ 
 /*      */     
 /*      */     public boolean isGenerateDescriptors() {
-/* 1394 */       return this.generateDescriptors;
+/* 1426 */       return this.generateDescriptors;
 /*      */     }
 /*      */     
 /*      */     public boolean isGenerateDescriptorsFile() {
-/* 1398 */       return this.generateDescriptorsFile;
+/* 1430 */       return this.generateDescriptorsFile;
 /*      */     }
 /*      */     
 /*      */     public boolean isAutoReload() {
-/* 1402 */       return this.autoReload;
+/* 1434 */       return this.autoReload;
 /*      */     }
 /*      */     
 /*      */     public boolean isValidateBuilder() {
-/* 1406 */       return this.validateBuilder;
+/* 1438 */       return this.validateBuilder;
 /*      */     }
 /*      */     
 /*      */     public int getMaxBlackboardBlockType() {
-/* 1410 */       return this.maxBlackboardBlockType;
+/* 1442 */       return this.maxBlackboardBlockType;
 /*      */     }
 /*      */     
 /*      */     public boolean isLogFailingTestErrors() {
-/* 1414 */       return this.logFailingTestErrors;
+/* 1446 */       return this.logFailingTestErrors;
 /*      */     }
 /*      */     
 /*      */     public String[] getPresetCoverageTestNPCs() {
-/* 1418 */       return this.presetCoverageTestNPCs;
+/* 1450 */       return this.presetCoverageTestNPCs;
 /*      */     }
 /*      */   }
 /*      */   
 /*      */   public static class NPCEntityRegenerateStatsSystem extends EntityStatsSystems.Regenerate<NPCEntity> {
 /*      */     public NPCEntityRegenerateStatsSystem() {
-/* 1424 */       super(EntityStatMap.getComponentType(), NPCEntity.getComponentType());
+/* 1456 */       super(EntityStatMap.getComponentType(), NPCEntity.getComponentType());
 /*      */     }
 /*      */   }
 /*      */ }

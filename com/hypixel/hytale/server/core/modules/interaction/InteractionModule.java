@@ -251,12 +251,13 @@
 /* 251 */     Interaction.CODEC.register("Interrupt", InterruptInteraction.class, InterruptInteraction.CODEC);
 /*     */     
 /* 253 */     Interaction.CODEC.register("RunRootInteraction", RunRootInteraction.class, RunRootInteraction.CODEC);
+/* 254 */     Interaction.CODEC.register("RunOnBlockTypes", RunOnBlockTypesInteraction.class, RunOnBlockTypesInteraction.CODEC);
 /*     */     
-/* 255 */     Interaction.CODEC.register("Camera", CameraInteraction.class, CameraInteraction.CODEC);
+/* 256 */     Interaction.CODEC.register("Camera", CameraInteraction.class, CameraInteraction.CODEC);
 /*     */     
-/* 257 */     Interaction.CODEC.register("ToggleGlider", ToggleGliderInteraction.class, ToggleGliderInteraction.CODEC);
+/* 258 */     Interaction.CODEC.register("ToggleGlider", ToggleGliderInteraction.class, ToggleGliderInteraction.CODEC);
 /*     */     
-/* 259 */     OpenCustomUIInteraction.registerBlockEntityCustomPage((PluginBase)this, LaunchPad.LaunchPadSettingsPage.class, "LaunchPad", (playerRef, ref) -> ref.getStore().getArchetype(ref).contains(LaunchPad.getComponentType()) ? new LaunchPad.LaunchPadSettingsPage(playerRef, ref, CustomPageLifetime.CanDismissOrCloseThroughInteraction) : null);
+/* 260 */     OpenCustomUIInteraction.registerBlockEntityCustomPage((PluginBase)this, LaunchPad.LaunchPadSettingsPage.class, "LaunchPad", (playerRef, ref) -> ref.getStore().getArchetype(ref).contains(LaunchPad.getComponentType()) ? new LaunchPad.LaunchPadSettingsPage(playerRef, ref, CustomPageLifetime.CanDismissOrCloseThroughInteraction) : null);
 /*     */ 
 /*     */ 
 /*     */ 
@@ -264,35 +265,35 @@
 /*     */ 
 /*     */ 
 /*     */     
-/* 267 */     OpenCustomUIInteraction.PAGE_CODEC.register("ItemRepair", ItemRepairPageSupplier.class, (Codec)ItemRepairPageSupplier.CODEC);
+/* 268 */     OpenCustomUIInteraction.PAGE_CODEC.register("ItemRepair", ItemRepairPageSupplier.class, (Codec)ItemRepairPageSupplier.CODEC);
 /*     */     
-/* 269 */     SelectorType.CODEC.register("Horizontal", HorizontalSelector.class, (Codec)HorizontalSelector.CODEC);
-/* 270 */     SelectorType.CODEC.register("Stab", StabSelector.class, (Codec)StabSelector.CODEC);
-/* 271 */     SelectorType.CODEC.register("AOECircle", AOECircleSelector.class, (Codec)AOECircleSelector.CODEC);
-/* 272 */     SelectorType.CODEC.register("AOECylinder", AOECylinderSelector.class, (Codec)AOECylinderSelector.CODEC);
-/* 273 */     SelectorType.CODEC.register("Raycast", RaycastSelector.class, (Codec)RaycastSelector.CODEC);
+/* 270 */     SelectorType.CODEC.register("Horizontal", HorizontalSelector.class, (Codec)HorizontalSelector.CODEC);
+/* 271 */     SelectorType.CODEC.register("Stab", StabSelector.class, (Codec)StabSelector.CODEC);
+/* 272 */     SelectorType.CODEC.register("AOECircle", AOECircleSelector.class, (Codec)AOECircleSelector.CODEC);
+/* 273 */     SelectorType.CODEC.register("AOECylinder", AOECylinderSelector.class, (Codec)AOECylinderSelector.CODEC);
+/* 274 */     SelectorType.CODEC.register("Raycast", RaycastSelector.class, (Codec)RaycastSelector.CODEC);
 /*     */     
-/* 275 */     Knockback.CODEC.register("Directional", DirectionalKnockback.class, (Codec)DirectionalKnockback.CODEC);
-/* 276 */     Knockback.CODEC.register("Point", PointKnockback.class, (Codec)PointKnockback.CODEC);
-/* 277 */     Knockback.CODEC.register("Force", ForceKnockback.class, (Codec)ForceKnockback.CODEC);
+/* 276 */     Knockback.CODEC.register("Directional", DirectionalKnockback.class, (Codec)DirectionalKnockback.CODEC);
+/* 277 */     Knockback.CODEC.register("Point", PointKnockback.class, (Codec)PointKnockback.CODEC);
+/* 278 */     Knockback.CODEC.register("Force", ForceKnockback.class, (Codec)ForceKnockback.CODEC);
 /*     */     
-/* 279 */     eventRegistry.register(LoadedAssetsEvent.class, RootInteraction.class, InteractionModule::handledLoadedRootInteractions);
-/* 280 */     eventRegistry.register(LoadedAssetsEvent.class, Interaction.class, InteractionModule::handledLoadedInteractions);
-/* 281 */     eventRegistry.register(RemovedAssetsEvent.class, Interaction.class, InteractionModule::handledRemovedInteractions);
+/* 280 */     eventRegistry.register(LoadedAssetsEvent.class, RootInteraction.class, InteractionModule::handledLoadedRootInteractions);
+/* 281 */     eventRegistry.register(LoadedAssetsEvent.class, Interaction.class, InteractionModule::handledLoadedInteractions);
+/* 282 */     eventRegistry.register(RemovedAssetsEvent.class, Interaction.class, InteractionModule::handledRemovedInteractions);
 /*     */     
-/* 283 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.PlayerAddManagerSystem());
-/* 284 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.CleanUpSystem());
-/* 285 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.TickInteractionManagerSystem());
-/* 286 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.TrackerTickSystem());
-/* 287 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.EntityTrackerRemove(EntityTrackerSystems.Visible.getComponentType()));
+/* 284 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.PlayerAddManagerSystem());
+/* 285 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.CleanUpSystem());
+/* 286 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.TickInteractionManagerSystem());
+/* 287 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.TrackerTickSystem());
+/* 288 */     entityStoreRegistry.registerSystem((ISystem)new InteractionSystems.EntityTrackerRemove(EntityTrackerSystems.Visible.getComponentType()));
 /*     */     
-/* 289 */     getCodecRegistry((StringCodecMapCodec)SelectInteraction.EntityMatcher.CODEC).register("Vulnerable", VulnerableMatcher.class, (Codec)VulnerableMatcher.CODEC);
-/* 290 */     getCodecRegistry((StringCodecMapCodec)SelectInteraction.EntityMatcher.CODEC).register("Player", PlayerMatcher.class, (Codec)PlayerMatcher.CODEC);
+/* 290 */     getCodecRegistry((StringCodecMapCodec)SelectInteraction.EntityMatcher.CODEC).register("Vulnerable", VulnerableMatcher.class, (Codec)VulnerableMatcher.CODEC);
+/* 291 */     getCodecRegistry((StringCodecMapCodec)SelectInteraction.EntityMatcher.CODEC).register("Player", PlayerMatcher.class, (Codec)PlayerMatcher.CODEC);
 /*     */     
-/* 292 */     this.blockCounterResourceType = getChunkStoreRegistry().registerResource(BlockCounter.class, "BlockCounter", BlockCounter.CODEC);
-/* 293 */     this.trackedPlacementComponentType = getChunkStoreRegistry().registerComponent(TrackedPlacement.class, "TrackedPlacement", TrackedPlacement.CODEC);
-/* 294 */     getChunkStoreRegistry().registerSystem((ISystem)new TrackedPlacement.OnAddRemove());
-/* 295 */     getCodecRegistry(Interaction.CODEC).register("PlacementCountCondition", PlacementCountConditionInteraction.class, PlacementCountConditionInteraction.CODEC);
+/* 293 */     this.blockCounterResourceType = getChunkStoreRegistry().registerResource(BlockCounter.class, "BlockCounter", BlockCounter.CODEC);
+/* 294 */     this.trackedPlacementComponentType = getChunkStoreRegistry().registerComponent(TrackedPlacement.class, "TrackedPlacement", TrackedPlacement.CODEC);
+/* 295 */     getChunkStoreRegistry().registerSystem((ISystem)new TrackedPlacement.OnAddRemove());
+/* 296 */     getCodecRegistry(Interaction.CODEC).register("PlacementCountCondition", PlacementCountConditionInteraction.class, PlacementCountConditionInteraction.CODEC);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -301,8 +302,8 @@
 /*     */ 
 /*     */   
 /*     */   private static void handledLoadedRootInteractions(@Nonnull LoadedAssetsEvent<String, RootInteraction, ?> event) {
-/* 304 */     for (RootInteraction rootInteraction : event.getLoadedAssets().values()) {
-/* 305 */       rootInteraction.build();
+/* 305 */     for (RootInteraction rootInteraction : event.getLoadedAssets().values()) {
+/* 306 */       rootInteraction.build();
 /*     */     }
 /*     */   }
 /*     */ 
@@ -312,8 +313,8 @@
 /*     */ 
 /*     */   
 /*     */   private static void handledLoadedInteractions(@Nonnull LoadedAssetsEvent<String, Interaction, ?> event) {
-/* 315 */     for (Map.Entry<String, RootInteraction> entry : (Iterable<Map.Entry<String, RootInteraction>>)RootInteraction.getAssetMap().getAssetMap().entrySet()) {
-/* 316 */       ((RootInteraction)entry.getValue()).build(event.getLoadedAssets().keySet());
+/* 316 */     for (Map.Entry<String, RootInteraction> entry : (Iterable<Map.Entry<String, RootInteraction>>)RootInteraction.getAssetMap().getAssetMap().entrySet()) {
+/* 317 */       ((RootInteraction)entry.getValue()).build(event.getLoadedAssets().keySet());
 /*     */     }
 /*     */   }
 /*     */ 
@@ -323,8 +324,8 @@
 /*     */ 
 /*     */   
 /*     */   private static void handledRemovedInteractions(@Nonnull RemovedAssetsEvent<String, Interaction, ?> event) {
-/* 326 */     for (Map.Entry<String, RootInteraction> entry : (Iterable<Map.Entry<String, RootInteraction>>)RootInteraction.getAssetMap().getAssetMap().entrySet()) {
-/* 327 */       ((RootInteraction)entry.getValue()).build(event.getRemovedAssets());
+/* 327 */     for (Map.Entry<String, RootInteraction> entry : (Iterable<Map.Entry<String, RootInteraction>>)RootInteraction.getAssetMap().getAssetMap().entrySet()) {
+/* 328 */       ((RootInteraction)entry.getValue()).build(event.getRemovedAssets());
 /*     */     }
 /*     */   }
 /*     */ 
@@ -342,13 +343,13 @@
 /*     */   public void doMouseInteraction(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull MouseInteraction packet, @Nonnull Player playerComponent, @Nonnull PlayerRef playerRefComponent) {
 /*     */     Item item;
 /*     */     Entity targetEntity;
-/* 345 */     if (isDisabled()) {
+/* 346 */     if (isDisabled()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 349 */     byte activeHotbarSlot = playerComponent.getInventory().getActiveHotbarSlot();
-/* 350 */     if (activeHotbarSlot != packet.activeSlot) {
-/* 351 */       playerComponent.sendMessage(Message.translation("server.modules.interaction.failedGetActiveSlot").param("server", activeHotbarSlot).param("packet", packet.activeSlot));
+/* 350 */     byte activeHotbarSlot = playerComponent.getInventory().getActiveHotbarSlot();
+/* 351 */     if (activeHotbarSlot != packet.activeSlot) {
+/* 352 */       playerComponent.sendMessage(Message.translation("server.modules.interaction.failedGetActiveSlot").param("server", activeHotbarSlot).param("packet", packet.activeSlot));
 /*     */ 
 /*     */ 
 /*     */ 
@@ -358,57 +359,57 @@
 /*     */ 
 /*     */ 
 /*     */     
-/* 361 */     MouseButtonType mouseButtonType = (packet.mouseButton != null) ? packet.mouseButton.mouseButtonType : MouseButtonType.Left;
+/* 362 */     MouseButtonType mouseButtonType = (packet.mouseButton != null) ? packet.mouseButton.mouseButtonType : MouseButtonType.Left;
 /*     */     
-/* 363 */     Inventory inventory = playerComponent.getInventory();
-/* 364 */     ItemStack itemInHand = inventory.getItemInHand();
-/* 365 */     ItemStack itemInOffHand = inventory.getUtilityItem();
-/* 366 */     Item primaryItem = (itemInHand == null || itemInHand.isEmpty()) ? null : itemInHand.getItem();
-/* 367 */     Item secondaryItem = (itemInOffHand == null || itemInOffHand.isEmpty()) ? null : itemInOffHand.getItem();
+/* 364 */     Inventory inventory = playerComponent.getInventory();
+/* 365 */     ItemStack itemInHand = inventory.getItemInHand();
+/* 366 */     ItemStack itemInOffHand = inventory.getUtilityItem();
+/* 367 */     Item primaryItem = (itemInHand == null || itemInHand.isEmpty()) ? null : itemInHand.getItem();
+/* 368 */     Item secondaryItem = (itemInOffHand == null || itemInOffHand.isEmpty()) ? null : itemInOffHand.getItem();
 /*     */ 
 /*     */     
-/* 370 */     if (mouseButtonType == MouseButtonType.Left) {
-/* 371 */       item = primaryItem;
-/* 372 */     } else if (mouseButtonType == MouseButtonType.Right && secondaryItem != null) {
-/* 373 */       item = secondaryItem;
+/* 371 */     if (mouseButtonType == MouseButtonType.Left) {
+/* 372 */       item = primaryItem;
+/* 373 */     } else if (mouseButtonType == MouseButtonType.Right && secondaryItem != null) {
+/* 374 */       item = secondaryItem;
 /*     */     } else {
-/* 375 */       item = primaryItem;
+/* 376 */       item = primaryItem;
 /*     */     } 
 /*     */     
-/* 378 */     WorldInteraction worldInteraction_ = packet.worldInteraction;
-/* 379 */     BlockPosition blockPositionPacket = worldInteraction_.blockPosition;
+/* 379 */     WorldInteraction worldInteraction_ = packet.worldInteraction;
+/* 380 */     BlockPosition blockPositionPacket = worldInteraction_.blockPosition;
 /*     */     
-/* 381 */     if (!ref.isValid())
+/* 382 */     if (!ref.isValid())
 /*     */       return; 
-/* 383 */     EntityStore entityComponentStore = (EntityStore)componentAccessor.getExternalData();
+/* 384 */     EntityStore entityComponentStore = (EntityStore)componentAccessor.getExternalData();
 /*     */     
-/* 385 */     Vector3i targetBlock = (blockPositionPacket == null) ? null : new Vector3i(blockPositionPacket.x, blockPositionPacket.y, blockPositionPacket.z);
+/* 386 */     Vector3i targetBlock = (blockPositionPacket == null) ? null : new Vector3i(blockPositionPacket.x, blockPositionPacket.y, blockPositionPacket.z);
 /*     */     
-/* 387 */     if (worldInteraction_.entityId < 0) {
-/* 388 */       targetEntity = null;
+/* 388 */     if (worldInteraction_.entityId < 0) {
+/* 389 */       targetEntity = null;
 /*     */     } else {
-/* 390 */       Ref<EntityStore> entityReference = entityComponentStore.getRefFromNetworkId(worldInteraction_.entityId);
-/* 391 */       targetEntity = EntityUtils.getEntity(entityReference, componentAccessor);
+/* 391 */       Ref<EntityStore> entityReference = entityComponentStore.getRefFromNetworkId(worldInteraction_.entityId);
+/* 392 */       targetEntity = EntityUtils.getEntity(entityReference, componentAccessor);
 /*     */     } 
 /*     */     
-/* 394 */     CameraManager cameraManagerComponent = (CameraManager)componentAccessor.getComponent(ref, CameraManager.getComponentType());
-/* 395 */     assert cameraManagerComponent != null;
+/* 395 */     CameraManager cameraManagerComponent = (CameraManager)componentAccessor.getComponent(ref, CameraManager.getComponentType());
+/* 396 */     assert cameraManagerComponent != null;
 /*     */     
-/* 397 */     if (packet.mouseButton != null) {
-/* 398 */       IEventDispatcher<PlayerMouseButtonEvent, PlayerMouseButtonEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerMouseButtonEvent.class);
-/* 399 */       if (dispatcher.hasListener()) {
-/* 400 */         dispatcher.dispatch((IBaseEvent)new PlayerMouseButtonEvent(ref, playerComponent, playerRefComponent, packet.clientTimestamp, item, targetBlock, targetEntity, packet.screenPoint, packet.mouseButton));
+/* 398 */     if (packet.mouseButton != null) {
+/* 399 */       IEventDispatcher<PlayerMouseButtonEvent, PlayerMouseButtonEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerMouseButtonEvent.class);
+/* 400 */       if (dispatcher.hasListener()) {
+/* 401 */         dispatcher.dispatch((IBaseEvent)new PlayerMouseButtonEvent(ref, playerComponent, playerRefComponent, packet.clientTimestamp, item, targetBlock, targetEntity, packet.screenPoint, packet.mouseButton));
 /*     */       }
-/* 402 */       cameraManagerComponent.handleMouseButtonState(packet.mouseButton.mouseButtonType, packet.mouseButton.state, targetBlock);
+/* 403 */       cameraManagerComponent.handleMouseButtonState(packet.mouseButton.mouseButtonType, packet.mouseButton.state, targetBlock);
 /*     */     } else {
-/* 404 */       IEventDispatcher<PlayerMouseMotionEvent, PlayerMouseMotionEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerMouseMotionEvent.class);
-/* 405 */       if (dispatcher.hasListener()) {
-/* 406 */         dispatcher.dispatch((IBaseEvent)new PlayerMouseMotionEvent(ref, playerComponent, packet.clientTimestamp, item, targetBlock, targetEntity, packet.screenPoint, packet.mouseMotion));
+/* 405 */       IEventDispatcher<PlayerMouseMotionEvent, PlayerMouseMotionEvent> dispatcher = HytaleServer.get().getEventBus().dispatchFor(PlayerMouseMotionEvent.class);
+/* 406 */       if (dispatcher.hasListener()) {
+/* 407 */         dispatcher.dispatch((IBaseEvent)new PlayerMouseMotionEvent(ref, playerComponent, packet.clientTimestamp, item, targetBlock, targetEntity, packet.screenPoint, packet.mouseMotion));
 /*     */       }
 /*     */     } 
 /*     */     
-/* 410 */     cameraManagerComponent.setLastScreenPoint(new Vector2d(packet.screenPoint.x, packet.screenPoint.y));
-/* 411 */     cameraManagerComponent.setLastBlockPosition(targetBlock);
+/* 411 */     cameraManagerComponent.setLastScreenPoint(new Vector2d(packet.screenPoint.x, packet.screenPoint.y));
+/* 412 */     cameraManagerComponent.setLastBlockPosition(targetBlock);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -416,7 +417,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ComponentType<EntityStore, ChainingInteraction.Data> getChainingDataComponent() {
-/* 419 */     return this.chainingDataComponent;
+/* 420 */     return this.chainingDataComponent;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -424,7 +425,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ComponentType<EntityStore, Interactions> getInteractionsComponentType() {
-/* 427 */     return this.interactionsComponentType;
+/* 428 */     return this.interactionsComponentType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -432,7 +433,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ComponentType<EntityStore, InteractionManager> getInteractionManagerComponent() {
-/* 435 */     return this.interactionManagerComponent;
+/* 436 */     return this.interactionManagerComponent;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -440,15 +441,15 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ComponentType<ChunkStore, PlacedByInteractionComponent> getPlacedByComponentType() {
-/* 443 */     return this.placedByComponentType;
+/* 444 */     return this.placedByComponentType;
 /*     */   }
 /*     */   
 /*     */   public ResourceType<ChunkStore, BlockCounter> getBlockCounterResourceType() {
-/* 447 */     return this.blockCounterResourceType;
+/* 448 */     return this.blockCounterResourceType;
 /*     */   }
 /*     */   
 /*     */   public ComponentType<ChunkStore, TrackedPlacement> getTrackedPlacementComponentType() {
-/* 451 */     return this.trackedPlacementComponentType;
+/* 452 */     return this.trackedPlacementComponentType;
 /*     */   }
 /*     */ }
 

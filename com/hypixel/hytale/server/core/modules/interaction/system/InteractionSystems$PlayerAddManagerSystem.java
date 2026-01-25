@@ -110,25 +110,26 @@
 /*     */   @Nonnull
 /* 111 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] {
 /* 112 */         (Query)Player.getComponentType(), 
-/* 113 */         (Query)Query.not((Query)InteractionModule.get().getInteractionManagerComponent())
+/* 113 */         (Query)PlayerRef.getComponentType(), 
+/* 114 */         (Query)Query.not((Query)InteractionModule.get().getInteractionManagerComponent())
 /*     */       });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 119 */     return this.query;
+/* 120 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 125 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
-/* 126 */     assert playerComponent != null;
+/* 126 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
+/* 127 */     assert playerComponent != null;
 /*     */     
-/* 128 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
-/* 129 */     assert playerRefComponent != null;
+/* 129 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 130 */     assert playerRefComponent != null;
 /*     */     
-/* 131 */     holder.addComponent(InteractionModule.get().getInteractionManagerComponent(), (Component)new InteractionManager((LivingEntity)playerComponent, playerRefComponent, (IInteractionSimulationHandler)new InteractionSimulationHandler()));
+/* 132 */     holder.addComponent(InteractionModule.get().getInteractionManagerComponent(), (Component)new InteractionManager((LivingEntity)playerComponent, playerRefComponent, (IInteractionSimulationHandler)new InteractionSimulationHandler()));
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}

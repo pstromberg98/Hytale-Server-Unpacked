@@ -442,11 +442,187 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class PlayerRemovedSystem
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
 /*     */   public Query<EntityStore> getQuery() {
-/* 449 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 619 */     return (Query<EntityStore>)Query.and(new Query[] {
+/* 620 */           (Query)PlayerRef.getComponentType(), 
+/* 621 */           (Query)Player.getComponentType(), 
+/* 622 */           (Query)TransformComponent.getComponentType(), 
+/* 623 */           (Query)HeadRotation.getComponentType(), 
+/* 624 */           (Query)DisplayNameComponent.getComponentType()
+/*     */         });
 /*     */   }
 /*     */ 
 /*     */ 
@@ -456,41 +632,41 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 459 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 635 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 461 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
-/* 462 */     assert playerRefComponent != null;
+/* 637 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 638 */     assert playerRefComponent != null;
 /*     */     
-/* 464 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
-/* 465 */     assert playerComponent != null;
+/* 640 */     Player playerComponent = (Player)holder.getComponent(Player.getComponentType());
+/* 641 */     assert playerComponent != null;
 /*     */     
-/* 467 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
-/* 468 */     assert transformComponent != null;
+/* 643 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
+/* 644 */     assert transformComponent != null;
 /*     */     
-/* 470 */     HeadRotation headRotationComponent = (HeadRotation)holder.getComponent(HeadRotation.getComponentType());
-/* 471 */     assert headRotationComponent != null;
+/* 646 */     HeadRotation headRotationComponent = (HeadRotation)holder.getComponent(HeadRotation.getComponentType());
+/* 647 */     assert headRotationComponent != null;
 /*     */     
-/* 473 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)holder.getComponent(DisplayNameComponent.getComponentType());
-/* 474 */     assert displayNameComponent != null;
+/* 649 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)holder.getComponent(DisplayNameComponent.getComponentType());
+/* 650 */     assert displayNameComponent != null;
 /*     */     
-/* 476 */     Message displayName = displayNameComponent.getDisplayName();
+/* 652 */     Message displayName = displayNameComponent.getDisplayName();
 /*     */     
-/* 478 */     PlayerSystems.LOGGER.at(Level.INFO).log("Removing player '%s%s' from world '%s' (%s)", playerRefComponent.getUsername(), (displayName != null) ? (" (" + displayName.getAnsiMessage() + ")") : "", world.getName(), playerRefComponent.getUuid());
+/* 654 */     PlayerSystems.LOGGER.at(Level.INFO).log("Removing player '%s%s' from world '%s' (%s)", playerRefComponent.getUsername(), (displayName != null) ? (" (" + displayName.getAnsiMessage() + ")") : "", world.getName(), playerRefComponent.getUuid());
 /*     */ 
 /*     */ 
 /*     */     
-/* 482 */     playerComponent.getPlayerConfigData()
-/* 483 */       .getPerWorldData(world.getName())
-/* 484 */       .setLastPosition(new Transform(transformComponent.getPosition().clone(), headRotationComponent.getRotation().clone()));
+/* 658 */     playerComponent.getPlayerConfigData()
+/* 659 */       .getPerWorldData(world.getName())
+/* 660 */       .setLastPosition(new Transform(transformComponent.getPosition().clone(), headRotationComponent.getRotation().clone()));
 /*     */     
-/* 486 */     playerRefComponent.getPacketHandler().setQueuePackets(false);
-/* 487 */     playerRefComponent.getPacketHandler().tryFlush();
+/* 662 */     playerRefComponent.getPacketHandler().setQueuePackets(false);
+/* 663 */     playerRefComponent.getPacketHandler().tryFlush();
 /*     */ 
 /*     */     
-/* 490 */     WorldConfig worldConfig = world.getWorldConfig();
-/* 491 */     PlayerUtil.broadcastMessageToPlayers(playerRefComponent.getUuid(), Message.translation("server.general.playerLeftWorld")
-/* 492 */         .param("username", playerRefComponent.getUsername())
-/* 493 */         .param("world", (worldConfig.getDisplayName() != null) ? worldConfig.getDisplayName() : WorldConfig.formatDisplayName(world.getName())), store);
+/* 666 */     WorldConfig worldConfig = world.getWorldConfig();
+/* 667 */     PlayerUtil.broadcastMessageToPlayers(playerRefComponent.getUuid(), Message.translation("server.general.playerLeftWorld")
+/* 668 */         .param("username", playerRefComponent.getUsername())
+/* 669 */         .param("world", (worldConfig.getDisplayName() != null) ? worldConfig.getDisplayName() : WorldConfig.formatDisplayName(world.getName())), store);
 /*     */   }
 /*     */ }
 

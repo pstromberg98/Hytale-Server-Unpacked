@@ -54,57 +54,60 @@
 /*  54 */     NPCEntity npcComponent = (NPCEntity)archetypeChunk.getComponent(index, NPCEntity.getComponentType());
 /*  55 */     assert npcComponent != null;
 /*     */     
-/*  57 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
-/*  58 */     assert velocityComponent != null;
+/*  57 */     Role role = npcComponent.getRole();
+/*  58 */     if (role == null)
+/*     */       return; 
+/*  60 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, Velocity.getComponentType());
+/*  61 */     assert velocityComponent != null;
 /*     */ 
 /*     */     
-/*  61 */     for (Velocity.Instruction instruction : velocityComponent.getInstructions()) {
-/*  62 */       Vector3d velocity; VelocityConfig velocityConfig; Role npcRole; switch (instruction.getType()) {
+/*  64 */     for (Velocity.Instruction instruction : velocityComponent.getInstructions()) {
+/*  65 */       Vector3d velocity; VelocityConfig velocityConfig; switch (instruction.getType()) {
 /*     */         case Set:
-/*  64 */           velocity = instruction.getVelocity();
-/*  65 */           velocityConfig = instruction.getConfig();
-/*  66 */           npcRole = npcComponent.getRole();
+/*  67 */           velocity = instruction.getVelocity();
+/*  68 */           velocityConfig = instruction.getConfig();
 /*     */           
-/*  68 */           npcRole.processSetVelocityInstruction(velocity, velocityConfig);
+/*  70 */           role.processSetVelocityInstruction(velocity, velocityConfig);
 /*     */           
-/*  70 */           if (DebugUtils.DISPLAY_FORCES) {
-/*  71 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  72 */             assert transformComponent != null;
-/*  73 */             World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/*  74 */             DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*  72 */           if (DebugUtils.DISPLAY_FORCES) {
+/*  73 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/*  74 */             if (transformComponent != null) {
+/*  75 */               World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/*  76 */               DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*     */             } 
 /*     */           } 
 /*     */         
 /*     */         case Add:
-/*  78 */           velocity = instruction.getVelocity();
-/*  79 */           velocityConfig = instruction.getConfig();
+/*  81 */           velocity = instruction.getVelocity();
+/*  82 */           velocityConfig = instruction.getConfig();
 /*     */           
-/*  81 */           npcComponent.getRole().processAddVelocityInstruction(velocity, velocityConfig);
+/*  84 */           role.processAddVelocityInstruction(velocity, velocityConfig);
 /*     */           
-/*  83 */           if (DebugUtils.DISPLAY_FORCES) {
-/*  84 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  85 */             assert transformComponent != null;
-/*  86 */             World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/*     */             
-/*  88 */             DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*  86 */           if (DebugUtils.DISPLAY_FORCES) {
+/*  87 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/*  88 */             if (transformComponent != null) {
+/*  89 */               World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/*  90 */               DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*     */             } 
 /*     */           } 
 /*     */       } 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     } 
-/*  95 */     velocityComponent.getInstructions().clear();
+/*  98 */     velocityComponent.getInstructions().clear();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 101 */     return this.dependencies;
+/* 104 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 107 */     return this.query;
+/* 110 */     return this.query;
 /*     */   }
 /*     */ }
 

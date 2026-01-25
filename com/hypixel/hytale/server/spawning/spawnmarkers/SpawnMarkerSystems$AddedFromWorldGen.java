@@ -245,30 +245,179 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class AddedFromWorldGen
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
-/* 251 */   private final ComponentType<EntityStore, SpawnMarkerEntity> componentType = SpawnMarkerEntity.getComponentType();
-/* 252 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
-/* 253 */   private final ComponentType<EntityStore, FromWorldGen> fromWorldGenComponentType = FromWorldGen.getComponentType();
-/* 254 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.componentType, (Query)this.fromWorldGenComponentType });
+/*     */   @Nonnull
+/* 382 */   private final ComponentType<EntityStore, SpawnMarkerEntity> componentType = SpawnMarkerEntity.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/* 388 */   private final ComponentType<EntityStore, WorldGenId> worldGenIdComponentType = WorldGenId.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/* 394 */   private final ComponentType<EntityStore, FromWorldGen> fromWorldGenComponentType = FromWorldGen.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/* 400 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.componentType, (Query)this.fromWorldGenComponentType });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 259 */     return this.query;
+/* 405 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 265 */     return EntityModule.get().getPreClearMarkersGroup();
+/* 411 */     return EntityModule.get().getPreClearMarkersGroup();
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 271 */     holder.putComponent(this.worldGenIdComponentType, (Component)new WorldGenId(((FromWorldGen)holder.getComponent(this.fromWorldGenComponentType)).getWorldGenId()));
+/* 418 */     FromWorldGen fromWorldGenComponent = (FromWorldGen)holder.getComponent(this.fromWorldGenComponentType);
+/* 419 */     assert fromWorldGenComponent != null;
+/* 420 */     holder.putComponent(this.worldGenIdComponentType, (Component)new WorldGenId(fromWorldGenComponent.getWorldGenId()));
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}

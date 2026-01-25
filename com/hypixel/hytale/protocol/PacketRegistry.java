@@ -16,7 +16,7 @@
 /*  16 */   private static final Map<Class<? extends Packet>, Integer> BY_TYPE = new HashMap<>();
 /*     */   
 /*     */   static {
-/*  19 */     register(0, "Connect", (Class)Connect.class, 82, 38161, false, Connect::validateStructure, Connect::deserialize);
+/*  19 */     register(0, "Connect", (Class)Connect.class, 46, 38013, false, Connect::validateStructure, Connect::deserialize);
 /*  20 */     register(1, "Disconnect", (Class)Disconnect.class, 2, 16384007, false, Disconnect::validateStructure, Disconnect::deserialize);
 /*  21 */     register(2, "Ping", (Class)Ping.class, 29, 29, false, Ping::validateStructure, Ping::deserialize);
 /*  22 */     register(3, "Pong", (Class)Pong.class, 20, 20, false, Pong::validateStructure, Pong::deserialize);
@@ -106,7 +106,7 @@
 /* 106 */     register(113, "ReticleEvent", (Class)ReticleEvent.class, 4, 4, false, ReticleEvent::validateStructure, ReticleEvent::deserialize);
 /* 107 */     register(114, "DisplayDebug", (Class)DisplayDebug.class, 19, 32768037, false, DisplayDebug::validateStructure, DisplayDebug::deserialize);
 /* 108 */     register(115, "ClearDebugShapes", (Class)ClearDebugShapes.class, 0, 0, false, ClearDebugShapes::validateStructure, ClearDebugShapes::deserialize);
-/* 109 */     register(116, "SyncPlayerPreferences", (Class)SyncPlayerPreferences.class, 8, 8, false, SyncPlayerPreferences::validateStructure, SyncPlayerPreferences::deserialize);
+/* 109 */     register(116, "SyncPlayerPreferences", (Class)SyncPlayerPreferences.class, 12, 12, false, SyncPlayerPreferences::validateStructure, SyncPlayerPreferences::deserialize);
 /* 110 */     register(117, "ClientPlaceBlock", (Class)ClientPlaceBlock.class, 20, 20, false, ClientPlaceBlock::validateStructure, ClientPlaceBlock::deserialize);
 /* 111 */     register(118, "UpdateMemoriesFeatureStatus", (Class)UpdateMemoriesFeatureStatus.class, 1, 1, false, UpdateMemoriesFeatureStatus::validateStructure, UpdateMemoriesFeatureStatus::deserialize);
 /* 112 */     register(119, "RemoveMapMarker", (Class)RemoveMapMarker.class, 1, 16384006, false, RemoveMapMarker::validateStructure, RemoveMapMarker::deserialize);

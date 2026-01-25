@@ -70,41 +70,42 @@
 /*     */           
 /*  71 */           if (DebugUtils.DISPLAY_FORCES) {
 /*  72 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  73 */             assert transformComponent != null;
-/*  74 */             World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/*  75 */             DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*  73 */             if (transformComponent != null) {
+/*  74 */               World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/*  75 */               DebugUtils.addForce(world, transformComponent.getPosition(), velocity, velocityConfig);
+/*     */             } 
 /*     */           } 
 /*     */         
 /*     */         case Add:
-/*  79 */           velocity = instruction.getVelocity();
-/*  80 */           velocityConfig = instruction.getConfig();
-/*  81 */           playerRefComponent.getPacketHandler().writeNoCache((Packet)new ChangeVelocity((float)velocity.x, (float)velocity.y, (float)velocity.z, ChangeVelocityType.Add, (velocityConfig != null) ? velocityConfig.toPacket() : null));
+/*  80 */           velocity = instruction.getVelocity();
+/*  81 */           velocityConfig = instruction.getConfig();
+/*  82 */           playerRefComponent.getPacketHandler().writeNoCache((Packet)new ChangeVelocity((float)velocity.x, (float)velocity.y, (float)velocity.z, ChangeVelocityType.Add, (velocityConfig != null) ? velocityConfig.toPacket() : null));
 /*     */           
-/*  83 */           if (DebugUtils.DISPLAY_FORCES) {
-/*  84 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  85 */             assert transformComponent != null;
-/*  86 */             World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/*     */             
-/*  88 */             DebugUtils.addForce(world, transformComponent.getPosition(), new Vector3d(velocity.x, velocity.y, velocity.z), velocityConfig);
+/*  84 */           if (DebugUtils.DISPLAY_FORCES) {
+/*  85 */             TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/*  86 */             if (transformComponent != null) {
+/*  87 */               World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/*  88 */               DebugUtils.addForce(world, transformComponent.getPosition(), new Vector3d(velocity.x, velocity.y, velocity.z), velocityConfig);
+/*     */             } 
 /*     */           } 
 /*     */       } 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     } 
-/*  95 */     velocityComponent.getInstructions().clear();
+/*  96 */     velocityComponent.getInstructions().clear();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 101 */     return this.dependencies;
+/* 102 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 107 */     return this.query;
+/* 108 */     return this.query;
 /*     */   }
 /*     */ }
 

@@ -27,16 +27,6 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */ public final class Arguments
 /*    */   extends Record
 /*    */ {
@@ -54,7 +44,7 @@
 /*    */     //   6: areturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #63	-> 0
+/*    */     //   #53	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/hytalegenerator/chunkgenerator/ChunkRequest$Arguments;
@@ -67,7 +57,7 @@
 /*    */     //   6: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #63	-> 0
+/*    */     //   #53	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/hytalegenerator/chunkgenerator/ChunkRequest$Arguments;
@@ -81,7 +71,7 @@
 /*    */     //   7: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #63	-> 0
+/*    */     //   #53	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/hytalegenerator/chunkgenerator/ChunkRequest$Arguments;
@@ -89,7 +79,7 @@
 /*    */   }
 /*    */   
 /*    */   public Arguments(int seed, long index, int x, int z, @Nullable LongPredicate stillNeeded) {
-/* 63 */     this.seed = seed; this.index = index; this.x = x; this.z = z; this.stillNeeded = stillNeeded; } public int seed() { return this.seed; } public long index() { return this.index; } public int x() { return this.x; } public int z() { return this.z; } @Nullable public LongPredicate stillNeeded() { return this.stillNeeded; }
+/* 53 */     this.seed = seed; this.index = index; this.x = x; this.z = z; this.stillNeeded = stillNeeded; } public int seed() { return this.seed; } public long index() { return this.index; } public int x() { return this.x; } public int z() { return this.z; } @Nullable public LongPredicate stillNeeded() { return this.stillNeeded; }
 /*    */ 
 /*    */ }
 

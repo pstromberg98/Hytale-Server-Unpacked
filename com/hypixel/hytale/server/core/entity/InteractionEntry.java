@@ -126,7 +126,7 @@
 /*     */   
 /*     */   public boolean setClientState(@Nullable InteractionSyncData clientState) {
 /* 128 */     if (clientState != null && (clientState.operationCounter != this.serverState.operationCounter || clientState.rootInteraction != this.serverState.rootInteraction)) {
-/* 129 */       HytaleLogger.Api ctx = LOGGER.at(Level.WARNING);
+/* 129 */       HytaleLogger.Api ctx = LOGGER.at(Level.FINE);
 /* 130 */       if (ctx.isEnabled()) {
 /* 131 */         String info; RootInteraction root = (RootInteraction)RootInteraction.getAssetMap().getAsset(this.serverState.rootInteraction);
 /* 132 */         Operation op = root.getOperation(this.serverState.operationCounter);

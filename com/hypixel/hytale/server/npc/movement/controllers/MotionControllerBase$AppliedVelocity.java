@@ -1287,6 +1287,22 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class AppliedVelocity
 /*      */ {
 /*      */   protected final Vector3d velocity;
@@ -1294,8 +1310,8 @@
 /*      */   protected boolean canClear;
 /*      */   
 /*      */   public AppliedVelocity(Vector3d velocity, VelocityConfig config) {
-/* 1297 */     this.velocity = velocity;
-/* 1298 */     this.config = config;
+/* 1313 */     this.velocity = velocity;
+/* 1314 */     this.config = config;
 /*      */   }
 /*      */ }
 

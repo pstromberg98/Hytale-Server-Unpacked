@@ -155,7 +155,7 @@
 /*     */   extends UpdateAssetsCommand.UpdateAssetsGitCommand
 /*     */ {
 /*     */   public UpdateAssetsPullCommand() {
-/* 158 */     super("pull", "server.commands.update.assets.pull.desc");
+/* 158 */     super("pull", "server.commands.git.assets.pull.desc");
 /*     */   }
 /*     */ 
 /*     */   

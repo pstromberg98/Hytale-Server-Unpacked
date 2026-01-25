@@ -459,21 +459,14 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class CoopResidentEntitySystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
-/* 472 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 465 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 476 */     return (Query)componentType;
+/* 469 */     return (Query)componentType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -483,70 +476,70 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 486 */     if (reason == RemoveReason.UNLOAD) {
+/* 479 */     if (reason == RemoveReason.UNLOAD) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 490 */     UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
-/* 491 */     if (uuidComponent == null) {
+/* 483 */     UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+/* 484 */     if (uuidComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 495 */     UUID uuid = uuidComponent.getUuid();
+/* 488 */     UUID uuid = uuidComponent.getUuid();
 /*     */     
-/* 497 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
-/* 498 */     if (coopResidentComponent == null) {
+/* 490 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
+/* 491 */     if (coopResidentComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 502 */     Vector3i coopPosition = coopResidentComponent.getCoopLocation();
-/* 503 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 495 */     Vector3i coopPosition = coopResidentComponent.getCoopLocation();
+/* 496 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
 /*     */     
-/* 505 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
-/* 506 */     WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
-/* 507 */     if (chunk == null) {
+/* 498 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
+/* 499 */     WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
+/* 500 */     if (chunk == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 511 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
-/* 512 */     if (chunkReference == null || !chunkReference.isValid()) {
+/* 504 */     Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
+/* 505 */     if (chunkReference == null || !chunkReference.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 516 */     Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 509 */     Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */     
-/* 518 */     ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
-/* 519 */     if (chunkColumnComponent == null) {
+/* 511 */     ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
+/* 512 */     if (chunkColumnComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 523 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
-/* 524 */     if (blockChunkComponent == null) {
+/* 516 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
+/* 517 */     if (blockChunkComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 528 */     Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
-/* 529 */     if (sectionRef == null || !sectionRef.isValid()) {
+/* 521 */     Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
+/* 522 */     if (sectionRef == null || !sectionRef.isValid()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 533 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
-/* 534 */     if (blockComponentChunk == null) {
+/* 526 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
+/* 527 */     if (blockComponentChunk == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 538 */     int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
-/* 539 */     Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
-/* 540 */     if (coopEntityReference == null) {
+/* 531 */     int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
+/* 532 */     Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
+/* 533 */     if (coopEntityReference == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 544 */     CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
-/* 545 */     if (coop == null) {
+/* 537 */     CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
+/* 538 */     if (coop == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 549 */     coop.handleResidentDespawn(uuid);
+/* 542 */     coop.handleResidentDespawn(uuid);
 /*     */   }
 /*     */ }
 

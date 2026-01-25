@@ -17,66 +17,59 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class ChunkForceTickCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED = Message.translation("server.commands.errors.chunkNotLoaded");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_FORCECHUNKTICK_CHUNK_LOAD_USAGE = Message.translation("server.commands.forcechunktick.chunkLoadUsage");
-/*    */   @Nonnull
-/* 28 */   private static final Message MESSAGE_COMMANDS_FORCECHUNKTICK_BLOCKS_IN_CHUNK_TICK = Message.translation("server.commands.forcechunktick.blocksInChunkTick");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 34 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.forcetick.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
+/* 27 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.forcetick.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkForceTickCommand() {
-/* 40 */     super("forcetick", "server.commands.chunk.forcetick.desc");
+/* 33 */     super("forcetick", "server.commands.chunk.forcetick.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 45 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
-/* 46 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
+/* 38 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
+/* 39 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
 /*    */     
-/* 48 */     ChunkStore chunkStore = world.getChunkStore();
-/* 49 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
-/* 50 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
-/* 51 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/* 41 */     ChunkStore chunkStore = world.getChunkStore();
+/* 42 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
+/* 43 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
+/* 44 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*    */ 
 /*    */     
-/* 54 */     if (chunkRef == null || !chunkRef.isValid()) {
-/* 55 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED
-/* 56 */           .param("chunkX", position.x)
-/* 57 */           .param("chunkZ", position.y)
-/* 58 */           .param("world", world.getName()));
+/* 47 */     if (chunkRef == null || !chunkRef.isValid()) {
+/* 48 */       context.sendMessage(Message.translation("server.commands.errors.chunkNotLoaded")
+/* 49 */           .param("chunkX", position.x)
+/* 50 */           .param("chunkZ", position.y)
+/* 51 */           .param("world", world.getName()));
 /*    */ 
 /*    */       
-/* 61 */       context.sendMessage(MESSAGE_COMMANDS_FORCECHUNKTICK_CHUNK_LOAD_USAGE
-/* 62 */           .param("chunkX", position.x)
-/* 63 */           .param("chunkZ", position.y));
+/* 54 */       context.sendMessage(Message.translation("server.commands.forcechunktick.chunkLoadUsage")
+/* 55 */           .param("chunkX", position.x)
+/* 56 */           .param("chunkZ", position.y));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 67 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
-/* 68 */     assert blockChunkComponent != null;
+/* 60 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
+/* 61 */     assert blockChunkComponent != null;
 /*    */     
-/* 70 */     for (int x = 0; x < 32; x++) {
-/* 71 */       for (int y = 0; y < 320; y++) {
-/* 72 */         for (int z = 0; z < 32; z++) {
-/* 73 */           blockChunkComponent.setTicking(x, y, z, true);
+/* 63 */     for (int x = 0; x < 32; x++) {
+/* 64 */       for (int y = 0; y < 320; y++) {
+/* 65 */         for (int z = 0; z < 32; z++) {
+/* 66 */           blockChunkComponent.setTicking(x, y, z, true);
 /*    */         }
 /*    */       } 
 /*    */     } 
-/* 77 */     context.sendMessage(MESSAGE_COMMANDS_FORCECHUNKTICK_BLOCKS_IN_CHUNK_TICK
-/* 78 */         .param("chunkX", position.x)
-/* 79 */         .param("chunkZ", position.y));
+/* 70 */     context.sendMessage(Message.translation("server.commands.forcechunktick.blocksInChunkTick")
+/* 71 */         .param("chunkX", position.x)
+/* 72 */         .param("chunkZ", position.y));
 /*    */   }
 /*    */ }
 

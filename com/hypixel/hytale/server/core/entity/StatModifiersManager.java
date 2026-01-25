@@ -73,38 +73,37 @@
 /*     */     } 
 /*     */     
 /*  75 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
-/*  76 */     Entity entity = EntityUtils.getEntity(ref, componentAccessor);
-/*  77 */     if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
+/*  76 */     Entity entity = EntityUtils.getEntity(ref, componentAccessor); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
 /*     */     else
 /*     */     { return; }
-/*  80 */      Inventory inventory = livingEntity.getInventory();
+/*  79 */      Inventory inventory = livingEntity.getInventory();
 /*     */ 
 /*     */     
-/*  83 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> effectModifiers = calculateEffectStatModifiers(ref, componentAccessor);
-/*  84 */     applyEffectModifiers(statMap, (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)effectModifiers);
+/*  82 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> effectModifiers = calculateEffectStatModifiers(ref, componentAccessor);
+/*  83 */     applyEffectModifiers(statMap, (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)effectModifiers);
 /*     */ 
 /*     */     
-/*  87 */     BrokenPenalties brokenPenalties = world.getGameplayConfig().getItemDurabilityConfig().getBrokenPenalties();
-/*  88 */     Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = computeStatModifiers(brokenPenalties, inventory);
-/*  89 */     applyStatModifiers(statMap, statModifiers);
+/*  86 */     BrokenPenalties brokenPenalties = world.getGameplayConfig().getItemDurabilityConfig().getBrokenPenalties();
+/*  87 */     Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = computeStatModifiers(brokenPenalties, inventory);
+/*  88 */     applyStatModifiers(statMap, statModifiers);
 /*     */     
-/*  91 */     ItemStack itemInHand = inventory.getItemInHand();
-/*  92 */     addItemStatModifiers(itemInHand, statMap, "*Weapon_", v -> (v.getWeapon() != null) ? v.getWeapon().getStatModifiers() : null);
+/*  90 */     ItemStack itemInHand = inventory.getItemInHand();
+/*  91 */     addItemStatModifiers(itemInHand, statMap, "*Weapon_", v -> (v.getWeapon() != null) ? v.getWeapon().getStatModifiers() : null);
 /*     */ 
 /*     */     
-/*  95 */     if (itemInHand == null || itemInHand.getItem().getUtility().isCompatible()) {
-/*  96 */       addItemStatModifiers(inventory.getUtilityItem(), statMap, "*Utility_", v -> v.getUtility().getStatModifiers());
+/*  94 */     if (itemInHand == null || itemInHand.getItem().getUtility().isCompatible()) {
+/*  95 */       addItemStatModifiers(inventory.getUtilityItem(), statMap, "*Utility_", v -> v.getUtility().getStatModifiers());
 /*     */     }
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   private static Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> calculateEffectStatModifiers(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 103 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = new Int2ObjectOpenHashMap();
-/* 104 */     EffectControllerComponent effectControllerComponent = (EffectControllerComponent)componentAccessor.getComponent(ref, EffectControllerComponent.getComponentType());
-/* 105 */     if (effectControllerComponent == null) return statModifiers;
+/* 102 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = new Int2ObjectOpenHashMap();
+/* 103 */     EffectControllerComponent effectControllerComponent = (EffectControllerComponent)componentAccessor.getComponent(ref, EffectControllerComponent.getComponentType());
+/* 104 */     if (effectControllerComponent == null) return statModifiers;
 /*     */     
-/* 107 */     effectControllerComponent.getActiveEffects().forEach((k, v) -> {
+/* 106 */     effectControllerComponent.getActiveEffects().forEach((k, v) -> {
 /*     */           if (!v.isInfinite() && v.getRemainingDuration() <= 0.0F)
 /*     */             return;  int index = v.getEntityEffectIndex(); EntityEffect effect = (EntityEffect)EntityEffect.getAssetMap().getAsset(index);
 /*     */           if (effect == null || effect.getStatModifiers() == null)
@@ -120,32 +119,32 @@
 /*     */             } 
 /*     */           } 
 /*     */         });
-/* 123 */     return statModifiers;
+/* 122 */     return statModifiers;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   private static void applyEffectModifiers(@Nonnull EntityStatMap statMap, @Nonnull Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers) {
-/* 128 */     for (int i = 0; i < statMap.size(); i++) {
-/* 129 */       Object2FloatMap<StaticModifier.CalculationType> statModifiersForEntityStat = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.get(i);
-/* 130 */       if (statModifiersForEntityStat == null) {
+/* 127 */     for (int i = 0; i < statMap.size(); i++) {
+/* 128 */       Object2FloatMap<StaticModifier.CalculationType> statModifiersForEntityStat = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.get(i);
+/* 129 */       if (statModifiersForEntityStat == null) {
 /*     */         
-/* 132 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
-/* 133 */           statMap.removeModifier(i, calculationType.createKey("Effect"));
+/* 131 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
+/* 132 */           statMap.removeModifier(i, calculationType.createKey("Effect"));
 /*     */         
 /*     */         }
 /*     */       }
 /*     */       else {
 /*     */         
-/* 139 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
-/* 140 */           if (!statModifiersForEntityStat.containsKey(calculationType)) {
-/* 141 */             statMap.removeModifier(i, calculationType.createKey("Effect"));
+/* 138 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
+/* 139 */           if (!statModifiersForEntityStat.containsKey(calculationType)) {
+/* 140 */             statMap.removeModifier(i, calculationType.createKey("Effect"));
 /*     */           }
 /*     */         } 
 /*     */         
-/* 145 */         for (ObjectIterator<Object2FloatMap.Entry<StaticModifier.CalculationType>> objectIterator = statModifiersForEntityStat.object2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Object2FloatMap.Entry<StaticModifier.CalculationType> entry = objectIterator.next();
-/* 146 */           StaticModifier.CalculationType calculationType = (StaticModifier.CalculationType)entry.getKey();
-/* 147 */           StaticModifier modifier = new StaticModifier(Modifier.ModifierTarget.MAX, calculationType, entry.getFloatValue());
-/* 148 */           statMap.putModifier(i, calculationType.createKey("Effect"), (Modifier)modifier); }
+/* 144 */         for (ObjectIterator<Object2FloatMap.Entry<StaticModifier.CalculationType>> objectIterator = statModifiersForEntityStat.object2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Object2FloatMap.Entry<StaticModifier.CalculationType> entry = objectIterator.next();
+/* 145 */           StaticModifier.CalculationType calculationType = (StaticModifier.CalculationType)entry.getKey();
+/* 146 */           StaticModifier modifier = new StaticModifier(Modifier.ModifierTarget.MAX, calculationType, entry.getFloatValue());
+/* 147 */           statMap.putModifier(i, calculationType.createKey("Effect"), (Modifier)modifier); }
 /*     */       
 /*     */       } 
 /*     */     } 
@@ -154,17 +153,17 @@
 /*     */ 
 /*     */   
 /*     */   private static void computeStatModifiers(double brokenPenalty, @Nonnull Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers, @Nonnull ItemStack itemInHand, @Nonnull Int2ObjectMap<StaticModifier[]> itemStatModifiers) {
-/* 157 */     boolean broken = itemInHand.isBroken();
-/* 158 */     for (ObjectIterator<Int2ObjectMap.Entry<StaticModifier[]>> objectIterator = itemStatModifiers.int2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Int2ObjectMap.Entry<StaticModifier[]> entry = objectIterator.next();
-/* 159 */       int entityStatType = entry.getIntKey();
-/* 160 */       for (StaticModifier modifier : (StaticModifier[])entry.getValue()) {
-/* 161 */         float value = modifier.getAmount();
+/* 156 */     boolean broken = itemInHand.isBroken();
+/* 157 */     for (ObjectIterator<Int2ObjectMap.Entry<StaticModifier[]>> objectIterator = itemStatModifiers.int2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Int2ObjectMap.Entry<StaticModifier[]> entry = objectIterator.next();
+/* 158 */       int entityStatType = entry.getIntKey();
+/* 159 */       for (StaticModifier modifier : (StaticModifier[])entry.getValue()) {
+/* 160 */         float value = modifier.getAmount();
 /*     */ 
 /*     */         
-/* 164 */         if (broken) value = (float)(value * brokenPenalty);
+/* 163 */         if (broken) value = (float)(value * brokenPenalty);
 /*     */         
-/* 166 */         Object2FloatMap<StaticModifier.CalculationType> statModifierToApply = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.computeIfAbsent(entityStatType, x -> new Object2FloatOpenHashMap());
-/* 167 */         statModifierToApply.mergeFloat(modifier.getCalculationType(), value, Float::sum);
+/* 165 */         Object2FloatMap<StaticModifier.CalculationType> statModifierToApply = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.computeIfAbsent(entityStatType, x -> new Object2FloatOpenHashMap());
+/* 166 */         statModifierToApply.mergeFloat(modifier.getCalculationType(), value, Float::sum);
 /*     */       }  }
 /*     */   
 /*     */   }
@@ -173,78 +172,78 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   private static Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> computeStatModifiers(@Nonnull BrokenPenalties brokenPenalties, @Nonnull Inventory inventory) {
-/* 176 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = new Int2ObjectOpenHashMap();
+/* 175 */     Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers = new Int2ObjectOpenHashMap();
 /*     */     
-/* 178 */     double armorBrokenPenalty = brokenPenalties.getArmor(0.0D);
-/* 179 */     ItemContainer armorContainer = inventory.getArmor(); short i;
-/* 180 */     for (i = 0; i < armorContainer.getCapacity(); i = (short)(i + 1)) {
-/* 181 */       ItemStack armorItemStack = armorContainer.getItemStack(i);
-/* 182 */       if (armorItemStack != null) {
-/* 183 */         addArmorStatModifiers(armorItemStack, armorBrokenPenalty, statModifiers);
+/* 177 */     double armorBrokenPenalty = brokenPenalties.getArmor(0.0D);
+/* 178 */     ItemContainer armorContainer = inventory.getArmor(); short i;
+/* 179 */     for (i = 0; i < armorContainer.getCapacity(); i = (short)(i + 1)) {
+/* 180 */       ItemStack armorItemStack = armorContainer.getItemStack(i);
+/* 181 */       if (armorItemStack != null) {
+/* 182 */         addArmorStatModifiers(armorItemStack, armorBrokenPenalty, statModifiers);
 /*     */       }
 /*     */     } 
-/* 186 */     return (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)statModifiers;
+/* 185 */     return (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)statModifiers;
 /*     */   }
 /*     */   
 /*     */   private static void addArmorStatModifiers(@Nonnull ItemStack itemStack, double brokenPenalties, @Nonnull Int2ObjectOpenHashMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers) {
-/* 190 */     if (ItemStack.isEmpty(itemStack))
+/* 189 */     if (ItemStack.isEmpty(itemStack))
 /*     */       return; 
-/* 192 */     ItemArmor armorItem = itemStack.getItem().getArmor();
-/* 193 */     if (armorItem == null)
+/* 191 */     ItemArmor armorItem = itemStack.getItem().getArmor();
+/* 192 */     if (armorItem == null)
 /*     */       return; 
-/* 195 */     Int2ObjectMap<StaticModifier[]> itemStatModifiers = armorItem.getStatModifiers();
-/* 196 */     if (itemStatModifiers == null)
+/* 194 */     Int2ObjectMap<StaticModifier[]> itemStatModifiers = armorItem.getStatModifiers();
+/* 195 */     if (itemStatModifiers == null)
 /*     */       return; 
-/* 198 */     computeStatModifiers(brokenPenalties, (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)statModifiers, itemStack, itemStatModifiers);
+/* 197 */     computeStatModifiers(brokenPenalties, (Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>>)statModifiers, itemStack, itemStatModifiers);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static void addItemStatModifiers(@Nullable ItemStack itemStack, @Nonnull EntityStatMap entityStatMap, @Nonnull String prefix, @Nonnull Function<Item, Int2ObjectMap<StaticModifier[]>> toStatModifiers) {
-/* 205 */     if (ItemStack.isEmpty(itemStack)) {
-/* 206 */       clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, null);
+/* 204 */     if (ItemStack.isEmpty(itemStack)) {
+/* 205 */       clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, null);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 210 */     Int2ObjectMap<StaticModifier[]> itemStatModifiers = toStatModifiers.apply(itemStack.getItem());
-/* 211 */     if (itemStatModifiers == null) {
-/* 212 */       clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, null);
+/* 209 */     Int2ObjectMap<StaticModifier[]> itemStatModifiers = toStatModifiers.apply(itemStack.getItem());
+/* 210 */     if (itemStatModifiers == null) {
+/* 211 */       clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, null);
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 217 */     for (ObjectIterator<Int2ObjectMap.Entry<StaticModifier[]>> objectIterator = itemStatModifiers.int2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Int2ObjectMap.Entry<StaticModifier[]> entry = objectIterator.next();
-/* 218 */       int offset = 0;
-/* 219 */       int statIndex = entry.getIntKey();
-/* 220 */       for (StaticModifier modifier : (StaticModifier[])entry.getValue()) {
+/* 216 */     for (ObjectIterator<Int2ObjectMap.Entry<StaticModifier[]>> objectIterator = itemStatModifiers.int2ObjectEntrySet().iterator(); objectIterator.hasNext(); ) { Int2ObjectMap.Entry<StaticModifier[]> entry = objectIterator.next();
+/* 217 */       int offset = 0;
+/* 218 */       int statIndex = entry.getIntKey();
+/* 219 */       for (StaticModifier modifier : (StaticModifier[])entry.getValue()) {
 /*     */         
-/* 222 */         String key = prefix + prefix;
-/* 223 */         offset++;
+/* 221 */         String key = prefix + prefix;
+/* 222 */         offset++;
 /*     */         
-/* 225 */         Modifier existing = entityStatMap.getModifier(statIndex, key);
-/* 226 */         if (existing instanceof StaticModifier) { StaticModifier existingStatic = (StaticModifier)existing;
-/* 227 */           if (existingStatic.equals(modifier)) {
+/* 224 */         Modifier existing = entityStatMap.getModifier(statIndex, key);
+/* 225 */         if (existing instanceof StaticModifier) { StaticModifier existingStatic = (StaticModifier)existing;
+/* 226 */           if (existingStatic.equals(modifier)) {
 /*     */             continue;
 /*     */           } }
 /*     */ 
 /*     */         
-/* 232 */         entityStatMap.putModifier(EntityStatMap.Predictable.SELF, statIndex, key, (Modifier)modifier);
+/* 231 */         entityStatMap.putModifier(EntityStatMap.Predictable.SELF, statIndex, key, (Modifier)modifier);
 /*     */         continue;
 /*     */       } 
-/* 235 */       clearStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, statIndex, prefix, offset); }
+/* 234 */       clearStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, statIndex, prefix, offset); }
 /*     */ 
 /*     */     
-/* 238 */     clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, itemStatModifiers);
+/* 237 */     clearAllStatModifiers(EntityStatMap.Predictable.SELF, entityStatMap, prefix, itemStatModifiers);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static void clearAllStatModifiers(@Nonnull EntityStatMap.Predictable predictable, @Nonnull EntityStatMap entityStatMap, @Nonnull String prefix, @Nullable Int2ObjectMap<StaticModifier[]> excluding) {
-/* 245 */     for (int i = 0; i < entityStatMap.size(); i++) {
-/* 246 */       if (excluding == null || !excluding.containsKey(i)) {
-/* 247 */         clearStatModifiers(predictable, entityStatMap, i, prefix, 0);
+/* 244 */     for (int i = 0; i < entityStatMap.size(); i++) {
+/* 245 */       if (excluding == null || !excluding.containsKey(i)) {
+/* 246 */         clearStatModifiers(predictable, entityStatMap, i, prefix, 0);
 /*     */       }
 /*     */     } 
 /*     */   }
@@ -255,9 +254,9 @@
 /*     */   private static void clearStatModifiers(@Nonnull EntityStatMap.Predictable predictable, @Nonnull EntityStatMap entityStatMap, int statIndex, @Nonnull String prefix, int offset) {
 /*     */     String key;
 /*     */     do {
-/* 258 */       key = prefix + prefix;
-/* 259 */       offset++;
-/* 260 */     } while (entityStatMap.removeModifier(predictable, statIndex, key) != null);
+/* 257 */       key = prefix + prefix;
+/* 258 */       offset++;
+/* 259 */     } while (entityStatMap.removeModifier(predictable, statIndex, key) != null);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -265,28 +264,28 @@
 /*     */ 
 /*     */   
 /*     */   private static void applyStatModifiers(@Nonnull EntityStatMap statMap, @Nonnull Int2ObjectMap<Object2FloatMap<StaticModifier.CalculationType>> statModifiers) {
-/* 268 */     for (int i = 0; i < statMap.size(); i++) {
-/* 269 */       Object2FloatMap<StaticModifier.CalculationType> statModifiersForEntityStat = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.get(i);
-/* 270 */       if (statModifiersForEntityStat == null) {
+/* 267 */     for (int i = 0; i < statMap.size(); i++) {
+/* 268 */       Object2FloatMap<StaticModifier.CalculationType> statModifiersForEntityStat = (Object2FloatMap<StaticModifier.CalculationType>)statModifiers.get(i);
+/* 269 */       if (statModifiersForEntityStat == null) {
 /*     */ 
 /*     */         
-/* 273 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
-/* 274 */           statMap.removeModifier(i, calculationType.createKey("Armor"));
+/* 272 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
+/* 273 */           statMap.removeModifier(i, calculationType.createKey("Armor"));
 /*     */         
 /*     */         }
 /*     */       }
 /*     */       else {
 /*     */         
-/* 280 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
-/* 281 */           if (!statModifiersForEntityStat.containsKey(calculationType)) {
-/* 282 */             statMap.removeModifier(i, calculationType.createKey("Armor"));
+/* 279 */         for (StaticModifier.CalculationType calculationType : StaticModifier.CalculationType.values()) {
+/* 280 */           if (!statModifiersForEntityStat.containsKey(calculationType)) {
+/* 281 */             statMap.removeModifier(i, calculationType.createKey("Armor"));
 /*     */           }
 /*     */         } 
 /*     */         
-/* 286 */         for (ObjectIterator<Object2FloatMap.Entry<StaticModifier.CalculationType>> objectIterator = statModifiersForEntityStat.object2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Object2FloatMap.Entry<StaticModifier.CalculationType> entry = objectIterator.next();
-/* 287 */           StaticModifier.CalculationType calculationType = (StaticModifier.CalculationType)entry.getKey();
-/* 288 */           StaticModifier modifier = new StaticModifier(Modifier.ModifierTarget.MAX, calculationType, entry.getFloatValue());
-/* 289 */           statMap.putModifier(i, calculationType.createKey("Armor"), (Modifier)modifier); }
+/* 285 */         for (ObjectIterator<Object2FloatMap.Entry<StaticModifier.CalculationType>> objectIterator = statModifiersForEntityStat.object2FloatEntrySet().iterator(); objectIterator.hasNext(); ) { Object2FloatMap.Entry<StaticModifier.CalculationType> entry = objectIterator.next();
+/* 286 */           StaticModifier.CalculationType calculationType = (StaticModifier.CalculationType)entry.getKey();
+/* 287 */           StaticModifier modifier = new StaticModifier(Modifier.ModifierTarget.MAX, calculationType, entry.getFloatValue());
+/* 288 */           statMap.putModifier(i, calculationType.createKey("Armor"), (Modifier)modifier); }
 /*     */       
 /*     */       } 
 /*     */     } 

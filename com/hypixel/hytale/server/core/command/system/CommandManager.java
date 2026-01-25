@@ -20,10 +20,10 @@
 /*     */ import com.hypixel.hytale.server.core.command.commands.player.HideCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.player.ToggleBlockPlacementOverrideCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.player.WhereAmICommand;
-/*     */ import com.hypixel.hytale.server.core.command.commands.player.inventory.GiveCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.server.KickCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.utility.BackupCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.utility.ValidateCPBCommand;
+/*     */ import com.hypixel.hytale.server.core.command.commands.utility.git.GitCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.utility.metacommands.CommandsCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.utility.net.NetworkCommand;
 /*     */ import com.hypixel.hytale.server.core.command.commands.utility.sleep.SleepCommand;
@@ -138,7 +138,7 @@
 /* 138 */     registerSystemCommand((AbstractCommand)new CommandsCommand());
 /*     */ 
 /*     */     
-/* 141 */     registerSystemCommand((AbstractCommand)new UpdateCommand());
+/* 141 */     registerSystemCommand((AbstractCommand)new GitCommand());
 /*     */   }
 /*     */ 
 /*     */ 

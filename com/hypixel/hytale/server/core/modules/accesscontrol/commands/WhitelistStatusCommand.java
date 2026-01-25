@@ -9,32 +9,29 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class WhitelistStatusCommand
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 16 */   private static final Message MESSAGE_MODULES_WHITELIST_STATUS = Message.translation("server.modules.whitelist.status");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
 /*    */   private final HytaleWhitelistProvider whitelistProvider;
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */   
 /*    */   public WhitelistStatusCommand(@Nonnull HytaleWhitelistProvider whitelistProvider) {
-/* 30 */     super("status", "server.commands.whitelist.status.desc");
-/* 31 */     this.whitelistProvider = whitelistProvider;
+/* 27 */     super("status", "server.commands.whitelist.status.desc");
+/* 28 */     this.whitelistProvider = whitelistProvider;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 36 */     context.sendMessage(MESSAGE_MODULES_WHITELIST_STATUS
-/* 37 */         .param("status", MessageFormat.enabled(this.whitelistProvider.isEnabled())));
+/* 33 */     context.sendMessage(Message.translation("server.modules.whitelist.status")
+/* 34 */         .param("status", MessageFormat.enabled(this.whitelistProvider.isEnabled())));
 /*    */   }
 /*    */ }
 

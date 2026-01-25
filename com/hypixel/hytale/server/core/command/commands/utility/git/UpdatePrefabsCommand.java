@@ -25,7 +25,7 @@
 /*     */   extends AbstractCommandCollection
 /*     */ {
 /*     */   public UpdatePrefabsCommand() {
-/*  28 */     super("prefabs", "server.commands.update.prefabs.desc");
+/*  28 */     super("prefabs", "server.commands.git.prefabs.desc");
 /*  29 */     addSubCommand((AbstractCommand)new UpdatePrefabsStatusCommand());
 /*  30 */     addSubCommand((AbstractCommand)new UpdatePrefabsCommitCommand());
 /*  31 */     addSubCommand((AbstractCommand)new UpdatePrefabsPullCommand());
@@ -77,15 +77,21 @@
 /*     */               return;
 /*     */             } 
 /*     */             
-/*     */             String senderDisplayName = context.sender().getDisplayName();
+/*     */             String senderDisplayName = context.sender().getDisplayName().replaceAll("[^a-zA-Z0-9 ._-]", "");
 /*     */             
-/*     */             String[][] cmds = getCommands(senderDisplayName);
+/*     */             if (senderDisplayName.isEmpty()) {
+/*     */               senderDisplayName = "Unknown";
+/*     */             }
+/*     */             
+/*     */             String finalSenderDisplayName = senderDisplayName;
+/*     */             
+/*     */             String[][] cmds = getCommands(finalSenderDisplayName);
 /*     */             
 /*     */             for (String[] processCommand : cmds) {
 /*     */               try {
 /*     */                 String commandDisplay = String.join(" ", (CharSequence[])processCommand);
 /*     */                 
-/*     */                 context.sendMessage(Message.translation("server.commands.update.runningCmd").param("cmd", commandDisplay));
+/*     */                 context.sendMessage(Message.translation("server.commands.git.runningCmd").param("cmd", commandDisplay));
 /*     */                 
 /*     */                 Process process = (new ProcessBuilder(processCommand)).directory(gitPath.toFile()).start();
 /*     */                 
@@ -93,23 +99,21 @@
 /*     */                   process.waitFor();
 /*     */                   
 /*     */                   BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-/*     */                   
 /*     */                   String line;
-/*     */                   
 /*     */                   while ((line = reader.readLine()) != null) {
-/*     */                     context.sendMessage(Message.translation("server.commands.update.runningStdOut").param("cmd", commandDisplay).param("line", line));
+/*     */                     context.sendMessage(Message.translation("server.commands.git.runningStdOut").param("cmd", commandDisplay).param("line", line));
 /*     */                   }
 /*     */                   reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
 /*     */                   while ((line = reader.readLine()) != null) {
-/*     */                     context.sendMessage(Message.translation("server.commands.update.runningStdErr").param("cmd", commandDisplay).param("line", line));
+/*     */                     context.sendMessage(Message.translation("server.commands.git.runningStdErr").param("cmd", commandDisplay).param("line", line));
 /*     */                   }
-/*     */                   context.sendMessage(Message.translation("server.commands.update.done").param("cmd", commandDisplay));
-/* 107 */                 } catch (InterruptedException e) {
+/*     */                   context.sendMessage(Message.translation("server.commands.git.done").param("cmd", commandDisplay));
+/* 111 */                 } catch (InterruptedException e) {
 /*     */                   Thread.currentThread().interrupt();
 /*     */                   break;
 /*     */                 } 
-/* 111 */               } catch (IOException e) {
-/*     */                 context.sendMessage(Message.translation("server.commands.update.failed").param("cmd", String.join(" ", (CharSequence[])processCommand)).param("msg", e.getMessage()));
+/* 115 */               } catch (IOException e) {
+/*     */                 context.sendMessage(Message.translation("server.commands.git.failed").param("cmd", String.join(" ", (CharSequence[])processCommand)).param("msg", e.getMessage()));
 /*     */                 break;
 /*     */               } 
 /*     */             } 
@@ -127,13 +131,13 @@
 /*     */     extends UpdatePrefabsGitCommand
 /*     */   {
 /*     */     public UpdatePrefabsStatusCommand() {
-/* 130 */       super("status", "server.commands.update.prefabs.status.desc");
+/* 134 */       super("status", "server.commands.git.prefabs.status.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 136 */       return new String[][] { { "git", "status" }, { "git", "submodule", "foreach", "git", "status" } };
+/* 140 */       return new String[][] { { "git", "status" }, { "git", "submodule", "foreach", "git", "status" } };
 /*     */     }
 /*     */   }
 /*     */ 
@@ -148,13 +152,13 @@
 /*     */     extends UpdatePrefabsGitCommand
 /*     */   {
 /*     */     public UpdatePrefabsCommitCommand() {
-/* 151 */       super("commit", "server.commands.update.prefabs.commit.desc");
+/* 155 */       super("commit", "server.commands.git.prefabs.commit.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 157 */       return new String[][] { { "git", "add", "--all", "." }, { "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" } };
+/* 161 */       return new String[][] { { "git", "add", "--all", "." }, { "git", "commit", "-am", "Update prefabs by " + senderDisplayName }, { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" } };
 /*     */     }
 /*     */   }
 /*     */ 
@@ -171,13 +175,13 @@
 /*     */     extends UpdatePrefabsGitCommand
 /*     */   {
 /*     */     public UpdatePrefabsPullCommand() {
-/* 174 */       super("pull", "server.commands.update.prefabs.pull.desc");
+/* 178 */       super("pull", "server.commands.git.prefabs.pull.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 180 */       return new String[][] { { "git", "pull" }, { "git", "submodule", "foreach", "git", "pull" } };
+/* 184 */       return new String[][] { { "git", "pull" }, { "git", "submodule", "foreach", "git", "pull" } };
 /*     */     }
 /*     */   }
 /*     */ 
@@ -192,13 +196,13 @@
 /*     */     extends UpdatePrefabsGitCommand
 /*     */   {
 /*     */     public UpdatePrefabsPushCommand() {
-/* 195 */       super("push", "server.commands.update.prefabs.push.desc");
+/* 199 */       super("push", "server.commands.git.prefabs.push.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 201 */       return new String[][] { { "git", "push", "origin", "master" }, { "git", "submodule", "foreach", "git", "push" } };
+/* 205 */       return new String[][] { { "git", "push", "origin", "master" }, { "git", "submodule", "foreach", "git", "push" } };
 /*     */     }
 /*     */   }
 /*     */ 
@@ -213,13 +217,13 @@
 /*     */     extends UpdatePrefabsGitCommand
 /*     */   {
 /*     */     public UpdatePrefabsAllCommand() {
-/* 216 */       super("all", "server.commands.update.prefabs.all.desc");
+/* 220 */       super("all", "server.commands.git.prefabs.all.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 222 */       return new String[][] { { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "pull" }, { "git", "submodule", "foreach", "git", "push" }, { "git", "add", "--all", "." }, { "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "pull" }, { "git", "push" } };
+/* 226 */       return new String[][] { { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "pull" }, { "git", "submodule", "foreach", "git", "push" }, { "git", "add", "--all", "." }, { "git", "commit", "-am", "Update prefabs by " + senderDisplayName }, { "git", "pull" }, { "git", "push" } };
 /*     */     }
 /*     */   }
 /*     */ }

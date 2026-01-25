@@ -18,36 +18,34 @@
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 21 */   private static final Message MESSAGE_COMMANDS_MEMORIES_SETCOUNT_SUCCESS = Message.translation("server.commands.memories.setCount.success");
-/*    */   @Nonnull
-/* 23 */   private static final Message MESSAGE_COMMANDS_MEMORIES_SETCOUNT_INVALID = Message.translation("server.commands.memories.setCount.invalid");
+/* 21 */   private static final Message MESSAGE_COMMANDS_MEMORIES_SETCOUNT_INVALID = Message.translation("server.commands.memories.setCount.invalid");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 29 */   private final RequiredArg<Integer> countArg = withRequiredArg("count", "server.commands.memories.setCount.count.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 27 */   private final RequiredArg<Integer> countArg = withRequiredArg("count", "server.commands.memories.setCount.count.desc", (ArgumentType)ArgTypes.INTEGER);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public MemoriesSetCountCommand() {
-/* 35 */     super("setCount", "server.commands.memories.setCount.desc");
+/* 33 */     super("setCount", "server.commands.memories.setCount.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 40 */     int count = ((Integer)this.countArg.get(context)).intValue();
+/* 38 */     int count = ((Integer)this.countArg.get(context)).intValue();
 /*    */     
-/* 42 */     if (count < 0) {
-/* 43 */       context.sendMessage(MESSAGE_COMMANDS_MEMORIES_SETCOUNT_INVALID);
+/* 40 */     if (count < 0) {
+/* 41 */       context.sendMessage(MESSAGE_COMMANDS_MEMORIES_SETCOUNT_INVALID);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 47 */     int actualCount = MemoriesPlugin.get().setRecordedMemoriesCount(count);
-/* 48 */     context.sendMessage(MESSAGE_COMMANDS_MEMORIES_SETCOUNT_SUCCESS
-/* 49 */         .param("requested", count)
-/* 50 */         .param("actual", actualCount));
+/* 45 */     int actualCount = MemoriesPlugin.get().setRecordedMemoriesCount(count);
+/* 46 */     context.sendMessage(Message.translation("server.commands.memories.setCount.success")
+/* 47 */         .param("requested", count)
+/* 48 */         .param("actual", actualCount));
 /*    */   }
 /*    */ }
 

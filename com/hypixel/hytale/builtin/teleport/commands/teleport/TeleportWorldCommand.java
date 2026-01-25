@@ -25,66 +25,62 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ public class TeleportWorldCommand
-/*    */   extends AbstractPlayerCommand {
+/*    */   extends AbstractPlayerCommand
+/*    */ {
 /*    */   @Nonnull
-/* 30 */   private static final Message MESSAGE_WORLD_NOT_FOUND = Message.translation("server.world.notFound");
-/*    */   @Nonnull
-/* 32 */   private static final Message MESSAGE_WORLD_SPAWN_NOT_SET = Message.translation("server.world.spawn.notSet");
-/*    */   @Nonnull
-/* 34 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD = Message.translation("server.commands.teleport.teleportedToWorld");
-/*    */   
-/*    */   @Nonnull
-/* 37 */   private final RequiredArg<String> worldNameArg = withRequiredArg("worldName", "server.commands.worldport.worldName.desc", (ArgumentType)ArgTypes.STRING);
+/* 31 */   private final RequiredArg<String> worldNameArg = withRequiredArg("worldName", "server.commands.worldport.worldName.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public TeleportWorldCommand() {
-/* 43 */     super("world", "server.commands.worldport.desc");
-/* 44 */     setPermissionGroup(null);
-/* 45 */     requirePermission(HytalePermissions.fromCommand("teleport.world"));
+/* 37 */     super("world", "server.commands.worldport.desc");
+/* 38 */     setPermissionGroup(null);
+/* 39 */     requirePermission(HytalePermissions.fromCommand("teleport.world"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 50 */     String worldName = (String)this.worldNameArg.get(context);
+/* 44 */     String worldName = (String)this.worldNameArg.get(context);
 /*    */ 
 /*    */     
-/* 53 */     World targetWorld = Universe.get().getWorld(worldName);
-/* 54 */     if (targetWorld == null) {
-/* 55 */       context.sendMessage(MESSAGE_WORLD_NOT_FOUND.param("worldName", worldName));
+/* 47 */     World targetWorld = Universe.get().getWorld(worldName);
+/* 48 */     if (targetWorld == null) {
+/* 49 */       context.sendMessage(Message.translation("server.world.notFound")
+/* 50 */           .param("worldName", worldName));
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 60 */     Transform spawnPoint = targetWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, (ComponentAccessor)store);
-/* 61 */     if (spawnPoint == null) {
-/* 62 */       context.sendMessage(MESSAGE_WORLD_SPAWN_NOT_SET.param("worldName", worldName));
+/* 55 */     Transform spawnPoint = targetWorld.getWorldConfig().getSpawnProvider().getSpawnPoint(ref, (ComponentAccessor)store);
+/* 56 */     if (spawnPoint == null) {
+/* 57 */       context.sendMessage(Message.translation("server.world.spawn.notSet")
+/* 58 */           .param("worldName", worldName));
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 67 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 68 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
+/* 63 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 64 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
 /*    */     
-/* 70 */     if (transformComponent != null && headRotationComponent != null) {
-/* 71 */       Vector3d previousPos = transformComponent.getPosition().clone();
-/* 72 */       Vector3f previousRotation = headRotationComponent.getRotation().clone();
+/* 66 */     if (transformComponent != null && headRotationComponent != null) {
+/* 67 */       Vector3d previousPos = transformComponent.getPosition().clone();
+/* 68 */       Vector3f previousRotation = headRotationComponent.getRotation().clone();
 /*    */       
-/* 74 */       TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
-/* 75 */       teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + targetWorld
-/* 76 */           .getName());
+/* 70 */       TeleportHistory teleportHistoryComponent = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
+/* 71 */       teleportHistoryComponent.append(world, previousPos, previousRotation, "World " + targetWorld
+/* 72 */           .getName());
 /*    */     } 
 /*    */     
-/* 79 */     Teleport teleportComponent = Teleport.createForPlayer(targetWorld, spawnPoint);
-/* 80 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 75 */     Teleport teleportComponent = Teleport.createForPlayer(targetWorld, spawnPoint);
+/* 76 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*    */     
-/* 82 */     Vector3d spawnPos = spawnPoint.getPosition();
-/* 83 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_TELEPORTED_TO_WORLD
-/* 84 */         .param("worldName", worldName)
-/* 85 */         .param("x", spawnPos.getX())
-/* 86 */         .param("y", spawnPos.getY())
-/* 87 */         .param("z", spawnPos.getZ()));
+/* 78 */     Vector3d spawnPos = spawnPoint.getPosition();
+/* 79 */     context.sendMessage(Message.translation("server.commands.teleport.teleportedToWorld")
+/* 80 */         .param("worldName", worldName)
+/* 81 */         .param("x", spawnPos.getX())
+/* 82 */         .param("y", spawnPos.getY())
+/* 83 */         .param("z", spawnPos.getZ()));
 /*    */   }
 /*    */ }
 

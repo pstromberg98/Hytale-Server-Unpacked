@@ -52,9 +52,9 @@
 /*  52 */     obj.op = EntityStatOp.fromValue(buf.getByte(offset + 1));
 /*  53 */     obj.predictable = (buf.getByte(offset + 2) != 0);
 /*  54 */     obj.value = buf.getFloatLE(offset + 3);
-/*  55 */     if ((nullBits & 0x4) != 0) obj.modifier = Modifier.deserialize(buf, offset + 7);
+/*  55 */     if ((nullBits & 0x1) != 0) obj.modifier = Modifier.deserialize(buf, offset + 7);
 /*     */     
-/*  57 */     if ((nullBits & 0x1) != 0) {
+/*  57 */     if ((nullBits & 0x2) != 0) {
 /*  58 */       int varPos0 = offset + 21 + buf.getIntLE(offset + 13);
 /*  59 */       int modifiersCount = VarInt.peek(buf, varPos0);
 /*  60 */       if (modifiersCount < 0) throw ProtocolException.negativeLength("Modifiers", modifiersCount); 
@@ -75,7 +75,7 @@
 /*  75 */           throw ProtocolException.duplicateKey("modifiers", key); 
 /*     */       } 
 /*     */     } 
-/*  78 */     if ((nullBits & 0x2) != 0) {
+/*  78 */     if ((nullBits & 0x4) != 0) {
 /*  79 */       int varPos1 = offset + 21 + buf.getIntLE(offset + 17);
 /*  80 */       int modifierKeyLen = VarInt.peek(buf, varPos1);
 /*  81 */       if (modifierKeyLen < 0) throw ProtocolException.negativeLength("ModifierKey", modifierKeyLen); 
@@ -89,14 +89,14 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  90 */     byte nullBits = buf.getByte(offset);
 /*  91 */     int maxEnd = 21;
-/*  92 */     if ((nullBits & 0x1) != 0) {
+/*  92 */     if ((nullBits & 0x2) != 0) {
 /*  93 */       int fieldOffset0 = buf.getIntLE(offset + 13);
 /*  94 */       int pos0 = offset + 21 + fieldOffset0;
 /*  95 */       int dictLen = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0);
 /*  96 */       for (int i = 0; i < dictLen; ) { int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl; pos0 += Modifier.computeBytesConsumed(buf, pos0); i++; }
 /*  97 */        if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  99 */     if ((nullBits & 0x2) != 0) {
+/*  99 */     if ((nullBits & 0x4) != 0) {
 /* 100 */       int fieldOffset1 = buf.getIntLE(offset + 17);
 /* 101 */       int pos1 = offset + 21 + fieldOffset1;
 /* 102 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
@@ -109,9 +109,9 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 110 */     int startPos = buf.writerIndex();
 /* 111 */     byte nullBits = 0;
-/* 112 */     if (this.modifiers != null) nullBits = (byte)(nullBits | 0x1); 
-/* 113 */     if (this.modifierKey != null) nullBits = (byte)(nullBits | 0x2); 
-/* 114 */     if (this.modifier != null) nullBits = (byte)(nullBits | 0x4); 
+/* 112 */     if (this.modifier != null) nullBits = (byte)(nullBits | 0x1); 
+/* 113 */     if (this.modifiers != null) nullBits = (byte)(nullBits | 0x2); 
+/* 114 */     if (this.modifierKey != null) nullBits = (byte)(nullBits | 0x4); 
 /* 115 */     buf.writeByte(nullBits);
 /*     */     
 /* 117 */     buf.writeByte(this.op.getValue());
@@ -160,7 +160,7 @@
 /* 160 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 163 */     if ((nullBits & 0x1) != 0) {
+/* 163 */     if ((nullBits & 0x2) != 0) {
 /* 164 */       int modifiersOffset = buffer.getIntLE(offset + 13);
 /* 165 */       if (modifiersOffset < 0) {
 /* 166 */         return ValidationResult.error("Invalid offset for Modifiers");
@@ -195,7 +195,7 @@
 /*     */     } 
 /*     */ 
 /*     */     
-/* 198 */     if ((nullBits & 0x2) != 0) {
+/* 198 */     if ((nullBits & 0x4) != 0) {
 /* 199 */       int modifierKeyOffset = buffer.getIntLE(offset + 17);
 /* 200 */       if (modifierKeyOffset < 0) {
 /* 201 */         return ValidationResult.error("Invalid offset for ModifierKey");

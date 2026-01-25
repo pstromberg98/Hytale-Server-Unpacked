@@ -39,31 +39,34 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class Tick
 /*    */   extends EntityTickingSystem<EntityStore>
 /*    */ {
 /*    */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 46 */     AmbienceResource ambienceResource = (AmbienceResource)store.getResource(AmbienceResource.getResourceType());
-/* 47 */     AmbienceTracker tracker = (AmbienceTracker)archetypeChunk.getComponent(index, AmbienceTracker.getComponentType());
-/* 48 */     PlayerRef playerRef = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
+/* 49 */     AmbienceResource ambienceResource = (AmbienceResource)store.getResource(AmbienceResource.getResourceType());
+/* 50 */     AmbienceTracker tracker = (AmbienceTracker)archetypeChunk.getComponent(index, AmbienceTracker.getComponentType());
+/* 51 */     PlayerRef playerRef = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
 /*    */     
-/* 50 */     int have = tracker.getForcedMusicIndex();
-/* 51 */     int desired = ambienceResource.getForcedMusicIndex();
-/* 52 */     if (have == desired) {
+/* 53 */     int have = tracker.getForcedMusicIndex();
+/* 54 */     int desired = ambienceResource.getForcedMusicIndex();
+/* 55 */     if (have == desired) {
 /*    */       return;
 /*    */     }
 /*    */     
-/* 56 */     tracker.setForcedMusicIndex(desired);
+/* 59 */     tracker.setForcedMusicIndex(desired);
 /*    */     
-/* 58 */     UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
-/* 59 */     pooledPacket.environmentIndex = desired;
-/* 60 */     playerRef.getPacketHandler().write((Packet)pooledPacket);
+/* 61 */     UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
+/* 62 */     pooledPacket.environmentIndex = desired;
+/* 63 */     playerRef.getPacketHandler().write((Packet)pooledPacket);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nullable
 /*    */   public Query<EntityStore> getQuery() {
-/* 66 */     return ForcedMusicSystems.TICK_QUERY;
+/* 69 */     return ForcedMusicSystems.TICK_QUERY;
 /*    */   }
 /*    */ }
 

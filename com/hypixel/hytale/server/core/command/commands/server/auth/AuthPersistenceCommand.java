@@ -25,34 +25,30 @@
 /*    */ {
 /*    */   @Nonnull
 /* 27 */   private static final Message MESSAGE_SINGLEPLAYER = Message.translation("server.commands.auth.persistence.singleplayer").color(Color.RED);
-/*    */   @Nonnull
-/* 29 */   private static final Message MESSAGE_CURRENT = Message.translation("server.commands.auth.persistence.current").color(Color.YELLOW);
-/*    */   @Nonnull
-/* 31 */   private static final Message MESSAGE_AVAILABLE = Message.translation("server.commands.auth.persistence.available").color(Color.GRAY);
-/*    */   @Nonnull
-/* 33 */   private static final Message MESSAGE_CHANGED = Message.translation("server.commands.auth.persistence.changed").color(Color.GREEN);
-/*    */   @Nonnull
-/* 35 */   private static final Message MESSAGE_UNKNOWN_TYPE = Message.translation("server.commands.auth.persistence.unknownType").color(Color.RED);
 /*    */   
 /*    */   public AuthPersistenceCommand() {
-/* 38 */     super("persistence", "server.commands.auth.persistence.desc");
-/* 39 */     addUsageVariant((AbstractCommand)new SetPersistenceVariant());
+/* 30 */     super("persistence", "server.commands.auth.persistence.desc");
+/* 31 */     addUsageVariant((AbstractCommand)new SetPersistenceVariant());
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 44 */     if (ServerAuthManager.getInstance().isSingleplayer()) {
-/* 45 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
+/* 36 */     if (ServerAuthManager.getInstance().isSingleplayer()) {
+/* 37 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 49 */     AuthCredentialStoreProvider provider = HytaleServer.get().getConfig().getAuthCredentialStoreProvider();
-/* 50 */     String typeName = (String)AuthCredentialStoreProvider.CODEC.getIdFor(provider.getClass());
-/* 51 */     context.sendMessage(MESSAGE_CURRENT.param("type", typeName));
+/* 41 */     AuthCredentialStoreProvider provider = HytaleServer.get().getConfig().getAuthCredentialStoreProvider();
+/* 42 */     String typeName = (String)AuthCredentialStoreProvider.CODEC.getIdFor(provider.getClass());
+/* 43 */     context.sendMessage(Message.translation("server.commands.auth.persistence.current")
+/* 44 */         .color(Color.YELLOW)
+/* 45 */         .param("type", typeName));
 /*    */ 
 /*    */     
-/* 54 */     String availableTypes = String.join(", ", AuthCredentialStoreProvider.CODEC.getRegisteredIds());
-/* 55 */     context.sendMessage(MESSAGE_AVAILABLE.param("types", availableTypes));
+/* 48 */     String availableTypes = String.join(", ", AuthCredentialStoreProvider.CODEC.getRegisteredIds());
+/* 49 */     context.sendMessage(Message.translation("server.commands.auth.persistence.available")
+/* 50 */         .color(Color.GRAY)
+/* 51 */         .param("types", availableTypes));
 /*    */   }
 /*    */ 
 /*    */   
@@ -60,37 +56,41 @@
 /*    */     extends CommandBase
 /*    */   {
 /*    */     @Nonnull
-/* 63 */     private final RequiredArg<String> typeArg = withRequiredArg("type", "server.commands.auth.persistence.type.desc", (ArgumentType)ArgTypes.STRING);
+/* 59 */     private final RequiredArg<String> typeArg = withRequiredArg("type", "server.commands.auth.persistence.type.desc", (ArgumentType)ArgTypes.STRING);
 /*    */     
 /*    */     SetPersistenceVariant() {
-/* 66 */       super("server.commands.auth.persistence.variant.desc");
+/* 62 */       super("server.commands.auth.persistence.variant.desc");
 /*    */     }
 /*    */ 
 /*    */     
 /*    */     protected void executeSync(@Nonnull CommandContext context) {
-/* 71 */       ServerAuthManager authManager = ServerAuthManager.getInstance();
+/* 67 */       ServerAuthManager authManager = ServerAuthManager.getInstance();
 /*    */       
-/* 73 */       if (authManager.isSingleplayer()) {
-/* 74 */         context.sendMessage(AuthPersistenceCommand.MESSAGE_SINGLEPLAYER);
+/* 69 */       if (authManager.isSingleplayer()) {
+/* 70 */         context.sendMessage(AuthPersistenceCommand.MESSAGE_SINGLEPLAYER);
 /*    */         
 /*    */         return;
 /*    */       } 
-/* 78 */       String typeName = (String)this.typeArg.get(context);
+/* 74 */       String typeName = (String)this.typeArg.get(context);
 /*    */ 
 /*    */       
-/* 81 */       BuilderCodec<? extends AuthCredentialStoreProvider> codec = (BuilderCodec<? extends AuthCredentialStoreProvider>)AuthCredentialStoreProvider.CODEC.getCodecFor(typeName);
-/* 82 */       if (codec == null) {
-/* 83 */         context.sendMessage(AuthPersistenceCommand.MESSAGE_UNKNOWN_TYPE.param("type", typeName));
+/* 77 */       BuilderCodec<? extends AuthCredentialStoreProvider> codec = (BuilderCodec<? extends AuthCredentialStoreProvider>)AuthCredentialStoreProvider.CODEC.getCodecFor(typeName);
+/* 78 */       if (codec == null) {
+/* 79 */         context.sendMessage(Message.translation("server.commands.auth.persistence.unknownType")
+/* 80 */             .color(Color.RED)
+/* 81 */             .param("type", typeName));
 /*    */         
 /*    */         return;
 /*    */       } 
-/* 87 */       AuthCredentialStoreProvider newProvider = (AuthCredentialStoreProvider)codec.getDefaultValue();
+/* 85 */       AuthCredentialStoreProvider newProvider = (AuthCredentialStoreProvider)codec.getDefaultValue();
 /*    */ 
 /*    */       
-/* 90 */       HytaleServer.get().getConfig().setAuthCredentialStoreProvider(newProvider);
-/* 91 */       authManager.swapCredentialStoreProvider(newProvider);
+/* 88 */       HytaleServer.get().getConfig().setAuthCredentialStoreProvider(newProvider);
+/* 89 */       authManager.swapCredentialStoreProvider(newProvider);
 /*    */       
-/* 93 */       context.sendMessage(AuthPersistenceCommand.MESSAGE_CHANGED.param("type", typeName));
+/* 91 */       context.sendMessage(Message.translation("server.commands.auth.persistence.changed")
+/* 92 */           .color(Color.GREEN)
+/* 93 */           .param("type", typeName));
 /*    */     }
 /*    */   }
 /*    */ }

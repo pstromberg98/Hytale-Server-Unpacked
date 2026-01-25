@@ -25,18 +25,21 @@
 /*    */ 
 /*    */   
 /*    */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 28 */     AmbienceTracker tracker = (AmbienceTracker)holder.getComponent(AmbienceTracker.getComponentType());
-/* 29 */     PlayerRef playerRef = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 28 */     AmbienceTracker ambienceTrackerComponent = (AmbienceTracker)holder.getComponent(AmbienceTracker.getComponentType());
+/* 29 */     assert ambienceTrackerComponent != null;
 /*    */     
-/* 31 */     UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
-/* 32 */     pooledPacket.environmentIndex = 0;
-/* 33 */     playerRef.getPacketHandler().write((Packet)pooledPacket);
+/* 31 */     PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 32 */     assert playerRefComponent != null;
+/*    */     
+/* 34 */     UpdateEnvironmentMusic pooledPacket = ambienceTrackerComponent.getMusicPacket();
+/* 35 */     pooledPacket.environmentIndex = 0;
+/* 36 */     playerRefComponent.getPacketHandler().write((Packet)pooledPacket);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nullable
 /*    */   public Query<EntityStore> getQuery() {
-/* 39 */     return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 42 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)PlayerRef.getComponentType(), (Query)AmbienceTracker.getComponentType() });
 /*    */   }
 /*    */ }
 

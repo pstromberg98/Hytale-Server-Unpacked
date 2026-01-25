@@ -1,5 +1,10 @@
 /*    */ package com.hypixel.hytale.component;
 /*    */ 
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -7,16 +12,24 @@
 /*    */ public class NonSerialized<ECS_TYPE>
 /*    */   implements Component<ECS_TYPE>
 /*    */ {
-/* 10 */   private static final NonSerialized<?> INSTANCE = new NonSerialized();
+/*    */   @Nonnull
+/* 16 */   private static final NonSerialized<?> INSTANCE = new NonSerialized();
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */   
 /*    */   public static <ECS_TYPE> NonSerialized<ECS_TYPE> get() {
-/* 14 */     return (NonSerialized)INSTANCE;
+/* 26 */     return (NonSerialized)INSTANCE;
 /*    */   }
+/*    */ 
 /*    */ 
 /*    */   
 /*    */   public Component<ECS_TYPE> clone() {
-/* 19 */     return get();
+/* 32 */     return get();
 /*    */   }
 /*    */ }
 

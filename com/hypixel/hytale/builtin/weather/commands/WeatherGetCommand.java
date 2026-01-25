@@ -12,35 +12,32 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class WeatherGetCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
-/*    */   @Nonnull
-/* 19 */   private static final Message MESSAGE_COMMANDS_WEATHER_GET_FORCED_WEATHER = Message.translation("server.commands.weather.get.getForcedWeather");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
 /*    */   public WeatherGetCommand() {
-/* 25 */     super("get", "server.commands.weather.get.desc");
+/* 22 */     super("get", "server.commands.weather.get.desc");
 /*    */   }
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
 /*    */     String weatherId;
-/* 30 */     WeatherResource weatherResource = (WeatherResource)store.getResource(WeatherResource.getResourceType());
-/* 31 */     int forcedWeatherIndex = weatherResource.getForcedWeatherIndex();
+/* 27 */     WeatherResource weatherResource = (WeatherResource)store.getResource(WeatherResource.getResourceType());
+/* 28 */     int forcedWeatherIndex = weatherResource.getForcedWeatherIndex();
 /*    */ 
 /*    */     
-/* 34 */     if (forcedWeatherIndex != 0) {
-/* 35 */       Weather weatherAsset = (Weather)Weather.getAssetMap().getAsset(forcedWeatherIndex);
-/* 36 */       weatherId = weatherAsset.getId();
+/* 31 */     if (forcedWeatherIndex != 0) {
+/* 32 */       Weather weatherAsset = (Weather)Weather.getAssetMap().getAsset(forcedWeatherIndex);
+/* 33 */       weatherId = weatherAsset.getId();
 /*    */     } else {
-/* 38 */       weatherId = "not locked";
+/* 35 */       weatherId = "not locked";
 /*    */     } 
 /*    */     
-/* 41 */     context.sendMessage(MESSAGE_COMMANDS_WEATHER_GET_FORCED_WEATHER
-/* 42 */         .param("worldName", world.getName())
-/* 43 */         .param("weather", weatherId));
+/* 38 */     context.sendMessage(Message.translation("server.commands.weather.get.getForcedWeather")
+/* 39 */         .param("worldName", world.getName())
+/* 40 */         .param("weather", weatherId));
 /*    */   }
 /*    */ }
 

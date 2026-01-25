@@ -454,14 +454,13 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class ImageEntry
 /*     */ {
-/* 460 */   private final AtomicInteger keepAlive = new AtomicInteger();
+/* 459 */   private final AtomicInteger keepAlive = new AtomicInteger();
 /*     */   private final MapImage image;
 /*     */   
 /*     */   public ImageEntry(MapImage image) {
-/* 464 */     this.image = image;
+/* 463 */     this.image = image;
 /*     */   }
 /*     */ }
 

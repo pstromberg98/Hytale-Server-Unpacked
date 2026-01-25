@@ -1010,6 +1010,76 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class RateLimitConfig
 /*      */ {
 /*      */   public static final int DEFAULT_PACKETS_PER_SECOND = 2000;
@@ -1021,7 +1091,7 @@
 /*      */   transient HytaleServerConfig hytaleServerConfig;
 /*      */   
 /*      */   static {
-/* 1024 */     CODEC = (Codec<RateLimitConfig>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RateLimitConfig.class, RateLimitConfig::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, b) -> o.enabled = b, o -> o.enabled)).addField(new KeyedCodec("PacketsPerSecond", (Codec)Codec.INTEGER), (o, i) -> o.packetsPerSecond = i, o -> o.packetsPerSecond)).addField(new KeyedCodec("BurstCapacity", (Codec)Codec.INTEGER), (o, i) -> o.burstCapacity = i, o -> o.burstCapacity)).build();
+/* 1094 */     CODEC = (Codec<RateLimitConfig>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RateLimitConfig.class, RateLimitConfig::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, b) -> o.enabled = b, o -> o.enabled)).addField(new KeyedCodec("PacketsPerSecond", (Codec)Codec.INTEGER), (o, i) -> o.packetsPerSecond = i, o -> o.packetsPerSecond)).addField(new KeyedCodec("BurstCapacity", (Codec)Codec.INTEGER), (o, i) -> o.burstCapacity = i, o -> o.burstCapacity)).build();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1032,34 +1102,34 @@
 /*      */ 
 /*      */   
 /*      */   public RateLimitConfig(HytaleServerConfig hytaleServerConfig) {
-/* 1035 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 1105 */     this.hytaleServerConfig = hytaleServerConfig;
 /*      */   }
 /*      */   
 /*      */   public boolean isEnabled() {
-/* 1039 */     return (this.enabled != null) ? this.enabled.booleanValue() : true;
+/* 1109 */     return (this.enabled != null) ? this.enabled.booleanValue() : true;
 /*      */   }
 /*      */   
 /*      */   public void setEnabled(boolean enabled) {
-/* 1043 */     this.enabled = Boolean.valueOf(enabled);
-/* 1044 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1113 */     this.enabled = Boolean.valueOf(enabled);
+/* 1114 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */   
 /*      */   public int getPacketsPerSecond() {
-/* 1048 */     return (this.packetsPerSecond != null) ? this.packetsPerSecond.intValue() : 2000;
+/* 1118 */     return (this.packetsPerSecond != null) ? this.packetsPerSecond.intValue() : 2000;
 /*      */   }
 /*      */   
 /*      */   public void setPacketsPerSecond(int packetsPerSecond) {
-/* 1052 */     this.packetsPerSecond = Integer.valueOf(packetsPerSecond);
-/* 1053 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1122 */     this.packetsPerSecond = Integer.valueOf(packetsPerSecond);
+/* 1123 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */   
 /*      */   public int getBurstCapacity() {
-/* 1057 */     return (this.burstCapacity != null) ? this.burstCapacity.intValue() : 500;
+/* 1127 */     return (this.burstCapacity != null) ? this.burstCapacity.intValue() : 500;
 /*      */   }
 /*      */   
 /*      */   public void setBurstCapacity(int burstCapacity) {
-/* 1061 */     this.burstCapacity = Integer.valueOf(burstCapacity);
-/* 1062 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
+/* 1131 */     this.burstCapacity = Integer.valueOf(burstCapacity);
+/* 1132 */     if (this.hytaleServerConfig != null) this.hytaleServerConfig.markChanged(); 
 /*      */   }
 /*      */ }
 

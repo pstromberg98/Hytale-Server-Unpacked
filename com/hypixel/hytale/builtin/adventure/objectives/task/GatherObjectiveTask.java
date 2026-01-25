@@ -66,41 +66,43 @@
 /*     */           Ref<EntityStore> ref = livingEntity.getReference();
 /*     */ 
 /*     */           
+/*     */           if (ref == null || !ref.isValid()) {
+/*     */             return;
+/*     */           }
+/*     */           
 /*     */           World refWorld = ((EntityStore)store.getExternalData()).getWorld();
-/*     */ 
 /*     */           
 /*     */           refWorld.execute(());
 /*     */         });
-/*     */ 
 /*     */     
-/*  76 */     return RegistrationTransactionRecord.wrap(this.eventRegistry);
+/*  78 */     return RegistrationTransactionRecord.wrap(this.eventRegistry);
 /*     */   }
 /*     */   
 /*     */   private int countObjectiveItemInInventories(@Nonnull Set<UUID> participatingPlayers, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  80 */     int count = 0;
-/*  81 */     BlockTagOrItemIdField blockTypeOrSet = getAsset().getBlockTagOrItemIdField();
-/*  82 */     for (UUID playerUUID : participatingPlayers) {
+/*  82 */     int count = 0;
+/*  83 */     BlockTagOrItemIdField blockTypeOrSet = getAsset().getBlockTagOrItemIdField();
+/*  84 */     for (UUID playerUUID : participatingPlayers) {
 /*     */       
-/*  84 */       PlayerRef playerRefComponent = Universe.get().getPlayer(playerUUID);
-/*  85 */       if (playerRefComponent == null)
+/*  86 */       PlayerRef playerRefComponent = Universe.get().getPlayer(playerUUID);
+/*  87 */       if (playerRefComponent == null)
 /*     */         continue; 
-/*  87 */       Ref<EntityStore> playerRef = playerRefComponent.getReference();
-/*  88 */       if (playerRef == null || !playerRef.isValid())
+/*  89 */       Ref<EntityStore> playerRef = playerRefComponent.getReference();
+/*  90 */       if (playerRef == null || !playerRef.isValid())
 /*     */         continue; 
-/*  90 */       Player playerComponent = (Player)componentAccessor.getComponent(playerRef, Player.getComponentType());
-/*  91 */       assert playerComponent != null;
+/*  92 */       Player playerComponent = (Player)componentAccessor.getComponent(playerRef, Player.getComponentType());
+/*  93 */       assert playerComponent != null;
 /*     */       
-/*  93 */       CombinedItemContainer inventory = playerComponent.getInventory().getCombinedHotbarFirst();
-/*  94 */       count += inventory.countItemStacks(itemStack -> blockTypeOrSet.isBlockTypeIncluded(itemStack.getItemId()));
+/*  95 */       CombinedItemContainer inventory = playerComponent.getInventory().getCombinedHotbarFirst();
+/*  96 */       count += inventory.countItemStacks(itemStack -> blockTypeOrSet.isBlockTypeIncluded(itemStack.getItemId()));
 /*     */     } 
 /*     */     
-/*  97 */     return count;
+/*  99 */     return count;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 103 */     return "GatherObjectiveTask{} " + super.toString();
+/* 105 */     return "GatherObjectiveTask{} " + super.toString();
 /*     */   }
 /*     */ }
 

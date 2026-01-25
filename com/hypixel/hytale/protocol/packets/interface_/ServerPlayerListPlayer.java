@@ -44,11 +44,11 @@
 /*  44 */     ServerPlayerListPlayer obj = new ServerPlayerListPlayer();
 /*  45 */     byte nullBits = buf.getByte(offset);
 /*  46 */     obj.uuid = PacketIO.readUUID(buf, offset + 1);
-/*  47 */     if ((nullBits & 0x2) != 0) obj.worldUuid = PacketIO.readUUID(buf, offset + 17); 
+/*  47 */     if ((nullBits & 0x1) != 0) obj.worldUuid = PacketIO.readUUID(buf, offset + 17); 
 /*  48 */     obj.ping = buf.getIntLE(offset + 33);
 /*     */     
 /*  50 */     int pos = offset + 37;
-/*  51 */     if ((nullBits & 0x1) != 0) { int usernameLen = VarInt.peek(buf, pos);
+/*  51 */     if ((nullBits & 0x2) != 0) { int usernameLen = VarInt.peek(buf, pos);
 /*  52 */       if (usernameLen < 0) throw ProtocolException.negativeLength("Username", usernameLen); 
 /*  53 */       if (usernameLen > 4096000) throw ProtocolException.stringTooLong("Username", usernameLen, 4096000); 
 /*  54 */       int usernameVarLen = VarInt.length(buf, pos);
@@ -61,15 +61,15 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  62 */     byte nullBits = buf.getByte(offset);
 /*  63 */     int pos = offset + 37;
-/*  64 */     if ((nullBits & 0x1) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/*  64 */     if ((nullBits & 0x2) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /*  65 */      return pos - offset;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  70 */     byte nullBits = 0;
-/*  71 */     if (this.username != null) nullBits = (byte)(nullBits | 0x1); 
-/*  72 */     if (this.worldUuid != null) nullBits = (byte)(nullBits | 0x2); 
+/*  71 */     if (this.worldUuid != null) nullBits = (byte)(nullBits | 0x1); 
+/*  72 */     if (this.username != null) nullBits = (byte)(nullBits | 0x2); 
 /*  73 */     buf.writeByte(nullBits);
 /*     */     
 /*  75 */     PacketIO.writeUUID(buf, this.uuid);
@@ -96,7 +96,7 @@
 /*     */     
 /*  97 */     int pos = offset + 37;
 /*     */     
-/*  99 */     if ((nullBits & 0x1) != 0) {
+/*  99 */     if ((nullBits & 0x2) != 0) {
 /* 100 */       int usernameLen = VarInt.peek(buffer, pos);
 /* 101 */       if (usernameLen < 0) {
 /* 102 */         return ValidationResult.error("Invalid string length for Username");

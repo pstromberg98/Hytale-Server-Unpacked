@@ -76,17 +76,19 @@
 /*  76 */     Vector3d position = transformComponent.getPosition();
 /*     */     
 /*  78 */     TransformComponent targetTransformComponent = (TransformComponent)commandBuffer.getComponent(targetRef, this.transformComponentType);
-/*  79 */     assert targetTransformComponent != null;
-/*  80 */     Vector3d targetPosition = targetTransformComponent.getPosition().clone();
+/*  79 */     if (targetTransformComponent == null) {
+/*     */       return;
+/*     */     }
+/*  82 */     Vector3d targetPosition = targetTransformComponent.getPosition().clone();
 /*     */     
-/*  82 */     ModelComponent targetModelComponent = (ModelComponent)commandBuffer.getComponent(targetRef, ModelComponent.getComponentType());
-/*  83 */     if (targetModelComponent != null) {
-/*  84 */       float targetModelEyeHeight = targetModelComponent.getModel().getEyeHeight(targetRef, (ComponentAccessor)commandBuffer);
-/*  85 */       targetPosition.add(0.0D, (targetModelEyeHeight / 5.0F), 0.0D);
+/*  84 */     ModelComponent targetModelComponent = (ModelComponent)commandBuffer.getComponent(targetRef, ModelComponent.getComponentType());
+/*  85 */     if (targetModelComponent != null) {
+/*  86 */       float targetModelEyeHeight = targetModelComponent.getModel().getEyeHeight(targetRef, (ComponentAccessor)commandBuffer);
+/*  87 */       targetPosition.add(0.0D, (targetModelEyeHeight / 5.0F), 0.0D);
 /*     */     } 
 /*     */     
-/*  88 */     if (updateMovement(pickupItemComponent, position, targetPosition, dt)) {
-/*  89 */       pickupItemComponent.setFinished(true);
+/*  90 */     if (updateMovement(pickupItemComponent, position, targetPosition, dt)) {
+/*  91 */       pickupItemComponent.setFinished(true);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -100,24 +102,24 @@
 /*     */ 
 /*     */   
 /*     */   private static boolean updateMovement(@Nonnull PickupItemComponent pickupItemComponent, @Nonnull Vector3d current, @Nonnull Vector3d target, float dt) {
-/* 103 */     float remainingTime = pickupItemComponent.getLifeTime();
-/* 104 */     float originalLifeTime = pickupItemComponent.getOriginalLifeTime();
+/* 105 */     float remainingTime = pickupItemComponent.getLifeTime();
+/* 106 */     float originalLifeTime = pickupItemComponent.getOriginalLifeTime();
 /*     */     
-/* 106 */     float progress = 1.0F - remainingTime / originalLifeTime;
-/* 107 */     if (progress >= 1.0F) {
-/* 108 */       current.assign(target);
-/* 109 */       return true;
+/* 108 */     float progress = 1.0F - remainingTime / originalLifeTime;
+/* 109 */     if (progress >= 1.0F) {
+/* 110 */       current.assign(target);
+/* 111 */       return true;
 /*     */     } 
 /*     */     
-/* 112 */     current.assign(Vector3d.lerp(pickupItemComponent.getStartPosition(), target, progress));
-/* 113 */     pickupItemComponent.decreaseLifetime(dt);
-/* 114 */     return false;
+/* 114 */     current.assign(Vector3d.lerp(pickupItemComponent.getStartPosition(), target, progress));
+/* 115 */     pickupItemComponent.decreaseLifetime(dt);
+/* 116 */     return false;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 120 */     return this.query;
+/* 122 */     return this.query;
 /*     */   }
 /*     */ }
 

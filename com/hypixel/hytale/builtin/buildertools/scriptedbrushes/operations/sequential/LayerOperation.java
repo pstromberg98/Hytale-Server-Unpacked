@@ -60,50 +60,53 @@
 /*  60 */         for (LayerEntryCodec entry : this.layerArgs) {
 /*  61 */           depthTestingAt += entry.getDepth().intValue();
 /*  62 */           if (depth < depthTestingAt) {
-/*  63 */             int blockId = resolveBlockId(entry, toolArgs, brushConfig);
-/*  64 */             if (blockId >= 0) {
-/*  65 */               edit.setBlock(x, y, z, blockId);
+/*  63 */             if (entry.isSkip()) {
+/*  64 */               return true;
 /*     */             }
-/*  67 */             return true;
+/*  66 */             int blockId = resolveBlockId(entry, toolArgs, brushConfig);
+/*  67 */             if (blockId >= 0) {
+/*  68 */               edit.setBlock(x, y, z, blockId);
+/*     */             }
+/*  70 */             return true;
 /*     */           } 
 /*     */         } 
 /*     */       } 
 /*     */     } 
 /*     */     
-/*  73 */     return true;
+/*  76 */     return true;
 /*     */   }
 /*     */   
 /*     */   private int resolveBlockId(LayerEntryCodec entry, @Nullable Map<String, Object> toolArgs, BrushConfig brushConfig) {
-/*  77 */     if (entry.isUseToolArg()) {
-/*  78 */       if (toolArgs == null || !toolArgs.containsKey(entry.getMaterial())) {
-/*  79 */         brushConfig.setErrorFlag("Layer: Tool arg '" + entry.getMaterial() + "' not found");
-/*  80 */         return -1;
+/*  80 */     if (entry.isUseToolArg()) {
+/*  81 */       if (toolArgs == null || !toolArgs.containsKey(entry.getMaterial())) {
+/*  82 */         brushConfig.setErrorFlag("Layer: Tool arg '" + entry.getMaterial() + "' not found");
+/*  83 */         return -1;
 /*     */       } 
-/*  82 */       Object argValue = toolArgs.get(entry.getMaterial());
-/*  83 */       if (argValue instanceof BlockPattern) { BlockPattern blockPattern = (BlockPattern)argValue;
-/*  84 */         return blockPattern.nextBlock(brushConfig.getRandom()); }
+/*  85 */       Object argValue = toolArgs.get(entry.getMaterial());
+/*  86 */       if (argValue instanceof BlockPattern) { BlockPattern blockPattern = (BlockPattern)argValue;
+/*  87 */         return blockPattern.nextBlock(brushConfig.getRandom()); }
 /*     */       
-/*  86 */       brushConfig.setErrorFlag("Layer: Tool arg '" + entry.getMaterial() + "' is not a Block type");
-/*  87 */       return -1;
+/*  89 */       brushConfig.setErrorFlag("Layer: Tool arg '" + entry.getMaterial() + "' is not a Block type");
+/*  90 */       return -1;
 /*     */     } 
 /*     */     
-/*  90 */     return BlockType.getAssetMap().getIndex(entry.getMaterial());
+/*  93 */     return BlockType.getAssetMap().getIndex(entry.getMaterial());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   private Map<String, Object> getToolArgs(Ref<EntityStore> ref, ComponentAccessor<EntityStore> componentAccessor) {
-/*  96 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/*  97 */     if (playerComponent == null) return null;
+/*  99 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 100 */     if (playerComponent == null) return null;
 /*     */     
-/*  99 */     BuilderTool builderTool = BuilderTool.getActiveBuilderTool(playerComponent);
-/* 100 */     if (builderTool == null) return null;
+/* 102 */     BuilderTool builderTool = BuilderTool.getActiveBuilderTool(playerComponent);
+/* 103 */     if (builderTool == null) return null;
 /*     */     
-/* 102 */     ItemStack itemStack = playerComponent.getInventory().getItemInHand();
-/* 103 */     if (itemStack == null) return null;
+/* 105 */     ItemStack itemStack = playerComponent.getInventory().getItemInHand();
+/* 106 */     if (itemStack == null) return null;
 /*     */     
-/* 105 */     BuilderTool.ArgData argData = builderTool.getItemArgData(itemStack);
-/* 106 */     return argData.tool();
+/* 108 */     BuilderTool.ArgData argData = builderTool.getItemArgData(itemStack);
+/* 109 */     return argData.tool();
 /*     */   }
 /*     */   
 /*     */   public void modifyBrushConfig(@Nonnull Ref<EntityStore> ref, @Nonnull BrushConfig brushConfig, @Nonnull BrushConfigCommandExecutor brushConfigCommandExecutor, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {}

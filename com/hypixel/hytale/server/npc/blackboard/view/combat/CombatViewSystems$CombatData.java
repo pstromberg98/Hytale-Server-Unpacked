@@ -149,31 +149,27 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class CombatData
 /*     */   implements Component<EntityStore>
 /*     */ {
 /*     */   public static ComponentType<EntityStore, CombatData> getComponentType() {
-/* 160 */     return NPCPlugin.get().getCombatDataComponentType();
+/* 156 */     return NPCPlugin.get().getCombatDataComponentType();
 /*     */   }
 /*     */   
-/* 163 */   private final List<InterpretedCombatData> combatData = (List<InterpretedCombatData>)new ObjectArrayList();
-/* 164 */   private final List<InterpretedCombatData> unmodifiableCombatData = Collections.unmodifiableList(this.combatData);
+/* 159 */   private final List<InterpretedCombatData> combatData = (List<InterpretedCombatData>)new ObjectArrayList();
+/* 160 */   private final List<InterpretedCombatData> unmodifiableCombatData = Collections.unmodifiableList(this.combatData);
 /*     */   
 /*     */   private boolean interpreted;
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<EntityStore> clone() {
-/* 171 */     CombatData data = new CombatData();
-/* 172 */     data.interpreted = this.interpreted;
-/* 173 */     for (int i = 0; i < this.combatData.size(); i++) {
-/* 174 */       data.combatData.add(((InterpretedCombatData)this.combatData.get(i)).clone());
+/* 167 */     CombatData data = new CombatData();
+/* 168 */     data.interpreted = this.interpreted;
+/* 169 */     for (int i = 0; i < this.combatData.size(); i++) {
+/* 170 */       data.combatData.add(((InterpretedCombatData)this.combatData.get(i)).clone());
 /*     */     }
-/* 176 */     return data;
+/* 172 */     return data;
 /*     */   }
 /*     */ }
 

@@ -91,21 +91,13 @@
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/*  94 */   private static final Message MESSAGE_COMMANDS_OBJECTIVE_OBJECTIVE_LINE_NOT_FOUND = Message.translation("server.commands.objective.objectiveLineNotFound");
-/*     */   @Nonnull
-/*  96 */   private static final Message MESSAGE_GENERAL_FAILED_DID_YOU_MEAN = Message.translation("server.general.failed.didYouMean");
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
-/*     */   @Nonnull
-/* 102 */   private final RequiredArg<String> objectiveLineArg = withRequiredArg("objectiveLineId", "server.commands.objective.start.objectiveLine.arg.objectiveLineId.desc", (ArgumentType)ArgTypes.STRING);
+/*  94 */   private final RequiredArg<String> objectiveLineArg = withRequiredArg("objectiveLineId", "server.commands.objective.start.objectiveLine.arg.objectiveLineId.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public StartObjectiveLineCommand() {
-/* 108 */     super("line", "server.commands.objective.start.objectiveLine");
+/* 100 */     super("line", "server.commands.objective.start.objectiveLine");
 /*     */   }
 /*     */ 
 /*     */ 
@@ -116,20 +108,21 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 119 */     String objectiveLineId = (String)this.objectiveLineArg.get(context);
+/* 111 */     String objectiveLineId = (String)this.objectiveLineArg.get(context);
 /*     */ 
 /*     */     
-/* 122 */     if (ObjectiveLineAsset.getAssetMap().getAsset(objectiveLineId) == null) {
-/* 123 */       context.sendMessage(MESSAGE_COMMANDS_OBJECTIVE_OBJECTIVE_LINE_NOT_FOUND.param("id", objectiveLineId));
-/* 124 */       context.sendMessage(MESSAGE_GENERAL_FAILED_DID_YOU_MEAN
-/* 125 */           .param("choices", StringUtil.sortByFuzzyDistance(objectiveLineId, ObjectiveLineAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
+/* 114 */     if (ObjectiveLineAsset.getAssetMap().getAsset(objectiveLineId) == null) {
+/* 115 */       context.sendMessage(Message.translation("server.commands.objective.objectiveLineNotFound")
+/* 116 */           .param("id", objectiveLineId));
+/* 117 */       context.sendMessage(Message.translation("server.general.failed.didYouMean")
+/* 118 */           .param("choices", StringUtil.sortByFuzzyDistance(objectiveLineId, ObjectiveLineAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 129 */     HashSet<UUID> playerSet = new HashSet<>();
-/* 130 */     playerSet.add(playerRef.getUuid());
+/* 122 */     HashSet<UUID> playerSet = new HashSet<>();
+/* 123 */     playerSet.add(playerRef.getUuid());
 /*     */     
-/* 132 */     ObjectivePlugin.get().startObjectiveLine(store, objectiveLineId, playerSet, world.getWorldConfig().getUuid(), null);
+/* 125 */     ObjectivePlugin.get().startObjectiveLine(store, objectiveLineId, playerSet, world.getWorldConfig().getUuid(), null);
 /*     */   }
 /*     */ }
 

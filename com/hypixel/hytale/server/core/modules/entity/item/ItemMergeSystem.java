@@ -59,105 +59,110 @@
 /*  59 */     this.interactableComponentType = interactableComponentType;
 /*     */ 
 /*     */     
-/*  62 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemComponentComponentType, (Query)Query.not((Query)interactableComponentType), (Query)Query.not((Query)PreventItemMerging.getComponentType()) });
+/*  62 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemComponentComponentType, 
+/*     */           
+/*  64 */           (Query)TransformComponent.getComponentType(), 
+/*  65 */           (Query)Query.not((Query)interactableComponentType), 
+/*  66 */           (Query)Query.not((Query)PreventItemMerging.getComponentType()) });
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  68 */     return this.query;
+/*  73 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/*  73 */     return false;
+/*  78 */     return false;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  78 */     ItemComponent itemComponent = (ItemComponent)archetypeChunk.getComponent(index, this.itemComponentComponentType);
-/*  79 */     assert itemComponent != null;
-/*  80 */     ItemStack itemStack = itemComponent.getItemStack();
+/*  83 */     ItemComponent itemComponent = (ItemComponent)archetypeChunk.getComponent(index, this.itemComponentComponentType);
+/*  84 */     assert itemComponent != null;
+/*  85 */     ItemStack itemStack = itemComponent.getItemStack();
 /*     */ 
 /*     */     
-/*  83 */     if (itemStack == null)
+/*  88 */     if (itemStack == null)
 /*     */       return; 
-/*  85 */     Item itemAsset = itemStack.getItem();
-/*  86 */     int maxStack = itemAsset.getMaxStack();
+/*  90 */     Item itemAsset = itemStack.getItem();
+/*  91 */     int maxStack = itemAsset.getMaxStack();
 /*     */     
-/*  88 */     if (maxStack <= 1 || itemStack.getQuantity() >= maxStack)
+/*  93 */     if (maxStack <= 1 || itemStack.getQuantity() >= maxStack)
 /*     */       return; 
-/*  90 */     if (!itemComponent.pollMergeDelay(dt))
+/*  95 */     if (!itemComponent.pollMergeDelay(dt))
 /*     */       return; 
-/*  92 */     SpatialResource<Ref<EntityStore>, EntityStore> spatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(this.itemSpatialComponent);
-/*  93 */     TimeResource timeResource = (TimeResource)store.getResource(TimeResource.getResourceType());
+/*  97 */     SpatialResource<Ref<EntityStore>, EntityStore> spatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(this.itemSpatialComponent);
+/*  98 */     TimeResource timeResource = (TimeResource)store.getResource(TimeResource.getResourceType());
 /*     */     
-/*  95 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  96 */     assert transformComponent != null;
+/* 100 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/* 101 */     assert transformComponent != null;
 /*     */     
-/*  98 */     Vector3d position = transformComponent.getPosition();
+/* 103 */     Vector3d position = transformComponent.getPosition();
 /*     */ 
 /*     */     
-/* 101 */     ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
-/* 102 */     spatialResource.getSpatialStructure().ordered(position, 2.0D, (List)results);
+/* 106 */     ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
+/* 107 */     spatialResource.getSpatialStructure().ordered(position, 2.0D, (List)results);
 /*     */     
-/* 104 */     Ref<EntityStore> reference = archetypeChunk.getReferenceTo(index);
+/* 109 */     Ref<EntityStore> reference = archetypeChunk.getReferenceTo(index);
 /*     */     
-/* 106 */     for (ObjectListIterator<Ref<EntityStore>> objectListIterator = results.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> otherReference = objectListIterator.next();
-/* 107 */       if (!otherReference.isValid() || otherReference.equals(reference))
+/* 111 */     for (ObjectListIterator<Ref<EntityStore>> objectListIterator = results.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> otherReference = objectListIterator.next();
+/* 112 */       if (!otherReference.isValid() || otherReference.equals(reference))
 /*     */         continue; 
-/* 109 */       ItemComponent otherItemComponent = (ItemComponent)store.getComponent(otherReference, this.itemComponentComponentType);
-/* 110 */       assert otherItemComponent != null;
+/* 114 */       ItemComponent otherItemComponent = (ItemComponent)store.getComponent(otherReference, this.itemComponentComponentType);
+/* 115 */       assert otherItemComponent != null;
 /*     */ 
 /*     */       
-/* 113 */       ItemStack otherItemStack = otherItemComponent.getItemStack();
-/* 114 */       if (otherItemStack == null) {
+/* 118 */       ItemStack otherItemStack = otherItemComponent.getItemStack();
+/* 119 */       if (otherItemStack == null) {
 /*     */         continue;
 /*     */       }
-/* 117 */       if (commandBuffer.getArchetype(otherReference).contains(this.interactableComponentType))
+/* 122 */       if (commandBuffer.getArchetype(otherReference).contains(this.interactableComponentType))
 /*     */         continue; 
-/* 119 */       if (!itemStack.isStackableWith(otherItemStack))
+/* 124 */       if (!itemStack.isStackableWith(otherItemStack))
 /*     */         continue; 
-/* 121 */       int otherQuantity = otherItemStack.getQuantity();
-/* 122 */       if (otherQuantity >= maxStack) {
+/* 126 */       int otherQuantity = otherItemStack.getQuantity();
+/* 127 */       if (otherQuantity >= maxStack) {
 /*     */         continue;
 /*     */       }
 /*     */ 
 /*     */       
-/* 127 */       int combinedTotal = itemStack.getQuantity() + otherQuantity;
-/* 128 */       if (combinedTotal <= maxStack) {
-/* 129 */         commandBuffer.removeEntity(otherReference, RemoveReason.REMOVE);
+/* 132 */       int combinedTotal = itemStack.getQuantity() + otherQuantity;
+/* 133 */       if (combinedTotal <= maxStack) {
+/* 134 */         commandBuffer.removeEntity(otherReference, RemoveReason.REMOVE);
 /*     */ 
 /*     */ 
 /*     */         
-/* 133 */         otherItemComponent.setItemStack(null);
+/* 138 */         otherItemComponent.setItemStack(null);
 /*     */         
-/* 135 */         itemStack = itemStack.withQuantity(combinedTotal);
+/* 140 */         itemStack = itemStack.withQuantity(combinedTotal);
 /*     */       } else {
-/* 137 */         otherItemComponent.setItemStack(itemStack.withQuantity(combinedTotal - maxStack));
-/* 138 */         float f = otherItemComponent.computeLifetimeSeconds((ComponentAccessor<EntityStore>)commandBuffer);
-/* 139 */         DespawnComponent.trySetDespawn(commandBuffer, timeResource, otherReference, (DespawnComponent)commandBuffer.getComponent(otherReference, DespawnComponent.getComponentType()), Float.valueOf(f));
+/* 142 */         otherItemComponent.setItemStack(itemStack.withQuantity(combinedTotal - maxStack));
+/* 143 */         float f = otherItemComponent.computeLifetimeSeconds((ComponentAccessor<EntityStore>)commandBuffer);
+/* 144 */         DespawnComponent.trySetDespawn(commandBuffer, timeResource, otherReference, (DespawnComponent)commandBuffer.getComponent(otherReference, DespawnComponent.getComponentType()), Float.valueOf(f));
 /*     */         
-/* 141 */         ColorLight otherItemDynamicLight = otherItemComponent.computeDynamicLight();
-/* 142 */         if (otherItemDynamicLight != null) {
-/* 143 */           DynamicLight otherDynamicLightComponent = (DynamicLight)commandBuffer.getComponent(otherReference, DynamicLight.getComponentType());
-/* 144 */           if (otherDynamicLightComponent != null) {
-/* 145 */             otherDynamicLightComponent.setColorLight(otherItemDynamicLight);
+/* 146 */         ColorLight otherItemDynamicLight = otherItemComponent.computeDynamicLight();
+/* 147 */         if (otherItemDynamicLight != null) {
+/* 148 */           DynamicLight otherDynamicLightComponent = (DynamicLight)commandBuffer.getComponent(otherReference, DynamicLight.getComponentType());
+/* 149 */           if (otherDynamicLightComponent != null) {
+/* 150 */             otherDynamicLightComponent.setColorLight(otherItemDynamicLight);
 /*     */           } else {
-/* 147 */             commandBuffer.putComponent(otherReference, DynamicLight.getComponentType(), (Component)new DynamicLight(otherItemDynamicLight));
+/* 152 */             commandBuffer.putComponent(otherReference, DynamicLight.getComponentType(), (Component)new DynamicLight(otherItemDynamicLight));
 /*     */           } 
 /*     */         } 
 /*     */         
-/* 151 */         itemStack = itemStack.withQuantity(maxStack);
+/* 156 */         itemStack = itemStack.withQuantity(maxStack);
 /*     */       } 
 /*     */       
-/* 154 */       itemComponent.setItemStack(itemStack);
+/* 159 */       itemComponent.setItemStack(itemStack);
 /*     */       
-/* 156 */       float newLifetime = itemComponent.computeLifetimeSeconds((ComponentAccessor<EntityStore>)commandBuffer);
-/* 157 */       DespawnComponent.trySetDespawn(commandBuffer, timeResource, reference, (DespawnComponent)archetypeChunk.getComponent(index, DespawnComponent.getComponentType()), Float.valueOf(newLifetime));
+/* 161 */       float newLifetime = itemComponent.computeLifetimeSeconds((ComponentAccessor<EntityStore>)commandBuffer);
+/* 162 */       DespawnComponent.trySetDespawn(commandBuffer, timeResource, reference, (DespawnComponent)archetypeChunk.getComponent(index, DespawnComponent.getComponentType()), Float.valueOf(newLifetime));
 /*     */ 
 /*     */       
-/* 160 */       if (itemStack.getQuantity() >= maxStack)
+/* 165 */       if (itemStack.getQuantity() >= maxStack)
 /*     */         break;  }
 /*     */   
 /*     */   }

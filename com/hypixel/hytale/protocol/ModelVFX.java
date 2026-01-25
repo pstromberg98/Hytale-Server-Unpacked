@@ -79,20 +79,20 @@
 /*  79 */     obj.switchTo = SwitchTo.fromValue(buf.getByte(offset + 1));
 /*  80 */     obj.effectDirection = EffectDirection.fromValue(buf.getByte(offset + 2));
 /*  81 */     obj.animationDuration = buf.getFloatLE(offset + 3);
-/*  82 */     if ((nullBits & 0x2) != 0) obj.animationRange = Vector2f.deserialize(buf, offset + 7); 
+/*  82 */     if ((nullBits & 0x1) != 0) obj.animationRange = Vector2f.deserialize(buf, offset + 7); 
 /*  83 */     obj.loopOption = LoopOption.fromValue(buf.getByte(offset + 15));
 /*  84 */     obj.curveType = CurveType.fromValue(buf.getByte(offset + 16));
-/*  85 */     if ((nullBits & 0x4) != 0) obj.highlightColor = Color.deserialize(buf, offset + 17); 
+/*  85 */     if ((nullBits & 0x2) != 0) obj.highlightColor = Color.deserialize(buf, offset + 17); 
 /*  86 */     obj.highlightThickness = buf.getFloatLE(offset + 20);
 /*  87 */     obj.useBloomOnHighlight = (buf.getByte(offset + 24) != 0);
 /*  88 */     obj.useProgessiveHighlight = (buf.getByte(offset + 25) != 0);
-/*  89 */     if ((nullBits & 0x8) != 0) obj.noiseScale = Vector2f.deserialize(buf, offset + 26); 
-/*  90 */     if ((nullBits & 0x10) != 0) obj.noiseScrollSpeed = Vector2f.deserialize(buf, offset + 34); 
-/*  91 */     if ((nullBits & 0x20) != 0) obj.postColor = Color.deserialize(buf, offset + 42); 
+/*  89 */     if ((nullBits & 0x4) != 0) obj.noiseScale = Vector2f.deserialize(buf, offset + 26); 
+/*  90 */     if ((nullBits & 0x8) != 0) obj.noiseScrollSpeed = Vector2f.deserialize(buf, offset + 34); 
+/*  91 */     if ((nullBits & 0x10) != 0) obj.postColor = Color.deserialize(buf, offset + 42); 
 /*  92 */     obj.postColorOpacity = buf.getFloatLE(offset + 45);
 /*     */     
 /*  94 */     int pos = offset + 49;
-/*  95 */     if ((nullBits & 0x1) != 0) { int idLen = VarInt.peek(buf, pos);
+/*  95 */     if ((nullBits & 0x20) != 0) { int idLen = VarInt.peek(buf, pos);
 /*  96 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  97 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  98 */       int idVarLen = VarInt.length(buf, pos);
@@ -105,19 +105,19 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 106 */     byte nullBits = buf.getByte(offset);
 /* 107 */     int pos = offset + 49;
-/* 108 */     if ((nullBits & 0x1) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/* 108 */     if ((nullBits & 0x20) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /* 109 */      return pos - offset;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 114 */     byte nullBits = 0;
-/* 115 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 116 */     if (this.animationRange != null) nullBits = (byte)(nullBits | 0x2); 
-/* 117 */     if (this.highlightColor != null) nullBits = (byte)(nullBits | 0x4); 
-/* 118 */     if (this.noiseScale != null) nullBits = (byte)(nullBits | 0x8); 
-/* 119 */     if (this.noiseScrollSpeed != null) nullBits = (byte)(nullBits | 0x10); 
-/* 120 */     if (this.postColor != null) nullBits = (byte)(nullBits | 0x20); 
+/* 115 */     if (this.animationRange != null) nullBits = (byte)(nullBits | 0x1); 
+/* 116 */     if (this.highlightColor != null) nullBits = (byte)(nullBits | 0x2); 
+/* 117 */     if (this.noiseScale != null) nullBits = (byte)(nullBits | 0x4); 
+/* 118 */     if (this.noiseScrollSpeed != null) nullBits = (byte)(nullBits | 0x8); 
+/* 119 */     if (this.postColor != null) nullBits = (byte)(nullBits | 0x10); 
+/* 120 */     if (this.id != null) nullBits = (byte)(nullBits | 0x20); 
 /* 121 */     buf.writeByte(nullBits);
 /*     */     
 /* 123 */     buf.writeByte(this.switchTo.getValue());
@@ -155,7 +155,7 @@
 /*     */     
 /* 156 */     int pos = offset + 49;
 /*     */     
-/* 158 */     if ((nullBits & 0x1) != 0) {
+/* 158 */     if ((nullBits & 0x20) != 0) {
 /* 159 */       int idLen = VarInt.peek(buffer, pos);
 /* 160 */       if (idLen < 0) {
 /* 161 */         return ValidationResult.error("Invalid string length for Id");

@@ -611,111 +611,104 @@
 /*     */       
 /* 248 */       if (y >= 320)
 /*     */         return; 
-/* 250 */       int checkIndex = ChunkUtil.indexBlockInColumn(x, y + 1, z);
-/* 251 */       Ref<ChunkStore> aboveBlockRef = blockComponentChunk.getEntityReference(checkIndex);
+/* 250 */       assert info.getChunkRef() != null;
+/* 251 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 252 */       assert blockChunk != null;
+/* 253 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*     */       
-/* 253 */       boolean hasCrop = false;
-/* 254 */       if (aboveBlockRef != null) {
-/* 255 */         FarmingBlock farmingBlock = (FarmingBlock)commandBuffer.getComponent(aboveBlockRef, FarmingBlock.getComponentType());
-/* 256 */         hasCrop = (farmingBlock != null);
-/*     */       } 
+/* 255 */       boolean hasCrop = FarmingSystems.hasCropAbove(blockChunk, x, y, z);
 /*     */       
-/* 259 */       assert info.getChunkRef() != null;
-/* 260 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 261 */       assert blockChunk != null;
-/* 262 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/* 257 */       BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
+/* 258 */       Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
 /*     */       
-/* 264 */       BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockSection.get(x, y, z));
-/* 265 */       Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
-/*     */       
-/* 267 */       Instant decayTime = soilBlock.getDecayTime();
+/* 260 */       Instant decayTime = soilBlock.getDecayTime();
 /*     */ 
 /*     */       
-/* 270 */       if (soilBlock.isPlanted() && !hasCrop) {
-/* 271 */         if (!FarmingSystems.updateSoilDecayTime(commandBuffer, soilBlock, blockType))
-/* 272 */           return;  if (decayTime != null) {
-/* 273 */           blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
+/* 263 */       if (soilBlock.isPlanted() && !hasCrop) {
+/* 264 */         if (!FarmingSystems.updateSoilDecayTime(commandBuffer, soilBlock, blockType))
+/* 265 */           return;  if (decayTime != null) {
+/* 266 */           blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), decayTime);
 /*     */         }
-/* 275 */       } else if (!soilBlock.isPlanted() && !hasCrop) {
+/* 268 */       } else if (!soilBlock.isPlanted() && !hasCrop) {
 /*     */         
-/* 277 */         if (decayTime == null || !decayTime.isAfter(currentTime)) {
-/* 278 */           assert info.getChunkRef() != null;
+/* 270 */         if (decayTime == null || !decayTime.isAfter(currentTime)) {
+/* 271 */           assert info.getChunkRef() != null;
 /*     */           
-/* 280 */           if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null)
-/* 281 */             return;  FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
-/* 282 */           String str = soilConfig.getTargetBlock();
-/* 283 */           if (str == null)
+/* 273 */           if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null)
+/* 274 */             return;  FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
+/* 275 */           String str = soilConfig.getTargetBlock();
+/* 276 */           if (str == null)
 /*     */             return; 
-/* 285 */           int targetBlockId = BlockType.getAssetMap().getIndex(str);
-/* 286 */           if (targetBlockId == Integer.MIN_VALUE)
-/* 287 */             return;  BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
+/* 278 */           int targetBlockId = BlockType.getAssetMap().getIndex(str);
+/* 279 */           if (targetBlockId == Integer.MIN_VALUE)
+/* 280 */             return;  BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
 /*     */           
-/* 289 */           int rotation = blockSection.getRotationIndex(x, y, z);
+/* 282 */           int rotation = blockSection.getRotationIndex(x, y, z);
 /*     */           
-/* 291 */           WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
-/* 292 */           commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 0));
+/* 284 */           WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
+/* 285 */           commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 0));
 /*     */ 
 /*     */           
 /*     */           return;
 /*     */         } 
-/* 297 */       } else if (hasCrop) {
-/* 298 */         soilBlock.setDecayTime(null);
+/* 290 */       } else if (hasCrop) {
+/* 291 */         soilBlock.setDecayTime(null);
 /*     */       } 
 /*     */       
-/* 301 */       String targetBlock = soilBlock.computeBlockType(currentTime, blockType);
-/* 302 */       if (targetBlock != null && !targetBlock.equals(blockType.getId())) {
-/* 303 */         WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
-/* 304 */         int rotation = blockSection.getRotationIndex(x, y, z);
-/* 305 */         int targetBlockId = BlockType.getAssetMap().getIndex(targetBlock);
-/* 306 */         BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
-/* 307 */         commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 2));
+/* 294 */       String targetBlock = soilBlock.computeBlockType(currentTime, blockType);
+/* 295 */       if (targetBlock != null && !targetBlock.equals(blockType.getId())) {
+/* 296 */         WorldChunk worldChunk = (WorldChunk)commandBuffer.getComponent(info.getChunkRef(), WorldChunk.getComponentType());
+/* 297 */         int rotation = blockSection.getRotationIndex(x, y, z);
+/* 298 */         int targetBlockId = BlockType.getAssetMap().getIndex(targetBlock);
+/* 299 */         BlockType targetBlockType = (BlockType)BlockType.getAssetMap().getAsset(targetBlockId);
+/* 300 */         commandBuffer.run(_store -> worldChunk.setBlock(x, y, z, targetBlockId, targetBlockType, rotation, 0, 2));
 /*     */       } 
 /*     */ 
 /*     */ 
 /*     */       
-/* 312 */       soilBlock.setPlanted(hasCrop);
+/* 305 */       soilBlock.setPlanted(hasCrop);
 /*     */     }
 /*     */     
 /*     */     private static void tickCoop(CommandBuffer<ChunkStore> commandBuffer, BlockComponentChunk blockComponentChunk, Ref<ChunkStore> blockRef, CoopBlock coopBlock) {
-/* 316 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
-/* 317 */       assert info != null;
+/* 309 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
+/* 310 */       assert info != null;
 /*     */       
-/* 319 */       Store<EntityStore> store = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
-/* 320 */       WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
-/* 321 */       FarmingCoopAsset coopAsset = coopBlock.getCoopAsset();
-/* 322 */       if (coopAsset == null)
+/* 312 */       Store<EntityStore> store = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
+/* 313 */       WorldTimeResource worldTimeResource = (WorldTimeResource)store.getResource(WorldTimeResource.getResourceType());
+/* 314 */       FarmingCoopAsset coopAsset = coopBlock.getCoopAsset();
+/* 315 */       if (coopAsset == null)
 /*     */         return; 
-/* 324 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 325 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 326 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 317 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 318 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 319 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 328 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 329 */       assert blockChunk != null;
+/* 321 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 322 */       assert blockChunk != null;
 /*     */       
-/* 331 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
-/* 332 */       assert column != null;
-/* 333 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 334 */       assert sectionRef != null;
-/* 335 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
-/* 336 */       assert blockSection != null;
-/* 337 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
-/* 338 */       assert chunkSection != null;
+/* 324 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
+/* 325 */       assert column != null;
+/* 326 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 327 */       assert sectionRef != null;
+/* 328 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
+/* 329 */       assert blockSection != null;
+/* 330 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
+/* 331 */       assert chunkSection != null;
 /*     */       
-/* 340 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
-/* 341 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
-/* 342 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
+/* 333 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
+/* 334 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
+/* 335 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
 /*     */       
-/* 344 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
-/* 345 */       WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(worldX, worldZ));
-/* 346 */       double blockRotation = chunk.getRotation(worldX, worldY, worldZ).yaw().getRadians();
-/* 347 */       Vector3d spawnOffset = (new Vector3d()).assign(coopAsset.getResidentSpawnOffset()).rotateY((float)blockRotation);
-/* 348 */       Vector3i coopLocation = new Vector3i(worldX, worldY, worldZ);
+/* 337 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
+/* 338 */       WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(worldX, worldZ));
+/* 339 */       double blockRotation = chunk.getRotation(worldX, worldY, worldZ).yaw().getRadians();
+/* 340 */       Vector3d spawnOffset = (new Vector3d()).assign(coopAsset.getResidentSpawnOffset()).rotateY((float)blockRotation);
+/* 341 */       Vector3i coopLocation = new Vector3i(worldX, worldY, worldZ);
 /*     */ 
 /*     */       
-/* 351 */       boolean tryCapture = coopAsset.getCaptureWildNPCsInRange();
-/* 352 */       float captureRange = coopAsset.getWildCaptureRadius();
-/* 353 */       if (tryCapture && captureRange >= 0.0F) {
-/* 354 */         world.execute(() -> {
+/* 344 */       boolean tryCapture = coopAsset.getCaptureWildNPCsInRange();
+/* 345 */       float captureRange = coopAsset.getWildCaptureRadius();
+/* 346 */       if (tryCapture && captureRange >= 0.0F) {
+/* 347 */         world.execute(() -> {
 /*     */               List<Ref<EntityStore>> entities = TargetUtil.getAllEntitiesInSphere(coopLocation.toVector3d(), captureRange, (ComponentAccessor)store);
 /*     */ 
 /*     */ 
@@ -727,10 +720,10 @@
 /*     */       }
 /*     */ 
 /*     */       
-/* 366 */       if (coopBlock.shouldResidentsBeInCoop(worldTimeResource)) {
-/* 367 */         world.execute(() -> coopBlock.ensureNoResidentsInWorld(store));
+/* 359 */       if (coopBlock.shouldResidentsBeInCoop(worldTimeResource)) {
+/* 360 */         world.execute(() -> coopBlock.ensureNoResidentsInWorld(store));
 /*     */       } else {
-/* 369 */         world.execute(() -> {
+/* 362 */         world.execute(() -> {
 /*     */               coopBlock.ensureSpawnResidentsInWorld(world, store, coopLocation.toVector3d(), spawnOffset);
 /*     */               
 /*     */               coopBlock.generateProduceToInventory(worldTimeResource);
@@ -743,101 +736,101 @@
 /*     */               chunk.setBlockInteractionState(blockPos, currentBlockType, coopBlock.hasProduce() ? "Produce_Ready" : "default");
 /*     */             });
 /*     */       } 
-/* 382 */       Instant nextTickInstant = coopBlock.getNextScheduledTick(worldTimeResource);
-/* 383 */       if (nextTickInstant != null) {
-/* 384 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), nextTickInstant);
+/* 375 */       Instant nextTickInstant = coopBlock.getNextScheduledTick(worldTimeResource);
+/* 376 */       if (nextTickInstant != null) {
+/* 377 */         blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), nextTickInstant);
 /*     */       }
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 391 */       return QUERY;
+/* 384 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class OnCoopAdded
 /*     */     extends RefSystem<ChunkStore> {
-/* 397 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
-/* 398 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
-/* 399 */           (Query)CoopBlock.getComponentType()
+/* 390 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] {
+/* 391 */           (Query)BlockModule.BlockStateInfo.getComponentType(), 
+/* 392 */           (Query)CoopBlock.getComponentType()
 /*     */         });
 /*     */ 
 /*     */     
 /*     */     public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 404 */       CoopBlock coopBlock = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
-/* 405 */       if (coopBlock == null)
+/* 397 */       CoopBlock coopBlock = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
+/* 398 */       if (coopBlock == null)
 /*     */         return; 
-/* 407 */       WorldTimeResource worldTimeResource = (WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
+/* 400 */       WorldTimeResource worldTimeResource = (WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
 /*     */       
-/* 409 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 410 */       assert info != null;
+/* 402 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 403 */       assert info != null;
 /*     */       
-/* 412 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 413 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 414 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 405 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 406 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 407 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 416 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 417 */       assert blockChunk != null;
-/* 418 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
+/* 409 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 410 */       assert blockChunk != null;
+/* 411 */       BlockSection blockSection = blockChunk.getSectionAtBlockY(y);
 /*     */       
-/* 420 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), coopBlock.getNextScheduledTick(worldTimeResource));
+/* 413 */       blockSection.scheduleTick(ChunkUtil.indexBlock(x, y, z), coopBlock.getNextScheduledTick(worldTimeResource));
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void onEntityRemove(@Nonnull Ref<ChunkStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 425 */       if (reason == RemoveReason.UNLOAD) {
+/* 418 */       if (reason == RemoveReason.UNLOAD) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 429 */       CoopBlock coop = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
-/* 430 */       if (coop == null) {
+/* 422 */       CoopBlock coop = (CoopBlock)commandBuffer.getComponent(ref, CoopBlock.getComponentType());
+/* 423 */       if (coop == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 434 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
-/* 435 */       assert info != null;
+/* 427 */       BlockModule.BlockStateInfo info = (BlockModule.BlockStateInfo)commandBuffer.getComponent(ref, BlockModule.BlockStateInfo.getComponentType());
+/* 428 */       assert info != null;
 /*     */       
-/* 437 */       Store<EntityStore> entityStore = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
+/* 430 */       Store<EntityStore> entityStore = ((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore();
 /*     */       
-/* 439 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
-/* 440 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
-/* 441 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
+/* 432 */       int x = ChunkUtil.xFromBlockInColumn(info.getIndex());
+/* 433 */       int y = ChunkUtil.yFromBlockInColumn(info.getIndex());
+/* 434 */       int z = ChunkUtil.zFromBlockInColumn(info.getIndex());
 /*     */       
-/* 443 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
-/* 444 */       assert blockChunk != null;
+/* 436 */       BlockChunk blockChunk = (BlockChunk)commandBuffer.getComponent(info.getChunkRef(), BlockChunk.getComponentType());
+/* 437 */       assert blockChunk != null;
 /*     */       
-/* 446 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
-/* 447 */       assert column != null;
-/* 448 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 449 */       assert sectionRef != null;
-/* 450 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
-/* 451 */       assert blockSection != null;
-/* 452 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
-/* 453 */       assert chunkSection != null;
+/* 439 */       ChunkColumn column = (ChunkColumn)commandBuffer.getComponent(info.getChunkRef(), ChunkColumn.getComponentType());
+/* 440 */       assert column != null;
+/* 441 */       Ref<ChunkStore> sectionRef = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 442 */       assert sectionRef != null;
+/* 443 */       BlockSection blockSection = (BlockSection)commandBuffer.getComponent(sectionRef, BlockSection.getComponentType());
+/* 444 */       assert blockSection != null;
+/* 445 */       ChunkSection chunkSection = (ChunkSection)commandBuffer.getComponent(sectionRef, ChunkSection.getComponentType());
+/* 446 */       assert chunkSection != null;
 /*     */       
-/* 455 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
-/* 456 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
-/* 457 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
+/* 448 */       int worldX = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getX(), x);
+/* 449 */       int worldY = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getY(), y);
+/* 450 */       int worldZ = ChunkUtil.worldCoordFromLocalCoord(chunkSection.getZ(), z);
 /*     */       
-/* 459 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
-/* 460 */       WorldTimeResource worldTimeResource = (WorldTimeResource)world.getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
-/* 461 */       coop.handleBlockBroken(world, worldTimeResource, entityStore, worldX, worldY, worldZ);
+/* 452 */       World world = ((ChunkStore)commandBuffer.getExternalData()).getWorld();
+/* 453 */       WorldTimeResource worldTimeResource = (WorldTimeResource)world.getEntityStore().getStore().getResource(WorldTimeResource.getResourceType());
+/* 454 */       coop.handleBlockBroken(world, worldTimeResource, entityStore, worldX, worldY, worldZ);
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 467 */       return QUERY;
+/* 460 */       return QUERY;
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class CoopResidentEntitySystem extends RefSystem<EntityStore> {
-/* 472 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 465 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */     
 /*     */     public Query<EntityStore> getQuery() {
-/* 476 */       return (Query)componentType;
+/* 469 */       return (Query)componentType;
 /*     */     }
 /*     */ 
 /*     */ 
@@ -847,107 +840,136 @@
 /*     */ 
 /*     */     
 /*     */     public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 486 */       if (reason == RemoveReason.UNLOAD) {
+/* 479 */       if (reason == RemoveReason.UNLOAD) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 490 */       UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
-/* 491 */       if (uuidComponent == null) {
+/* 483 */       UUIDComponent uuidComponent = (UUIDComponent)commandBuffer.getComponent(ref, UUIDComponent.getComponentType());
+/* 484 */       if (uuidComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 495 */       UUID uuid = uuidComponent.getUuid();
+/* 488 */       UUID uuid = uuidComponent.getUuid();
 /*     */       
-/* 497 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
-/* 498 */       if (coopResidentComponent == null) {
+/* 490 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)commandBuffer.getComponent(ref, componentType);
+/* 491 */       if (coopResidentComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 502 */       Vector3i coopPosition = coopResidentComponent.getCoopLocation();
-/* 503 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
+/* 495 */       Vector3i coopPosition = coopResidentComponent.getCoopLocation();
+/* 496 */       World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
 /*     */       
-/* 505 */       long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
-/* 506 */       WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
-/* 507 */       if (chunk == null) {
+/* 498 */       long chunkIndex = ChunkUtil.indexChunkFromBlock(coopPosition.x, coopPosition.z);
+/* 499 */       WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
+/* 500 */       if (chunk == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 511 */       Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
-/* 512 */       if (chunkReference == null || !chunkReference.isValid()) {
+/* 504 */       Ref<ChunkStore> chunkReference = world.getChunkStore().getChunkReference(chunkIndex);
+/* 505 */       if (chunkReference == null || !chunkReference.isValid()) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 516 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 509 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */       
-/* 518 */       ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
-/* 519 */       if (chunkColumnComponent == null) {
+/* 511 */       ChunkColumn chunkColumnComponent = (ChunkColumn)chunkStore.getComponent(chunkReference, ChunkColumn.getComponentType());
+/* 512 */       if (chunkColumnComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 523 */       BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
-/* 524 */       if (blockChunkComponent == null) {
+/* 516 */       BlockChunk blockChunkComponent = (BlockChunk)chunkStore.getComponent(chunkReference, BlockChunk.getComponentType());
+/* 517 */       if (blockChunkComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 528 */       Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
-/* 529 */       if (sectionRef == null || !sectionRef.isValid()) {
+/* 521 */       Ref<ChunkStore> sectionRef = chunkColumnComponent.getSection(ChunkUtil.chunkCoordinate(coopPosition.y));
+/* 522 */       if (sectionRef == null || !sectionRef.isValid()) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 533 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
-/* 534 */       if (blockComponentChunk == null) {
+/* 526 */       BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getComponent(chunkReference, BlockComponentChunk.getComponentType());
+/* 527 */       if (blockComponentChunk == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 538 */       int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
-/* 539 */       Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
-/* 540 */       if (coopEntityReference == null) {
+/* 531 */       int blockIndexColumn = ChunkUtil.indexBlockInColumn(coopPosition.x, coopPosition.y, coopPosition.z);
+/* 532 */       Ref<ChunkStore> coopEntityReference = blockComponentChunk.getEntityReference(blockIndexColumn);
+/* 533 */       if (coopEntityReference == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 544 */       CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
-/* 545 */       if (coop == null) {
+/* 537 */       CoopBlock coop = (CoopBlock)chunkStore.getComponent(coopEntityReference, CoopBlock.getComponentType());
+/* 538 */       if (coop == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 549 */       coop.handleResidentDespawn(uuid);
+/* 542 */       coop.handleResidentDespawn(uuid);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public static class CoopResidentTicking
 /*     */     extends EntityTickingSystem<EntityStore> {
-/* 555 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 548 */     private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */     
 /*     */     public Query<EntityStore> getQuery() {
-/* 559 */       return (Query)componentType;
+/* 552 */       return (Query)componentType;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 564 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
-/* 565 */       if (coopResidentComponent == null) {
+/* 557 */       CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
+/* 558 */       if (coopResidentComponent == null) {
 /*     */         return;
 /*     */       }
 /*     */       
-/* 569 */       if (coopResidentComponent.getMarkedForDespawn()) {
-/* 570 */         commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 562 */       if (coopResidentComponent.getMarkedForDespawn()) {
+/* 563 */         commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */       }
 /*     */     }
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   private static boolean hasCropAbove(BlockChunk blockChunk, int x, int y, int z) {
+/* 579 */     if (y + 1 >= 320) {
+/* 580 */       return false;
+/*     */     }
+/*     */     
+/* 583 */     BlockSection aboveBlockSection = blockChunk.getSectionAtBlockY(y + 1);
+/* 584 */     if (aboveBlockSection == null) {
+/* 585 */       return false;
+/*     */     }
+/*     */     
+/* 588 */     BlockType aboveBlockType = (BlockType)BlockType.getAssetMap().getAsset(aboveBlockSection.get(x, y + 1, z));
+/* 589 */     if (aboveBlockType == null) {
+/* 590 */       return false;
+/*     */     }
+/*     */     
+/* 593 */     FarmingData farmingConfig = aboveBlockType.getFarming();
+/* 594 */     return (farmingConfig != null && farmingConfig.getStages() != null);
+/*     */   }
 /*     */   
 /*     */   private static boolean updateSoilDecayTime(CommandBuffer<ChunkStore> commandBuffer, TilledSoilBlock soilBlock, BlockType blockType) {
-/* 576 */     if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null) return false; 
-/* 577 */     FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
-/* 578 */     Rangef range = soilConfig.getLifetime();
-/* 579 */     if (range == null) return false;
+/* 598 */     if (blockType == null || blockType.getFarming() == null || blockType.getFarming().getSoilConfig() == null) return false; 
+/* 599 */     FarmingData.SoilConfig soilConfig = blockType.getFarming().getSoilConfig();
+/* 600 */     Rangef range = soilConfig.getLifetime();
+/* 601 */     if (range == null) return false;
 /*     */     
-/* 581 */     double baseDuration = range.min + (range.max - range.min) * ThreadLocalRandom.current().nextDouble();
+/* 603 */     double baseDuration = range.min + (range.max - range.min) * ThreadLocalRandom.current().nextDouble();
 /*     */     
-/* 583 */     Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
-/* 584 */     Instant endTime = currentTime.plus(Math.round(baseDuration), ChronoUnit.SECONDS);
-/* 585 */     soilBlock.setDecayTime(endTime);
-/* 586 */     return true;
+/* 605 */     Instant currentTime = ((WorldTimeResource)((ChunkStore)commandBuffer.getExternalData()).getWorld().getEntityStore().getStore().getResource(WorldTimeResource.getResourceType())).getGameTime();
+/* 606 */     Instant endTime = currentTime.plus(Math.round(baseDuration), ChronoUnit.SECONDS);
+/* 607 */     soilBlock.setDecayTime(endTime);
+/* 608 */     return true;
 /*     */   }
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
@@ -955,13 +977,13 @@
 /*     */     extends BlockModule.MigrationSystem
 /*     */   {
 /*     */     public void onEntityAdd(@Nonnull Holder<ChunkStore> holder, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store) {
-/* 594 */       FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
-/* 595 */       FarmingBlock farming = new FarmingBlock();
-/* 596 */       farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
-/* 597 */       farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
-/* 598 */       farming.setSpreadRate(oldState.getSpreadRate());
-/* 599 */       holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
-/* 600 */       holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 616 */       FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 617 */       FarmingBlock farming = new FarmingBlock();
+/* 618 */       farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
+/* 619 */       farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
+/* 620 */       farming.setSpreadRate(oldState.getSpreadRate());
+/* 621 */       holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
+/* 622 */       holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
 /*     */     }
 /*     */ 
 /*     */ 
@@ -972,7 +994,7 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 611 */       return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
+/* 633 */       return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
 /*     */     }
 /*     */   }
 /*     */ }

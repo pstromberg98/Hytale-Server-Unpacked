@@ -56,13 +56,13 @@
 /*     */   public static SpawnParticleSystem deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  57 */     SpawnParticleSystem obj = new SpawnParticleSystem();
 /*  58 */     byte nullBits = buf.getByte(offset);
-/*  59 */     if ((nullBits & 0x2) != 0) obj.position = Position.deserialize(buf, offset + 1); 
-/*  60 */     if ((nullBits & 0x4) != 0) obj.rotation = Direction.deserialize(buf, offset + 25); 
+/*  59 */     if ((nullBits & 0x1) != 0) obj.position = Position.deserialize(buf, offset + 1); 
+/*  60 */     if ((nullBits & 0x2) != 0) obj.rotation = Direction.deserialize(buf, offset + 25); 
 /*  61 */     obj.scale = buf.getFloatLE(offset + 37);
-/*  62 */     if ((nullBits & 0x8) != 0) obj.color = Color.deserialize(buf, offset + 41);
+/*  62 */     if ((nullBits & 0x4) != 0) obj.color = Color.deserialize(buf, offset + 41);
 /*     */     
 /*  64 */     int pos = offset + 44;
-/*  65 */     if ((nullBits & 0x1) != 0) { int particleSystemIdLen = VarInt.peek(buf, pos);
+/*  65 */     if ((nullBits & 0x8) != 0) { int particleSystemIdLen = VarInt.peek(buf, pos);
 /*  66 */       if (particleSystemIdLen < 0) throw ProtocolException.negativeLength("ParticleSystemId", particleSystemIdLen); 
 /*  67 */       if (particleSystemIdLen > 4096000) throw ProtocolException.stringTooLong("ParticleSystemId", particleSystemIdLen, 4096000); 
 /*  68 */       int particleSystemIdVarLen = VarInt.length(buf, pos);
@@ -75,7 +75,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  76 */     byte nullBits = buf.getByte(offset);
 /*  77 */     int pos = offset + 44;
-/*  78 */     if ((nullBits & 0x1) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/*  78 */     if ((nullBits & 0x8) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /*  79 */      return pos - offset;
 /*     */   }
 /*     */ 
@@ -83,10 +83,10 @@
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  85 */     byte nullBits = 0;
-/*  86 */     if (this.particleSystemId != null) nullBits = (byte)(nullBits | 0x1); 
-/*  87 */     if (this.position != null) nullBits = (byte)(nullBits | 0x2); 
-/*  88 */     if (this.rotation != null) nullBits = (byte)(nullBits | 0x4); 
-/*  89 */     if (this.color != null) nullBits = (byte)(nullBits | 0x8); 
+/*  86 */     if (this.position != null) nullBits = (byte)(nullBits | 0x1); 
+/*  87 */     if (this.rotation != null) nullBits = (byte)(nullBits | 0x2); 
+/*  88 */     if (this.color != null) nullBits = (byte)(nullBits | 0x4); 
+/*  89 */     if (this.particleSystemId != null) nullBits = (byte)(nullBits | 0x8); 
 /*  90 */     buf.writeByte(nullBits);
 /*     */     
 /*  92 */     if (this.position != null) { this.position.serialize(buf); } else { buf.writeZero(24); }
@@ -114,7 +114,7 @@
 /*     */     
 /* 115 */     int pos = offset + 44;
 /*     */     
-/* 117 */     if ((nullBits & 0x1) != 0) {
+/* 117 */     if ((nullBits & 0x8) != 0) {
 /* 118 */       int particleSystemIdLen = VarInt.peek(buffer, pos);
 /* 119 */       if (particleSystemIdLen < 0) {
 /* 120 */         return ValidationResult.error("Invalid string length for ParticleSystemId");

@@ -88,24 +88,30 @@
 /*     */     
 /*  89 */     this.playerSpatialComponent = playerSpatialComponent;
 /*  90 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, PlayerSpatialSystem.class, OrderPriority.CLOSEST));
-/*  91 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemComponentType, (Query)Query.not((Query)Interactable.getComponentType()), (Query)Query.not((Query)PickupItemComponent.getComponentType()), (Query)Query.not((Query)PreventPickup.getComponentType()) });
+/*  91 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemComponentType, 
+/*     */           
+/*  93 */           (Query)TransformComponent.getComponentType(), 
+/*  94 */           (Query)Query.not((Query)Interactable.getComponentType()), 
+/*  95 */           (Query)Query.not((Query)PickupItemComponent.getComponentType()), 
+/*  96 */           (Query)Query.not((Query)PreventPickup.getComponentType()) });
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/*  97 */     return this.dependencies;
+/* 103 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 103 */     return this.query;
+/* 109 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 108 */     return false;
+/* 114 */     return false;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -114,47 +120,49 @@
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 117 */     Ref<EntityStore> itemRef = archetypeChunk.getReferenceTo(index);
-/* 118 */     ItemComponent itemComponent = (ItemComponent)archetypeChunk.getComponent(index, this.itemComponentType);
-/* 119 */     assert itemComponent != null;
+/* 123 */     Ref<EntityStore> itemRef = archetypeChunk.getReferenceTo(index);
+/* 124 */     ItemComponent itemComponent = (ItemComponent)archetypeChunk.getComponent(index, this.itemComponentType);
+/* 125 */     assert itemComponent != null;
 /*     */     
-/* 121 */     if (!itemComponent.pollPickupDelay(dt)) {
+/* 127 */     if (!itemComponent.pollPickupDelay(dt)) {
 /*     */       return;
 /*     */     }
-/* 124 */     if (!itemComponent.pollPickupThrottle(dt))
+/* 130 */     if (!itemComponent.pollPickupThrottle(dt))
 /*     */       return; 
-/* 126 */     TimeResource timeResource = (TimeResource)commandBuffer.getResource(TimeResource.getResourceType());
-/* 127 */     SpatialResource<Ref<EntityStore>, EntityStore> playerSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(this.playerSpatialComponent);
-/* 128 */     SpatialStructure<Ref<EntityStore>> spatialStructure = playerSpatialResource.getSpatialStructure();
-/* 129 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/* 130 */     assert transformComponent != null;
+/* 132 */     TimeResource timeResource = (TimeResource)commandBuffer.getResource(TimeResource.getResourceType());
 /*     */     
-/* 132 */     Vector3d itemEntityPosition = transformComponent.getPosition();
-/* 133 */     DespawnComponent despawnComponent = (DespawnComponent)archetypeChunk.getComponent(index, DespawnComponent.getComponentType());
+/* 134 */     SpatialResource<Ref<EntityStore>, EntityStore> playerSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)store.getResource(this.playerSpatialComponent);
+/* 135 */     SpatialStructure<Ref<EntityStore>> spatialStructure = playerSpatialResource.getSpatialStructure();
 /*     */     
-/* 135 */     float pickupRadius = itemComponent.getPickupRadius((ComponentAccessor)commandBuffer);
+/* 137 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/* 138 */     assert transformComponent != null;
 /*     */     
-/* 137 */     ItemStack itemStack = itemComponent.getItemStack();
-/* 138 */     Item item = itemStack.getItem();
-/* 139 */     String interactions = (String)item.getInteractions().get(InteractionType.Pickup);
-/* 140 */     if (interactions != null) {
-/* 141 */       Ref<EntityStore> targetRef = (Ref<EntityStore>)spatialStructure.closest(itemEntityPosition);
-/* 142 */       if (targetRef == null)
+/* 140 */     Vector3d itemEntityPosition = transformComponent.getPosition();
+/* 141 */     DespawnComponent despawnComponent = (DespawnComponent)archetypeChunk.getComponent(index, DespawnComponent.getComponentType());
+/*     */     
+/* 143 */     float pickupRadius = itemComponent.getPickupRadius((ComponentAccessor)commandBuffer);
+/*     */     
+/* 145 */     ItemStack itemStack = itemComponent.getItemStack();
+/* 146 */     Item item = itemStack.getItem();
+/* 147 */     String interactions = (String)item.getInteractions().get(InteractionType.Pickup);
+/* 148 */     if (interactions != null) {
+/* 149 */       Ref<EntityStore> targetRef = (Ref<EntityStore>)spatialStructure.closest(itemEntityPosition);
+/* 150 */       if (targetRef == null)
 /*     */         return; 
-/* 144 */       TransformComponent targetTransformComponent = (TransformComponent)store.getComponent(targetRef, TransformComponent.getComponentType());
-/* 145 */       assert targetTransformComponent != null;
+/* 152 */       TransformComponent targetTransformComponent = (TransformComponent)store.getComponent(targetRef, TransformComponent.getComponentType());
+/* 153 */       assert targetTransformComponent != null;
 /*     */       
-/* 147 */       InteractionManager targetInteractionManagerComponent = (InteractionManager)store.getComponent(targetRef, this.interactionManagerType);
-/* 148 */       assert targetInteractionManagerComponent != null;
+/* 155 */       InteractionManager targetInteractionManagerComponent = (InteractionManager)store.getComponent(targetRef, this.interactionManagerType);
+/* 156 */       assert targetInteractionManagerComponent != null;
 /*     */       
-/* 150 */       Vector3d targetPosition = targetTransformComponent.getPosition();
+/* 158 */       Vector3d targetPosition = targetTransformComponent.getPosition();
 /*     */ 
 /*     */       
-/* 153 */       double distance = targetPosition.distanceTo(itemEntityPosition);
-/* 154 */       if (distance > pickupRadius)
+/* 161 */       double distance = targetPosition.distanceTo(itemEntityPosition);
+/* 162 */       if (distance > pickupRadius)
 /*     */         return; 
-/* 156 */       Ref<EntityStore> reference = archetypeChunk.getReferenceTo(index);
-/* 157 */       commandBuffer.run(_store -> {
+/* 164 */       Ref<EntityStore> reference = archetypeChunk.getReferenceTo(index);
+/* 165 */       commandBuffer.run(_store -> {
 /*     */             InteractionContext context = InteractionContext.forInteraction(targetInteractionManagerComponent, targetRef, InteractionType.Pickup, (ComponentAccessor)commandBuffer);
 /*     */             
 /*     */             InteractionChain chain = targetInteractionManagerComponent.initChain(InteractionType.Pickup, context, RootInteraction.getRootInteractionOrUnknown(interactions), false);
@@ -164,53 +172,53 @@
 /*     */           });
 /*     */       return;
 /*     */     } 
-/* 167 */     ObjectList<Ref<EntityStore>> targetPlayerRefs = SpatialResource.getThreadLocalReferenceList();
-/* 168 */     spatialStructure.ordered(itemEntityPosition, pickupRadius, (List)targetPlayerRefs);
+/* 175 */     ObjectList<Ref<EntityStore>> targetPlayerRefs = SpatialResource.getThreadLocalReferenceList();
+/* 176 */     spatialStructure.ordered(itemEntityPosition, pickupRadius, (List)targetPlayerRefs);
 /*     */     
-/* 170 */     for (ObjectListIterator<Ref<EntityStore>> objectListIterator = targetPlayerRefs.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> targetPlayerRef = objectListIterator.next();
-/* 171 */       if (store.getArchetype(targetPlayerRef).contains(DeathComponent.getComponentType())) {
+/* 178 */     for (ObjectListIterator<Ref<EntityStore>> objectListIterator = targetPlayerRefs.iterator(); objectListIterator.hasNext(); ) { Ref<EntityStore> targetPlayerRef = objectListIterator.next();
+/* 179 */       if (store.getArchetype(targetPlayerRef).contains(DeathComponent.getComponentType())) {
 /*     */         continue;
 /*     */       }
 /*     */       
-/* 175 */       Player playerComponent = (Player)store.getComponent(targetPlayerRef, this.playerComponentType);
-/* 176 */       assert playerComponent != null;
+/* 183 */       Player playerComponent = (Player)store.getComponent(targetPlayerRef, this.playerComponentType);
+/* 184 */       assert playerComponent != null;
 /*     */       
-/* 178 */       PlayerSettings playerSettings = (PlayerSettings)commandBuffer.getComponent(targetPlayerRef, PlayerSettings.getComponentType());
-/* 179 */       if (playerSettings == null) playerSettings = PlayerSettings.defaults();
+/* 186 */       PlayerSettings playerSettings = (PlayerSettings)commandBuffer.getComponent(targetPlayerRef, PlayerSettings.getComponentType());
+/* 187 */       if (playerSettings == null) playerSettings = PlayerSettings.defaults();
 /*     */       
-/* 181 */       ItemContainer itemContainer = playerComponent.getInventory().getContainerForItemPickup(item, playerSettings);
+/* 189 */       ItemContainer itemContainer = playerComponent.getInventory().getContainerForItemPickup(item, playerSettings);
 /*     */       
-/* 183 */       ItemStackTransaction transaction = itemContainer.addItemStack(itemStack);
-/* 184 */       ItemStack remainder = transaction.getRemainder();
+/* 191 */       ItemStackTransaction transaction = itemContainer.addItemStack(itemStack);
+/* 192 */       ItemStack remainder = transaction.getRemainder();
 /*     */ 
 /*     */       
-/* 187 */       if (ItemStack.isEmpty(remainder)) {
-/* 188 */         itemComponent.setRemovedByPlayerPickup(true);
-/* 189 */         commandBuffer.removeEntity(itemRef, RemoveReason.REMOVE);
-/* 190 */         playerComponent.notifyPickupItem(targetPlayerRef, itemStack, itemEntityPosition, (ComponentAccessor)commandBuffer);
+/* 195 */       if (ItemStack.isEmpty(remainder)) {
+/* 196 */         itemComponent.setRemovedByPlayerPickup(true);
+/* 197 */         commandBuffer.removeEntity(itemRef, RemoveReason.REMOVE);
+/* 198 */         playerComponent.notifyPickupItem(targetPlayerRef, itemStack, itemEntityPosition, (ComponentAccessor)commandBuffer);
 /*     */ 
 /*     */         
-/* 193 */         Holder<EntityStore> holder = ItemComponent.generatePickedUpItem(itemRef, (ComponentAccessor)commandBuffer, targetPlayerRef, itemEntityPosition);
-/* 194 */         commandBuffer.addEntity(holder, AddReason.SPAWN);
+/* 201 */         Holder<EntityStore> holder = ItemComponent.generatePickedUpItem(itemRef, (ComponentAccessor)commandBuffer, targetPlayerRef, itemEntityPosition);
+/* 202 */         commandBuffer.addEntity(holder, AddReason.SPAWN);
 /*     */         
 /*     */         break;
 /*     */       } 
 /*     */       
-/* 199 */       if (remainder.equals(itemStack))
+/* 207 */       if (remainder.equals(itemStack))
 /*     */         continue; 
-/* 201 */       int quantity = itemStack.getQuantity() - remainder.getQuantity();
-/* 202 */       itemStack = remainder;
-/* 203 */       itemComponent.setItemStack(remainder);
-/* 204 */       float newLifetime = itemComponent.computeLifetimeSeconds((ComponentAccessor)commandBuffer);
-/* 205 */       DespawnComponent.trySetDespawn(commandBuffer, timeResource, itemRef, despawnComponent, Float.valueOf(newLifetime));
+/* 209 */       int quantity = itemStack.getQuantity() - remainder.getQuantity();
+/* 210 */       itemStack = remainder;
+/* 211 */       itemComponent.setItemStack(remainder);
+/* 212 */       float newLifetime = itemComponent.computeLifetimeSeconds((ComponentAccessor)commandBuffer);
+/* 213 */       DespawnComponent.trySetDespawn(commandBuffer, timeResource, itemRef, despawnComponent, Float.valueOf(newLifetime));
 /*     */ 
 /*     */       
-/* 208 */       Holder<EntityStore> pickupItemHolder = ItemComponent.generatePickedUpItem(itemRef, (ComponentAccessor)commandBuffer, targetPlayerRef, itemEntityPosition);
-/* 209 */       commandBuffer.addEntity(pickupItemHolder, AddReason.SPAWN);
+/* 216 */       Holder<EntityStore> pickupItemHolder = ItemComponent.generatePickedUpItem(itemRef, (ComponentAccessor)commandBuffer, targetPlayerRef, itemEntityPosition);
+/* 217 */       commandBuffer.addEntity(pickupItemHolder, AddReason.SPAWN);
 /*     */ 
 /*     */       
-/* 212 */       if (quantity > 0)
-/* 213 */         playerComponent.notifyPickupItem(targetPlayerRef, itemStack.withQuantity(quantity), itemEntityPosition, (ComponentAccessor)commandBuffer);  }
+/* 220 */       if (quantity > 0)
+/* 221 */         playerComponent.notifyPickupItem(targetPlayerRef, itemStack.withQuantity(quantity), itemEntityPosition, (ComponentAccessor)commandBuffer);  }
 /*     */   
 /*     */   }
 /*     */ }

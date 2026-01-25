@@ -521,6 +521,7 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ class Node<T>
 /*     */ {
 /*     */   private Vector3d vector;
@@ -531,23 +532,23 @@
 /*     */   private Node<T> two;
 /*     */   
 /*     */   public Node(Vector3d vector, List<T> data) {
-/* 534 */     this.vector = vector;
-/* 535 */     this.data = data;
+/* 535 */     this.vector = vector;
+/* 536 */     this.data = data;
 /*     */   }
 /*     */   
 /*     */   public void reset(Vector3d vector, List<T> data) {
-/* 539 */     this.vector = vector;
-/* 540 */     this.data = data;
-/* 541 */     this.one = null;
-/* 542 */     this.two = null;
+/* 540 */     this.vector = vector;
+/* 541 */     this.data = data;
+/* 542 */     this.one = null;
+/* 543 */     this.two = null;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public String dump(int depth) {
-/* 547 */     int nextDepth = depth + 1;
-/* 548 */     return "vector=" + String.valueOf(this.vector) + ", data=" + String.valueOf(this.data) + ",\n" + " "
-/* 549 */       .repeat(depth) + "one=" + ((this.one == null) ? null : this.one.dump(nextDepth)) + ",\n" + " "
-/* 550 */       .repeat(depth) + "two=" + ((this.two == null) ? null : this.two.dump(nextDepth));
+/* 548 */     int nextDepth = depth + 1;
+/* 549 */     return "vector=" + String.valueOf(this.vector) + ", data=" + String.valueOf(this.data) + ",\n" + " "
+/* 550 */       .repeat(depth) + "one=" + ((this.one == null) ? null : this.one.dump(nextDepth)) + ",\n" + " "
+/* 551 */       .repeat(depth) + "two=" + ((this.two == null) ? null : this.two.dump(nextDepth));
 /*     */   }
 /*     */ }
 

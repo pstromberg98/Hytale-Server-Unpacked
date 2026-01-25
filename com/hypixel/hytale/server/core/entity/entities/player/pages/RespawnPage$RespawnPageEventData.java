@@ -180,6 +180,19 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class RespawnPageEventData
 /*     */ {
 /*     */   static final String KEY_ACTION = "Action";
@@ -188,7 +201,7 @@
 /*     */   private String action;
 /*     */   
 /*     */   static {
-/* 191 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(RespawnPageEventData.class, RespawnPageEventData::new).addField(new KeyedCodec("Action", (Codec)Codec.STRING), (entry, s) -> entry.action = s, entry -> entry.action)).build();
+/* 204 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(RespawnPageEventData.class, RespawnPageEventData::new).addField(new KeyedCodec("Action", (Codec)Codec.STRING), (entry, s) -> entry.action = s, entry -> entry.action)).build();
 /*     */   }
 /*     */ }
 

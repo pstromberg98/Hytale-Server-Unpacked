@@ -32,34 +32,36 @@
 /*    */   protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
 /*    */     LivingEntity livingEntity;
 /* 34 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
-/* 35 */     Ref<EntityStore> ref = context.getEntity();
-/* 36 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
+/* 35 */     assert commandBuffer != null;
+/*    */     
+/* 37 */     Ref<EntityStore> ref = context.getEntity();
+/* 38 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
 /*    */     else { return; }
-/* 38 */      Inventory inventory = livingEntity.getInventory();
-/* 39 */     byte activeSlot = context.getHeldItemSlot();
-/* 40 */     ItemStack itemInHand = context.getHeldItem();
-/* 41 */     if (itemInHand == null)
+/* 40 */      Inventory inventory = livingEntity.getInventory();
+/* 41 */     byte activeSlot = context.getHeldItemSlot();
+/* 42 */     ItemStack itemInHand = context.getHeldItem();
+/* 43 */     if (itemInHand == null)
 /*    */       return; 
-/* 43 */     Item item = itemInHand.getItem();
-/* 44 */     if (item == null)
+/* 45 */     Item item = itemInHand.getItem();
+/* 46 */     if (item == null)
 /*    */       return; 
-/* 46 */     ItemArmor armor = item.getArmor();
-/* 47 */     if (armor == null)
+/* 48 */     ItemArmor armor = item.getArmor();
+/* 49 */     if (armor == null)
 /*    */       return; 
-/* 49 */     short slotId = (short)armor.getArmorSlot().ordinal();
-/* 50 */     ItemContainer armorContainer = inventory.getArmor();
-/* 51 */     if (slotId > armorContainer.getCapacity())
+/* 51 */     short slotId = (short)armor.getArmorSlot().ordinal();
+/* 52 */     ItemContainer armorContainer = inventory.getArmor();
+/* 53 */     if (slotId > armorContainer.getCapacity())
 /*    */       return; 
-/* 53 */     MoveTransaction<ItemStackTransaction> stackTransaction = context.getHeldItemContainer().moveItemStackFromSlot((short)activeSlot, itemInHand.getQuantity(), armorContainer);
-/* 54 */     if (!stackTransaction.succeeded()) {
-/* 55 */       (context.getState()).state = InteractionState.Failed;
+/* 55 */     MoveTransaction<ItemStackTransaction> stackTransaction = context.getHeldItemContainer().moveItemStackFromSlot((short)activeSlot, itemInHand.getQuantity(), armorContainer);
+/* 56 */     if (!stackTransaction.succeeded()) {
+/* 57 */       (context.getState()).state = InteractionState.Failed;
 /*    */     }
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 62 */     return "EquipItemInteraction{} " + super.toString();
+/* 64 */     return "EquipItemInteraction{} " + super.toString();
 /*    */   }
 /*    */ }
 

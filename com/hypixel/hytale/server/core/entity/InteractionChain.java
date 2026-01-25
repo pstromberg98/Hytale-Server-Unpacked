@@ -481,12 +481,15 @@
 /*     */   
 /*     */   public void removeInteractionEntry(@Nonnull InteractionManager interactionManager, int index) {
 /* 483 */     int oIndex = index - this.operationIndexOffset;
-/* 484 */     if (oIndex != 0) throw new IllegalArgumentException("Trying to remove out of order"); 
-/* 485 */     InteractionEntry entry = this.interactions.remove(oIndex);
-/* 486 */     this.operationIndexOffset++;
+/* 484 */     if (oIndex != 0) {
+/* 485 */       flagDesync();
+/*     */       return;
+/*     */     } 
+/* 488 */     InteractionEntry entry = this.interactions.remove(oIndex);
+/* 489 */     this.operationIndexOffset++;
 /*     */ 
 /*     */     
-/* 489 */     this.tempForkedChainData.values().removeIf(fork -> {
+/* 492 */     this.tempForkedChainData.values().removeIf(fork -> {
 /*     */           if (fork.baseForkedChainId.entryIndex != entry.getIndex())
 /*     */             return false; 
 /*     */           interactionManager.sendCancelPacket(getChainId(), fork.forkedChainId);
@@ -495,19 +498,19 @@
 /*     */   }
 /*     */   
 /*     */   public void putInteractionSyncData(int index, InteractionSyncData data) {
-/* 498 */     index -= this.tempSyncDataOffset;
-/* 499 */     if (index < 0) {
-/* 500 */       LOGGER.at(Level.SEVERE).log("Attempted to store sync data at %d. Offset: %d, Size: %d", Integer.valueOf(index + this.tempSyncDataOffset), Integer.valueOf(this.tempSyncDataOffset), Integer.valueOf(this.tempSyncData.size()));
-/* 501 */     } else if (index < this.tempSyncData.size()) {
-/* 502 */       this.tempSyncData.set(index, data);
-/* 503 */     } else if (index == this.tempSyncData.size()) {
-/* 504 */       this.tempSyncData.add(data);
-/*     */     } else {
-/*     */       
-/* 507 */       LOGGER.at(Level.WARNING).log("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
-/*     */     } 
+/* 501 */     index -= this.tempSyncDataOffset;
+/* 502 */     if (index >= 0)
+/*     */     {
+/* 504 */       if (index < this.tempSyncData.size()) {
+/* 505 */         this.tempSyncData.set(index, data);
+/* 506 */       } else if (index == this.tempSyncData.size()) {
+/* 507 */         this.tempSyncData.add(data);
+/*     */       } else {
+/*     */         
+/* 510 */         LOGGER.at(Level.WARNING).log("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
+/*     */       } 
+/*     */     }
 /*     */   }
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -515,155 +518,155 @@
 /*     */ 
 /*     */   
 /*     */   public void clearInteractionSyncData(int operationIndex) {
-/* 518 */     int tempIdx = operationIndex - this.tempSyncDataOffset;
-/* 519 */     if (!this.tempSyncData.isEmpty()) {
-/* 520 */       int end = this.tempSyncData.size() - 1;
-/* 521 */       while (end >= tempIdx && end >= 0) {
-/* 522 */         this.tempSyncData.remove(end);
-/* 523 */         end--;
+/* 521 */     int tempIdx = operationIndex - this.tempSyncDataOffset;
+/* 522 */     if (!this.tempSyncData.isEmpty()) {
+/* 523 */       int end = this.tempSyncData.size() - 1;
+/* 524 */       while (end >= tempIdx && end >= 0) {
+/* 525 */         this.tempSyncData.remove(end);
+/* 526 */         end--;
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 527 */     int idx = operationIndex - this.operationIndexOffset;
-/* 528 */     for (int i = Math.max(idx, 0); i < this.interactions.size(); i++) {
-/* 529 */       ((InteractionEntry)this.interactions.get(i)).setClientState(null);
+/* 530 */     int idx = operationIndex - this.operationIndexOffset;
+/* 531 */     for (int i = Math.max(idx, 0); i < this.interactions.size(); i++) {
+/* 532 */       ((InteractionEntry)this.interactions.get(i)).setClientState(null);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public InteractionSyncData removeInteractionSyncData(int index) {
-/* 535 */     index -= this.tempSyncDataOffset;
-/* 536 */     if (index != 0) return null; 
-/* 537 */     if (this.tempSyncData.isEmpty()) {
-/* 538 */       return null;
+/* 538 */     index -= this.tempSyncDataOffset;
+/* 539 */     if (index != 0) return null; 
+/* 540 */     if (this.tempSyncData.isEmpty()) {
+/* 541 */       return null;
 /*     */     }
-/* 540 */     if (this.tempSyncData.get(index) == null) return null; 
-/* 541 */     this.tempSyncDataOffset++;
-/* 542 */     return this.tempSyncData.remove(index);
+/* 543 */     if (this.tempSyncData.get(index) == null) return null; 
+/* 544 */     this.tempSyncDataOffset++;
+/* 545 */     return this.tempSyncData.remove(index);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void updateSyncPosition(int index) {
-/* 547 */     if (this.tempSyncDataOffset == index) {
-/* 548 */       this.tempSyncDataOffset = index + 1;
-/* 549 */     } else if (index > this.tempSyncDataOffset) {
-/* 550 */       throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
+/* 550 */     if (this.tempSyncDataOffset == index) {
+/* 551 */       this.tempSyncDataOffset = index + 1;
+/* 552 */     } else if (index > this.tempSyncDataOffset) {
+/* 553 */       throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isSyncDataOutOfOrder(int index) {
-/* 556 */     return (index > this.tempSyncDataOffset + this.tempSyncData.size());
+/* 559 */     return (index > this.tempSyncDataOffset + this.tempSyncData.size());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void syncFork(@Nonnull Ref<EntityStore> ref, @Nonnull InteractionManager manager, @Nonnull SyncInteractionChain packet) {
-/* 561 */     ForkedChainId baseId = packet.forkedId;
-/* 562 */     for (; baseId.forkedId != null; baseId = baseId.forkedId);
+/* 564 */     ForkedChainId baseId = packet.forkedId;
+/* 565 */     for (; baseId.forkedId != null; baseId = baseId.forkedId);
 /*     */     
-/* 564 */     InteractionChain fork = findForkedChain(baseId, packet.data);
-/* 565 */     if (fork != null) {
-/* 566 */       manager.sync(ref, fork, packet);
+/* 567 */     InteractionChain fork = findForkedChain(baseId, packet.data);
+/* 568 */     if (fork != null) {
+/* 569 */       manager.sync(ref, fork, packet);
 /*     */     } else {
-/* 568 */       TempChain temp = getTempForkedChain(baseId);
-/* 569 */       if (temp == null)
-/* 570 */         return;  temp.setForkedChainId(packet.forkedId);
-/* 571 */       temp.setBaseForkedChainId(baseId);
-/* 572 */       temp.setChainData(packet.data);
-/* 573 */       manager.sync(ref, temp, packet);
+/* 571 */       TempChain temp = getTempForkedChain(baseId);
+/* 572 */       if (temp == null)
+/* 573 */         return;  temp.setForkedChainId(packet.forkedId);
+/* 574 */       temp.setBaseForkedChainId(baseId);
+/* 575 */       temp.setChainData(packet.data);
+/* 576 */       manager.sync(ref, temp, packet);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void copyTempFrom(@Nonnull TempChain temp) {
-/* 578 */     setClientState(temp.clientState);
-/* 579 */     this.tempSyncData.addAll(temp.tempSyncData);
-/* 580 */     getTempForkedChainData().putAll((Map)temp.tempForkedChainData);
+/* 581 */     setClientState(temp.clientState);
+/* 582 */     this.tempSyncData.addAll(temp.tempSyncData);
+/* 583 */     getTempForkedChainData().putAll((Map)temp.tempForkedChainData);
 /*     */   }
 /*     */   
 /*     */   private static long forkedIdToIndex(@Nonnull ForkedChainId chainId) {
-/* 584 */     return chainId.entryIndex << 32L | chainId.subIndex & 0xFFFFFFFFL;
+/* 587 */     return chainId.entryIndex << 32L | chainId.subIndex & 0xFFFFFFFFL;
 /*     */   }
 /*     */   
 /*     */   public void setChainId(int chainId) {
-/* 588 */     this.chainId = chainId;
+/* 591 */     this.chainId = chainId;
 /*     */   }
 /*     */   
 /*     */   public InteractionType getBaseType() {
-/* 592 */     return this.baseType;
+/* 595 */     return this.baseType;
 /*     */   }
 /*     */   
 /*     */   public void setBaseType(InteractionType baseType) {
-/* 596 */     this.baseType = baseType;
+/* 599 */     this.baseType = baseType;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Long2ObjectMap<InteractionChain> getForkedChains() {
-/* 601 */     return this.forkedChains;
+/* 604 */     return this.forkedChains;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Long2ObjectMap<TempChain> getTempForkedChainData() {
-/* 606 */     return this.tempForkedChainData;
+/* 609 */     return this.tempForkedChainData;
 /*     */   }
 /*     */   
 /*     */   public long getTimestamp() {
-/* 610 */     return this.timestamp;
+/* 613 */     return this.timestamp;
 /*     */   }
 /*     */   
 /*     */   public void setTimestamp(long timestamp) {
-/* 614 */     this.timestamp = timestamp;
+/* 617 */     this.timestamp = timestamp;
 /*     */   }
 /*     */   
 /*     */   public long getWaitingForServerFinished() {
-/* 618 */     return this.waitingForServerFinished;
+/* 621 */     return this.waitingForServerFinished;
 /*     */   }
 /*     */   
 /*     */   public void setWaitingForServerFinished(long waitingForServerFinished) {
-/* 622 */     this.waitingForServerFinished = waitingForServerFinished;
+/* 625 */     this.waitingForServerFinished = waitingForServerFinished;
 /*     */   }
 /*     */   
 /*     */   public long getWaitingForClientFinished() {
-/* 626 */     return this.waitingForClientFinished;
+/* 629 */     return this.waitingForClientFinished;
 /*     */   }
 /*     */   
 /*     */   public void setWaitingForClientFinished(long waitingForClientFinished) {
-/* 630 */     this.waitingForClientFinished = waitingForClientFinished;
+/* 633 */     this.waitingForClientFinished = waitingForClientFinished;
 /*     */   }
 /*     */   
 /*     */   public void setServerState(InteractionState serverState) {
-/* 634 */     this.serverState = serverState;
+/* 637 */     this.serverState = serverState;
 /*     */   }
 /*     */   
 /*     */   public InteractionState getFinalState() {
-/* 638 */     return this.finalState;
+/* 641 */     return this.finalState;
 /*     */   }
 /*     */   
 /*     */   public void setFinalState(InteractionState finalState) {
-/* 642 */     this.finalState = finalState;
+/* 645 */     this.finalState = finalState;
 /*     */   }
 /*     */   
 /*     */   void setPredicted(boolean predicted) {
-/* 646 */     this.predicted = predicted;
+/* 649 */     this.predicted = predicted;
 /*     */   }
 /*     */   
 /*     */   public void flagDesync() {
-/* 650 */     this.desynced = true;
-/* 651 */     this.forkedChains.forEach((k, c) -> c.flagDesync());
+/* 653 */     this.desynced = true;
+/* 654 */     this.forkedChains.forEach((k, c) -> c.flagDesync());
 /*     */   }
 /*     */   
 /*     */   public boolean isDesynced() {
-/* 655 */     return this.desynced;
+/* 658 */     return this.desynced;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public List<InteractionChain> getNewForks() {
-/* 660 */     return this.newForks;
+/* 663 */     return this.newForks;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 666 */     return "InteractionChain{type=" + String.valueOf(this.type) + ", chainData=" + String.valueOf(this.chainData) + ", chainId=" + this.chainId + ", forkedChainId=" + String.valueOf(this.forkedChainId) + ", predicted=" + this.predicted + ", context=" + String.valueOf(this.context) + ", forkedChains=" + String.valueOf(this.forkedChains) + ", tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", initialRootInteraction=" + String.valueOf(this.initialRootInteraction) + ", rootInteraction=" + String.valueOf(this.rootInteraction) + ", operationCounter=" + this.operationCounter + ", callStack=" + String.valueOf(this.callStack) + ", simulatedCallStack=" + this.simulatedCallStack + ", requiresClient=" + this.requiresClient + ", simulatedOperationCounter=" + this.simulatedOperationCounter + ", simulatedRootInteraction=" + String.valueOf(this.simulatedRootInteraction) + ", operationIndex=" + this.operationIndex + ", operationIndexOffset=" + this.operationIndexOffset + ", clientOperationIndex=" + this.clientOperationIndex + ", interactions=" + String.valueOf(this.interactions) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", tempSyncDataOffset=" + this.tempSyncDataOffset + ", timestamp=" + this.timestamp + ", waitingForServerFinished=" + this.waitingForServerFinished + ", waitingForClientFinished=" + this.waitingForClientFinished + ", clientState=" + String.valueOf(this.clientState) + ", serverState=" + String.valueOf(this.serverState) + ", onCompletion=" + String.valueOf(this.onCompletion) + ", sentInitial=" + this.sentInitial + ", desynced=" + this.desynced + ", timeShift=" + this.timeShift + ", firstRun=" + this.firstRun + ", skipChainOnClick=" + this.skipChainOnClick + "}";
+/* 669 */     return "InteractionChain{type=" + String.valueOf(this.type) + ", chainData=" + String.valueOf(this.chainData) + ", chainId=" + this.chainId + ", forkedChainId=" + String.valueOf(this.forkedChainId) + ", predicted=" + this.predicted + ", context=" + String.valueOf(this.context) + ", forkedChains=" + String.valueOf(this.forkedChains) + ", tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", initialRootInteraction=" + String.valueOf(this.initialRootInteraction) + ", rootInteraction=" + String.valueOf(this.rootInteraction) + ", operationCounter=" + this.operationCounter + ", callStack=" + String.valueOf(this.callStack) + ", simulatedCallStack=" + this.simulatedCallStack + ", requiresClient=" + this.requiresClient + ", simulatedOperationCounter=" + this.simulatedOperationCounter + ", simulatedRootInteraction=" + String.valueOf(this.simulatedRootInteraction) + ", operationIndex=" + this.operationIndex + ", operationIndexOffset=" + this.operationIndexOffset + ", clientOperationIndex=" + this.clientOperationIndex + ", interactions=" + String.valueOf(this.interactions) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", tempSyncDataOffset=" + this.tempSyncDataOffset + ", timestamp=" + this.timestamp + ", waitingForServerFinished=" + this.waitingForServerFinished + ", waitingForClientFinished=" + this.waitingForClientFinished + ", clientState=" + String.valueOf(this.clientState) + ", serverState=" + String.valueOf(this.serverState) + ", onCompletion=" + String.valueOf(this.onCompletion) + ", sentInitial=" + this.sentInitial + ", desynced=" + this.desynced + ", timeShift=" + this.timeShift + ", firstRun=" + this.firstRun + ", skipChainOnClick=" + this.skipChainOnClick + "}";
 /*     */   }
 /*     */ 
 /*     */ 
@@ -701,42 +704,42 @@
 /*     */   static class TempChain
 /*     */     implements ChainSyncStorage
 /*     */   {
-/* 704 */     final Long2ObjectMap<TempChain> tempForkedChainData = (Long2ObjectMap<TempChain>)new Long2ObjectOpenHashMap();
-/* 705 */     final List<InteractionSyncData> tempSyncData = (List<InteractionSyncData>)new ObjectArrayList();
+/* 707 */     final Long2ObjectMap<TempChain> tempForkedChainData = (Long2ObjectMap<TempChain>)new Long2ObjectOpenHashMap();
+/* 708 */     final List<InteractionSyncData> tempSyncData = (List<InteractionSyncData>)new ObjectArrayList();
 /*     */     ForkedChainId forkedChainId;
-/* 707 */     InteractionState clientState = InteractionState.NotFinished;
+/* 710 */     InteractionState clientState = InteractionState.NotFinished;
 /*     */     ForkedChainId baseForkedChainId;
 /*     */     InteractionChainData chainData;
 /*     */     
 /*     */     @Nonnull
 /*     */     public TempChain getOrCreateTempForkedChain(@Nonnull ForkedChainId chainId) {
-/* 713 */       return (TempChain)this.tempForkedChainData.computeIfAbsent(InteractionChain.forkedIdToIndex(chainId), i -> new TempChain());
+/* 716 */       return (TempChain)this.tempForkedChainData.computeIfAbsent(InteractionChain.forkedIdToIndex(chainId), i -> new TempChain());
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public InteractionState getClientState() {
-/* 718 */       return this.clientState;
+/* 721 */       return this.clientState;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void setClientState(InteractionState state) {
-/* 723 */       this.clientState = state;
+/* 726 */       this.clientState = state;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nullable
 /*     */     public InteractionEntry getInteraction(int index) {
-/* 729 */       return null;
+/* 732 */       return null;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void putInteractionSyncData(int index, InteractionSyncData data) {
-/* 734 */       if (index < this.tempSyncData.size()) {
-/* 735 */         this.tempSyncData.set(index, data);
-/* 736 */       } else if (index == this.tempSyncData.size()) {
-/* 737 */         this.tempSyncData.add(data);
+/* 737 */       if (index < this.tempSyncData.size()) {
+/* 738 */         this.tempSyncData.set(index, data);
+/* 739 */       } else if (index == this.tempSyncData.size()) {
+/* 740 */         this.tempSyncData.add(data);
 /*     */       } else {
-/* 739 */         throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
+/* 742 */         throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
 /*     */       } 
 /*     */     }
 /*     */ 
@@ -747,53 +750,53 @@
 /*     */ 
 /*     */     
 /*     */     public boolean isSyncDataOutOfOrder(int index) {
-/* 750 */       return (index > this.tempSyncData.size());
+/* 753 */       return (index > this.tempSyncData.size());
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void syncFork(@Nonnull Ref<EntityStore> ref, @Nonnull InteractionManager manager, @Nonnull SyncInteractionChain packet) {
-/* 755 */       ForkedChainId baseId = packet.forkedId;
-/* 756 */       for (; baseId.forkedId != null; baseId = baseId.forkedId);
-/* 757 */       TempChain temp = getOrCreateTempForkedChain(baseId);
-/* 758 */       temp.setForkedChainId(packet.forkedId);
-/* 759 */       temp.setBaseForkedChainId(baseId);
-/* 760 */       temp.setChainData(packet.data);
-/* 761 */       manager.sync(ref, temp, packet);
+/* 758 */       ForkedChainId baseId = packet.forkedId;
+/* 759 */       for (; baseId.forkedId != null; baseId = baseId.forkedId);
+/* 760 */       TempChain temp = getOrCreateTempForkedChain(baseId);
+/* 761 */       temp.setForkedChainId(packet.forkedId);
+/* 762 */       temp.setBaseForkedChainId(baseId);
+/* 763 */       temp.setChainData(packet.data);
+/* 764 */       manager.sync(ref, temp, packet);
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void clearInteractionSyncData(int index) {
-/* 766 */       int end = this.tempSyncData.size() - 1;
-/* 767 */       while (end >= index) {
-/* 768 */         this.tempSyncData.remove(end);
-/* 769 */         end--;
+/* 769 */       int end = this.tempSyncData.size() - 1;
+/* 770 */       while (end >= index) {
+/* 771 */         this.tempSyncData.remove(end);
+/* 772 */         end--;
 /*     */       } 
 /*     */     }
 /*     */     
 /*     */     public InteractionChainData getChainData() {
-/* 774 */       return this.chainData;
+/* 777 */       return this.chainData;
 /*     */     }
 /*     */     
 /*     */     public void setChainData(InteractionChainData chainData) {
-/* 778 */       this.chainData = chainData;
+/* 781 */       this.chainData = chainData;
 /*     */     }
 /*     */     
 /*     */     public ForkedChainId getBaseForkedChainId() {
-/* 782 */       return this.baseForkedChainId;
+/* 785 */       return this.baseForkedChainId;
 /*     */     }
 /*     */     
 /*     */     public void setBaseForkedChainId(ForkedChainId baseForkedChainId) {
-/* 786 */       this.baseForkedChainId = baseForkedChainId;
+/* 789 */       this.baseForkedChainId = baseForkedChainId;
 /*     */     }
 /*     */     
 /*     */     public void setForkedChainId(ForkedChainId forkedChainId) {
-/* 790 */       this.forkedChainId = forkedChainId;
+/* 793 */       this.forkedChainId = forkedChainId;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public String toString() {
-/* 796 */       return "TempChain{tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", clientState=" + String.valueOf(this.clientState) + "}";
+/* 799 */       return "TempChain{tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", clientState=" + String.valueOf(this.clientState) + "}";
 /*     */     }
 /*     */   } private static final class CallState extends Record { private final RootInteraction rootInteraction; private final int operationCounter; public final String toString() {
 /*     */       // Byte code:
@@ -802,7 +805,7 @@
 /*     */       //   6: areturn
 /*     */       // Line number table:
 /*     */       //   Java source line number -> byte code offset
-/*     */       //   #804	-> 0
+/*     */       //   #807	-> 0
 /*     */       // Local variable table:
 /*     */       //   start	length	slot	name	descriptor
 /*     */       //   0	7	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
@@ -814,23 +817,23 @@
 /*     */       //   6: ireturn
 /*     */       // Line number table:
 /*     */       //   Java source line number -> byte code offset
-/*     */       //   #804	-> 0
+/*     */       //   #807	-> 0
 /*     */       // Local variable table:
 /*     */       //   start	length	slot	name	descriptor
 /*     */       //   0	7	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
 /*     */     }
-/* 804 */     private CallState(RootInteraction rootInteraction, int operationCounter) { this.rootInteraction = rootInteraction; this.operationCounter = operationCounter; } public final boolean equals(Object o) { // Byte code:
+/* 807 */     private CallState(RootInteraction rootInteraction, int operationCounter) { this.rootInteraction = rootInteraction; this.operationCounter = operationCounter; } public final boolean equals(Object o) { // Byte code:
 /*     */       //   0: aload_0
 /*     */       //   1: aload_1
 /*     */       //   2: <illegal opcode> equals : (Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;Ljava/lang/Object;)Z
 /*     */       //   7: ireturn
 /*     */       // Line number table:
 /*     */       //   Java source line number -> byte code offset
-/*     */       //   #804	-> 0
+/*     */       //   #807	-> 0
 /*     */       // Local variable table:
 /*     */       //   start	length	slot	name	descriptor
 /*     */       //   0	8	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
-/* 804 */       //   0	8	1	o	Ljava/lang/Object; } public RootInteraction rootInteraction() { return this.rootInteraction; } public int operationCounter() { return this.operationCounter; }
+/* 807 */       //   0	8	1	o	Ljava/lang/Object; } public RootInteraction rootInteraction() { return this.rootInteraction; } public int operationCounter() { return this.operationCounter; }
 /*     */      }
 /*     */ 
 /*     */ }

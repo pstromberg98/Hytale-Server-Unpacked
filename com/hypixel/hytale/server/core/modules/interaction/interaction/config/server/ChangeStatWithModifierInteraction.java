@@ -38,58 +38,59 @@
 /*    */   protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
 /* 39 */     Ref<EntityStore> ref = context.getEntity();
 /* 40 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+/* 41 */     assert commandBuffer != null;
 /*    */     
-/* 42 */     EntityStatMap entityStatMapComponent = (EntityStatMap)commandBuffer.getComponent(ref, EntityStatMap.getComponentType());
-/* 43 */     assert entityStatMapComponent != null;
+/* 43 */     EntityStatMap entityStatMapComponent = (EntityStatMap)commandBuffer.getComponent(ref, EntityStatMap.getComponentType());
+/* 44 */     assert entityStatMapComponent != null;
 /*    */     
-/* 45 */     Int2FloatOpenHashMap int2FloatOpenHashMap = new Int2FloatOpenHashMap(this.entityStats);
+/* 46 */     Int2FloatOpenHashMap int2FloatOpenHashMap = new Int2FloatOpenHashMap(this.entityStats);
 /*    */     
-/* 47 */     Inventory inventory = null;
-/* 48 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { LivingEntity livingEntity = (LivingEntity)entity;
-/* 49 */       inventory = livingEntity.getInventory(); }
+/* 48 */     Inventory inventory = null;
+/* 49 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { LivingEntity livingEntity = (LivingEntity)entity;
+/* 50 */       inventory = livingEntity.getInventory(); }
 /*    */ 
 /*    */     
-/* 52 */     for (IntIterator<Integer> intIterator = int2FloatOpenHashMap.keySet().iterator(); intIterator.hasNext(); ) { int index = ((Integer)intIterator.next()).intValue();
-/* 53 */       if (inventory == null)
-/* 54 */         continue;  ItemContainer armorContainer = inventory.getArmor();
-/* 55 */       if (armorContainer == null)
-/* 56 */         continue;  float flatModifier = 0.0F;
-/* 57 */       float multiplierModifier = 0.0F;
+/* 53 */     for (IntIterator<Integer> intIterator = int2FloatOpenHashMap.keySet().iterator(); intIterator.hasNext(); ) { int index = ((Integer)intIterator.next()).intValue();
+/* 54 */       if (inventory == null)
+/* 55 */         continue;  ItemContainer armorContainer = inventory.getArmor();
+/* 56 */       if (armorContainer == null)
+/* 57 */         continue;  float flatModifier = 0.0F;
+/* 58 */       float multiplierModifier = 0.0F;
 /*    */       short i;
-/* 59 */       for (i = 0; i < armorContainer.getCapacity(); i = (short)(i + 1)) {
-/* 60 */         ItemStack itemStack = armorContainer.getItemStack(i);
-/* 61 */         if (itemStack != null && !itemStack.isEmpty()) {
+/* 60 */       for (i = 0; i < armorContainer.getCapacity(); i = (short)(i + 1)) {
+/* 61 */         ItemStack itemStack = armorContainer.getItemStack(i);
+/* 62 */         if (itemStack != null && !itemStack.isEmpty()) {
 /*    */           
-/* 63 */           Item item = itemStack.getItem();
-/* 64 */           if (item != null && item.getArmor() != null) {
+/* 64 */           Item item = itemStack.getItem();
+/* 65 */           if (item != null && item.getArmor() != null) {
 /*    */             
-/* 66 */             Int2ObjectMap<StaticModifier> statModifierMap = item.getArmor().getInteractionModifier(this.interactionModifierId.toString());
-/* 67 */             if (statModifierMap != null)
+/* 67 */             Int2ObjectMap<StaticModifier> statModifierMap = item.getArmor().getInteractionModifier(this.interactionModifierId.toString());
+/* 68 */             if (statModifierMap != null)
 /*    */             
-/* 69 */             { StaticModifier statModifier = (StaticModifier)statModifierMap.get(index);
-/* 70 */               if (statModifier != null)
+/* 70 */             { StaticModifier statModifier = (StaticModifier)statModifierMap.get(index);
+/* 71 */               if (statModifier != null)
 /*    */               {
-/* 72 */                 if (statModifier.getCalculationType() == StaticModifier.CalculationType.ADDITIVE)
-/* 73 */                 { flatModifier += statModifier.getAmount(); }
+/* 73 */                 if (statModifier.getCalculationType() == StaticModifier.CalculationType.ADDITIVE)
+/* 74 */                 { flatModifier += statModifier.getAmount(); }
 /*    */                 else
 /*    */                 
-/* 76 */                 { multiplierModifier = statModifier.getAmount(); }  }  } 
+/* 77 */                 { multiplierModifier = statModifier.getAmount(); }  }  } 
 /*    */           } 
 /*    */         } 
-/* 79 */       }  float cost = this.entityStats.get(index);
-/* 80 */       cost += flatModifier;
-/* 81 */       cost *= Math.max(0.0F, 1.0F - multiplierModifier);
-/* 82 */       int2FloatOpenHashMap.replace(index, cost); }
+/* 80 */       }  float cost = this.entityStats.get(index);
+/* 81 */       cost += flatModifier;
+/* 82 */       cost *= Math.max(0.0F, 1.0F - multiplierModifier);
+/* 83 */       int2FloatOpenHashMap.replace(index, cost); }
 /*    */     
-/* 84 */     entityStatMapComponent.processStatChanges(EntityStatMap.Predictable.NONE, (Int2FloatMap)int2FloatOpenHashMap, this.valueType, this.changeStatBehaviour);
+/* 85 */     entityStatMapComponent.processStatChanges(EntityStatMap.Predictable.NONE, (Int2FloatMap)int2FloatOpenHashMap, this.valueType, this.changeStatBehaviour);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 90 */     return "ChangeStatWithModifierInteraction{interactionModifierId=" + String.valueOf(this.interactionModifierId) + "}" + super
+/* 91 */     return "ChangeStatWithModifierInteraction{interactionModifierId=" + String.valueOf(this.interactionModifierId) + "}" + super
 /*    */       
-/* 92 */       .toString();
+/* 93 */       .toString();
 /*    */   }
 /*    */ }
 

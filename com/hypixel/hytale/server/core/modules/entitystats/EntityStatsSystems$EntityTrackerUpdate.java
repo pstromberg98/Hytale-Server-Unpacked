@@ -341,114 +341,117 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class EntityTrackerUpdate
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   private final ComponentType<EntityStore, EntityStatMap> componentType;
-/* 348 */   private final ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType = EntityTrackerSystems.Visible.getComponentType();
+/* 351 */   private final ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType = EntityTrackerSystems.Visible.getComponentType();
 /*     */   @Nonnull
 /*     */   private final Query<EntityStore> query;
-/* 351 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.BEFORE, EntityTrackerSystems.EffectControllerSystem.class), new SystemTypeDependency(Order.AFTER, 
+/* 354 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.BEFORE, EntityTrackerSystems.EffectControllerSystem.class), new SystemTypeDependency(Order.AFTER, 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */         
-/* 357 */         EntityStatsModule.get().getStatModifyingSystemType()));
+/* 360 */         EntityStatsModule.get().getStatModifyingSystemType()));
 /*     */ 
 /*     */   
 /*     */   public EntityTrackerUpdate(ComponentType<EntityStore, EntityStatMap> componentType) {
-/* 361 */     this.componentType = componentType;
-/* 362 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.visibleComponentType, (Query)componentType });
+/* 364 */     this.componentType = componentType;
+/* 365 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.visibleComponentType, (Query)componentType });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 368 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
+/* 371 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 374 */     return this.query;
+/* 377 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 380 */     return this.dependencies;
+/* 383 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 385 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 388 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 390 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
-/* 391 */     EntityTrackerSystems.Visible visible = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
-/* 392 */     EntityStatMap statMap = (EntityStatMap)archetypeChunk.getComponent(index, this.componentType);
+/* 393 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/* 394 */     EntityTrackerSystems.Visible visible = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
+/* 395 */     EntityStatMap statMap = (EntityStatMap)archetypeChunk.getComponent(index, this.componentType);
 /*     */ 
 /*     */     
-/* 395 */     if (!visible.newlyVisibleTo.isEmpty()) {
-/* 396 */       queueUpdatesForNewlyVisible(ref, statMap, visible.newlyVisibleTo);
+/* 398 */     if (!visible.newlyVisibleTo.isEmpty()) {
+/* 399 */       queueUpdatesForNewlyVisible(ref, statMap, visible.newlyVisibleTo);
 /*     */     }
 /*     */     
-/* 399 */     if (statMap.consumeSelfNetworkOutdated()) {
+/* 402 */     if (statMap.consumeSelfNetworkOutdated()) {
 /*     */       
-/* 401 */       EntityTrackerSystems.EntityViewer selfEntityViewer = (EntityTrackerSystems.EntityViewer)visible.visibleTo.get(ref);
-/* 402 */       if (selfEntityViewer != null && !visible.newlyVisibleTo.containsKey(ref)) {
-/* 403 */         ComponentUpdate update = new ComponentUpdate();
-/* 404 */         update.type = ComponentUpdateType.EntityStats;
-/* 405 */         update.entityStatUpdates = (Map)statMap.consumeSelfUpdates();
-/* 406 */         selfEntityViewer.queueUpdate(ref, update);
+/* 404 */       EntityTrackerSystems.EntityViewer selfEntityViewer = (EntityTrackerSystems.EntityViewer)visible.visibleTo.get(ref);
+/* 405 */       if (selfEntityViewer != null && !visible.newlyVisibleTo.containsKey(ref)) {
+/* 406 */         ComponentUpdate update = new ComponentUpdate();
+/* 407 */         update.type = ComponentUpdateType.EntityStats;
+/* 408 */         update.entityStatUpdates = (Map)statMap.consumeSelfUpdates();
+/* 409 */         selfEntityViewer.queueUpdate(ref, update);
 /*     */       } 
 /*     */     } 
 /*     */ 
 /*     */     
-/* 411 */     if (statMap.consumeNetworkOutdated()) {
-/* 412 */       ComponentUpdate update = new ComponentUpdate();
-/* 413 */       update.type = ComponentUpdateType.EntityStats;
-/* 414 */       update.entityStatUpdates = (Map)statMap.consumeOtherUpdates();
+/* 414 */     if (statMap.consumeNetworkOutdated()) {
+/* 415 */       ComponentUpdate update = new ComponentUpdate();
+/* 416 */       update.type = ComponentUpdateType.EntityStats;
+/* 417 */       update.entityStatUpdates = (Map)statMap.consumeOtherUpdates();
 /*     */       
-/* 416 */       for (Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> entry : (Iterable<Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer>>)visible.visibleTo.entrySet()) {
-/* 417 */         Ref<EntityStore> viewerRef = entry.getKey();
+/* 419 */       for (Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> entry : (Iterable<Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer>>)visible.visibleTo.entrySet()) {
+/* 420 */         Ref<EntityStore> viewerRef = entry.getKey();
 /*     */ 
 /*     */         
-/* 420 */         if (visible.newlyVisibleTo.containsKey(viewerRef)) {
+/* 423 */         if (visible.newlyVisibleTo.containsKey(viewerRef)) {
 /*     */           continue;
 /*     */         }
-/* 423 */         if (ref.equals(viewerRef))
+/* 426 */         if (ref.equals(viewerRef))
 /*     */           continue; 
-/* 425 */         ((EntityTrackerSystems.EntityViewer)entry.getValue()).queueUpdate(ref, update);
+/* 428 */         ((EntityTrackerSystems.EntityViewer)entry.getValue()).queueUpdate(ref, update);
 /*     */       } 
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void queueUpdatesForNewlyVisible(@Nonnull Ref<EntityStore> ref, @Nonnull EntityStatMap statMap, @Nonnull Map<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> newlyVisibleTo) {
-/* 431 */     ComponentUpdate update = new ComponentUpdate();
-/* 432 */     update.type = ComponentUpdateType.EntityStats;
-/* 433 */     update.entityStatUpdates = (Map)statMap.createInitUpdate(false);
+/* 434 */     ComponentUpdate update = new ComponentUpdate();
+/* 435 */     update.type = ComponentUpdateType.EntityStats;
+/* 436 */     update.entityStatUpdates = (Map)statMap.createInitUpdate(false);
 /*     */     
-/* 435 */     for (Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> entry : newlyVisibleTo.entrySet()) {
+/* 438 */     for (Map.Entry<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> entry : newlyVisibleTo.entrySet()) {
 /*     */       
-/* 437 */       if (ref.equals(entry.getKey())) {
-/* 438 */         queueUpdateForNewlyVisibleSelf(ref, statMap, entry.getValue());
+/* 440 */       if (ref.equals(entry.getKey())) {
+/* 441 */         queueUpdateForNewlyVisibleSelf(ref, statMap, entry.getValue());
 /*     */         
 /*     */         continue;
 /*     */       } 
-/* 442 */       ((EntityTrackerSystems.EntityViewer)entry.getValue()).queueUpdate(ref, update);
+/* 445 */       ((EntityTrackerSystems.EntityViewer)entry.getValue()).queueUpdate(ref, update);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void queueUpdateForNewlyVisibleSelf(Ref<EntityStore> ref, @Nonnull EntityStatMap statMap, @Nonnull EntityTrackerSystems.EntityViewer viewer) {
-/* 447 */     ComponentUpdate update = new ComponentUpdate();
-/* 448 */     update.type = ComponentUpdateType.EntityStats;
-/* 449 */     update.entityStatUpdates = (Map)statMap.createInitUpdate(true);
+/* 450 */     ComponentUpdate update = new ComponentUpdate();
+/* 451 */     update.type = ComponentUpdateType.EntityStats;
+/* 452 */     update.entityStatUpdates = (Map)statMap.createInitUpdate(true);
 /*     */     
-/* 451 */     viewer.queueUpdate(ref, update);
+/* 454 */     viewer.queueUpdate(ref, update);
 /*     */   }
 /*     */ }
 

@@ -1256,15 +1256,22 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class LegacyTransformSystem
 /*      */   extends EntityModule.MigrationSystem
 /*      */ {
 /*      */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 1263 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
-/* 1264 */     Objects.requireNonNull(transformComponent);
+/* 1270 */     TransformComponent transformComponent = (TransformComponent)holder.getComponent(TransformComponent.getComponentType());
+/* 1271 */     Objects.requireNonNull(transformComponent);
 /*      */     
-/* 1266 */     Entity entity = EntityUtils.getEntity(holder);
-/* 1267 */     entity.setTransformComponent(transformComponent);
+/* 1273 */     Entity entity = EntityUtils.getEntity(holder);
+/* 1274 */     entity.setTransformComponent(transformComponent);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1274,13 +1281,13 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 1277 */     return RootDependency.firstSet();
+/* 1284 */     return RootDependency.firstSet();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1283 */     return AllLegacyEntityTypesQuery.INSTANCE;
+/* 1290 */     return AllLegacyEntityTypesQuery.INSTANCE;
 /*      */   }
 /*      */ }
 

@@ -107,149 +107,150 @@
 /*     */     
 /* 108 */     ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
 /* 109 */     this.craftingManagerComponentType = entityStoreRegistry.registerComponent(CraftingManager.class, CraftingManager::new);
-/* 110 */     entityStoreRegistry.registerSystem((ISystem)new PlayerCraftingSystems.PlayerCraftingSystem(this.craftingManagerComponentType));
-/* 111 */     entityStoreRegistry.registerSystem((ISystem)new PlayerCraftingSystems.CraftingManagerAddSystem(this.craftingManagerComponentType));
+/* 110 */     entityStoreRegistry.registerSystem((ISystem)new PlayerCraftingSystems.CraftingTickingSystem(this.craftingManagerComponentType));
+/* 111 */     entityStoreRegistry.registerSystem((ISystem)new PlayerCraftingSystems.CraftingHolderSystem(this.craftingManagerComponentType));
+/* 112 */     entityStoreRegistry.registerSystem((ISystem)new PlayerCraftingSystems.CraftingRefSystem(this.craftingManagerComponentType));
 /*     */     
-/* 113 */     getCodecRegistry(Interaction.CODEC)
-/* 114 */       .register("OpenBenchPage", OpenBenchPageInteraction.class, OpenBenchPageInteraction.CODEC)
-/* 115 */       .register("OpenProcessingBench", OpenProcessingBenchInteraction.class, OpenProcessingBenchInteraction.CODEC);
+/* 114 */     getCodecRegistry(Interaction.CODEC)
+/* 115 */       .register("OpenBenchPage", OpenBenchPageInteraction.class, OpenBenchPageInteraction.CODEC)
+/* 116 */       .register("OpenProcessingBench", OpenProcessingBenchInteraction.class, OpenProcessingBenchInteraction.CODEC);
 /*     */     
-/* 117 */     Bench.registerRootInteraction(BenchType.Crafting, OpenBenchPageInteraction.SIMPLE_CRAFTING_ROOT);
-/* 118 */     Bench.registerRootInteraction(BenchType.DiagramCrafting, OpenBenchPageInteraction.DIAGRAM_CRAFTING_ROOT);
-/* 119 */     Bench.registerRootInteraction(BenchType.StructuralCrafting, OpenBenchPageInteraction.STRUCTURAL_CRAFTING_ROOT);
+/* 118 */     Bench.registerRootInteraction(BenchType.Crafting, OpenBenchPageInteraction.SIMPLE_CRAFTING_ROOT);
+/* 119 */     Bench.registerRootInteraction(BenchType.DiagramCrafting, OpenBenchPageInteraction.DIAGRAM_CRAFTING_ROOT);
+/* 120 */     Bench.registerRootInteraction(BenchType.StructuralCrafting, OpenBenchPageInteraction.STRUCTURAL_CRAFTING_ROOT);
 /*     */     
-/* 121 */     BlockStateRegistry blockStateRegistry = getBlockStateRegistry();
-/* 122 */     blockStateRegistry.registerBlockState(ProcessingBenchState.class, "processingBench", ProcessingBenchState.CODEC);
-/* 123 */     blockStateRegistry.registerBlockState(BenchState.class, "crafting", (Codec)BenchState.CODEC);
+/* 122 */     BlockStateRegistry blockStateRegistry = getBlockStateRegistry();
+/* 123 */     blockStateRegistry.registerBlockState(ProcessingBenchState.class, "processingBench", ProcessingBenchState.CODEC);
+/* 124 */     blockStateRegistry.registerBlockState(BenchState.class, "crafting", (Codec)BenchState.CODEC);
 /*     */     
-/* 125 */     Window.CLIENT_REQUESTABLE_WINDOW_TYPES.put(WindowType.PocketCrafting, com.hypixel.hytale.builtin.crafting.window.FieldCraftingWindow::new);
+/* 126 */     Window.CLIENT_REQUESTABLE_WINDOW_TYPES.put(WindowType.PocketCrafting, com.hypixel.hytale.builtin.crafting.window.FieldCraftingWindow::new);
 /*     */     
-/* 127 */     getEventRegistry().register(LoadedAssetsEvent.class, CraftingRecipe.class, CraftingPlugin::onRecipeLoad);
-/* 128 */     getEventRegistry().register(RemovedAssetsEvent.class, CraftingRecipe.class, CraftingPlugin::onRecipeRemove);
+/* 128 */     getEventRegistry().register(LoadedAssetsEvent.class, CraftingRecipe.class, CraftingPlugin::onRecipeLoad);
+/* 129 */     getEventRegistry().register(RemovedAssetsEvent.class, CraftingRecipe.class, CraftingPlugin::onRecipeRemove);
 /*     */     
-/* 130 */     getEventRegistry().register(LoadedAssetsEvent.class, Item.class, CraftingPlugin::onItemAssetLoad);
-/* 131 */     getEventRegistry().register(RemovedAssetsEvent.class, Item.class, CraftingPlugin::onItemAssetRemove);
+/* 131 */     getEventRegistry().register(LoadedAssetsEvent.class, Item.class, CraftingPlugin::onItemAssetLoad);
+/* 132 */     getEventRegistry().register(RemovedAssetsEvent.class, Item.class, CraftingPlugin::onItemAssetRemove);
 /*     */     
-/* 133 */     Interaction.CODEC.register("LearnRecipe", LearnRecipeInteraction.class, LearnRecipeInteraction.CODEC);
+/* 134 */     Interaction.CODEC.register("LearnRecipe", LearnRecipeInteraction.class, LearnRecipeInteraction.CODEC);
 /*     */     
-/* 135 */     CommandManager.get().registerSystemCommand((AbstractCommand)new RecipeCommand());
-/* 136 */     entityStoreRegistry.registerSystem((ISystem)new PlayerAddedSystem());
+/* 136 */     CommandManager.get().registerSystemCommand((AbstractCommand)new RecipeCommand());
+/* 137 */     entityStoreRegistry.registerSystem((ISystem)new PlayerAddedSystem());
 /*     */   }
 /*     */   
 /*     */   private static void onItemAssetLoad(LoadedAssetsEvent<String, Item, DefaultAssetMap<String, Item>> event) {
-/* 140 */     ObjectArrayList objectArrayList = new ObjectArrayList();
+/* 141 */     ObjectArrayList objectArrayList = new ObjectArrayList();
 /*     */     
-/* 142 */     for (Item item : event.getLoadedAssets().values()) {
-/* 143 */       if (!item.hasRecipesToGenerate()) {
+/* 143 */     for (Item item : event.getLoadedAssets().values()) {
+/* 144 */       if (!item.hasRecipesToGenerate()) {
 /*     */         continue;
 /*     */       }
-/* 146 */       ObjectArrayList objectArrayList1 = new ObjectArrayList();
-/* 147 */       item.collectRecipesToGenerate((Collection)objectArrayList1);
+/* 147 */       ObjectArrayList objectArrayList1 = new ObjectArrayList();
+/* 148 */       item.collectRecipesToGenerate((Collection)objectArrayList1);
 /*     */       
-/* 149 */       ObjectArrayList<String> objectArrayList2 = new ObjectArrayList();
-/* 150 */       for (CraftingRecipe generatedRecipe : objectArrayList1) {
-/* 151 */         String id = generatedRecipe.getId();
-/* 152 */         objectArrayList2.add(id);
+/* 150 */       ObjectArrayList<String> objectArrayList2 = new ObjectArrayList();
+/* 151 */       for (CraftingRecipe generatedRecipe : objectArrayList1) {
+/* 152 */         String id = generatedRecipe.getId();
+/* 153 */         objectArrayList2.add(id);
 /*     */       } 
 /*     */       
-/* 155 */       itemGeneratedRecipes.put(item.getId(), (String[])objectArrayList2.toArray(x$0 -> new String[x$0]));
-/* 156 */       objectArrayList.addAll((Collection)objectArrayList1);
+/* 156 */       itemGeneratedRecipes.put(item.getId(), (String[])objectArrayList2.toArray(x$0 -> new String[x$0]));
+/* 157 */       objectArrayList.addAll((Collection)objectArrayList1);
 /*     */     } 
 /*     */     
-/* 159 */     if (!objectArrayList.isEmpty()) {
-/* 160 */       CraftingRecipe.getAssetStore().loadAssets("Hytale:Hytale", (List)objectArrayList);
+/* 160 */     if (!objectArrayList.isEmpty()) {
+/* 161 */       CraftingRecipe.getAssetStore().loadAssets("Hytale:Hytale", (List)objectArrayList);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   private static void onItemAssetRemove(@Nonnull RemovedAssetsEvent<String, Item, DefaultAssetMap<String, Item>> event) {
-/* 165 */     for (String id : event.getRemovedAssets()) {
-/* 166 */       String[] generatedRecipes = itemGeneratedRecipes.get(id);
-/* 167 */       if (generatedRecipes == null) {
+/* 166 */     for (String id : event.getRemovedAssets()) {
+/* 167 */       String[] generatedRecipes = itemGeneratedRecipes.get(id);
+/* 168 */       if (generatedRecipes == null) {
 /*     */         continue;
 /*     */       }
 /*     */       
-/* 171 */       CraftingRecipe.getAssetStore().removeAssets(List.of(generatedRecipes));
+/* 172 */       CraftingRecipe.getAssetStore().removeAssets(List.of(generatedRecipes));
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void onRecipeLoad(LoadedAssetsEvent<String, CraftingRecipe, DefaultAssetMap<String, CraftingRecipe>> event) {
-/* 176 */     for (CraftingRecipe recipe : event.getLoadedAssets().values()) {
-/* 177 */       for (BenchRecipeRegistry registry : registries.values()) {
-/* 178 */         registry.removeRecipe(recipe.getId());
+/* 177 */     for (CraftingRecipe recipe : event.getLoadedAssets().values()) {
+/* 178 */       for (BenchRecipeRegistry registry : registries.values()) {
+/* 179 */         registry.removeRecipe(recipe.getId());
 /*     */       }
 /*     */       
-/* 181 */       if (recipe.getBenchRequirement() == null) {
+/* 182 */       if (recipe.getBenchRequirement() == null) {
 /*     */         continue;
 /*     */       }
 /*     */       
-/* 185 */       for (BenchRequirement benchRequirement : recipe.getBenchRequirement()) {
-/* 186 */         BenchRecipeRegistry benchRecipeRegistry = registries.computeIfAbsent(benchRequirement.id, BenchRecipeRegistry::new);
-/* 187 */         benchRecipeRegistry.addRecipe(benchRequirement, recipe);
+/* 186 */       for (BenchRequirement benchRequirement : recipe.getBenchRequirement()) {
+/* 187 */         BenchRecipeRegistry benchRecipeRegistry = registries.computeIfAbsent(benchRequirement.id, BenchRecipeRegistry::new);
+/* 188 */         benchRecipeRegistry.addRecipe(benchRequirement, recipe);
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 191 */     computeBenchRecipeRegistries();
+/* 192 */     computeBenchRecipeRegistries();
 /*     */   }
 /*     */   
 /*     */   private static void onRecipeRemove(RemovedAssetsEvent<String, CraftingRecipe, DefaultAssetMap<String, CraftingRecipe>> event) {
-/* 195 */     for (String removedRecipeId : event.getRemovedAssets()) {
-/* 196 */       for (BenchRecipeRegistry registry : registries.values()) {
-/* 197 */         registry.removeRecipe(removedRecipeId);
+/* 196 */     for (String removedRecipeId : event.getRemovedAssets()) {
+/* 197 */       for (BenchRecipeRegistry registry : registries.values()) {
+/* 198 */         registry.removeRecipe(removedRecipeId);
 /*     */       }
 /*     */     } 
 /*     */     
-/* 201 */     computeBenchRecipeRegistries();
+/* 202 */     computeBenchRecipeRegistries();
 /*     */   }
 /*     */   
 /*     */   private static void computeBenchRecipeRegistries() {
-/* 205 */     for (BenchRecipeRegistry registry : registries.values()) {
-/* 206 */       registry.recompute();
+/* 206 */     for (BenchRecipeRegistry registry : registries.values()) {
+/* 207 */       registry.recompute();
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static List<CraftingRecipe> getBenchRecipes(@Nonnull Bench bench) {
-/* 212 */     return getBenchRecipes(bench.getType(), bench.getId());
+/* 213 */     return getBenchRecipes(bench.getType(), bench.getId());
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static List<CraftingRecipe> getBenchRecipes(BenchType benchType, String name) {
-/* 217 */     return getBenchRecipes(benchType, name, (String)null);
+/* 218 */     return getBenchRecipes(benchType, name, (String)null);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static List<CraftingRecipe> getBenchRecipes(BenchType benchType, String benchId, @Nullable String category) {
-/* 222 */     BenchRecipeRegistry registry = registries.get(benchId);
-/* 223 */     if (registry == null) {
-/* 224 */       return List.of();
+/* 223 */     BenchRecipeRegistry registry = registries.get(benchId);
+/* 224 */     if (registry == null) {
+/* 225 */       return List.of();
 /*     */     }
 /*     */     
-/* 227 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
+/* 228 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
 /*     */ 
 /*     */     
-/* 230 */     for (CraftingRecipe recipe : registry.getAllRecipes()) {
-/* 231 */       BenchRequirement[] benchRequirement = recipe.getBenchRequirement();
-/* 232 */       if (benchRequirement != null)
+/* 231 */     for (CraftingRecipe recipe : registry.getAllRecipes()) {
+/* 232 */       BenchRequirement[] benchRequirement = recipe.getBenchRequirement();
+/* 233 */       if (benchRequirement != null)
 /*     */       {
-/* 234 */         for (BenchRequirement requirement : benchRequirement) {
-/* 235 */           if (requirement.type == benchType && requirement.id.equals(benchId) && (category == null || 
-/* 236 */             hasCategory(recipe, category))) {
-/* 237 */             objectArrayList.add(recipe);
+/* 235 */         for (BenchRequirement requirement : benchRequirement) {
+/* 236 */           if (requirement.type == benchType && requirement.id.equals(benchId) && (category == null || 
+/* 237 */             hasCategory(recipe, category))) {
+/* 238 */             objectArrayList.add(recipe);
 /*     */             break;
 /*     */           } 
 /*     */         } 
 /*     */       }
 /*     */     } 
-/* 243 */     return (List<CraftingRecipe>)objectArrayList;
+/* 244 */     return (List<CraftingRecipe>)objectArrayList;
 /*     */   }
 /*     */   
 /*     */   private static boolean hasCategory(@Nonnull CraftingRecipe recipe, String category) {
-/* 247 */     for (BenchRequirement benchRequirement : recipe.getBenchRequirement()) {
-/* 248 */       if (benchRequirement.categories != null && ArrayUtil.contains((Object[])benchRequirement.categories, category)) {
-/* 249 */         return true;
+/* 248 */     for (BenchRequirement benchRequirement : recipe.getBenchRequirement()) {
+/* 249 */       if (benchRequirement.categories != null && ArrayUtil.contains((Object[])benchRequirement.categories, category)) {
+/* 250 */         return true;
 /*     */       }
 /*     */     } 
-/* 252 */     return false;
+/* 253 */     return false;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -263,19 +264,19 @@
 /*     */ 
 /*     */   
 /*     */   public static boolean learnRecipe(@Nonnull Ref<EntityStore> ref, @Nonnull String recipeId, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 266 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/* 267 */     assert playerComponent != null;
+/* 267 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 268 */     assert playerComponent != null;
 /*     */     
-/* 269 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
+/* 270 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
 /*     */ 
 /*     */     
-/* 272 */     Set<String> knownRecipes = new HashSet<>(playerConfigData.getKnownRecipes());
-/* 273 */     if (knownRecipes.add(recipeId)) {
-/* 274 */       playerConfigData.setKnownRecipes(knownRecipes);
-/* 275 */       sendKnownRecipes(ref, componentAccessor);
-/* 276 */       return true;
+/* 273 */     Set<String> knownRecipes = new HashSet<>(playerConfigData.getKnownRecipes());
+/* 274 */     if (knownRecipes.add(recipeId)) {
+/* 275 */       playerConfigData.setKnownRecipes(knownRecipes);
+/* 276 */       sendKnownRecipes(ref, componentAccessor);
+/* 277 */       return true;
 /*     */     } 
-/* 278 */     return false;
+/* 279 */     return false;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -287,19 +288,19 @@
 /*     */ 
 /*     */   
 /*     */   public static boolean forgetRecipe(@Nonnull Ref<EntityStore> ref, @Nonnull String itemId, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 290 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/* 291 */     assert playerComponent != null;
+/* 291 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 292 */     assert playerComponent != null;
 /*     */     
-/* 293 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
+/* 294 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
 /*     */ 
 /*     */     
-/* 296 */     ObjectOpenHashSet objectOpenHashSet = new ObjectOpenHashSet(playerConfigData.getKnownRecipes());
-/* 297 */     if (objectOpenHashSet.remove(itemId)) {
-/* 298 */       playerConfigData.setKnownRecipes((Set)objectOpenHashSet);
-/* 299 */       sendKnownRecipes(ref, componentAccessor);
-/* 300 */       return true;
+/* 297 */     ObjectOpenHashSet objectOpenHashSet = new ObjectOpenHashSet(playerConfigData.getKnownRecipes());
+/* 298 */     if (objectOpenHashSet.remove(itemId)) {
+/* 299 */       playerConfigData.setKnownRecipes((Set)objectOpenHashSet);
+/* 300 */       sendKnownRecipes(ref, componentAccessor);
+/* 301 */       return true;
 /*     */     } 
-/* 302 */     return false;
+/* 303 */     return false;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -309,59 +310,59 @@
 /*     */ 
 /*     */   
 /*     */   public static void sendKnownRecipes(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 312 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/* 313 */     assert playerRefComponent != null;
+/* 313 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/* 314 */     assert playerRefComponent != null;
 /*     */     
-/* 315 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/* 316 */     assert playerComponent != null;
+/* 316 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 317 */     assert playerComponent != null;
 /*     */     
-/* 318 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
-/* 319 */     DefaultAssetMap<String, Item> itemAssetMap = Item.getAssetMap();
+/* 319 */     PlayerConfigData playerConfigData = playerComponent.getPlayerConfigData();
+/* 320 */     DefaultAssetMap<String, Item> itemAssetMap = Item.getAssetMap();
 /*     */     
-/* 321 */     Object2ObjectOpenHashMap<String, CraftingRecipe> object2ObjectOpenHashMap = new Object2ObjectOpenHashMap();
-/* 322 */     for (String id : playerConfigData.getKnownRecipes()) {
-/* 323 */       Item item = (Item)itemAssetMap.getAsset(id);
-/* 324 */       if (item == null)
+/* 322 */     Object2ObjectOpenHashMap<String, CraftingRecipe> object2ObjectOpenHashMap = new Object2ObjectOpenHashMap();
+/* 323 */     for (String id : playerConfigData.getKnownRecipes()) {
+/* 324 */       Item item = (Item)itemAssetMap.getAsset(id);
+/* 325 */       if (item == null)
 /*     */         continue; 
-/* 326 */       for (BenchRecipeRegistry registry : registries.values()) {
-/* 327 */         Iterable<String> incomingRecipes = registry.getIncomingRecipesForItem(item.getId());
+/* 327 */       for (BenchRecipeRegistry registry : registries.values()) {
+/* 328 */         Iterable<String> incomingRecipes = registry.getIncomingRecipesForItem(item.getId());
 /*     */         
-/* 329 */         for (String recipeId : incomingRecipes) {
-/* 330 */           CraftingRecipe recipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
-/* 331 */           if (recipe == null) {
+/* 330 */         for (String recipeId : incomingRecipes) {
+/* 331 */           CraftingRecipe recipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
+/* 332 */           if (recipe == null) {
 /*     */             continue;
 /*     */           }
 /*     */           
-/* 335 */           object2ObjectOpenHashMap.put(id, recipe.toPacket(id));
+/* 336 */           object2ObjectOpenHashMap.put(id, recipe.toPacket(id));
 /*     */         } 
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 340 */     playerRefComponent.getPacketHandler().writeNoCache((Packet)new UpdateKnownRecipes((Map)object2ObjectOpenHashMap));
+/* 341 */     playerRefComponent.getPacketHandler().writeNoCache((Packet)new UpdateKnownRecipes((Map)object2ObjectOpenHashMap));
 /*     */   }
 /*     */   
 /*     */   public ComponentType<EntityStore, CraftingManager> getCraftingManagerComponentType() {
-/* 344 */     return this.craftingManagerComponentType;
+/* 345 */     return this.craftingManagerComponentType;
 /*     */   }
 /*     */   
 /*     */   public static CraftingPlugin get() {
-/* 348 */     return instance;
+/* 349 */     return instance;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public static class PlayerAddedSystem
 /*     */     extends RefSystem<EntityStore>
 /*     */   {
-/* 355 */     private static final Query<EntityStore> QUERY = (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), PlayerRef.getComponentType() });
+/* 356 */     private static final Query<EntityStore> QUERY = (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), PlayerRef.getComponentType() });
 /*     */ 
 /*     */     
 /*     */     public Query<EntityStore> getQuery() {
-/* 359 */       return QUERY;
+/* 360 */       return QUERY;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 364 */       CraftingPlugin.sendKnownRecipes(ref, (ComponentAccessor<EntityStore>)commandBuffer);
+/* 365 */       CraftingPlugin.sendKnownRecipes(ref, (ComponentAccessor<EntityStore>)commandBuffer);
 /*     */     }
 /*     */     
 /*     */     public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}

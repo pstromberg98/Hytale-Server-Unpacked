@@ -109,6 +109,22 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class WeightedPropAsset
 /*     */   implements Cleanable, JsonAssetWithMap<String, DefaultAssetMap<String, ClusterPropAsset.WeightedPropAsset>>
 /*     */ {
@@ -117,22 +133,22 @@
 /*     */   private AssetExtraInfo.Data data;
 /*     */   
 /*     */   static {
-/* 120 */     CODEC = ((AssetBuilderCodec.Builder)((AssetBuilderCodec.Builder)AssetBuilderCodec.builder(WeightedPropAsset.class, WeightedPropAsset::new, (Codec)Codec.STRING, (asset, id) -> asset.id = id, config -> config.id, (config, data) -> config.data = data, config -> config.data).append(new KeyedCodec("Weight", (Codec)Codec.DOUBLE, true), (t, w) -> t.weight = w.doubleValue(), t -> Double.valueOf(t.weight)).addValidator(Validators.greaterThan(Double.valueOf(0.0D))).add()).append(new KeyedCodec("ColumnProp", (Codec)PropAsset.CODEC, true), (t, out) -> t.propAsset = out, t -> t.propAsset).add()).build();
+/* 136 */     CODEC = ((AssetBuilderCodec.Builder)((AssetBuilderCodec.Builder)AssetBuilderCodec.builder(WeightedPropAsset.class, WeightedPropAsset::new, (Codec)Codec.STRING, (asset, id) -> asset.id = id, config -> config.id, (config, data) -> config.data = data, config -> config.data).append(new KeyedCodec("Weight", (Codec)Codec.DOUBLE, true), (t, w) -> t.weight = w.doubleValue(), t -> Double.valueOf(t.weight)).addValidator(Validators.greaterThan(Double.valueOf(0.0D))).add()).append(new KeyedCodec("ColumnProp", (Codec)PropAsset.CODEC, true), (t, out) -> t.propAsset = out, t -> t.propAsset).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
-/* 125 */   private double weight = 1.0D;
+/* 141 */   private double weight = 1.0D;
 /*     */   
 /*     */   private PropAsset propAsset;
 /*     */   
 /*     */   public String getId() {
-/* 130 */     return this.id;
+/* 146 */     return this.id;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void cleanUp() {
-/* 135 */     this.propAsset.cleanUp();
+/* 151 */     this.propAsset.cleanUp();
 /*     */   }
 /*     */ }
 

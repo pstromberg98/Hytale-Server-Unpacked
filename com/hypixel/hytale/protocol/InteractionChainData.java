@@ -55,12 +55,12 @@
 /*  55 */     obj.entityId = buf.getIntLE(offset + 1);
 /*  56 */     obj.proxyId = PacketIO.readUUID(buf, offset + 5);
 /*  57 */     if ((nullBits & 0x1) != 0) obj.hitLocation = Vector3f.deserialize(buf, offset + 21); 
-/*  58 */     if ((nullBits & 0x4) != 0) obj.blockPosition = BlockPosition.deserialize(buf, offset + 33); 
+/*  58 */     if ((nullBits & 0x2) != 0) obj.blockPosition = BlockPosition.deserialize(buf, offset + 33); 
 /*  59 */     obj.targetSlot = buf.getIntLE(offset + 45);
-/*  60 */     if ((nullBits & 0x8) != 0) obj.hitNormal = Vector3f.deserialize(buf, offset + 49);
+/*  60 */     if ((nullBits & 0x4) != 0) obj.hitNormal = Vector3f.deserialize(buf, offset + 49);
 /*     */     
 /*  62 */     int pos = offset + 61;
-/*  63 */     if ((nullBits & 0x2) != 0) { int hitDetailLen = VarInt.peek(buf, pos);
+/*  63 */     if ((nullBits & 0x8) != 0) { int hitDetailLen = VarInt.peek(buf, pos);
 /*  64 */       if (hitDetailLen < 0) throw ProtocolException.negativeLength("HitDetail", hitDetailLen); 
 /*  65 */       if (hitDetailLen > 4096000) throw ProtocolException.stringTooLong("HitDetail", hitDetailLen, 4096000); 
 /*  66 */       int hitDetailVarLen = VarInt.length(buf, pos);
@@ -73,7 +73,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  74 */     byte nullBits = buf.getByte(offset);
 /*  75 */     int pos = offset + 61;
-/*  76 */     if ((nullBits & 0x2) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/*  76 */     if ((nullBits & 0x8) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /*  77 */      return pos - offset;
 /*     */   }
 /*     */ 
@@ -81,9 +81,9 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  82 */     byte nullBits = 0;
 /*  83 */     if (this.hitLocation != null) nullBits = (byte)(nullBits | 0x1); 
-/*  84 */     if (this.hitDetail != null) nullBits = (byte)(nullBits | 0x2); 
-/*  85 */     if (this.blockPosition != null) nullBits = (byte)(nullBits | 0x4); 
-/*  86 */     if (this.hitNormal != null) nullBits = (byte)(nullBits | 0x8); 
+/*  84 */     if (this.blockPosition != null) nullBits = (byte)(nullBits | 0x2); 
+/*  85 */     if (this.hitNormal != null) nullBits = (byte)(nullBits | 0x4); 
+/*  86 */     if (this.hitDetail != null) nullBits = (byte)(nullBits | 0x8); 
 /*  87 */     buf.writeByte(nullBits);
 /*     */     
 /*  89 */     buf.writeIntLE(this.entityId);
@@ -113,7 +113,7 @@
 /*     */     
 /* 114 */     int pos = offset + 61;
 /*     */     
-/* 116 */     if ((nullBits & 0x2) != 0) {
+/* 116 */     if ((nullBits & 0x8) != 0) {
 /* 117 */       int hitDetailLen = VarInt.peek(buffer, pos);
 /* 118 */       if (hitDetailLen < 0) {
 /* 119 */         return ValidationResult.error("Invalid string length for HitDetail");

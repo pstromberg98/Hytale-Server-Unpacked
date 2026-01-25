@@ -867,44 +867,75 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class Defaults
 /*     */ {
-/* 872 */   public static final KeyedCodec<String> WORLD = new KeyedCodec("World", (Codec)Codec.STRING);
-/* 873 */   public static final KeyedCodec<GameMode> GAMEMODE = new KeyedCodec("GameMode", (Codec)ProtocolCodecs.GAMEMODE_LEGACY);
+/* 903 */   public static final KeyedCodec<String> WORLD = new KeyedCodec("World", (Codec)Codec.STRING);
+/* 904 */   public static final KeyedCodec<GameMode> GAMEMODE = new KeyedCodec("GameMode", (Codec)ProtocolCodecs.GAMEMODE_LEGACY);
 /*     */   public static final BuilderCodec<Defaults> CODEC;
 /*     */   private transient HytaleServerConfig hytaleServerConfig;
 /*     */   
 /*     */   static {
-/* 878 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Defaults.class, Defaults::new).addField(WORLD, (o, i) -> o.world = i, o -> o.world)).addField(GAMEMODE, (o, s) -> o.gameMode = s, o -> o.gameMode)).build();
+/* 909 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Defaults.class, Defaults::new).addField(WORLD, (o, i) -> o.world = i, o -> o.world)).addField(GAMEMODE, (o, s) -> o.gameMode = s, o -> o.gameMode)).build();
 /*     */   }
 /*     */ 
 /*     */   
-/* 882 */   private String world = "default";
-/* 883 */   private GameMode gameMode = GameMode.Adventure;
+/* 913 */   private String world = "default";
+/* 914 */   private GameMode gameMode = GameMode.Adventure;
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private Defaults(HytaleServerConfig hytaleServerConfig) {
-/* 889 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 920 */     this.hytaleServerConfig = hytaleServerConfig;
 /*     */   }
 /*     */   
 /*     */   public String getWorld() {
-/* 893 */     return this.world;
+/* 924 */     return this.world;
 /*     */   }
 /*     */   
 /*     */   public void setWorld(String world) {
-/* 897 */     this.world = world;
-/* 898 */     this.hytaleServerConfig.markChanged();
+/* 928 */     this.world = world;
+/* 929 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */   
 /*     */   public GameMode getGameMode() {
-/* 902 */     return this.gameMode;
+/* 933 */     return this.gameMode;
 /*     */   }
 /*     */   
 /*     */   public void setGameMode(GameMode gameMode) {
-/* 906 */     this.gameMode = gameMode;
-/* 907 */     this.hytaleServerConfig.markChanged();
+/* 937 */     this.gameMode = gameMode;
+/* 938 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */   
 /*     */   private Defaults() {}

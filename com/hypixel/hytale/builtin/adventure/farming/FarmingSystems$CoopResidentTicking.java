@@ -542,32 +542,25 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class CoopResidentTicking
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
-/* 555 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
+/* 548 */   private static final ComponentType<EntityStore, CoopResidentComponent> componentType = CoopResidentComponent.getComponentType();
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 559 */     return (Query)componentType;
+/* 552 */     return (Query)componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 564 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
-/* 565 */     if (coopResidentComponent == null) {
+/* 557 */     CoopResidentComponent coopResidentComponent = (CoopResidentComponent)archetypeChunk.getComponent(index, CoopResidentComponent.getComponentType());
+/* 558 */     if (coopResidentComponent == null) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 569 */     if (coopResidentComponent.getMarkedForDespawn())
-/* 570 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
+/* 562 */     if (coopResidentComponent.getMarkedForDespawn())
+/* 563 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
 /*     */   }
 /*     */ }
 

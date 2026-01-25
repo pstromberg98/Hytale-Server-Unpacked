@@ -17,57 +17,50 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class ChunkMaxSendRateCommand
 /*    */   extends AbstractTargetPlayerCommand
 /*    */ {
 /*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_SEC_SET = Message.translation("server.commands.chunk.maxsendrate.sec.set");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_TICK_SET = Message.translation("server.commands.chunk.maxsendrate.tick.set");
-/*    */   @Nonnull
-/* 28 */   private static final Message MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_SUMMARY = Message.translation("server.commands.chunk.maxsendrate.summary");
+/* 27 */   private final OptionalArg<Integer> secArg = withOptionalArg("sec", "server.commands.chunk.maxsendrate.sec.desc", (ArgumentType)ArgTypes.INTEGER);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 34 */   private final OptionalArg<Integer> secArg = withOptionalArg("sec", "server.commands.chunk.maxsendrate.sec.desc", (ArgumentType)ArgTypes.INTEGER);
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 40 */   private final OptionalArg<Integer> tickArg = withOptionalArg("tick", "server.commands.chunk.maxsendrate.tick.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 33 */   private final OptionalArg<Integer> tickArg = withOptionalArg("tick", "server.commands.chunk.maxsendrate.tick.desc", (ArgumentType)ArgTypes.INTEGER);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkMaxSendRateCommand() {
-/* 46 */     super("maxsendrate", "server.commands.chunk.maxsendrate.desc");
+/* 39 */     super("maxsendrate", "server.commands.chunk.maxsendrate.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nullable Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 51 */     ChunkTracker chunkTracker = (ChunkTracker)store.getComponent(ref, ChunkTracker.getComponentType());
-/* 52 */     assert chunkTracker != null;
+/* 44 */     ChunkTracker chunkTracker = (ChunkTracker)store.getComponent(ref, ChunkTracker.getComponentType());
+/* 45 */     assert chunkTracker != null;
 /*    */     
-/* 54 */     if (this.secArg.provided(context)) {
-/* 55 */       int sec = ((Integer)this.secArg.get(context)).intValue();
-/* 56 */       chunkTracker.setMaxChunksPerSecond(sec);
-/* 57 */       context.sendMessage(MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_SEC_SET
-/* 58 */           .param("value", sec));
+/* 47 */     if (this.secArg.provided(context)) {
+/* 48 */       int sec = ((Integer)this.secArg.get(context)).intValue();
+/* 49 */       chunkTracker.setMaxChunksPerSecond(sec);
+/* 50 */       context.sendMessage(Message.translation("server.commands.chunk.maxsendrate.sec.set")
+/* 51 */           .param("value", sec));
 /*    */     } 
 /*    */     
-/* 61 */     if (this.tickArg.provided(context)) {
-/* 62 */       int tick = ((Integer)this.tickArg.get(context)).intValue();
-/* 63 */       chunkTracker.setMaxChunksPerTick(tick);
-/* 64 */       context.sendMessage(MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_TICK_SET
-/* 65 */           .param("value", tick));
+/* 54 */     if (this.tickArg.provided(context)) {
+/* 55 */       int tick = ((Integer)this.tickArg.get(context)).intValue();
+/* 56 */       chunkTracker.setMaxChunksPerTick(tick);
+/* 57 */       context.sendMessage(Message.translation("server.commands.chunk.maxsendrate.tick.set")
+/* 58 */           .param("value", tick));
 /*    */     } 
 /*    */     
-/* 68 */     context.sendMessage(MESSAGE_COMMANDS_CHUNK_MAXSENDRATE_SUMMARY
-/* 69 */         .param("perSecond", chunkTracker.getMaxChunksPerSecond())
-/* 70 */         .param("perTick", chunkTracker.getMaxChunksPerTick()));
+/* 61 */     context.sendMessage(Message.translation("server.commands.chunk.maxsendrate.summary")
+/* 62 */         .param("perSecond", chunkTracker.getMaxChunksPerSecond())
+/* 63 */         .param("perTick", chunkTracker.getMaxChunksPerTick()));
 /*    */   }
 /*    */ }
 

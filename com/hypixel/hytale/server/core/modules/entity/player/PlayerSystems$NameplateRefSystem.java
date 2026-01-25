@@ -496,26 +496,202 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class NameplateRefSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 504 */     return (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), DisplayNameComponent.getComponentType() });
+/* 680 */     return (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), DisplayNameComponent.getComponentType() });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 509 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)commandBuffer.getComponent(ref, DisplayNameComponent.getComponentType());
-/* 510 */     assert displayNameComponent != null;
+/* 685 */     DisplayNameComponent displayNameComponent = (DisplayNameComponent)commandBuffer.getComponent(ref, DisplayNameComponent.getComponentType());
+/* 686 */     assert displayNameComponent != null;
 /*     */ 
 /*     */     
-/* 513 */     if (commandBuffer.getComponent(ref, Nameplate.getComponentType()) != null) {
+/* 689 */     if (commandBuffer.getComponent(ref, Nameplate.getComponentType()) != null) {
 /*     */       return;
 /*     */     }
-/* 516 */     String displayName = (displayNameComponent.getDisplayName() != null) ? displayNameComponent.getDisplayName().getAnsiMessage() : "";
-/* 517 */     Nameplate nameplateComponent = new Nameplate(displayName);
-/* 518 */     commandBuffer.putComponent(ref, Nameplate.getComponentType(), (Component)nameplateComponent);
+/* 692 */     String displayName = (displayNameComponent.getDisplayName() != null) ? displayNameComponent.getDisplayName().getAnsiMessage() : "";
+/* 693 */     Nameplate nameplateComponent = new Nameplate(displayName);
+/* 694 */     commandBuffer.putComponent(ref, Nameplate.getComponentType(), (Component)nameplateComponent);
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}

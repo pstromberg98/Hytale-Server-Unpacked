@@ -27,39 +27,33 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class GradientWarpDensityAsset
 /*    */   extends DensityAsset
 /*    */ {
 /*    */   public static final BuilderCodec<GradientWarpDensityAsset> CODEC;
 /*    */   
 /*    */   static {
-/* 41 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(GradientWarpDensityAsset.class, GradientWarpDensityAsset::new, DensityAsset.ABSTRACT_CODEC).append(new KeyedCodec("SampleRange", (Codec)Codec.DOUBLE, false), (t, k) -> t.sampleRange = k.doubleValue(), t -> Double.valueOf(t.sampleRange)).addValidator(Validators.greaterThan(Double.valueOf(0.0D))).add()).append(new KeyedCodec("WarpFactor", (Codec)Codec.DOUBLE, false), (t, k) -> t.warpFactor = k.doubleValue(), t -> Double.valueOf(t.warpFactor)).add()).append(new KeyedCodec("2D", (Codec)Codec.BOOLEAN, false), (t, k) -> t.is2d = k.booleanValue(), t -> Boolean.valueOf(t.is2d)).add()).append(new KeyedCodec("YFor2D", (Codec)Codec.DOUBLE, false), (t, k) -> t.y2d = k.doubleValue(), t -> Double.valueOf(t.y2d)).add()).append(new KeyedCodec("CacheSizeFor2D", (Codec)Codec.INTEGER, false), (t, k) -> t._2dCacheSize = k.intValue(), t -> Integer.valueOf(t._2dCacheSize)).add()).build();
+/* 36 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(GradientWarpDensityAsset.class, GradientWarpDensityAsset::new, DensityAsset.ABSTRACT_CODEC).append(new KeyedCodec("SampleRange", (Codec)Codec.DOUBLE, false), (t, k) -> t.sampleRange = k.doubleValue(), t -> Double.valueOf(t.sampleRange)).addValidator(Validators.greaterThan(Double.valueOf(0.0D))).add()).append(new KeyedCodec("WarpFactor", (Codec)Codec.DOUBLE, false), (t, k) -> t.warpFactor = k.doubleValue(), t -> Double.valueOf(t.warpFactor)).add()).append(new KeyedCodec("2D", (Codec)Codec.BOOLEAN, false), (t, k) -> t.is2d = k.booleanValue(), t -> Boolean.valueOf(t.is2d)).add()).append(new KeyedCodec("YFor2D", (Codec)Codec.DOUBLE, false), (t, k) -> t.y2d = k.doubleValue(), t -> Double.valueOf(t.y2d)).add()).build();
 /*    */   }
-/* 43 */   private double sampleRange = 1.0D;
-/* 44 */   private double warpFactor = 1.0D;
+/* 38 */   private double sampleRange = 1.0D;
+/* 39 */   private double warpFactor = 1.0D;
 /*    */   private boolean is2d = false;
-/* 46 */   private double y2d = 0.0D;
-/* 47 */   private int _2dCacheSize = 16;
+/* 41 */   private double y2d = 0.0D;
 /*    */   
 /*    */   @Nonnull
 /*    */   public Density build(@Nonnull DensityAsset.Argument argument) {
-/* 51 */     if (isSkipped()) return (Density)new ConstantValueDensity(0.0D);
+/* 45 */     if (isSkipped()) return (Density)new ConstantValueDensity(0.0D);
 /*    */ 
 /*    */     
-/* 54 */     GradientWarpDensity node = new GradientWarpDensity(buildFirstInput(argument), buildSecondInput(argument), this.sampleRange, this.warpFactor);
+/* 48 */     GradientWarpDensity node = new GradientWarpDensity(buildFirstInput(argument), buildSecondInput(argument), this.sampleRange, this.warpFactor);
 /*    */ 
 /*    */     
-/* 57 */     return (Density)node;
+/* 51 */     return (Density)node;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void cleanUp() {
-/* 62 */     cleanUpInputs();
+/* 56 */     cleanUpInputs();
 /*    */   }
 /*    */ }
 

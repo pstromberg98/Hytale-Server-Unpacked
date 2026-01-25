@@ -96,110 +96,113 @@
 /*  96 */     this.playerRefComponentType = PlayerRef.getComponentType();
 /*  97 */     this.transformComponentType = TransformComponent.getComponentType();
 /*  98 */     this.positionDataComponentType = PositionDataComponent.getComponentType();
-/*  99 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)playerComponentType, (Query)this.boundingBoxComponentType, (Query)velocityComponentType, (Query)collisionResultComponentType, (Query)this.positionDataComponentType });
+/*  99 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)playerComponentType, (Query)this.playerRefComponentType, (Query)this.transformComponentType, (Query)this.boundingBoxComponentType, (Query)velocityComponentType, (Query)collisionResultComponentType, (Query)this.positionDataComponentType });
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 105 */     return this.query;
+/* 106 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 110 */     return false;
+/* 111 */     return false;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 115 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 116 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/* 116 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 117 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 /*     */     
-/* 118 */     Player playerComponent = (Player)archetypeChunk.getComponent(index, this.playerComponentType);
-/* 119 */     assert playerComponent != null;
+/* 119 */     Player playerComponent = (Player)archetypeChunk.getComponent(index, this.playerComponentType);
+/* 120 */     assert playerComponent != null;
 /*     */     
-/* 121 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, this.velocityComponentType);
-/* 122 */     assert velocityComponent != null;
+/* 122 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, this.velocityComponentType);
+/* 123 */     assert velocityComponent != null;
 /*     */     
-/* 124 */     CollisionResultComponent collisionResultComponent = (CollisionResultComponent)archetypeChunk.getComponent(index, this.collisionResultComponentType);
-/* 125 */     assert collisionResultComponent != null;
+/* 125 */     CollisionResultComponent collisionResultComponent = (CollisionResultComponent)archetypeChunk.getComponent(index, this.collisionResultComponentType);
+/* 126 */     assert collisionResultComponent != null;
 /*     */     
-/* 127 */     InteractionManager interactionManagerComponent = (InteractionManager)archetypeChunk.getComponent(index, InteractionModule.get().getInteractionManagerComponent());
-/* 128 */     assert interactionManagerComponent != null;
+/* 128 */     InteractionManager interactionManagerComponent = (InteractionManager)archetypeChunk.getComponent(index, InteractionModule.get().getInteractionManagerComponent());
+/* 129 */     if (interactionManagerComponent == null) {
+/*     */       return;
+/*     */     }
 /*     */     
-/* 130 */     PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, this.playerRefComponentType);
-/* 131 */     assert playerRefComponent != null;
+/* 133 */     PlayerRef playerRefComponent = (PlayerRef)archetypeChunk.getComponent(index, this.playerRefComponentType);
+/* 134 */     assert playerRefComponent != null;
 /*     */     
-/* 133 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
-/* 134 */     assert transformComponent != null;
+/* 136 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
+/* 137 */     assert transformComponent != null;
 /*     */ 
 /*     */ 
 /*     */     
-/* 138 */     boolean pendingCollisionCheck = collisionResultComponent.isPendingCollisionCheck();
+/* 141 */     boolean pendingCollisionCheck = collisionResultComponent.isPendingCollisionCheck();
 /*     */     
-/* 140 */     collisionResultComponent.getCollisionStartPositionCopy().assign(pendingCollisionCheck ? collisionResultComponent.getCollisionStartPosition() : transformComponent.getPosition());
-/* 141 */     collisionResultComponent.getCollisionPositionOffsetCopy().assign(collisionResultComponent.getCollisionPositionOffset());
-/* 142 */     collisionResultComponent.resetLocationChange();
+/* 143 */     collisionResultComponent.getCollisionStartPositionCopy().assign(pendingCollisionCheck ? collisionResultComponent.getCollisionStartPosition() : transformComponent.getPosition());
+/* 144 */     collisionResultComponent.getCollisionPositionOffsetCopy().assign(collisionResultComponent.getCollisionPositionOffset());
+/* 145 */     collisionResultComponent.resetLocationChange();
 /*     */ 
 /*     */     
-/* 145 */     if (collisionResultComponent.getCollisionPositionOffsetCopy().squaredLength() >= 100.0D) {
-/* 146 */       if (playerComponent.getGameMode() == GameMode.Adventure) {
-/* 147 */         Entity.LOGGER.at(Level.WARNING).log("%s, %s: Jump in location in processMovementBlockCollisions %s", playerRefComponent.getUsername(), playerRefComponent.getUuid(), Double.valueOf(collisionResultComponent.getCollisionPositionOffsetCopy().length()));
+/* 148 */     if (collisionResultComponent.getCollisionPositionOffsetCopy().squaredLength() >= 100.0D) {
+/* 149 */       if (playerComponent.getGameMode() == GameMode.Adventure) {
+/* 150 */         Entity.LOGGER.at(Level.WARNING).log("%s, %s: Jump in location in processMovementBlockCollisions %s", playerRefComponent.getUsername(), playerRefComponent.getUuid(), Double.valueOf(collisionResultComponent.getCollisionPositionOffsetCopy().length()));
 /*     */       }
 /*     */       
-/* 150 */       playerComponent.resetVelocity(velocityComponent);
+/* 153 */       playerComponent.resetVelocity(velocityComponent);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 154 */     BoundingBox boundingBoxComponent = (BoundingBox)archetypeChunk.getComponent(index, this.boundingBoxComponentType);
-/* 155 */     assert boundingBoxComponent != null;
+/* 157 */     BoundingBox boundingBoxComponent = (BoundingBox)archetypeChunk.getComponent(index, this.boundingBoxComponentType);
+/* 158 */     assert boundingBoxComponent != null;
 /*     */     
-/* 157 */     Box boundingBox = boundingBoxComponent.getBoundingBox();
-/*     */ 
-/*     */     
-/* 160 */     if (pendingCollisionCheck);
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
+/* 160 */     Box boundingBox = boundingBoxComponent.getBoundingBox();
 /*     */ 
 /*     */     
-/* 181 */     CollisionModule.get().findIntersections(world, boundingBox, collisionResultComponent.getCollisionStartPositionCopy(), collisionResultComponent.getCollisionResult(), true, false);
+/* 163 */     if (pendingCollisionCheck);
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */     
-/* 184 */     playerComponent.processVelocitySample(dt, collisionResultComponent.getCollisionPositionOffsetCopy(), velocityComponent);
+/* 184 */     CollisionModule.get().findIntersections(world, boundingBox, collisionResultComponent.getCollisionStartPositionCopy(), collisionResultComponent.getCollisionResult(), true, false);
 /*     */ 
 /*     */     
-/* 187 */     Ref<ChunkStore> chunkRef = transformComponent.getChunkRef();
-/* 188 */     if (chunkRef != null && chunkRef.isValid()) {
-/* 189 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
-/* 190 */       WorldChunk worldChunkComponent = (WorldChunk)chunkStore.getComponent(chunkRef, WorldChunk.getComponentType());
-/* 191 */       assert worldChunkComponent != null;
+/* 187 */     playerComponent.processVelocitySample(dt, collisionResultComponent.getCollisionPositionOffsetCopy(), velocityComponent);
+/*     */ 
+/*     */     
+/* 190 */     Ref<ChunkStore> chunkRef = transformComponent.getChunkRef();
+/* 191 */     if (chunkRef != null && chunkRef.isValid()) {
+/* 192 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 193 */       WorldChunk worldChunkComponent = (WorldChunk)chunkStore.getComponent(chunkRef, WorldChunk.getComponentType());
+/* 194 */       assert worldChunkComponent != null;
 /*     */       
-/* 193 */       PositionDataComponent positionDataComponent = (PositionDataComponent)archetypeChunk.getComponent(index, this.positionDataComponentType);
-/* 194 */       assert positionDataComponent != null;
+/* 196 */       PositionDataComponent positionDataComponent = (PositionDataComponent)archetypeChunk.getComponent(index, this.positionDataComponentType);
+/* 197 */       assert positionDataComponent != null;
 /*     */       
-/* 196 */       Vector3i blockPosition = transformComponent.getPosition().toVector3i();
-/* 197 */       positionDataComponent.setInsideBlockTypeId(worldChunkComponent.getBlock(blockPosition));
-/* 198 */       positionDataComponent.setStandingOnBlockTypeId(worldChunkComponent.getBlock(blockPosition.x, blockPosition.y - 1, blockPosition.z));
+/* 199 */       Vector3i blockPosition = transformComponent.getPosition().toVector3i();
+/* 200 */       positionDataComponent.setInsideBlockTypeId(worldChunkComponent.getBlock(blockPosition));
+/* 201 */       positionDataComponent.setStandingOnBlockTypeId(worldChunkComponent.getBlock(blockPosition.x, blockPosition.y - 1, blockPosition.z));
 /*     */     } 
 /*     */ 
 /*     */     
-/* 202 */     commandBuffer.run(_store -> {
+/* 205 */     commandBuffer.run(_store -> {
 /*     */           int damageToEntity = collisionResultComponent.getCollisionResult().defaultTriggerBlocksProcessing(interactionManagerComponent, (Entity)playerComponent, ref, playerComponent.executeTriggers, (ComponentAccessor)commandBuffer);
 /*     */           if (playerComponent.executeBlockDamage && damageToEntity > 0) {
 /*     */             Damage damage = new Damage(Damage.NULL_SOURCE, DamageCause.ENVIRONMENT, damageToEntity);

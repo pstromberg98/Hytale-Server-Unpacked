@@ -193,65 +193,66 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class TrackerTickSystem
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 200 */   private final ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType = EntityTrackerSystems.Visible.getComponentType(); @Nonnull
-/* 201 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.visibleComponentType, (Query)Interactions.getComponentType() });
+/* 201 */   private final ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType = EntityTrackerSystems.Visible.getComponentType(); @Nonnull
+/* 202 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.visibleComponentType, (Query)Interactions.getComponentType() });
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 207 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
+/* 208 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 213 */     return this.query;
+/* 214 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 218 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 219 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 223 */     EntityTrackerSystems.Visible visibleComponentType = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
-/* 224 */     assert visibleComponentType != null;
+/* 224 */     EntityTrackerSystems.Visible visibleComponentType = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
+/* 225 */     assert visibleComponentType != null;
 /*     */     
-/* 226 */     Interactions interactionsComponent = (Interactions)archetypeChunk.getComponent(index, Interactions.getComponentType());
-/* 227 */     assert interactionsComponent != null;
+/* 227 */     Interactions interactionsComponent = (Interactions)archetypeChunk.getComponent(index, Interactions.getComponentType());
+/* 228 */     assert interactionsComponent != null;
 /*     */     
-/* 229 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/* 230 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 /*     */ 
 /*     */     
-/* 232 */     if (interactionsComponent.consumeNetworkOutdated()) {
-/* 233 */       queueUpdatesFor(ref, visibleComponentType.visibleTo, interactionsComponent);
-/* 234 */     } else if (!visibleComponentType.newlyVisibleTo.isEmpty()) {
-/* 235 */       queueUpdatesFor(ref, visibleComponentType.newlyVisibleTo, interactionsComponent);
+/* 233 */     if (interactionsComponent.consumeNetworkOutdated()) {
+/* 234 */       queueUpdatesFor(ref, visibleComponentType.visibleTo, interactionsComponent);
+/* 235 */     } else if (!visibleComponentType.newlyVisibleTo.isEmpty()) {
+/* 236 */       queueUpdatesFor(ref, visibleComponentType.newlyVisibleTo, interactionsComponent);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static void queueUpdatesFor(@Nonnull Ref<EntityStore> ref, @Nonnull Map<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> visibleTo, @Nonnull Interactions component) {
-/* 242 */     ComponentUpdate componentUpdate = new ComponentUpdate();
-/* 243 */     componentUpdate.type = ComponentUpdateType.Interactions;
+/* 243 */     ComponentUpdate componentUpdate = new ComponentUpdate();
+/* 244 */     componentUpdate.type = ComponentUpdateType.Interactions;
 /*     */     
-/* 245 */     Object2IntOpenHashMap<InteractionType> interactions = new Object2IntOpenHashMap();
-/* 246 */     for (Map.Entry<InteractionType, String> entry : (Iterable<Map.Entry<InteractionType, String>>)component.getInteractions().entrySet()) {
-/* 247 */       interactions.put(entry.getKey(), RootInteraction.getRootInteractionIdOrUnknown(entry.getValue()));
+/* 246 */     Object2IntOpenHashMap<InteractionType> interactions = new Object2IntOpenHashMap();
+/* 247 */     for (Map.Entry<InteractionType, String> entry : (Iterable<Map.Entry<InteractionType, String>>)component.getInteractions().entrySet()) {
+/* 248 */       interactions.put(entry.getKey(), RootInteraction.getRootInteractionIdOrUnknown(entry.getValue()));
 /*     */     }
 /*     */     
-/* 250 */     componentUpdate.interactions = (Map)interactions;
-/* 251 */     componentUpdate.interactionHint = component.getInteractionHint();
+/* 251 */     componentUpdate.interactions = (Map)interactions;
+/* 252 */     componentUpdate.interactionHint = component.getInteractionHint();
 /*     */     
-/* 253 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
-/* 254 */       viewer.queueUpdate(ref, componentUpdate); 
+/* 254 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
+/* 255 */       viewer.queueUpdate(ref, componentUpdate); 
 /*     */   }
 /*     */ }
 

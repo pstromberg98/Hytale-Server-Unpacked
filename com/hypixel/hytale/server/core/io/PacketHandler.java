@@ -18,7 +18,6 @@
 /*     */ import com.hypixel.hytale.protocol.packets.connection.Ping;
 /*     */ import com.hypixel.hytale.protocol.packets.connection.Pong;
 /*     */ import com.hypixel.hytale.protocol.packets.connection.PongType;
-/*     */ import com.hypixel.hytale.server.core.HytaleServer;
 /*     */ import com.hypixel.hytale.server.core.auth.PlayerAuthentication;
 /*     */ import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 /*     */ import com.hypixel.hytale.server.core.io.netty.NettyUtil;
@@ -40,7 +39,6 @@
 /*     */ import java.security.SecureRandom;
 /*     */ import java.time.Duration;
 /*     */ import java.time.Instant;
-/*     */ import java.util.Map;
 /*     */ import java.util.concurrent.CompletableFuture;
 /*     */ import java.util.concurrent.ScheduledFuture;
 /*     */ import java.util.concurrent.TimeUnit;
@@ -51,6 +49,8 @@
 /*     */ import java.util.logging.Level;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -481,35 +481,63 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */   
+/*     */   protected void initStage(@Nonnull String stage, @Nonnull Duration timeout, @Nonnull BooleanSupplier condition) {
+/* 486 */     NettyUtil.TimeoutContext.init(this.channel, stage, getIdentifier());
+/* 487 */     setStageTimeout(stage, timeout, condition);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   protected void setTimeout(@Nonnull String stageId, @Nonnull BooleanSupplier meets, long def, @Nonnull TimeUnit timeUnit) {
-/*     */     long timeout;
-/* 491 */     if (this.timeoutTask != null) this.timeoutTask.cancel(false);
+/*     */   protected void enterStage(@Nonnull String stage, @Nonnull Duration timeout, @Nonnull BooleanSupplier condition) {
+/* 499 */     NettyUtil.TimeoutContext.update(this.channel, stage, getIdentifier());
+/* 500 */     updatePacketTimeout(timeout);
+/* 501 */     setStageTimeout(stage, timeout, condition);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   protected void enterStage(@Nonnull String stage, @Nonnull Duration timeout) {
+/* 512 */     NettyUtil.TimeoutContext.update(this.channel, stage, getIdentifier());
+/* 513 */     updatePacketTimeout(timeout);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   protected void continueStage(@Nonnull String stage, @Nonnull Duration timeout, @Nonnull BooleanSupplier condition) {
+/* 525 */     NettyUtil.TimeoutContext.update(this.channel, stage);
+/* 526 */     updatePacketTimeout(timeout);
+/* 527 */     setStageTimeout(stage, timeout, condition);
+/*     */   }
+/*     */   
+/*     */   private void setStageTimeout(@Nonnull String stageId, @Nonnull Duration timeout, @Nonnull BooleanSupplier meets) {
+/* 531 */     if (this.timeoutTask != null) this.timeoutTask.cancel(false);
 /*     */     
-/* 493 */     if (!(this instanceof com.hypixel.hytale.server.core.io.handlers.login.AuthenticationPacketHandler) && 
-/* 494 */       this instanceof com.hypixel.hytale.server.core.io.handlers.login.PasswordPacketHandler && this.auth == null) {
+/* 533 */     if (!(this instanceof com.hypixel.hytale.server.core.io.handlers.login.AuthenticationPacketHandler) && 
+/* 534 */       this instanceof com.hypixel.hytale.server.core.io.handlers.login.PasswordPacketHandler && this.auth == null) {
 /*     */       return;
 /*     */     }
-/* 497 */     logConnectionTimings(this.channel, "setTimeout-" + stageId, Level.FINEST);
-/*     */ 
+/* 537 */     logConnectionTimings(this.channel, "Entering stage '" + stageId + "'", Level.FINEST);
 /*     */     
-/* 500 */     Map<String, Duration> timeouts = HytaleServer.get().getConfig().getConnectionTimeouts().getJoinTimeouts();
-/*     */     
-/* 502 */     if (timeouts.containsKey(stageId)) {
-/* 503 */       timeout = ((Duration)timeouts.get(stageId)).toMillis();
-/*     */     } else {
-/* 505 */       timeout = TimeUnit.MILLISECONDS.convert(def, timeUnit);
-/*     */     } 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */     
-/* 512 */     this.timeoutTask = (ScheduledFuture<?>)this.channel.eventLoop().schedule(() -> { if (!this.channel.isOpen()) return;  if (!meets.getAsBoolean()) { disconnect("Either you took too long to login or we took too long to process your request! Retry again in a moment."); HytaleLogger.getLogger().at(Level.WARNING).log("Took longer than %s for %s to log in at stage %s! Aborting!", FormatUtil.timeUnitToString(timeout, TimeUnit.MILLISECONDS), getIdentifier(), stageId); }  }timeout, TimeUnit.MILLISECONDS);
+/* 539 */     long timeoutMillis = timeout.toMillis();
+/* 540 */     this.timeoutTask = (ScheduledFuture<?>)this.channel.eventLoop().schedule(() -> { if (!this.channel.isOpen()) return;  if (!meets.getAsBoolean()) { NettyUtil.TimeoutContext context = (NettyUtil.TimeoutContext)this.channel.attr(NettyUtil.TimeoutContext.KEY).get(); String duration = (context != null) ? FormatUtil.nanosToString(System.nanoTime() - context.connectionStartNs()) : "unknown"; HytaleLogger.getLogger().at(Level.WARNING).log("Stage timeout for %s at stage '%s' after %s connected", getIdentifier(), stageId, duration); disconnect("Either you took too long to login or we took too long to process your request! Retry again in a moment."); }  }timeoutMillis, TimeUnit.MILLISECONDS);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -521,12 +549,19 @@
 /*     */ 
 /*     */ 
 /*     */   
+/*     */   private void updatePacketTimeout(@Nonnull Duration timeout) {
+/* 553 */     this.channel.attr(ProtocolUtil.PACKET_TIMEOUT_KEY).set(timeout);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
 /*     */   protected void clearTimeout() {
-/* 525 */     if (this.timeoutTask != null) this.timeoutTask.cancel(false); 
-/* 526 */     if (this.clientReadyForChunksFuture != null) {
-/* 527 */       this.clientReadyForChunksFuture.cancel(true);
-/* 528 */       this.clientReadyForChunksFuture = null;
-/* 529 */       this.clientReadyForChunksFutureStack = null;
+/* 560 */     if (this.timeoutTask != null) this.timeoutTask.cancel(false); 
+/* 561 */     if (this.clientReadyForChunksFuture != null) {
+/* 562 */       this.clientReadyForChunksFuture.cancel(true);
+/* 563 */       this.clientReadyForChunksFuture = null;
+/* 564 */       this.clientReadyForChunksFutureStack = null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -535,7 +570,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public PlayerAuthentication getAuth() {
-/* 538 */     return this.auth;
+/* 573 */     return this.auth;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -543,14 +578,14 @@
 /*     */ 
 /*     */   
 /*     */   public boolean stillActive() {
-/* 546 */     return this.channel.isActive();
+/* 581 */     return this.channel.isActive();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public int getQueuedPacketsCount() {
-/* 553 */     return this.queuedPackets.get();
+/* 588 */     return this.queuedPackets.get();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -558,19 +593,19 @@
 /*     */   
 /*     */   public boolean isLocalConnection() {
 /*     */     SocketAddress socketAddress;
-/* 561 */     Channel channel = this.channel; if (channel instanceof QuicStreamChannel) { QuicStreamChannel quicStreamChannel = (QuicStreamChannel)channel;
-/* 562 */       socketAddress = quicStreamChannel.parent().remoteSocketAddress(); }
+/* 596 */     Channel channel = this.channel; if (channel instanceof QuicStreamChannel) { QuicStreamChannel quicStreamChannel = (QuicStreamChannel)channel;
+/* 597 */       socketAddress = quicStreamChannel.parent().remoteSocketAddress(); }
 /*     */     else
-/* 564 */     { socketAddress = this.channel.remoteAddress(); }
+/* 599 */     { socketAddress = this.channel.remoteAddress(); }
 /*     */ 
 /*     */ 
 /*     */     
-/* 568 */     if (socketAddress instanceof InetSocketAddress) {
-/* 569 */       InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
-/* 570 */       return NetworkUtil.addressMatchesAny(address, new NetworkUtil.AddressType[] { NetworkUtil.AddressType.ANY_LOCAL, NetworkUtil.AddressType.LOOPBACK });
+/* 603 */     if (socketAddress instanceof InetSocketAddress) {
+/* 604 */       InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+/* 605 */       return NetworkUtil.addressMatchesAny(address, new NetworkUtil.AddressType[] { NetworkUtil.AddressType.ANY_LOCAL, NetworkUtil.AddressType.LOOPBACK });
 /*     */     } 
 /*     */     
-/* 573 */     return (socketAddress instanceof io.netty.channel.unix.DomainSocketAddress || socketAddress instanceof io.netty.channel.local.LocalAddress);
+/* 608 */     return (socketAddress instanceof io.netty.channel.unix.DomainSocketAddress || socketAddress instanceof io.netty.channel.local.LocalAddress);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -578,19 +613,19 @@
 /*     */   
 /*     */   public boolean isLANConnection() {
 /*     */     SocketAddress socketAddress;
-/* 581 */     Channel channel = this.channel; if (channel instanceof QuicStreamChannel) { QuicStreamChannel quicStreamChannel = (QuicStreamChannel)channel;
-/* 582 */       socketAddress = quicStreamChannel.parent().remoteSocketAddress(); }
+/* 616 */     Channel channel = this.channel; if (channel instanceof QuicStreamChannel) { QuicStreamChannel quicStreamChannel = (QuicStreamChannel)channel;
+/* 617 */       socketAddress = quicStreamChannel.parent().remoteSocketAddress(); }
 /*     */     else
-/* 584 */     { socketAddress = this.channel.remoteAddress(); }
+/* 619 */     { socketAddress = this.channel.remoteAddress(); }
 /*     */ 
 /*     */ 
 /*     */     
-/* 588 */     if (socketAddress instanceof InetSocketAddress) {
-/* 589 */       InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
-/* 590 */       return NetworkUtil.addressMatchesAny(address);
+/* 623 */     if (socketAddress instanceof InetSocketAddress) {
+/* 624 */       InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+/* 625 */       return NetworkUtil.addressMatchesAny(address);
 /*     */     } 
 /*     */     
-/* 593 */     return (socketAddress instanceof io.netty.channel.unix.DomainSocketAddress || socketAddress instanceof io.netty.channel.local.LocalAddress);
+/* 628 */     return (socketAddress instanceof io.netty.channel.unix.DomainSocketAddress || socketAddress instanceof io.netty.channel.local.LocalAddress);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -598,7 +633,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public DisconnectReason getDisconnectReason() {
-/* 601 */     return this.disconnectReason;
+/* 636 */     return this.disconnectReason;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -607,12 +642,12 @@
 /*     */ 
 /*     */   
 /*     */   public void setClientReadyForChunksFuture(@Nonnull CompletableFuture<Void> clientReadyFuture) {
-/* 610 */     if (this.clientReadyForChunksFuture != null) {
-/* 611 */       throw new IllegalStateException("Tried to hook client ready but something is already waiting for it!", this.clientReadyForChunksFutureStack);
+/* 645 */     if (this.clientReadyForChunksFuture != null) {
+/* 646 */       throw new IllegalStateException("Tried to hook client ready but something is already waiting for it!", this.clientReadyForChunksFutureStack);
 /*     */     }
-/* 613 */     HytaleLogger.getLogger().at(Level.WARNING).log("%s Added future for ClientReady packet?", getIdentifier());
-/* 614 */     this.clientReadyForChunksFutureStack = new Throwable();
-/* 615 */     this.clientReadyForChunksFuture = clientReadyFuture;
+/* 648 */     HytaleLogger.getLogger().at(Level.WARNING).log("%s Added future for ClientReady packet?", getIdentifier());
+/* 649 */     this.clientReadyForChunksFutureStack = new Throwable();
+/* 650 */     this.clientReadyForChunksFuture = clientReadyFuture;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -620,7 +655,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public CompletableFuture<Void> getClientReadyForChunksFuture() {
-/* 623 */     return this.clientReadyForChunksFuture;
+/* 658 */     return this.clientReadyForChunksFuture;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -631,15 +666,15 @@
 /*     */ 
 /*     */   
 /*     */   public static void logConnectionTimings(@Nonnull Channel channel, @Nonnull String message, @Nonnull Level level) {
-/* 634 */     Attribute<Long> loginStartAttribute = channel.attr(LOGIN_START_ATTRIBUTE_KEY);
+/* 669 */     Attribute<Long> loginStartAttribute = channel.attr(LOGIN_START_ATTRIBUTE_KEY);
 /*     */     
-/* 636 */     long now = System.nanoTime();
-/* 637 */     Long before = (Long)loginStartAttribute.getAndSet(Long.valueOf(now));
+/* 671 */     long now = System.nanoTime();
+/* 672 */     Long before = (Long)loginStartAttribute.getAndSet(Long.valueOf(now));
 /*     */     
-/* 639 */     if (before == null) {
-/* 640 */       LOGIN_TIMING_LOGGER.at(level).log(message);
+/* 674 */     if (before == null) {
+/* 675 */       LOGIN_TIMING_LOGGER.at(level).log(message);
 /*     */     } else {
-/* 642 */       LOGIN_TIMING_LOGGER.at(level).log("%s took %s", message, LazyArgs.lazy(() -> FormatUtil.nanosToString(now - before.longValue())));
+/* 677 */       LOGIN_TIMING_LOGGER.at(level).log("%s took %s", message, LazyArgs.lazy(() -> FormatUtil.nanosToString(now - before.longValue())));
 /*     */     } 
 /*     */   }
 /*     */   @Nonnull
@@ -649,9 +684,9 @@
 /*     */   public static class PingInfo { public static final MetricsRegistry<PingInfo> METRICS_REGISTRY;
 /*     */     
 /*     */     static {
-/* 652 */       METRICS_REGISTRY = (new MetricsRegistry()).register("PingType", pingInfo -> pingInfo.pingType, (Codec)new EnumCodec(PongType.class)).register("PingMetrics", PingInfo::getPingMetricSet, HistoricMetric.METRICS_CODEC).register("PacketQueueMin", pingInfo -> Long.valueOf(pingInfo.packetQueueMetric.getMin()), (Codec)Codec.LONG).register("PacketQueueAvg", pingInfo -> Double.valueOf(pingInfo.packetQueueMetric.getAverage()), (Codec)Codec.DOUBLE).register("PacketQueueMax", pingInfo -> Long.valueOf(pingInfo.packetQueueMetric.getMax()), (Codec)Codec.LONG);
+/* 687 */       METRICS_REGISTRY = (new MetricsRegistry()).register("PingType", pingInfo -> pingInfo.pingType, (Codec)new EnumCodec(PongType.class)).register("PingMetrics", PingInfo::getPingMetricSet, HistoricMetric.METRICS_CODEC).register("PacketQueueMin", pingInfo -> Long.valueOf(pingInfo.packetQueueMetric.getMin()), (Codec)Codec.LONG).register("PacketQueueAvg", pingInfo -> Double.valueOf(pingInfo.packetQueueMetric.getAverage()), (Codec)Codec.DOUBLE).register("PacketQueueMax", pingInfo -> Long.valueOf(pingInfo.packetQueueMetric.getMax()), (Codec)Codec.LONG);
 /*     */     }
-/* 654 */     public static final TimeUnit TIME_UNIT = TimeUnit.MICROSECONDS;
+/* 689 */     public static final TimeUnit TIME_UNIT = TimeUnit.MICROSECONDS;
 /*     */     
 /*     */     public static final int ONE_SECOND_INDEX = 0;
 /*     */     
@@ -660,7 +695,7 @@
 /*     */     public static final int FIVE_MINUTE_INDEX = 2;
 /*     */     public static final double PERCENTILE = 0.9900000095367432D;
 /*     */     public static final int PING_FREQUENCY = 1;
-/* 663 */     public static final TimeUnit PING_FREQUENCY_UNIT = TimeUnit.SECONDS;
+/* 698 */     public static final TimeUnit PING_FREQUENCY_UNIT = TimeUnit.SECONDS;
 /*     */     
 /*     */     public static final int PING_FREQUENCY_MILLIS = 1000;
 /*     */     
@@ -668,86 +703,86 @@
 /*     */     
 /*     */     public static final int PING_HISTORY_LENGTH = 15;
 /*     */     protected final PongType pingType;
-/* 671 */     protected final Lock queueLock = new ReentrantLock();
-/* 672 */     protected final IntPriorityQueue pingIdQueue = (IntPriorityQueue)new IntArrayFIFOQueue(15);
-/* 673 */     protected final LongPriorityQueue pingTimestampQueue = (LongPriorityQueue)new LongArrayFIFOQueue(15);
+/* 706 */     protected final Lock queueLock = new ReentrantLock();
+/* 707 */     protected final IntPriorityQueue pingIdQueue = (IntPriorityQueue)new IntArrayFIFOQueue(15);
+/* 708 */     protected final LongPriorityQueue pingTimestampQueue = (LongPriorityQueue)new LongArrayFIFOQueue(15);
 /*     */     
-/* 675 */     protected final Lock pingLock = new ReentrantLock();
+/* 710 */     protected final Lock pingLock = new ReentrantLock();
 /*     */     @Nonnull
 /*     */     protected final HistoricMetric pingMetricSet;
-/* 678 */     protected final Metric packetQueueMetric = new Metric();
+/* 713 */     protected final Metric packetQueueMetric = new Metric();
 /*     */     
 /*     */     public PingInfo(PongType pingType) {
-/* 681 */       this.pingType = pingType;
+/* 716 */       this.pingType = pingType;
 /*     */ 
 /*     */       
-/* 684 */       this
+/* 719 */       this
 /*     */ 
 /*     */ 
 /*     */         
-/* 688 */         .pingMetricSet = HistoricMetric.builder(1000L, TimeUnit.MILLISECONDS).addPeriod(1L, TimeUnit.SECONDS).addPeriod(1L, TimeUnit.MINUTES).addPeriod(5L, TimeUnit.MINUTES).build();
+/* 723 */         .pingMetricSet = HistoricMetric.builder(1000L, TimeUnit.MILLISECONDS).addPeriod(1L, TimeUnit.SECONDS).addPeriod(1L, TimeUnit.MINUTES).addPeriod(5L, TimeUnit.MINUTES).build();
 /*     */     }
 /*     */     
 /*     */     protected void recordSent(int id, long timestamp) {
-/* 692 */       this.queueLock.lock();
+/* 727 */       this.queueLock.lock();
 /*     */       try {
-/* 694 */         this.pingIdQueue.enqueue(id);
-/* 695 */         this.pingTimestampQueue.enqueue(timestamp);
+/* 729 */         this.pingIdQueue.enqueue(id);
+/* 730 */         this.pingTimestampQueue.enqueue(timestamp);
 /*     */       } finally {
-/* 697 */         this.queueLock.unlock();
+/* 732 */         this.queueLock.unlock();
 /*     */       } 
 /*     */     } protected void handlePacket(@Nonnull Pong packet) {
 /*     */       int nextIdToHandle;
 /*     */       long sentTimestamp;
-/* 702 */       if (packet.type != this.pingType) throw new IllegalArgumentException("Got packet for " + String.valueOf(packet.type) + " but expected " + String.valueOf(this.pingType));
+/* 737 */       if (packet.type != this.pingType) throw new IllegalArgumentException("Got packet for " + String.valueOf(packet.type) + " but expected " + String.valueOf(this.pingType));
 /*     */ 
 /*     */ 
 /*     */       
-/* 706 */       this.queueLock.lock();
+/* 741 */       this.queueLock.lock();
 /*     */       try {
-/* 708 */         nextIdToHandle = this.pingIdQueue.dequeueInt();
-/* 709 */         sentTimestamp = this.pingTimestampQueue.dequeueLong();
+/* 743 */         nextIdToHandle = this.pingIdQueue.dequeueInt();
+/* 744 */         sentTimestamp = this.pingTimestampQueue.dequeueLong();
 /*     */       } finally {
-/* 711 */         this.queueLock.unlock();
+/* 746 */         this.queueLock.unlock();
 /*     */       } 
 /*     */       
-/* 714 */       if (packet.id != nextIdToHandle) throw new IllegalArgumentException(String.valueOf(packet.id));
+/* 749 */       if (packet.id != nextIdToHandle) throw new IllegalArgumentException(String.valueOf(packet.id));
 /*     */ 
 /*     */       
-/* 717 */       long nanoTime = System.nanoTime();
-/* 718 */       long pingValue = nanoTime - sentTimestamp;
-/* 719 */       if (pingValue <= 0L) throw new IllegalArgumentException(String.format("Ping must be received after its sent! %s", new Object[] { Long.valueOf(pingValue) }));
+/* 752 */       long nanoTime = System.nanoTime();
+/* 753 */       long pingValue = nanoTime - sentTimestamp;
+/* 754 */       if (pingValue <= 0L) throw new IllegalArgumentException(String.format("Ping must be received after its sent! %s", new Object[] { Long.valueOf(pingValue) }));
 /*     */       
-/* 721 */       this.pingLock.lock();
+/* 756 */       this.pingLock.lock();
 /*     */       try {
-/* 723 */         this.pingMetricSet.add(nanoTime, TIME_UNIT.convert(pingValue, TimeUnit.NANOSECONDS));
-/* 724 */         this.packetQueueMetric.add(packet.packetQueueSize);
+/* 758 */         this.pingMetricSet.add(nanoTime, TIME_UNIT.convert(pingValue, TimeUnit.NANOSECONDS));
+/* 759 */         this.packetQueueMetric.add(packet.packetQueueSize);
 /*     */       } finally {
-/* 726 */         this.pingLock.unlock();
+/* 761 */         this.pingLock.unlock();
 /*     */       } 
 /*     */     }
 /*     */     
 /*     */     public PongType getPingType() {
-/* 731 */       return this.pingType;
+/* 766 */       return this.pingType;
 /*     */     }
 /*     */     
 /*     */     @Nonnull
 /*     */     public Metric getPacketQueueMetric() {
-/* 736 */       return this.packetQueueMetric;
+/* 771 */       return this.packetQueueMetric;
 /*     */     }
 /*     */     
 /*     */     @Nonnull
 /*     */     public HistoricMetric getPingMetricSet() {
-/* 741 */       return this.pingMetricSet;
+/* 776 */       return this.pingMetricSet;
 /*     */     }
 /*     */     
 /*     */     public void clear() {
-/* 745 */       this.pingLock.lock();
+/* 780 */       this.pingLock.lock();
 /*     */       try {
-/* 747 */         this.packetQueueMetric.clear();
-/* 748 */         this.pingMetricSet.clear();
+/* 782 */         this.packetQueueMetric.clear();
+/* 783 */         this.pingMetricSet.clear();
 /*     */       } finally {
-/* 750 */         this.pingLock.unlock();
+/* 785 */         this.pingLock.unlock();
 /*     */       } 
 /*     */     } }
 /*     */ 
@@ -771,12 +806,12 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public String getServerDisconnectReason() {
-/* 774 */       return this.serverDisconnectReason;
+/* 809 */       return this.serverDisconnectReason;
 /*     */     }
 /*     */     
 /*     */     public void setServerDisconnectReason(String serverDisconnectReason) {
-/* 778 */       this.serverDisconnectReason = serverDisconnectReason;
-/* 779 */       this.clientDisconnectType = null;
+/* 813 */       this.serverDisconnectReason = serverDisconnectReason;
+/* 814 */       this.clientDisconnectType = null;
 /*     */     }
 /*     */ 
 /*     */ 
@@ -787,18 +822,18 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public DisconnectType getClientDisconnectType() {
-/* 790 */       return this.clientDisconnectType;
+/* 825 */       return this.clientDisconnectType;
 /*     */     }
 /*     */     
 /*     */     public void setClientDisconnectType(DisconnectType clientDisconnectType) {
-/* 794 */       this.clientDisconnectType = clientDisconnectType;
-/* 795 */       this.serverDisconnectReason = null;
+/* 829 */       this.clientDisconnectType = clientDisconnectType;
+/* 830 */       this.serverDisconnectReason = null;
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     @Nonnull
 /*     */     public String toString() {
-/* 801 */       return "DisconnectReason{serverDisconnectReason='" + this.serverDisconnectReason + "', clientDisconnectType=" + String.valueOf(this.clientDisconnectType) + "}";
+/* 836 */       return "DisconnectReason{serverDisconnectReason='" + this.serverDisconnectReason + "', clientDisconnectType=" + String.valueOf(this.clientDisconnectType) + "}";
 /*     */     }
 /*     */   }
 /*     */ }

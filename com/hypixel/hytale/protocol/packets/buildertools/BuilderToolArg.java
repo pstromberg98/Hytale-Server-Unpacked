@@ -75,20 +75,20 @@
 /*  75 */     if ((nullBits[0] & 0x1) != 0) obj.boolArg = BuilderToolBoolArg.deserialize(buf, offset + 4); 
 /*  76 */     if ((nullBits[0] & 0x2) != 0) obj.floatArg = BuilderToolFloatArg.deserialize(buf, offset + 5); 
 /*  77 */     if ((nullBits[0] & 0x4) != 0) obj.intArg = BuilderToolIntArg.deserialize(buf, offset + 17); 
-/*  78 */     if ((nullBits[0] & 0x40) != 0) obj.brushShapeArg = BuilderToolBrushShapeArg.deserialize(buf, offset + 29); 
-/*  79 */     if ((nullBits[0] & 0x80) != 0) obj.brushOriginArg = BuilderToolBrushOriginArg.deserialize(buf, offset + 30); 
-/*  80 */     if ((nullBits[1] & 0x1) != 0) obj.brushAxisArg = BuilderToolBrushAxisArg.deserialize(buf, offset + 31); 
-/*  81 */     if ((nullBits[1] & 0x2) != 0) obj.rotationArg = BuilderToolRotationArg.deserialize(buf, offset + 32);
+/*  78 */     if ((nullBits[0] & 0x8) != 0) obj.brushShapeArg = BuilderToolBrushShapeArg.deserialize(buf, offset + 29); 
+/*  79 */     if ((nullBits[0] & 0x10) != 0) obj.brushOriginArg = BuilderToolBrushOriginArg.deserialize(buf, offset + 30); 
+/*  80 */     if ((nullBits[0] & 0x20) != 0) obj.brushAxisArg = BuilderToolBrushAxisArg.deserialize(buf, offset + 31); 
+/*  81 */     if ((nullBits[0] & 0x40) != 0) obj.rotationArg = BuilderToolRotationArg.deserialize(buf, offset + 32);
 /*     */     
-/*  83 */     if ((nullBits[0] & 0x8) != 0) {
+/*  83 */     if ((nullBits[0] & 0x80) != 0) {
 /*  84 */       int varPos0 = offset + 49 + buf.getIntLE(offset + 33);
 /*  85 */       obj.stringArg = BuilderToolStringArg.deserialize(buf, varPos0);
 /*     */     } 
-/*  87 */     if ((nullBits[0] & 0x10) != 0) {
+/*  87 */     if ((nullBits[1] & 0x1) != 0) {
 /*  88 */       int varPos1 = offset + 49 + buf.getIntLE(offset + 37);
 /*  89 */       obj.blockArg = BuilderToolBlockArg.deserialize(buf, varPos1);
 /*     */     } 
-/*  91 */     if ((nullBits[0] & 0x20) != 0) {
+/*  91 */     if ((nullBits[1] & 0x2) != 0) {
 /*  92 */       int varPos2 = offset + 49 + buf.getIntLE(offset + 41);
 /*  93 */       obj.maskArg = BuilderToolMaskArg.deserialize(buf, varPos2);
 /*     */     } 
@@ -103,19 +103,19 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 104 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 105 */     int maxEnd = 49;
-/* 106 */     if ((nullBits[0] & 0x8) != 0) {
+/* 106 */     if ((nullBits[0] & 0x80) != 0) {
 /* 107 */       int fieldOffset0 = buf.getIntLE(offset + 33);
 /* 108 */       int pos0 = offset + 49 + fieldOffset0;
 /* 109 */       pos0 += BuilderToolStringArg.computeBytesConsumed(buf, pos0);
 /* 110 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 112 */     if ((nullBits[0] & 0x10) != 0) {
+/* 112 */     if ((nullBits[1] & 0x1) != 0) {
 /* 113 */       int fieldOffset1 = buf.getIntLE(offset + 37);
 /* 114 */       int pos1 = offset + 49 + fieldOffset1;
 /* 115 */       pos1 += BuilderToolBlockArg.computeBytesConsumed(buf, pos1);
 /* 116 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 118 */     if ((nullBits[0] & 0x20) != 0) {
+/* 118 */     if ((nullBits[1] & 0x2) != 0) {
 /* 119 */       int fieldOffset2 = buf.getIntLE(offset + 41);
 /* 120 */       int pos2 = offset + 49 + fieldOffset2;
 /* 121 */       pos2 += BuilderToolMaskArg.computeBytesConsumed(buf, pos2);
@@ -137,13 +137,13 @@
 /* 137 */     if (this.boolArg != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
 /* 138 */     if (this.floatArg != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
 /* 139 */     if (this.intArg != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/* 140 */     if (this.stringArg != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/* 141 */     if (this.blockArg != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/* 142 */     if (this.maskArg != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/* 143 */     if (this.brushShapeArg != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/* 144 */     if (this.brushOriginArg != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/* 145 */     if (this.brushAxisArg != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
-/* 146 */     if (this.rotationArg != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
+/* 140 */     if (this.brushShapeArg != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/* 141 */     if (this.brushOriginArg != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/* 142 */     if (this.brushAxisArg != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/* 143 */     if (this.rotationArg != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/* 144 */     if (this.stringArg != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/* 145 */     if (this.blockArg != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/* 146 */     if (this.maskArg != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
 /* 147 */     if (this.optionArg != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
 /* 148 */     buf.writeBytes(nullBits);
 /*     */     
@@ -211,7 +211,7 @@
 /*     */     
 /* 212 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 2);
 /*     */     
-/* 214 */     if ((nullBits[0] & 0x8) != 0) {
+/* 214 */     if ((nullBits[0] & 0x80) != 0) {
 /* 215 */       int stringArgOffset = buffer.getIntLE(offset + 33);
 /* 216 */       if (stringArgOffset < 0) {
 /* 217 */         return ValidationResult.error("Invalid offset for StringArg");
@@ -227,7 +227,7 @@
 /* 227 */       pos += BuilderToolStringArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 230 */     if ((nullBits[0] & 0x10) != 0) {
+/* 230 */     if ((nullBits[1] & 0x1) != 0) {
 /* 231 */       int blockArgOffset = buffer.getIntLE(offset + 37);
 /* 232 */       if (blockArgOffset < 0) {
 /* 233 */         return ValidationResult.error("Invalid offset for BlockArg");
@@ -243,7 +243,7 @@
 /* 243 */       pos += BuilderToolBlockArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 246 */     if ((nullBits[0] & 0x20) != 0) {
+/* 246 */     if ((nullBits[1] & 0x2) != 0) {
 /* 247 */       int maskArgOffset = buffer.getIntLE(offset + 41);
 /* 248 */       if (maskArgOffset < 0) {
 /* 249 */         return ValidationResult.error("Invalid offset for MaskArg");

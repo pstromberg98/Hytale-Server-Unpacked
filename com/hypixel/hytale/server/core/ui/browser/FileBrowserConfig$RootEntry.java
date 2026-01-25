@@ -19,6 +19,10 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public final class RootEntry
 /*    */   extends Record
 /*    */ {
@@ -29,25 +33,25 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public Path path() {
-/* 32 */     return this.path; } @Nonnull public LocalizableString displayName() { return this.displayName; } public final boolean equals(Object o) { // Byte code:
+/* 36 */     return this.path; } @Nonnull public LocalizableString displayName() { return this.displayName; } public final boolean equals(Object o) { // Byte code:
 /*    */     //   0: aload_0
 /*    */     //   1: aload_1
 /*    */     //   2: <illegal opcode> equals : (Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry;Ljava/lang/Object;)Z
 /*    */     //   7: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #32	-> 0
+/*    */     //   #36	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry;
-/* 32 */     //   0	8	1	o	Ljava/lang/Object; } public RootEntry(@Nonnull LocalizableString displayName, @Nonnull Path path) { this.displayName = displayName; this.path = path; }
+/* 36 */     //   0	8	1	o	Ljava/lang/Object; } public RootEntry(@Nonnull LocalizableString displayName, @Nonnull Path path) { this.displayName = displayName; this.path = path; }
 /*    */   public final int hashCode() { // Byte code:
 /*    */     //   0: aload_0
 /*    */     //   1: <illegal opcode> hashCode : (Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry;)I
 /*    */     //   6: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #32	-> 0
+/*    */     //   #36	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry; }
@@ -57,10 +61,10 @@
 /*    */     //   6: areturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #32	-> 0
+/*    */     //   #36	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
-/* 34 */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry; } public RootEntry(@Nonnull String displayName, @Nonnull Path path) { this(LocalizableString.fromString(displayName), path); }
+/* 38 */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileBrowserConfig$RootEntry; } public RootEntry(@Nonnull String displayName, @Nonnull Path path) { this(LocalizableString.fromString(displayName), path); }
 /*    */ 
 /*    */ }
 

@@ -64,77 +64,82 @@
 /*  64 */     this.velocityComponentType = velocityComponentType;
 /*  65 */     this.boundingBoxComponentType = boundingBoxComponentType;
 /*  66 */     this.transformComponentType = TransformComponent.getComponentType();
-/*  67 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemPhysicsComponentType, (Query)boundingBoxComponentType, (Query)velocityComponentType });
+/*  67 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)itemPhysicsComponentType, (Query)boundingBoxComponentType, (Query)velocityComponentType, (Query)this.transformComponentType });
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  73 */     return this.query;
+/*  78 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/*  78 */     return false;
+/*  83 */     return false;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  83 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  88 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/*  85 */     ItemPhysicsComponent itemPhysicsComponent = (ItemPhysicsComponent)archetypeChunk.getComponent(index, this.itemPhysicsComponentType);
-/*  86 */     assert itemPhysicsComponent != null;
+/*  90 */     ItemPhysicsComponent itemPhysicsComponent = (ItemPhysicsComponent)archetypeChunk.getComponent(index, this.itemPhysicsComponentType);
+/*  91 */     assert itemPhysicsComponent != null;
 /*     */     
-/*  88 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, this.velocityComponentType);
-/*  89 */     assert velocityComponent != null;
+/*  93 */     Velocity velocityComponent = (Velocity)archetypeChunk.getComponent(index, this.velocityComponentType);
+/*  94 */     assert velocityComponent != null;
 /*     */     
-/*  91 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
-/*  92 */     assert transformComponent != null;
+/*  96 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
+/*  97 */     assert transformComponent != null;
 /*     */     
-/*  94 */     Vector3d position = transformComponent.getPosition();
+/*  99 */     Vector3d position = transformComponent.getPosition();
 /*     */     
-/*  96 */     Vector3d scaledVelocity = itemPhysicsComponent.scaledVelocity;
-/*  97 */     CollisionResult collisionResult = itemPhysicsComponent.collisionResult;
-/*  98 */     velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
+/* 101 */     Vector3d scaledVelocity = itemPhysicsComponent.scaledVelocity;
+/* 102 */     CollisionResult collisionResult = itemPhysicsComponent.collisionResult;
+/* 103 */     velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
 /*     */ 
 /*     */     
-/* 101 */     BoundingBox boundingBoxComponent = (BoundingBox)archetypeChunk.getComponent(index, this.boundingBoxComponentType);
-/* 102 */     assert boundingBoxComponent != null;
-/* 103 */     Box boundingBox = boundingBoxComponent.getBoundingBox();
+/* 106 */     BoundingBox boundingBoxComponent = (BoundingBox)archetypeChunk.getComponent(index, this.boundingBoxComponentType);
+/* 107 */     assert boundingBoxComponent != null;
+/* 108 */     Box boundingBox = boundingBoxComponent.getBoundingBox();
 /*     */     
-/* 105 */     if (CollisionModule.isBelowMovementThreshold(scaledVelocity)) {
+/* 110 */     if (CollisionModule.isBelowMovementThreshold(scaledVelocity)) {
 /*     */       
-/* 107 */       CollisionModule.findBlockCollisionsShortDistance(world, boundingBox, position, scaledVelocity, collisionResult);
+/* 112 */       CollisionModule.findBlockCollisionsShortDistance(world, boundingBox, position, scaledVelocity, collisionResult);
 /*     */     } else {
-/* 109 */       CollisionModule.findBlockCollisionsIterative(world, boundingBox, position, scaledVelocity, true, collisionResult);
+/* 114 */       CollisionModule.findBlockCollisionsIterative(world, boundingBox, position, scaledVelocity, true, collisionResult);
 /*     */     } 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/* 115 */     BlockCollisionData blockCollisionData = collisionResult.getFirstBlockCollision();
-/* 116 */     if (blockCollisionData != null) {
-/* 117 */       if (blockCollisionData.collisionNormal.equals(Vector3d.UP)) {
-/* 118 */         velocityComponent.setZero();
-/* 119 */         position.assign(blockCollisionData.collisionPoint);
+/* 120 */     BlockCollisionData blockCollisionData = collisionResult.getFirstBlockCollision();
+/* 121 */     if (blockCollisionData != null) {
+/* 122 */       if (blockCollisionData.collisionNormal.equals(Vector3d.UP)) {
+/* 123 */         velocityComponent.setZero();
+/* 124 */         position.assign(blockCollisionData.collisionPoint);
 /*     */       } else {
-/* 121 */         Vector3d velocity = velocityComponent.getVelocity();
-/* 122 */         double dot = velocity.dot(blockCollisionData.collisionNormal);
-/* 123 */         Vector3d velocityToCancel = blockCollisionData.collisionNormal.clone().scale(dot);
-/* 124 */         velocity.subtract(velocityToCancel);
+/* 126 */         Vector3d velocity = velocityComponent.getVelocity();
+/* 127 */         double dot = velocity.dot(blockCollisionData.collisionNormal);
+/* 128 */         Vector3d velocityToCancel = blockCollisionData.collisionNormal.clone().scale(dot);
+/* 129 */         velocity.subtract(velocityToCancel);
 /*     */       } 
 /*     */     } else {
-/* 127 */       velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
-/* 128 */       position.add(scaledVelocity);
+/* 132 */       velocityComponent.assignVelocityTo(scaledVelocity).scale(dt);
+/* 133 */       position.add(scaledVelocity);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 132 */     collisionResult.reset();
+/* 137 */     collisionResult.reset();
 /*     */ 
 /*     */     
-/* 135 */     if (position.getY() < -32.0D) {
-/* 136 */       LOGGER.at(Level.WARNING).log("Item fell out of the world %s", archetypeChunk.getReferenceTo(index));
-/* 137 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 140 */     if (position.getY() < -32.0D) {
+/* 141 */       LOGGER.at(Level.WARNING).log("Item fell out of the world %s", archetypeChunk.getReferenceTo(index));
+/* 142 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */     } 
 /*     */   }
 /*     */ }

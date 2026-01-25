@@ -1,6 +1,7 @@
 /*     */ package com.hypixel.hytale.builtin.crafting.state;
 /*     */ import com.google.common.flogger.LazyArgs;
 /*     */ import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
+/*     */ import com.hypixel.hytale.builtin.crafting.window.BenchWindow;
 /*     */ import com.hypixel.hytale.builtin.crafting.window.ProcessingBenchWindow;
 /*     */ import com.hypixel.hytale.codec.Codec;
 /*     */ import com.hypixel.hytale.codec.KeyedCodec;
@@ -50,79 +51,77 @@
 /*     */ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 /*     */ import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 /*     */ import java.util.List;
-/*     */ import java.util.Map;
 /*     */ import java.util.Set;
 /*     */ import java.util.UUID;
 /*     */ import java.util.concurrent.ThreadLocalRandom;
 /*     */ import java.util.logging.Level;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ import org.bson.BsonDocument;
 /*     */ 
 /*     */ public class ProcessingBenchState extends BenchState implements TickableBlockState, ItemContainerBlockState, DestroyableBlockState, MarkerBlockState, PlacedByBlockState {
-/*  63 */   public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-/*     */ 
-/*     */ 
-/*     */ 
+/*  62 */   public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public static final boolean EXACT_RESOURCE_AMOUNTS = true;
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */   
 /*     */   public static final Codec<ProcessingBenchState> CODEC;
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static final float EJECT_VELOCITY = 2.0F;
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */   
 /*     */   private static final float EJECT_SPREAD_VELOCITY = 1.0F;
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static final float EJECT_VERTICAL_VELOCITY = 3.25F;
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */   
 /*     */   public static final String PROCESSING = "Processing";
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public static final String PROCESS_COMPLETED = "ProcessCompleted";
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */   
 /*     */   protected WorldMapManager.MarkerReference marker;
 /*     */ 
 /*     */ 
+/*     */   
+/*     */   private ProcessingBench processingBench;
 /*     */ 
+/*     */   
+/*     */   private ItemContainer inputContainer;
+/*     */ 
+/*     */   
+/*     */   private ItemContainer fuelContainer;
+/*     */ 
+/*     */   
+/*     */   private ItemContainer outputContainer;
+/*     */ 
+/*     */   
+/*     */   private CombinedItemContainer combinedItemContainer;
+/*     */ 
+/*     */   
+/*     */   private float inputProgress;
+/*     */ 
+/*     */   
+/*     */   private float fuelTime;
+/*     */ 
+/*     */   
+/*     */   private int lastConsumedFuelTotal;
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   static {
-/* 125 */     CODEC = (Codec<ProcessingBenchState>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(ProcessingBenchState.class, ProcessingBenchState::new, BenchState.CODEC).append(new KeyedCodec("InputContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.inputContainer = o, state -> state.inputContainer).add()).append(new KeyedCodec("FuelContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.fuelContainer = o, state -> state.fuelContainer).add()).append(new KeyedCodec("OutputContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.outputContainer = o, state -> state.outputContainer).add()).append(new KeyedCodec("Progress", (Codec)Codec.DOUBLE), (state, d) -> state.inputProgress = d.floatValue(), state -> Double.valueOf(state.inputProgress)).add()).append(new KeyedCodec("FuelTime", (Codec)Codec.DOUBLE), (state, d) -> state.fuelTime = d.floatValue(), state -> Double.valueOf(state.fuelTime)).add()).append(new KeyedCodec("Active", (Codec)Codec.BOOLEAN), (state, b) -> state.active = b.booleanValue(), state -> Boolean.valueOf(state.active)).add()).append(new KeyedCodec("NextExtra", (Codec)Codec.INTEGER), (state, b) -> state.nextExtra = b.intValue(), state -> Integer.valueOf(state.nextExtra)).add()).append(new KeyedCodec("Marker", (Codec)WorldMapManager.MarkerReference.CODEC), (state, o) -> state.marker = o, state -> state.marker).add()).append(new KeyedCodec("RecipeId", (Codec)Codec.STRING), (state, o) -> state.recipeId = o, state -> state.recipeId).add()).build();
+/* 124 */     CODEC = (Codec<ProcessingBenchState>)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(ProcessingBenchState.class, ProcessingBenchState::new, BenchState.CODEC).append(new KeyedCodec("InputContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.inputContainer = o, state -> state.inputContainer).add()).append(new KeyedCodec("FuelContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.fuelContainer = o, state -> state.fuelContainer).add()).append(new KeyedCodec("OutputContainer", (Codec)ItemContainer.CODEC), (state, o) -> state.outputContainer = o, state -> state.outputContainer).add()).append(new KeyedCodec("Progress", (Codec)Codec.DOUBLE), (state, d) -> state.inputProgress = d.floatValue(), state -> Double.valueOf(state.inputProgress)).add()).append(new KeyedCodec("FuelTime", (Codec)Codec.DOUBLE), (state, d) -> state.fuelTime = d.floatValue(), state -> Double.valueOf(state.fuelTime)).add()).append(new KeyedCodec("Active", (Codec)Codec.BOOLEAN), (state, b) -> state.active = b.booleanValue(), state -> Boolean.valueOf(state.active)).add()).append(new KeyedCodec("NextExtra", (Codec)Codec.INTEGER), (state, b) -> state.nextExtra = b.intValue(), state -> Integer.valueOf(state.nextExtra)).add()).append(new KeyedCodec("Marker", (Codec)WorldMapManager.MarkerReference.CODEC), (state, o) -> state.marker = o, state -> state.marker).add()).append(new KeyedCodec("RecipeId", (Codec)Codec.STRING), (state, o) -> state.recipeId = o, state -> state.recipeId).add()).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -134,23 +133,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/* 138 */   private final Map<UUID, ProcessingBenchWindow> windows = new ConcurrentHashMap<>();
-/*     */   
-/*     */   private ProcessingBench processingBench;
-/*     */   
-/*     */   private ItemContainer inputContainer;
-/*     */   
-/*     */   private ItemContainer fuelContainer;
-/*     */   
-/*     */   private ItemContainer outputContainer;
-/*     */   private CombinedItemContainer combinedItemContainer;
-/*     */   private float inputProgress;
-/*     */   private float fuelTime;
-/*     */   private int lastConsumedFuelTotal;
-/* 151 */   private int nextExtra = -1;
-/* 152 */   private final Set<Short> processingSlots = new HashSet<>();
-/* 153 */   private final Set<Short> processingFuelSlots = new HashSet<>();
+/* 148 */   private int nextExtra = -1;
+/* 149 */   private final Set<Short> processingSlots = new HashSet<>();
+/* 150 */   private final Set<Short> processingFuelSlots = new HashSet<>();
 /*     */   
 /*     */   @Nullable
 /*     */   private String recipeId;
@@ -161,71 +158,71 @@
 /*     */   private boolean active = false;
 /*     */   
 /*     */   public boolean initialize(@Nonnull BlockType blockType) {
-/* 164 */     if (!super.initialize(blockType)) {
-/* 165 */       if (this.bench == null) {
-/* 166 */         ObjectArrayList objectArrayList = new ObjectArrayList();
-/* 167 */         if (this.inputContainer != null) objectArrayList.addAll(this.inputContainer.dropAllItemStacks()); 
-/* 168 */         if (this.fuelContainer != null) objectArrayList.addAll(this.fuelContainer.dropAllItemStacks()); 
-/* 169 */         if (this.outputContainer != null) objectArrayList.addAll(this.outputContainer.dropAllItemStacks());
+/* 161 */     if (!super.initialize(blockType)) {
+/* 162 */       if (this.bench == null) {
+/* 163 */         ObjectArrayList objectArrayList = new ObjectArrayList();
+/* 164 */         if (this.inputContainer != null) objectArrayList.addAll(this.inputContainer.dropAllItemStacks()); 
+/* 165 */         if (this.fuelContainer != null) objectArrayList.addAll(this.fuelContainer.dropAllItemStacks()); 
+/* 166 */         if (this.outputContainer != null) objectArrayList.addAll(this.outputContainer.dropAllItemStacks());
 /*     */         
-/* 171 */         World world = getChunk().getWorld();
-/* 172 */         Store<EntityStore> store = world.getEntityStore().getStore();
+/* 168 */         World world = getChunk().getWorld();
+/* 169 */         Store<EntityStore> store = world.getEntityStore().getStore();
 /*     */ 
 /*     */         
-/* 175 */         Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)store, (List<ItemStack>)objectArrayList);
+/* 172 */         Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)store, (List<ItemStack>)objectArrayList);
 /*     */         
-/* 177 */         if (arrayOfHolder.length > 0) {
-/* 178 */           world.execute(() -> store.addEntities(itemEntityHolders, AddReason.SPAWN));
+/* 174 */         if (arrayOfHolder.length > 0) {
+/* 175 */           world.execute(() -> store.addEntities(itemEntityHolders, AddReason.SPAWN));
 /*     */         }
 /*     */       } 
-/* 181 */       return false;
+/* 178 */       return false;
 /*     */     } 
 /*     */     
-/* 184 */     if (!(this.bench instanceof ProcessingBench)) {
-/* 185 */       LOGGER.at(Level.SEVERE).log("Wrong bench type for processing. Got %s", this.bench.getClass().getName());
-/* 186 */       return false;
+/* 181 */     if (!(this.bench instanceof ProcessingBench)) {
+/* 182 */       LOGGER.at(Level.SEVERE).log("Wrong bench type for processing. Got %s", this.bench.getClass().getName());
+/* 183 */       return false;
 /*     */     } 
 /*     */     
-/* 189 */     this.processingBench = (ProcessingBench)this.bench;
+/* 186 */     this.processingBench = (ProcessingBench)this.bench;
 /*     */     
-/* 191 */     if (this.nextExtra == -1) {
-/* 192 */       this.nextExtra = (this.processingBench.getExtraOutput() != null) ? this.processingBench.getExtraOutput().getPerFuelItemsConsumed() : 0;
+/* 188 */     if (this.nextExtra == -1) {
+/* 189 */       this.nextExtra = (this.processingBench.getExtraOutput() != null) ? this.processingBench.getExtraOutput().getPerFuelItemsConsumed() : 0;
 /*     */     }
 /*     */     
-/* 195 */     setupSlots();
-/* 196 */     return true;
+/* 192 */     setupSlots();
+/* 193 */     return true;
 /*     */   }
 /*     */   
 /*     */   private void setupSlots() {
-/* 200 */     ObjectArrayList objectArrayList = new ObjectArrayList();
-/* 201 */     int tierLevel = getTierLevel();
+/* 197 */     ObjectArrayList objectArrayList = new ObjectArrayList();
+/* 198 */     int tierLevel = getTierLevel();
 /*     */ 
 /*     */     
-/* 204 */     ProcessingBench.ProcessingSlot[] input = this.processingBench.getInput(tierLevel);
-/* 205 */     short inputSlotsCount = (short)input.length;
-/* 206 */     this.inputContainer = ItemContainer.ensureContainerCapacity(this.inputContainer, inputSlotsCount, SimpleItemContainer::getNewContainer, (List)objectArrayList);
-/* 207 */     this.inputContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
+/* 201 */     ProcessingBench.ProcessingSlot[] input = this.processingBench.getInput(tierLevel);
+/* 202 */     short inputSlotsCount = (short)input.length;
+/* 203 */     this.inputContainer = ItemContainer.ensureContainerCapacity(this.inputContainer, inputSlotsCount, SimpleItemContainer::getNewContainer, (List)objectArrayList);
+/* 204 */     this.inputContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
 /*     */     
 /*     */     short slot;
-/* 210 */     for (slot = 0; slot < inputSlotsCount; slot = (short)(slot + 1)) {
-/* 211 */       ProcessingBench.ProcessingSlot inputSlot = input[slot];
-/* 212 */       String resourceTypeId = inputSlot.getResourceTypeId();
-/* 213 */       boolean shouldFilterValidIngredients = inputSlot.shouldFilterValidIngredients();
+/* 207 */     for (slot = 0; slot < inputSlotsCount; slot = (short)(slot + 1)) {
+/* 208 */       ProcessingBench.ProcessingSlot inputSlot = input[slot];
+/* 209 */       String resourceTypeId = inputSlot.getResourceTypeId();
+/* 210 */       boolean shouldFilterValidIngredients = inputSlot.shouldFilterValidIngredients();
 /*     */       
-/* 215 */       if (resourceTypeId != null) {
-/* 216 */         this.inputContainer.setSlotFilter(FilterActionType.ADD, slot, (SlotFilter)new ResourceFilter(new ResourceQuantity(resourceTypeId, 1)));
-/* 217 */       } else if (shouldFilterValidIngredients) {
-/* 218 */         ObjectArrayList<MaterialQuantity> validIngredients = new ObjectArrayList();
-/* 219 */         List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
+/* 212 */       if (resourceTypeId != null) {
+/* 213 */         this.inputContainer.setSlotFilter(FilterActionType.ADD, slot, (SlotFilter)new ResourceFilter(new ResourceQuantity(resourceTypeId, 1)));
+/* 214 */       } else if (shouldFilterValidIngredients) {
+/* 215 */         ObjectArrayList<MaterialQuantity> validIngredients = new ObjectArrayList();
+/* 216 */         List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
 /*     */         
-/* 221 */         for (CraftingRecipe recipe : recipes) {
-/* 222 */           if (recipe.isRestrictedByBenchTierLevel(this.bench.getId(), tierLevel))
+/* 218 */         for (CraftingRecipe recipe : recipes) {
+/* 219 */           if (recipe.isRestrictedByBenchTierLevel(this.bench.getId(), tierLevel))
 /*     */             continue; 
-/* 224 */           List<MaterialQuantity> inputMaterials = CraftingManager.getInputMaterials(recipe);
-/* 225 */           validIngredients.addAll(inputMaterials);
+/* 221 */           List<MaterialQuantity> inputMaterials = CraftingManager.getInputMaterials(recipe);
+/* 222 */           validIngredients.addAll(inputMaterials);
 /*     */         } 
 /*     */         
-/* 228 */         this.inputContainer.setSlotFilter(FilterActionType.ADD, slot, (actionType, container, slotIndex, itemStack) -> {
+/* 225 */         this.inputContainer.setSlotFilter(FilterActionType.ADD, slot, (actionType, container, slotIndex, itemStack) -> {
 /*     */               if (itemStack == null) {
 /*     */                 return true;
 /*     */               }
@@ -240,223 +237,223 @@
 /*     */             });
 /*     */       } 
 /*     */     } 
-/* 243 */     ProcessingBench.ProcessingSlot[] benchFuel = this.processingBench.getFuel();
-/* 244 */     short fuelCapacity = (short)((benchFuel != null) ? benchFuel.length : 0);
-/* 245 */     this.fuelContainer = ItemContainer.ensureContainerCapacity(this.fuelContainer, fuelCapacity, SimpleItemContainer::getNewContainer, (List)objectArrayList);
-/* 246 */     this.fuelContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
+/* 240 */     ProcessingBench.ProcessingSlot[] benchFuel = this.processingBench.getFuel();
+/* 241 */     short fuelCapacity = (short)((benchFuel != null) ? benchFuel.length : 0);
+/* 242 */     this.fuelContainer = ItemContainer.ensureContainerCapacity(this.fuelContainer, fuelCapacity, SimpleItemContainer::getNewContainer, (List)objectArrayList);
+/* 243 */     this.fuelContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
 /*     */ 
 /*     */     
-/* 249 */     if (fuelCapacity > 0) {
-/* 250 */       for (int i = 0; i < benchFuel.length; i++) {
-/* 251 */         ProcessingBench.ProcessingSlot fuel = benchFuel[i];
-/* 252 */         String resourceTypeId = fuel.getResourceTypeId();
+/* 246 */     if (fuelCapacity > 0) {
+/* 247 */       for (int i = 0; i < benchFuel.length; i++) {
+/* 248 */         ProcessingBench.ProcessingSlot fuel = benchFuel[i];
+/* 249 */         String resourceTypeId = fuel.getResourceTypeId();
 /*     */         
-/* 254 */         if (resourceTypeId != null) {
-/* 255 */           this.fuelContainer.setSlotFilter(FilterActionType.ADD, (short)i, (SlotFilter)new ResourceFilter(new ResourceQuantity(resourceTypeId, 1)));
+/* 251 */         if (resourceTypeId != null) {
+/* 252 */           this.fuelContainer.setSlotFilter(FilterActionType.ADD, (short)i, (SlotFilter)new ResourceFilter(new ResourceQuantity(resourceTypeId, 1)));
 /*     */         }
 /*     */       } 
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */     
-/* 262 */     short outputSlotsCount = (short)this.processingBench.getOutputSlotsCount(tierLevel);
-/* 263 */     this.outputContainer = ItemContainer.ensureContainerCapacity(this.outputContainer, outputSlotsCount, SimpleItemContainer::getNewContainer, (List)objectArrayList);
-/* 264 */     this.outputContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
+/* 259 */     short outputSlotsCount = (short)this.processingBench.getOutputSlotsCount(tierLevel);
+/* 260 */     this.outputContainer = ItemContainer.ensureContainerCapacity(this.outputContainer, outputSlotsCount, SimpleItemContainer::getNewContainer, (List)objectArrayList);
+/* 261 */     this.outputContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
 /*     */ 
 /*     */     
-/* 267 */     if (outputSlotsCount > 0) this.outputContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
+/* 264 */     if (outputSlotsCount > 0) this.outputContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
 /*     */ 
 /*     */     
-/* 270 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { this.fuelContainer, this.inputContainer, this.outputContainer });
+/* 267 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { this.fuelContainer, this.inputContainer, this.outputContainer });
 /*     */     
-/* 272 */     World world = getChunk().getWorld();
-/* 273 */     Store<EntityStore> store = world.getEntityStore().getStore();
-/* 274 */     Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)store, (List<ItemStack>)objectArrayList);
-/* 275 */     if (arrayOfHolder.length > 0) {
-/* 276 */       world.execute(() -> store.addEntities(itemEntityHolders, AddReason.SPAWN));
+/* 269 */     World world = getChunk().getWorld();
+/* 270 */     Store<EntityStore> store = world.getEntityStore().getStore();
+/* 271 */     Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)store, (List<ItemStack>)objectArrayList);
+/* 272 */     if (arrayOfHolder.length > 0) {
+/* 273 */       world.execute(() -> store.addEntities(itemEntityHolders, AddReason.SPAWN));
 /*     */     }
 /*     */     
-/* 279 */     this.inputContainer.registerChangeEvent(EventPriority.LAST, event -> updateRecipe());
+/* 276 */     this.inputContainer.registerChangeEvent(EventPriority.LAST, event -> updateRecipe());
 /*     */ 
 /*     */     
-/* 282 */     if (this.processingBench.getFuel() == null) {
-/* 283 */       setActive(true);
+/* 279 */     if (this.processingBench.getFuel() == null) {
+/* 280 */       setActive(true);
 /*     */     }
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, ArchetypeChunk<ChunkStore> archetypeChunk, @Nonnull Store<ChunkStore> store, CommandBuffer<ChunkStore> commandBuffer) {
-/* 289 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
-/* 290 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
+/* 286 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
+/* 287 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
 /*     */     
-/* 292 */     BlockType blockType = getBlockType();
-/* 293 */     String currentState = BlockAccessor.getCurrentInteractionState(blockType);
+/* 289 */     BlockType blockType = getBlockType();
+/* 290 */     String currentState = BlockAccessor.getCurrentInteractionState(blockType);
 /*     */     
-/* 295 */     List<ItemStack> outputItemStacks = null;
-/* 296 */     List<MaterialQuantity> inputMaterials = null;
+/* 292 */     List<ItemStack> outputItemStacks = null;
+/* 293 */     List<MaterialQuantity> inputMaterials = null;
 /*     */     
-/* 298 */     this.processingSlots.clear();
-/* 299 */     checkForRecipeUpdate();
+/* 295 */     this.processingSlots.clear();
+/* 296 */     checkForRecipeUpdate();
 /*     */     
-/* 301 */     if (this.recipe != null) {
+/* 298 */     if (this.recipe != null) {
 /*     */       
-/* 303 */       outputItemStacks = CraftingManager.getOutputItemStacks(this.recipe);
-/* 304 */       if (!this.outputContainer.canAddItemStacks(outputItemStacks, false, false)) {
-/* 305 */         if ("Processing".equals(currentState)) {
+/* 300 */       outputItemStacks = CraftingManager.getOutputItemStacks(this.recipe);
+/* 301 */       if (!this.outputContainer.canAddItemStacks(outputItemStacks, false, false)) {
+/* 302 */         if ("Processing".equals(currentState)) {
+/* 303 */           setBlockInteractionState("default", blockType);
+/* 304 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 305 */         } else if ("ProcessCompleted".equals(currentState)) {
 /* 306 */           setBlockInteractionState("default", blockType);
-/* 307 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 308 */         } else if ("ProcessCompleted".equals(currentState)) {
-/* 309 */           setBlockInteractionState("default", blockType);
-/* 310 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 307 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */         } 
 /*     */         
-/* 313 */         setActive(false);
+/* 310 */         setActive(false);
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */       
-/* 318 */       inputMaterials = CraftingManager.getInputMaterials(this.recipe);
-/* 319 */       List<TestRemoveItemSlotResult> result = this.inputContainer.getSlotMaterialsToRemove(inputMaterials, true, true);
+/* 315 */       inputMaterials = CraftingManager.getInputMaterials(this.recipe);
+/* 316 */       List<TestRemoveItemSlotResult> result = this.inputContainer.getSlotMaterialsToRemove(inputMaterials, true, true);
 /*     */       
-/* 321 */       if (result.isEmpty()) {
-/* 322 */         if ("Processing".equals(currentState)) {
+/* 318 */       if (result.isEmpty()) {
+/* 319 */         if ("Processing".equals(currentState)) {
+/* 320 */           setBlockInteractionState("default", blockType);
+/* 321 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 322 */         } else if ("ProcessCompleted".equals(currentState)) {
 /* 323 */           setBlockInteractionState("default", blockType);
-/* 324 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 325 */         } else if ("ProcessCompleted".equals(currentState)) {
-/* 326 */           setBlockInteractionState("default", blockType);
-/* 327 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 324 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */         } 
-/* 329 */         this.inputProgress = 0.0F;
-/* 330 */         setActive(false);
-/* 331 */         this.recipeId = null;
-/* 332 */         this.recipe = null;
+/* 326 */         this.inputProgress = 0.0F;
+/* 327 */         setActive(false);
+/* 328 */         this.recipeId = null;
+/* 329 */         this.recipe = null;
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 336 */       for (TestRemoveItemSlotResult item : result) {
-/* 337 */         this.processingSlots.addAll(item.getPickedSlots());
+/* 333 */       for (TestRemoveItemSlotResult item : result) {
+/* 334 */         this.processingSlots.addAll(item.getPickedSlots());
 /*     */       }
-/* 339 */       sendProcessingSlots();
+/* 336 */       sendProcessingSlots();
 /*     */     } else {
-/* 341 */       if (this.processingBench.getFuel() == null) {
+/* 338 */       if (this.processingBench.getFuel() == null) {
 /*     */         
-/* 343 */         if ("Processing".equals(currentState)) {
+/* 340 */         if ("Processing".equals(currentState)) {
+/* 341 */           setBlockInteractionState("default", blockType);
+/* 342 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 343 */         } else if ("ProcessCompleted".equals(currentState)) {
 /* 344 */           setBlockInteractionState("default", blockType);
-/* 345 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 346 */         } else if ("ProcessCompleted".equals(currentState)) {
-/* 347 */           setBlockInteractionState("default", blockType);
-/* 348 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 345 */           playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */         } 
 /*     */         return;
 /*     */       } 
-/* 352 */       boolean allowNoInputProcessing = this.processingBench.shouldAllowNoInputProcessing();
+/* 349 */       boolean allowNoInputProcessing = this.processingBench.shouldAllowNoInputProcessing();
 /*     */       
-/* 354 */       if (!allowNoInputProcessing && "Processing".equals(currentState)) {
+/* 351 */       if (!allowNoInputProcessing && "Processing".equals(currentState)) {
+/* 352 */         setBlockInteractionState("default", blockType);
+/* 353 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 354 */       } else if ("ProcessCompleted".equals(currentState)) {
 /* 355 */         setBlockInteractionState("default", blockType);
-/* 356 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 357 */       } else if ("ProcessCompleted".equals(currentState)) {
-/* 358 */         setBlockInteractionState("default", blockType);
-/* 359 */         playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 360 */         setActive(false);
-/* 361 */         sendProgress(0.0F);
+/* 356 */         playSound(world, this.processingBench.getEndSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 357 */         setActive(false);
+/* 358 */         sendProgress(0.0F);
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 365 */       sendProgress(0.0F);
+/* 362 */       sendProgress(0.0F);
 /*     */       
-/* 367 */       if (!allowNoInputProcessing) {
-/* 368 */         setActive(false);
+/* 364 */       if (!allowNoInputProcessing) {
+/* 365 */         setActive(false);
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 374 */     boolean needsUpdate = false;
-/* 375 */     if (this.fuelTime > 0.0F && this.active) {
-/* 376 */       this.fuelTime -= dt;
-/* 377 */       if (this.fuelTime < 0.0F) this.fuelTime = 0.0F; 
-/* 378 */       needsUpdate = true;
+/* 371 */     boolean needsUpdate = false;
+/* 372 */     if (this.fuelTime > 0.0F && this.active) {
+/* 373 */       this.fuelTime -= dt;
+/* 374 */       if (this.fuelTime < 0.0F) this.fuelTime = 0.0F; 
+/* 375 */       needsUpdate = true;
 /*     */     } 
 /*     */     
-/* 381 */     ProcessingBench.ProcessingSlot[] fuelSlots = this.processingBench.getFuel();
-/* 382 */     boolean hasFuelSlots = (fuelSlots != null && fuelSlots.length > 0);
+/* 378 */     ProcessingBench.ProcessingSlot[] fuelSlots = this.processingBench.getFuel();
+/* 379 */     boolean hasFuelSlots = (fuelSlots != null && fuelSlots.length > 0);
 /*     */     
-/* 384 */     if ((this.processingBench.getMaxFuel() <= 0 || this.fuelTime < this.processingBench.getMaxFuel()) && !this.fuelContainer.isEmpty()) {
-/* 385 */       if (!hasFuelSlots)
+/* 381 */     if ((this.processingBench.getMaxFuel() <= 0 || this.fuelTime < this.processingBench.getMaxFuel()) && !this.fuelContainer.isEmpty()) {
+/* 382 */       if (!hasFuelSlots)
 /*     */         return; 
-/* 387 */       if (this.active)
+/* 384 */       if (this.active)
 /*     */       {
-/* 389 */         if (this.fuelTime > 0.0F) {
+/* 386 */         if (this.fuelTime > 0.0F) {
 /*     */ 
 /*     */           
-/* 392 */           for (int i = 0; i < fuelSlots.length; i++) {
-/* 393 */             ItemStack itemInSlot = this.fuelContainer.getItemStack((short)i);
-/* 394 */             if (itemInSlot != null) {
-/* 395 */               this.processingFuelSlots.add(Short.valueOf((short)i));
+/* 389 */           for (int i = 0; i < fuelSlots.length; i++) {
+/* 390 */             ItemStack itemInSlot = this.fuelContainer.getItemStack((short)i);
+/* 391 */             if (itemInSlot != null) {
+/* 392 */               this.processingFuelSlots.add(Short.valueOf((short)i));
 /*     */               
 /*     */               break;
 /*     */             } 
 /*     */           } 
 /*     */         } else {
-/* 401 */           if (this.fuelTime < 0.0F) this.fuelTime = 0.0F; 
-/* 402 */           this.processingFuelSlots.clear();
+/* 398 */           if (this.fuelTime < 0.0F) this.fuelTime = 0.0F; 
+/* 399 */           this.processingFuelSlots.clear();
 /*     */ 
 /*     */           
-/* 405 */           for (int i = 0; i < fuelSlots.length; i++) {
-/* 406 */             ProcessingBench.ProcessingSlot fuelSlot = fuelSlots[i];
+/* 402 */           for (int i = 0; i < fuelSlots.length; i++) {
+/* 403 */             ProcessingBench.ProcessingSlot fuelSlot = fuelSlots[i];
 /*     */             
-/* 408 */             String resourceTypeId = (fuelSlot.getResourceTypeId() != null) ? fuelSlot.getResourceTypeId() : "Fuel";
-/* 409 */             ResourceQuantity resourceQuantity = new ResourceQuantity(resourceTypeId, 1);
+/* 405 */             String resourceTypeId = (fuelSlot.getResourceTypeId() != null) ? fuelSlot.getResourceTypeId() : "Fuel";
+/* 406 */             ResourceQuantity resourceQuantity = new ResourceQuantity(resourceTypeId, 1);
 /*     */             
-/* 411 */             ItemStack slot = this.fuelContainer.getItemStack((short)i);
+/* 408 */             ItemStack slot = this.fuelContainer.getItemStack((short)i);
 /*     */             
-/* 413 */             if (slot != null) {
+/* 410 */             if (slot != null) {
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */               
-/* 419 */               double fuelQuality = slot.getItem().getFuelQuality();
-/* 420 */               ResourceTransaction transaction = this.fuelContainer.removeResource(resourceQuantity, true, true, true);
-/* 421 */               this.processingFuelSlots.add(Short.valueOf((short)i));
+/* 416 */               double fuelQuality = slot.getItem().getFuelQuality();
+/* 417 */               ResourceTransaction transaction = this.fuelContainer.removeResource(resourceQuantity, true, true, true);
+/* 418 */               this.processingFuelSlots.add(Short.valueOf((short)i));
 /*     */ 
 /*     */               
-/* 424 */               if (transaction.getRemainder() <= 0) {
+/* 421 */               if (transaction.getRemainder() <= 0) {
 /*     */ 
 /*     */                 
-/* 427 */                 ProcessingBench.ExtraOutput extra = this.processingBench.getExtraOutput();
-/* 428 */                 if (extra != null && 
-/* 429 */                   !extra.isIgnoredFuelSource(slot.getItem())) {
-/* 430 */                   this.nextExtra--;
-/* 431 */                   if (this.nextExtra <= 0) {
-/* 432 */                     this.nextExtra = extra.getPerFuelItemsConsumed();
+/* 424 */                 ProcessingBench.ExtraOutput extra = this.processingBench.getExtraOutput();
+/* 425 */                 if (extra != null && 
+/* 426 */                   !extra.isIgnoredFuelSource(slot.getItem())) {
+/* 427 */                   this.nextExtra--;
+/* 428 */                   if (this.nextExtra <= 0) {
+/* 429 */                     this.nextExtra = extra.getPerFuelItemsConsumed();
 /*     */                     
-/* 434 */                     ObjectArrayList<ItemStack> extraItemStacks = new ObjectArrayList((extra.getOutputs()).length);
-/* 435 */                     for (MaterialQuantity e : extra.getOutputs()) {
-/* 436 */                       extraItemStacks.add(e.toItemStack());
+/* 431 */                     ObjectArrayList<ItemStack> extraItemStacks = new ObjectArrayList((extra.getOutputs()).length);
+/* 432 */                     for (MaterialQuantity e : extra.getOutputs()) {
+/* 433 */                       extraItemStacks.add(e.toItemStack());
 /*     */                     }
-/* 438 */                     ListTransaction<ItemStackTransaction> addTransaction = this.outputContainer.addItemStacks((List)extraItemStacks, false, false, false);
+/* 435 */                     ListTransaction<ItemStackTransaction> addTransaction = this.outputContainer.addItemStacks((List)extraItemStacks, false, false, false);
 /*     */ 
 /*     */                     
-/* 441 */                     ObjectArrayList<ItemStack> objectArrayList1 = new ObjectArrayList();
-/* 442 */                     for (ItemStackTransaction itemStackTransaction : addTransaction.getList()) {
-/* 443 */                       ItemStack remainder = itemStackTransaction.getRemainder();
-/* 444 */                       if (remainder != null && !remainder.isEmpty()) {
-/* 445 */                         objectArrayList1.add(remainder);
+/* 438 */                     ObjectArrayList<ItemStack> objectArrayList1 = new ObjectArrayList();
+/* 439 */                     for (ItemStackTransaction itemStackTransaction : addTransaction.getList()) {
+/* 440 */                       ItemStack remainder = itemStackTransaction.getRemainder();
+/* 441 */                       if (remainder != null && !remainder.isEmpty()) {
+/* 442 */                         objectArrayList1.add(remainder);
 /*     */                       }
 /*     */                     } 
 /*     */                     
-/* 449 */                     if (!objectArrayList1.isEmpty()) {
-/* 450 */                       LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
+/* 446 */                     if (!objectArrayList1.isEmpty()) {
+/* 447 */                       LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
 /*     */                       
-/* 452 */                       Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList1);
-/* 453 */                       entityStore.addEntities(arrayOfHolder, AddReason.SPAWN);
+/* 449 */                       Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList1);
+/* 450 */                       entityStore.addEntities(arrayOfHolder, AddReason.SPAWN);
 /*     */                     } 
 /*     */                   } 
 /*     */                 } 
 /*     */                 
-/* 458 */                 this.fuelTime = (float)(this.fuelTime + transaction.getConsumed() * fuelQuality);
-/* 459 */                 needsUpdate = true;
+/* 455 */                 this.fuelTime = (float)(this.fuelTime + transaction.getConsumed() * fuelQuality);
+/* 456 */                 needsUpdate = true;
 /*     */                 break;
 /*     */               } 
 /*     */             } 
@@ -464,206 +461,206 @@
 /*     */         } 
 /*     */       }
 /*     */     } 
-/* 467 */     if (needsUpdate) {
-/* 468 */       updateFuelValues();
+/* 464 */     if (needsUpdate) {
+/* 465 */       updateFuelValues();
 /*     */     }
 /*     */ 
 /*     */     
-/* 472 */     if (hasFuelSlots && (!this.active || this.fuelTime <= 0.0F)) {
-/* 473 */       this.lastConsumedFuelTotal = 0;
+/* 469 */     if (hasFuelSlots && (!this.active || this.fuelTime <= 0.0F)) {
+/* 470 */       this.lastConsumedFuelTotal = 0;
 /*     */       
-/* 475 */       if ("Processing".equals(currentState)) {
-/* 476 */         setBlockInteractionState("default", blockType);
-/* 477 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 478 */         if (this.processingBench.getFuel() != null) {
-/* 479 */           setActive(false);
+/* 472 */       if ("Processing".equals(currentState)) {
+/* 473 */         setBlockInteractionState("default", blockType);
+/* 474 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 475 */         if (this.processingBench.getFuel() != null) {
+/* 476 */           setActive(false);
 /*     */         }
-/* 481 */       } else if ("ProcessCompleted".equals(currentState)) {
-/* 482 */         setBlockInteractionState("default", blockType);
-/* 483 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
-/* 484 */         if (this.processingBench.getFuel() != null) {
-/* 485 */           setActive(false);
+/* 478 */       } else if ("ProcessCompleted".equals(currentState)) {
+/* 479 */         setBlockInteractionState("default", blockType);
+/* 480 */         playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 481 */         if (this.processingBench.getFuel() != null) {
+/* 482 */           setActive(false);
 /*     */         }
 /*     */       } 
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 491 */     if (!"Processing".equals(currentState)) setBlockInteractionState("Processing", blockType);
+/* 488 */     if (!"Processing".equals(currentState)) setBlockInteractionState("Processing", blockType);
 /*     */     
-/* 493 */     if (this.recipe != null && (this.fuelTime > 0.0F || this.processingBench.getFuel() == null)) {
-/* 494 */       this.inputProgress += dt;
+/* 490 */     if (this.recipe != null && (this.fuelTime > 0.0F || this.processingBench.getFuel() == null)) {
+/* 491 */       this.inputProgress += dt;
 /*     */     }
 /*     */ 
 /*     */     
-/* 498 */     if (this.recipe != null) {
+/* 495 */     if (this.recipe != null) {
 /*     */       
-/* 500 */       float recipeTime = this.recipe.getTimeSeconds();
+/* 497 */       float recipeTime = this.recipe.getTimeSeconds();
 /*     */       
-/* 502 */       float craftingTimeReductionModifier = getCraftingTimeReductionModifier();
-/* 503 */       if (craftingTimeReductionModifier > 0.0F) {
-/* 504 */         recipeTime -= recipeTime * craftingTimeReductionModifier;
+/* 499 */       float craftingTimeReductionModifier = getCraftingTimeReductionModifier();
+/* 500 */       if (craftingTimeReductionModifier > 0.0F) {
+/* 501 */         recipeTime -= recipeTime * craftingTimeReductionModifier;
 /*     */       }
 /*     */       
-/* 507 */       if (this.inputProgress > recipeTime) {
-/* 508 */         if (recipeTime > 0.0F) {
-/* 509 */           this.inputProgress -= recipeTime;
-/* 510 */           float progressPercent = this.inputProgress / recipeTime;
-/* 511 */           sendProgress(progressPercent);
+/* 504 */       if (this.inputProgress > recipeTime) {
+/* 505 */         if (recipeTime > 0.0F) {
+/* 506 */           this.inputProgress -= recipeTime;
+/* 507 */           float progressPercent = this.inputProgress / recipeTime;
+/* 508 */           sendProgress(progressPercent);
 /*     */         } else {
-/* 513 */           this.inputProgress = 0.0F;
-/* 514 */           sendProgress(0.0F);
+/* 510 */           this.inputProgress = 0.0F;
+/* 511 */           sendProgress(0.0F);
 /*     */         } 
 /*     */         
-/* 517 */         LOGGER.at(Level.FINE).log("Do Process for %s %s", this.recipeId, this.recipe);
+/* 514 */         LOGGER.at(Level.FINE).log("Do Process for %s %s", this.recipeId, this.recipe);
 /*     */ 
 /*     */         
-/* 520 */         if (inputMaterials != null) {
-/* 521 */           ObjectArrayList<ItemStack> objectArrayList1 = new ObjectArrayList();
-/* 522 */           int success = 0;
-/* 523 */           IntArrayList slots = new IntArrayList();
-/* 524 */           for (int j = 0; j < this.inputContainer.getCapacity(); j++) {
-/* 525 */             slots.add(j);
+/* 517 */         if (inputMaterials != null) {
+/* 518 */           ObjectArrayList<ItemStack> objectArrayList1 = new ObjectArrayList();
+/* 519 */           int success = 0;
+/* 520 */           IntArrayList slots = new IntArrayList();
+/* 521 */           for (int j = 0; j < this.inputContainer.getCapacity(); j++) {
+/* 522 */             slots.add(j);
 /*     */           }
-/* 527 */           for (MaterialQuantity material : inputMaterials) {
-/* 528 */             for (int i = 0; i < slots.size(); i++) {
-/* 529 */               int slot = slots.getInt(i);
-/* 530 */               MaterialSlotTransaction materialSlotTransaction = this.inputContainer.removeMaterialFromSlot((short)slot, material, true, true, true);
-/* 531 */               if (materialSlotTransaction.succeeded()) {
-/* 532 */                 success++;
-/* 533 */                 slots.removeInt(i);
+/* 524 */           for (MaterialQuantity material : inputMaterials) {
+/* 525 */             for (int i = 0; i < slots.size(); i++) {
+/* 526 */               int slot = slots.getInt(i);
+/* 527 */               MaterialSlotTransaction materialSlotTransaction = this.inputContainer.removeMaterialFromSlot((short)slot, material, true, true, true);
+/* 528 */               if (materialSlotTransaction.succeeded()) {
+/* 529 */                 success++;
+/* 530 */                 slots.removeInt(i);
 /*     */                 
 /*     */                 break;
 /*     */               } 
 /*     */             } 
 /*     */           } 
-/* 539 */           ListTransaction<ItemStackTransaction> listTransaction = this.outputContainer.addItemStacks(outputItemStacks, false, false, false);
-/* 540 */           if (!listTransaction.succeeded()) {
+/* 536 */           ListTransaction<ItemStackTransaction> listTransaction = this.outputContainer.addItemStacks(outputItemStacks, false, false, false);
+/* 537 */           if (!listTransaction.succeeded()) {
 /*     */             return;
 /*     */           }
-/* 543 */           for (ItemStackTransaction itemStackTransaction : listTransaction.getList()) {
-/* 544 */             ItemStack remainder = itemStackTransaction.getRemainder();
-/* 545 */             if (remainder != null && !remainder.isEmpty()) {
-/* 546 */               objectArrayList1.add(remainder);
+/* 540 */           for (ItemStackTransaction itemStackTransaction : listTransaction.getList()) {
+/* 541 */             ItemStack remainder = itemStackTransaction.getRemainder();
+/* 542 */             if (remainder != null && !remainder.isEmpty()) {
+/* 543 */               objectArrayList1.add(remainder);
 /*     */             }
 /*     */           } 
 /*     */           
-/* 550 */           if (success == inputMaterials.size()) {
-/* 551 */             setBlockInteractionState("ProcessCompleted", blockType);
-/* 552 */             playSound(world, this.bench.getCompletedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 547 */           if (success == inputMaterials.size()) {
+/* 548 */             setBlockInteractionState("ProcessCompleted", blockType);
+/* 549 */             playSound(world, this.bench.getCompletedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */             
-/* 554 */             if (!objectArrayList1.isEmpty()) {
-/* 555 */               LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
+/* 551 */             if (!objectArrayList1.isEmpty()) {
+/* 552 */               LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
 /*     */               
-/* 557 */               Holder[] arrayOfHolder1 = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList1);
-/* 558 */               entityStore.addEntities(arrayOfHolder1, AddReason.SPAWN);
+/* 554 */               Holder[] arrayOfHolder1 = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList1);
+/* 555 */               entityStore.addEntities(arrayOfHolder1, AddReason.SPAWN);
 /*     */             } 
 /*     */             
 /*     */             return;
 /*     */           } 
 /*     */         } 
-/* 564 */         ObjectArrayList<ItemStack> objectArrayList = new ObjectArrayList();
+/* 561 */         ObjectArrayList<ItemStack> objectArrayList = new ObjectArrayList();
 /*     */         
-/* 566 */         ListTransaction<MaterialTransaction> transaction = this.inputContainer.removeMaterials(inputMaterials, true, true, true);
-/* 567 */         if (!transaction.succeeded()) {
-/* 568 */           LOGGER.at(Level.WARNING).log("Failed to remove input materials at %s", getBlockPosition());
-/* 569 */           setBlockInteractionState("default", blockType);
-/* 570 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 563 */         ListTransaction<MaterialTransaction> transaction = this.inputContainer.removeMaterials(inputMaterials, true, true, true);
+/* 564 */         if (!transaction.succeeded()) {
+/* 565 */           LOGGER.at(Level.WARNING).log("Failed to remove input materials at %s", getBlockPosition());
+/* 566 */           setBlockInteractionState("default", blockType);
+/* 567 */           playSound(world, this.processingBench.getFailedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */           
 /*     */           return;
 /*     */         } 
-/* 574 */         setBlockInteractionState("ProcessCompleted", blockType);
-/* 575 */         playSound(world, this.bench.getCompletedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
+/* 571 */         setBlockInteractionState("ProcessCompleted", blockType);
+/* 572 */         playSound(world, this.bench.getCompletedSoundEventIndex(), (ComponentAccessor<EntityStore>)entityStore);
 /*     */         
-/* 577 */         ListTransaction<ItemStackTransaction> addTransaction = this.outputContainer.addItemStacks(outputItemStacks, false, false, false);
-/* 578 */         if (addTransaction.succeeded())
+/* 574 */         ListTransaction<ItemStackTransaction> addTransaction = this.outputContainer.addItemStacks(outputItemStacks, false, false, false);
+/* 575 */         if (addTransaction.succeeded())
 /*     */           return; 
-/* 580 */         LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
+/* 577 */         LOGGER.at(Level.WARNING).log("Dropping excess items at %s", getBlockPosition());
 /*     */ 
 /*     */         
-/* 583 */         for (ItemStackTransaction itemStackTransaction : addTransaction.getList()) {
-/* 584 */           ItemStack remainder = itemStackTransaction.getRemainder();
-/* 585 */           if (remainder != null && !remainder.isEmpty()) {
-/* 586 */             objectArrayList.add(remainder);
+/* 580 */         for (ItemStackTransaction itemStackTransaction : addTransaction.getList()) {
+/* 581 */           ItemStack remainder = itemStackTransaction.getRemainder();
+/* 582 */           if (remainder != null && !remainder.isEmpty()) {
+/* 583 */             objectArrayList.add(remainder);
 /*     */           }
 /*     */         } 
 /*     */         
-/* 590 */         Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList);
-/* 591 */         entityStore.addEntities(arrayOfHolder, AddReason.SPAWN);
+/* 587 */         Holder[] arrayOfHolder = (Holder[])ejectItems((ComponentAccessor<EntityStore>)entityStore, (List<ItemStack>)objectArrayList);
+/* 588 */         entityStore.addEntities(arrayOfHolder, AddReason.SPAWN);
 /*     */       }
-/* 593 */       else if (this.recipe != null && recipeTime > 0.0F) {
-/* 594 */         float progressPercent = this.inputProgress / recipeTime;
-/* 595 */         sendProgress(progressPercent);
+/* 590 */       else if (this.recipe != null && recipeTime > 0.0F) {
+/* 591 */         float progressPercent = this.inputProgress / recipeTime;
+/* 592 */         sendProgress(progressPercent);
 /*     */       } else {
-/* 597 */         sendProgress(0.0F);
+/* 594 */         sendProgress(0.0F);
 /*     */       } 
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   private float getCraftingTimeReductionModifier() {
-/* 604 */     BenchTierLevel levelData = this.bench.getTierLevel(getTierLevel());
-/* 605 */     return (levelData != null) ? levelData.getCraftingTimeReductionModifier() : 0.0F;
+/* 601 */     BenchTierLevel levelData = this.bench.getTierLevel(getTierLevel());
+/* 602 */     return (levelData != null) ? levelData.getCraftingTimeReductionModifier() : 0.0F;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   private Holder<EntityStore>[] ejectItems(@Nonnull ComponentAccessor<EntityStore> accessor, @Nonnull List<ItemStack> itemStacks) {
 /*     */     Vector3d dropPosition;
-/* 611 */     if (itemStacks.isEmpty()) {
-/* 612 */       return (Holder<EntityStore>[])Holder.emptyArray();
+/* 608 */     if (itemStacks.isEmpty()) {
+/* 609 */       return (Holder<EntityStore>[])Holder.emptyArray();
 /*     */     }
 /*     */     
-/* 615 */     RotationTuple rotation = RotationTuple.get(getRotationIndex());
-/* 616 */     Vector3d frontDir = new Vector3d(0.0D, 0.0D, 1.0D);
-/* 617 */     rotation.yaw().rotateY(frontDir, frontDir);
+/* 612 */     RotationTuple rotation = RotationTuple.get(getRotationIndex());
+/* 613 */     Vector3d frontDir = new Vector3d(0.0D, 0.0D, 1.0D);
+/* 614 */     rotation.yaw().rotateY(frontDir, frontDir);
 /*     */ 
 /*     */     
-/* 620 */     BlockType blockType = getBlockType();
-/* 621 */     if (blockType == null) {
-/* 622 */       dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
+/* 617 */     BlockType blockType = getBlockType();
+/* 618 */     if (blockType == null) {
+/* 619 */       dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
 /*     */     } else {
-/* 624 */       BlockBoundingBoxes hitboxAsset = (BlockBoundingBoxes)BlockBoundingBoxes.getAssetMap().getAsset(blockType.getHitboxTypeIndex());
-/* 625 */       if (hitboxAsset == null) {
-/* 626 */         dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
+/* 621 */       BlockBoundingBoxes hitboxAsset = (BlockBoundingBoxes)BlockBoundingBoxes.getAssetMap().getAsset(blockType.getHitboxTypeIndex());
+/* 622 */       if (hitboxAsset == null) {
+/* 623 */         dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
 /*     */       } else {
-/* 628 */         double depth = hitboxAsset.get(0).getBoundingBox().depth();
-/* 629 */         double frontOffset = depth / 2.0D + 0.10000000149011612D;
+/* 625 */         double depth = hitboxAsset.get(0).getBoundingBox().depth();
+/* 626 */         double frontOffset = depth / 2.0D + 0.10000000149011612D;
 /*     */         
-/* 631 */         dropPosition = getCenteredBlockPosition();
-/* 632 */         dropPosition.add(frontDir.x * frontOffset, 0.0D, frontDir.z * frontOffset);
+/* 628 */         dropPosition = getCenteredBlockPosition();
+/* 629 */         dropPosition.add(frontDir.x * frontOffset, 0.0D, frontDir.z * frontOffset);
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 636 */     ThreadLocalRandom random = ThreadLocalRandom.current();
-/* 637 */     ObjectArrayList<Holder<EntityStore>> result = new ObjectArrayList(itemStacks.size());
+/* 633 */     ThreadLocalRandom random = ThreadLocalRandom.current();
+/* 634 */     ObjectArrayList<Holder<EntityStore>> result = new ObjectArrayList(itemStacks.size());
 /*     */     
-/* 639 */     for (ItemStack item : itemStacks) {
-/* 640 */       float velocityX = (float)(frontDir.x * 2.0D + 2.0D * (random.nextDouble() - 0.5D));
-/* 641 */       float velocityZ = (float)(frontDir.z * 2.0D + 2.0D * (random.nextDouble() - 0.5D));
+/* 636 */     for (ItemStack item : itemStacks) {
+/* 637 */       float velocityX = (float)(frontDir.x * 2.0D + 2.0D * (random.nextDouble() - 0.5D));
+/* 638 */       float velocityZ = (float)(frontDir.z * 2.0D + 2.0D * (random.nextDouble() - 0.5D));
 /*     */       
-/* 643 */       Holder<EntityStore> holder = ItemComponent.generateItemDrop(accessor, item, dropPosition, Vector3f.ZERO, velocityX, 3.25F, velocityZ);
+/* 640 */       Holder<EntityStore> holder = ItemComponent.generateItemDrop(accessor, item, dropPosition, Vector3f.ZERO, velocityX, 3.25F, velocityZ);
 /*     */       
-/* 645 */       if (holder != null) {
-/* 646 */         result.add(holder);
+/* 642 */       if (holder != null) {
+/* 643 */         result.add(holder);
 /*     */       }
 /*     */     } 
 /*     */     
-/* 650 */     return (Holder<EntityStore>[])result.toArray(x$0 -> new Holder[x$0]);
+/* 647 */     return (Holder<EntityStore>[])result.toArray(x$0 -> new Holder[x$0]);
 /*     */   }
 /*     */   
 /*     */   private void sendProgress(float progress) {
-/* 654 */     this.windows.forEach((uuid, window) -> window.setProgress(progress));
+/* 651 */     this.windows.forEach((uuid, window) -> ((ProcessingBenchWindow)window).setProgress(progress));
 /*     */   }
 /*     */   
 /*     */   private void sendProcessingSlots() {
-/* 658 */     this.windows.forEach((uuid, window) -> window.setProcessingSlots(this.processingSlots));
+/* 655 */     this.windows.forEach((uuid, window) -> ((ProcessingBenchWindow)window).setProcessingSlots(this.processingSlots));
 /*     */   }
 /*     */   
 /*     */   private void sendProcessingFuelSlots() {
-/* 662 */     this.windows.forEach((uuid, window) -> window.setProcessingFuelSlots(this.processingFuelSlots));
+/* 659 */     this.windows.forEach((uuid, window) -> ((ProcessingBenchWindow)window).setProcessingFuelSlots(this.processingFuelSlots));
 /*     */   }
 /*     */   
 /*     */   public boolean isActive() {
-/* 666 */     return this.active;
+/* 663 */     return this.active;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -672,232 +669,227 @@
 /*     */ 
 /*     */   
 /*     */   public boolean setActive(boolean active) {
-/* 675 */     if (this.active != active) {
-/* 676 */       if (active && this.processingBench.getFuel() != null && this.fuelContainer.isEmpty()) return false; 
-/* 677 */       this.active = active;
+/* 672 */     if (this.active != active) {
+/* 673 */       if (active && this.processingBench.getFuel() != null && this.fuelContainer.isEmpty()) return false; 
+/* 674 */       this.active = active;
 /*     */       
-/* 679 */       if (!active) {
-/* 680 */         this.processingSlots.clear();
-/* 681 */         this.processingFuelSlots.clear();
-/* 682 */         sendProcessingSlots();
-/* 683 */         sendProcessingFuelSlots();
+/* 676 */       if (!active) {
+/* 677 */         this.processingSlots.clear();
+/* 678 */         this.processingFuelSlots.clear();
+/* 679 */         sendProcessingSlots();
+/* 680 */         sendProcessingFuelSlots();
 /*     */       } 
-/* 685 */       updateRecipe();
-/* 686 */       this.windows.forEach((uuid, window) -> window.setActive(active));
-/* 687 */       markNeedsSave();
-/* 688 */       return true;
+/* 682 */       updateRecipe();
+/* 683 */       this.windows.forEach((uuid, window) -> ((ProcessingBenchWindow)window).setActive(active));
+/* 684 */       markNeedsSave();
+/* 685 */       return true;
 /*     */     } 
-/* 690 */     return false;
+/* 687 */     return false;
 /*     */   }
 /*     */   
 /*     */   public void updateFuelValues() {
-/* 694 */     if (this.fuelTime > this.lastConsumedFuelTotal) {
-/* 695 */       this.lastConsumedFuelTotal = MathUtil.ceil(this.fuelTime);
+/* 691 */     if (this.fuelTime > this.lastConsumedFuelTotal) {
+/* 692 */       this.lastConsumedFuelTotal = MathUtil.ceil(this.fuelTime);
 /*     */     }
 /*     */     
-/* 698 */     float fuelPercent = (this.lastConsumedFuelTotal > 0) ? (this.fuelTime / this.lastConsumedFuelTotal) : 0.0F;
-/* 699 */     this.windows.forEach((uuid, window) -> {
-/*     */           window.setFuelTime(fuelPercent);
-/*     */           window.setMaxFuel(this.lastConsumedFuelTotal);
-/*     */           window.setProcessingFuelSlots(this.processingFuelSlots);
+/* 695 */     float fuelPercent = (this.lastConsumedFuelTotal > 0) ? (this.fuelTime / this.lastConsumedFuelTotal) : 0.0F;
+/* 696 */     this.windows.forEach((uuid, window) -> {
+/*     */           ProcessingBenchWindow processingBenchWindow = (ProcessingBenchWindow)window;
+/*     */           processingBenchWindow.setFuelTime(fuelPercent);
+/*     */           processingBenchWindow.setMaxFuel(this.lastConsumedFuelTotal);
+/*     */           processingBenchWindow.setProcessingFuelSlots(this.processingFuelSlots);
 /*     */         });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onDestroy() {
-/* 708 */     super.onDestroy();
-/* 709 */     WindowManager.closeAndRemoveAll(this.windows);
+/* 706 */     super.onDestroy();
 /*     */     
-/* 711 */     if (this.combinedItemContainer != null) {
-/* 712 */       List<ItemStack> itemStacks = this.combinedItemContainer.dropAllItemStacks();
-/* 713 */       dropFuelItems(itemStacks);
+/* 708 */     if (this.combinedItemContainer != null) {
+/* 709 */       List<ItemStack> itemStacks = this.combinedItemContainer.dropAllItemStacks();
+/* 710 */       dropFuelItems(itemStacks);
 /*     */       
-/* 715 */       World world = getChunk().getWorld();
-/* 716 */       Store<EntityStore> entityStore = world.getEntityStore().getStore();
-/* 717 */       Vector3d dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
-/* 718 */       Holder[] arrayOfHolder = ItemComponent.generateItemDrops((ComponentAccessor)entityStore, itemStacks, dropPosition, Vector3f.ZERO);
-/* 719 */       if (arrayOfHolder.length > 0) {
-/* 720 */         world.execute(() -> entityStore.addEntities(itemEntityHolders, AddReason.SPAWN));
+/* 712 */       World world = getChunk().getWorld();
+/* 713 */       Store<EntityStore> entityStore = world.getEntityStore().getStore();
+/* 714 */       Vector3d dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
+/* 715 */       Holder[] arrayOfHolder = ItemComponent.generateItemDrops((ComponentAccessor)entityStore, itemStacks, dropPosition, Vector3f.ZERO);
+/* 716 */       if (arrayOfHolder.length > 0) {
+/* 717 */         world.execute(() -> entityStore.addEntities(itemEntityHolders, AddReason.SPAWN));
 /*     */       }
 /*     */     } 
 /*     */     
-/* 724 */     if (this.marker != null) this.marker.remove();
+/* 721 */     if (this.marker != null) this.marker.remove();
 /*     */   
 /*     */   }
 /*     */   
 /*     */   public CombinedItemContainer getItemContainer() {
-/* 729 */     return this.combinedItemContainer;
+/* 726 */     return this.combinedItemContainer;
 /*     */   }
 /*     */   
 /*     */   private void checkForRecipeUpdate() {
-/* 733 */     if (this.recipe == null && this.recipeId != null) {
-/* 734 */       updateRecipe();
+/* 730 */     if (this.recipe == null && this.recipeId != null) {
+/* 731 */       updateRecipe();
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   private void updateRecipe() {
-/* 739 */     List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
-/* 740 */     if (recipes.isEmpty()) {
-/* 741 */       clearRecipe();
+/* 736 */     List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId());
+/* 737 */     if (recipes.isEmpty()) {
+/* 738 */       clearRecipe();
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 746 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
-/* 747 */     for (CraftingRecipe craftingRecipe : recipes) {
-/* 748 */       if (craftingRecipe.isRestrictedByBenchTierLevel(this.bench.getId(), getTierLevel()))
+/* 743 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
+/* 744 */     for (CraftingRecipe craftingRecipe : recipes) {
+/* 745 */       if (craftingRecipe.isRestrictedByBenchTierLevel(this.bench.getId(), getTierLevel()))
 /*     */         continue; 
-/* 750 */       MaterialQuantity[] input = craftingRecipe.getInput();
-/* 751 */       int matches = 0;
+/* 747 */       MaterialQuantity[] input = craftingRecipe.getInput();
+/* 748 */       int matches = 0;
 /*     */       
-/* 753 */       IntArrayList slots = new IntArrayList();
-/* 754 */       for (int j = 0; j < this.inputContainer.getCapacity(); j++) {
-/* 755 */         slots.add(j);
+/* 750 */       IntArrayList slots = new IntArrayList();
+/* 751 */       for (int j = 0; j < this.inputContainer.getCapacity(); j++) {
+/* 752 */         slots.add(j);
 /*     */       }
 /*     */       
-/* 758 */       for (MaterialQuantity craftingMaterial : input) {
-/* 759 */         String itemId = craftingMaterial.getItemId();
-/* 760 */         String resourceTypeId = craftingMaterial.getResourceTypeId();
-/* 761 */         int materialQuantity = craftingMaterial.getQuantity();
-/* 762 */         BsonDocument metadata = craftingMaterial.getMetadata();
-/* 763 */         MaterialQuantity material = new MaterialQuantity(itemId, resourceTypeId, null, materialQuantity, metadata);
+/* 755 */       for (MaterialQuantity craftingMaterial : input) {
+/* 756 */         String itemId = craftingMaterial.getItemId();
+/* 757 */         String resourceTypeId = craftingMaterial.getResourceTypeId();
+/* 758 */         int materialQuantity = craftingMaterial.getQuantity();
+/* 759 */         BsonDocument metadata = craftingMaterial.getMetadata();
+/* 760 */         MaterialQuantity material = new MaterialQuantity(itemId, resourceTypeId, null, materialQuantity, metadata);
 /*     */         
-/* 765 */         for (int k = 0; k < slots.size(); k++) {
-/* 766 */           int i = slots.getInt(k);
-/* 767 */           int out = InternalContainerUtilMaterial.testRemoveMaterialFromSlot(this.inputContainer, (short)i, material, material.getQuantity(), true);
-/* 768 */           if (out == 0) {
-/* 769 */             matches++;
-/* 770 */             slots.removeInt(k);
+/* 762 */         for (int k = 0; k < slots.size(); k++) {
+/* 763 */           int i = slots.getInt(k);
+/* 764 */           int out = InternalContainerUtilMaterial.testRemoveMaterialFromSlot(this.inputContainer, (short)i, material, material.getQuantity(), true);
+/* 765 */           if (out == 0) {
+/* 766 */             matches++;
+/* 767 */             slots.removeInt(k);
 /*     */             
 /*     */             break;
 /*     */           } 
 /*     */         } 
 /*     */       } 
-/* 776 */       if (matches == input.length) {
-/* 777 */         objectArrayList.add(craftingRecipe);
+/* 773 */       if (matches == input.length) {
+/* 774 */         objectArrayList.add(craftingRecipe);
 /*     */       }
 /*     */     } 
 /*     */     
-/* 781 */     if (objectArrayList.isEmpty()) {
-/* 782 */       clearRecipe();
+/* 778 */     if (objectArrayList.isEmpty()) {
+/* 779 */       clearRecipe();
 /*     */ 
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 788 */     objectArrayList.sort(Comparator.comparingInt(o -> CraftingManager.getInputMaterials(o).size()));
-/* 789 */     Collections.reverse((List<?>)objectArrayList);
+/* 785 */     objectArrayList.sort(Comparator.comparingInt(o -> CraftingManager.getInputMaterials(o).size()));
+/* 786 */     Collections.reverse((List<?>)objectArrayList);
 /*     */     
-/* 791 */     if (this.recipeId != null)
+/* 788 */     if (this.recipeId != null)
 /*     */     {
-/* 793 */       for (CraftingRecipe rec : objectArrayList) {
-/* 794 */         if (Objects.equals(this.recipeId, rec.getId())) {
-/* 795 */           LOGGER.at(Level.FINE).log("%s - Keeping existing Recipe %s %s", LazyArgs.lazy(this::getBlockPosition), this.recipeId, rec);
-/* 796 */           this.recipe = rec;
+/* 790 */       for (CraftingRecipe rec : objectArrayList) {
+/* 791 */         if (Objects.equals(this.recipeId, rec.getId())) {
+/* 792 */           LOGGER.at(Level.FINE).log("%s - Keeping existing Recipe %s %s", LazyArgs.lazy(this::getBlockPosition), this.recipeId, rec);
+/* 793 */           this.recipe = rec;
 /*     */           
 /*     */           return;
 /*     */         } 
 /*     */       } 
 /*     */     }
-/* 802 */     CraftingRecipe recipe = objectArrayList.getFirst();
-/* 803 */     if (this.recipeId == null || !Objects.equals(this.recipeId, recipe.getId())) {
-/* 804 */       this.inputProgress = 0.0F;
-/* 805 */       sendProgress(0.0F);
+/* 799 */     CraftingRecipe recipe = objectArrayList.getFirst();
+/* 800 */     if (this.recipeId == null || !Objects.equals(this.recipeId, recipe.getId())) {
+/* 801 */       this.inputProgress = 0.0F;
+/* 802 */       sendProgress(0.0F);
 /*     */     } 
-/* 807 */     this.recipeId = recipe.getId();
-/* 808 */     this.recipe = recipe;
+/* 804 */     this.recipeId = recipe.getId();
+/* 805 */     this.recipe = recipe;
 /*     */     
-/* 810 */     LOGGER.at(Level.FINE).log("%s - Found Recipe %s %s", LazyArgs.lazy(this::getBlockPosition), this.recipeId, this.recipe);
+/* 807 */     LOGGER.at(Level.FINE).log("%s - Found Recipe %s %s", LazyArgs.lazy(this::getBlockPosition), this.recipeId, this.recipe);
 /*     */   }
 /*     */   
 /*     */   private void clearRecipe() {
-/* 814 */     this.recipeId = null;
-/* 815 */     this.recipe = null;
-/* 816 */     this.lastConsumedFuelTotal = 0;
-/* 817 */     this.inputProgress = 0.0F;
-/* 818 */     sendProgress(0.0F);
-/* 819 */     LOGGER.at(Level.FINE).log("%s - Cleared Recipe", LazyArgs.lazy(this::getBlockPosition));
+/* 811 */     this.recipeId = null;
+/* 812 */     this.recipe = null;
+/* 813 */     this.lastConsumedFuelTotal = 0;
+/* 814 */     this.inputProgress = 0.0F;
+/* 815 */     sendProgress(0.0F);
+/* 816 */     LOGGER.at(Level.FINE).log("%s - Cleared Recipe", LazyArgs.lazy(this::getBlockPosition));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void dropFuelItems(@Nonnull List<ItemStack> itemStacks) {
-/* 824 */     String fuelDropItemId = this.processingBench.getFuelDropItemId();
-/* 825 */     if (fuelDropItemId != null) {
-/* 826 */       Item item = (Item)Item.getAssetMap().getAsset(fuelDropItemId);
+/* 821 */     String fuelDropItemId = this.processingBench.getFuelDropItemId();
+/* 822 */     if (fuelDropItemId != null) {
+/* 823 */       Item item = (Item)Item.getAssetMap().getAsset(fuelDropItemId);
 /*     */ 
 /*     */       
-/* 829 */       int dropAmount = (int)this.fuelTime;
-/* 830 */       this.fuelTime = 0.0F;
+/* 826 */       int dropAmount = (int)this.fuelTime;
+/* 827 */       this.fuelTime = 0.0F;
 /*     */       
-/* 832 */       while (dropAmount > 0) {
-/* 833 */         int quantity = Math.min(dropAmount, item.getMaxStack());
-/* 834 */         itemStacks.add(new ItemStack(fuelDropItemId, quantity));
-/* 835 */         dropAmount -= quantity;
+/* 829 */       while (dropAmount > 0) {
+/* 830 */         int quantity = Math.min(dropAmount, item.getMaxStack());
+/* 831 */         itemStacks.add(new ItemStack(fuelDropItemId, quantity));
+/* 832 */         dropAmount -= quantity;
 /*     */       } 
 /*     */     } else {
-/* 838 */       LOGGER.at(Level.WARNING).log("No FuelDropItemId defined for %s fuel value of %s will be lost!", this.bench.getId(), this.fuelTime);
+/* 835 */       LOGGER.at(Level.WARNING).log("No FuelDropItemId defined for %s fuel value of %s will be lost!", this.bench.getId(), this.fuelTime);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public CraftingRecipe getRecipe() {
-/* 844 */     return this.recipe;
-/*     */   }
-/*     */   
-/*     */   @Nonnull
-/*     */   public Map<UUID, ProcessingBenchWindow> getWindows() {
-/* 849 */     return this.windows;
+/* 841 */     return this.recipe;
 /*     */   }
 /*     */   
 /*     */   public float getInputProgress() {
-/* 853 */     return this.inputProgress;
+/* 845 */     return this.inputProgress;
 /*     */   }
 /*     */   
 /*     */   public void onItemChange(ItemContainer.ItemContainerChangeEvent event) {
-/* 857 */     markNeedsSave();
+/* 849 */     markNeedsSave();
 /*     */   }
 /*     */   
 /*     */   public void setBlockInteractionState(@Nonnull String state, @Nonnull BlockType blockType) {
-/* 861 */     getChunk().setBlockInteractionState(getBlockPosition(), blockType, state);
+/* 853 */     getChunk().setBlockInteractionState(getBlockPosition(), blockType, state);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void setMarker(WorldMapManager.MarkerReference marker) {
-/* 866 */     this.marker = marker;
-/* 867 */     markNeedsSave();
+/* 858 */     this.marker = marker;
+/* 859 */     markNeedsSave();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void placedBy(@Nonnull Ref<EntityStore> playerRef, @Nonnull String blockTypeKey, @Nonnull BlockState blockState, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 872 */     if (blockTypeKey.equals(this.processingBench.getIconItem()) && this.processingBench.getIcon() != null) {
-/* 873 */       Player playerComponent = (Player)componentAccessor.getComponent(playerRef, Player.getComponentType());
-/* 874 */       assert playerComponent != null;
+/* 864 */     if (blockTypeKey.equals(this.processingBench.getIconItem()) && this.processingBench.getIcon() != null) {
+/* 865 */       Player playerComponent = (Player)componentAccessor.getComponent(playerRef, Player.getComponentType());
+/* 866 */       assert playerComponent != null;
 /*     */       
-/* 876 */       TransformComponent transformComponent = (TransformComponent)componentAccessor.getComponent(playerRef, TransformComponent.getComponentType());
-/* 877 */       assert transformComponent != null;
+/* 868 */       TransformComponent transformComponent = (TransformComponent)componentAccessor.getComponent(playerRef, TransformComponent.getComponentType());
+/* 869 */       assert transformComponent != null;
 /*     */       
-/* 879 */       Transform transformPacket = PositionUtil.toTransformPacket(transformComponent.getTransform());
-/* 880 */       transformPacket.orientation.yaw = 0.0F;
-/* 881 */       transformPacket.orientation.pitch = 0.0F;
-/* 882 */       transformPacket.orientation.roll = 0.0F;
+/* 871 */       Transform transformPacket = PositionUtil.toTransformPacket(transformComponent.getTransform());
+/* 872 */       transformPacket.orientation.yaw = 0.0F;
+/* 873 */       transformPacket.orientation.pitch = 0.0F;
+/* 874 */       transformPacket.orientation.roll = 0.0F;
 /*     */       
-/* 884 */       MapMarker marker = new MapMarker(this.processingBench.getIconId() + "-" + this.processingBench.getIconId(), this.processingBench.getIconName(), this.processingBench.getIcon(), transformPacket, null);
+/* 876 */       MapMarker marker = new MapMarker(this.processingBench.getIconId() + "-" + this.processingBench.getIconId(), this.processingBench.getIconName(), this.processingBench.getIcon(), transformPacket, null);
 /*     */       
-/* 886 */       ((MarkerBlockState)blockState).setMarker((WorldMapManager.MarkerReference)WorldMapManager.createPlayerMarker(playerRef, marker, componentAccessor));
+/* 878 */       ((MarkerBlockState)blockState).setMarker((WorldMapManager.MarkerReference)WorldMapManager.createPlayerMarker(playerRef, marker, componentAccessor));
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private void playSound(@Nonnull World world, int soundEventIndex, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 891 */     if (soundEventIndex == 0)
+/* 883 */     if (soundEventIndex == 0)
 /*     */       return; 
-/* 893 */     Vector3i pos = getBlockPosition();
-/* 894 */     SoundUtil.playSoundEvent3d(soundEventIndex, SoundCategory.SFX, pos.x + 0.5D, pos.y + 0.5D, pos.z + 0.5D, componentAccessor);
+/* 885 */     Vector3i pos = getBlockPosition();
+/* 886 */     SoundUtil.playSoundEvent3d(soundEventIndex, SoundCategory.SFX, pos.x + 0.5D, pos.y + 0.5D, pos.z + 0.5D, componentAccessor);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void onTierLevelChange() {
-/* 899 */     super.onTierLevelChange();
-/* 900 */     setupSlots();
+/* 891 */     super.onTierLevelChange();
+/* 892 */     setupSlots();
 /*     */   }
 /*     */ }
 

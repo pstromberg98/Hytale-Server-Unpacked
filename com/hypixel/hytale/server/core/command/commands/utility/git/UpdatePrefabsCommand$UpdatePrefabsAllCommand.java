@@ -209,17 +209,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class UpdatePrefabsAllCommand
 /*     */   extends UpdatePrefabsCommand.UpdatePrefabsGitCommand
 /*     */ {
 /*     */   public UpdatePrefabsAllCommand() {
-/* 216 */     super("all", "server.commands.update.prefabs.all.desc");
+/* 220 */     super("all", "server.commands.git.prefabs.all.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 222 */     return new String[][] { { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "pull" }, { "git", "submodule", "foreach", "git", "push" }, { "git", "add", "--all", "." }, { "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "pull" }, { "git", "push" } };
+/* 226 */     return new String[][] { { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "pull" }, { "git", "submodule", "foreach", "git", "push" }, { "git", "add", "--all", "." }, { "git", "commit", "-am", "Update prefabs by " + senderDisplayName }, { "git", "pull" }, { "git", "push" } };
 /*     */   }
 /*     */ }
 

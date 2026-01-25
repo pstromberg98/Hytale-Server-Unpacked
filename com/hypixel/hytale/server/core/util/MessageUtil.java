@@ -9,6 +9,7 @@
 /*     */ import com.hypixel.hytale.server.core.Message;
 /*     */ import com.hypixel.hytale.server.core.asset.util.ColorParseUtil;
 /*     */ import com.hypixel.hytale.server.core.universe.PlayerRef;
+/*     */ import java.util.HashMap;
 /*     */ import java.util.List;
 /*     */ import java.util.Map;
 /*     */ import javax.annotation.Nonnull;
@@ -20,65 +21,49 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class MessageUtil
 /*     */ {
 /*     */   public static AttributedString toAnsiString(@Nonnull Message message) {
-/*  33 */     AttributedStyle style = AttributedStyle.DEFAULT;
+/*  27 */     AttributedStyle style = AttributedStyle.DEFAULT;
 /*     */     
-/*  35 */     String color = message.getColor();
-/*  36 */     if (color != null) style = hexToStyle(color);
+/*  29 */     String color = message.getColor();
+/*  30 */     if (color != null) style = hexToStyle(color);
 /*     */     
-/*  38 */     AttributedStringBuilder sb = new AttributedStringBuilder();
-/*  39 */     sb.style(style).append(message.getAnsiMessage());
+/*  32 */     AttributedStringBuilder sb = new AttributedStringBuilder();
+/*  33 */     sb.style(style).append(message.getAnsiMessage());
 /*     */     
-/*  41 */     List<Message> children = message.getChildren();
-/*  42 */     for (Message child : children) {
-/*  43 */       sb.append(toAnsiString(child));
+/*  35 */     List<Message> children = message.getChildren();
+/*  36 */     for (Message child : children) {
+/*  37 */       sb.append(toAnsiString(child));
 /*     */     }
-/*  45 */     return sb.toAttributedString();
+/*  39 */     return sb.toAttributedString();
 /*     */   }
 /*     */   
 /*     */   public static AttributedStyle hexToStyle(@Nonnull String str) {
-/*  49 */     Color color = ColorParseUtil.parseColor(str);
-/*  50 */     if (color == null) return AttributedStyle.DEFAULT;
+/*  43 */     Color color = ColorParseUtil.parseColor(str);
+/*  44 */     if (color == null) return AttributedStyle.DEFAULT;
 /*     */ 
 /*     */     
-/*  53 */     int colorId = Colors.roundRgbColor(color.red & 0xFF, color.green & 0xFF, color.blue & 0xFF, 256);
-/*  54 */     return AttributedStyle.DEFAULT.foreground(colorId);
+/*  47 */     int colorId = Colors.roundRgbColor(color.red & 0xFF, color.green & 0xFF, color.blue & 0xFF, 256);
+/*  48 */     return AttributedStyle.DEFAULT.foreground(colorId);
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public static void sendSuccessReply(@Nonnull PlayerRef playerRef, int token) {
-/*  59 */     sendSuccessReply(playerRef, token, null);
+/*  53 */     sendSuccessReply(playerRef, token, null);
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public static void sendSuccessReply(@Nonnull PlayerRef playerRef, int token, @Nullable Message message) {
-/*  64 */     FormattedMessage msg = (message != null) ? message.getFormattedMessage() : null;
-/*  65 */     playerRef.getPacketHandler().writeNoCache((Packet)new SuccessReply(token, msg));
+/*  58 */     FormattedMessage msg = (message != null) ? message.getFormattedMessage() : null;
+/*  59 */     playerRef.getPacketHandler().writeNoCache((Packet)new SuccessReply(token, msg));
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public static void sendFailureReply(@Nonnull PlayerRef playerRef, int token, @Nonnull Message message) {
-/*  70 */     FormattedMessage msg = (message != null) ? message.getFormattedMessage() : null;
-/*  71 */     playerRef.getPacketHandler().writeNoCache((Packet)new FailureReply(token, msg));
+/*  64 */     FormattedMessage msg = (message != null) ? message.getFormattedMessage() : null;
+/*  65 */     playerRef.getPacketHandler().writeNoCache((Packet)new FailureReply(token, msg));
 /*     */   }
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -202,14 +187,14 @@
 /*     */     //   46: istore #6
 /*     */     //   48: iload #6
 /*     */     //   50: iload_3
-/*     */     //   51: if_icmpge -> 1467
+/*     */     //   51: if_icmpge -> 1419
 /*     */     //   54: aload_0
 /*     */     //   55: iload #6
 /*     */     //   57: invokevirtual charAt : (I)C
 /*     */     //   60: istore #7
 /*     */     //   62: iload #7
 /*     */     //   64: bipush #123
-/*     */     //   66: if_icmpne -> 1398
+/*     */     //   66: if_icmpne -> 1350
 /*     */     //   69: iload #6
 /*     */     //   71: iconst_1
 /*     */     //   72: iadd
@@ -240,14 +225,14 @@
 /*     */     //   121: iconst_1
 /*     */     //   122: iadd
 /*     */     //   123: istore #5
-/*     */     //   125: goto -> 1461
+/*     */     //   125: goto -> 1413
 /*     */     //   128: aload_0
 /*     */     //   129: iload #6
 /*     */     //   131: invokestatic findMatchingBrace : (Ljava/lang/String;I)I
 /*     */     //   134: istore #8
 /*     */     //   136: iload #8
 /*     */     //   138: ifge -> 144
-/*     */     //   141: goto -> 1461
+/*     */     //   141: goto -> 1413
 /*     */     //   144: iload #6
 /*     */     //   146: iload #5
 /*     */     //   148: if_icmple -> 162
@@ -417,10 +402,10 @@
 /*     */     //   474: getfield rawText : Ljava/lang/String;
 /*     */     //   477: invokevirtual append : (Ljava/lang/String;)Ljava/lang/StringBuilder;
 /*     */     //   480: pop
-/*     */     //   481: goto -> 1385
+/*     */     //   481: goto -> 1337
 /*     */     //   484: aload #20
 /*     */     //   486: getfield messageId : Ljava/lang/String;
-/*     */     //   489: ifnull -> 1385
+/*     */     //   489: ifnull -> 1337
 /*     */     //   492: invokestatic get : ()Lcom/hypixel/hytale/server/core/modules/i18n/I18nModule;
 /*     */     //   495: ldc 'en-US'
 /*     */     //   497: aload #20
@@ -444,9 +429,9 @@
 /*     */     //   540: getfield messageId : Ljava/lang/String;
 /*     */     //   543: invokevirtual append : (Ljava/lang/String;)Ljava/lang/StringBuilder;
 /*     */     //   546: pop
-/*     */     //   547: goto -> 1385
+/*     */     //   547: goto -> 1337
 /*     */     //   550: aload #19
-/*     */     //   552: ifnull -> 1374
+/*     */     //   552: ifnull -> 1326
 /*     */     //   555: ldc ''
 /*     */     //   557: astore #21
 /*     */     //   559: aload #17
@@ -456,7 +441,7 @@
 /*     */     //   566: aload #22
 /*     */     //   568: iload #23
 /*     */     //   570: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
-/*     */     //   575: tableswitch default -> 1212, -1 -> 1212, 0 -> 608, 1 -> 636, 2 -> 664, 3 -> 1023
+/*     */     //   575: tableswitch default -> 1163, -1 -> 1163, 0 -> 608, 1 -> 636, 2 -> 664, 3 -> 1023
 /*     */     //   608: aload #19
 /*     */     //   610: instanceof com/hypixel/hytale/protocol/StringParamValue
 /*     */     //   613: ifeq -> 633
@@ -467,7 +452,7 @@
 /*     */     //   625: getfield value : Ljava/lang/String;
 /*     */     //   628: invokevirtual toUpperCase : ()Ljava/lang/String;
 /*     */     //   631: astore #21
-/*     */     //   633: goto -> 1212
+/*     */     //   633: goto -> 1163
 /*     */     //   636: aload #19
 /*     */     //   638: instanceof com/hypixel/hytale/protocol/StringParamValue
 /*     */     //   641: ifeq -> 661
@@ -478,7 +463,7 @@
 /*     */     //   653: getfield value : Ljava/lang/String;
 /*     */     //   656: invokevirtual toLowerCase : ()Ljava/lang/String;
 /*     */     //   659: astore #21
-/*     */     //   661: goto -> 1212
+/*     */     //   661: goto -> 1163
 /*     */     //   664: aload #18
 /*     */     //   666: astore #24
 /*     */     //   668: iconst_0
@@ -591,333 +576,284 @@
 /*     */     //   1013: goto -> 1018
 /*     */     //   1016: ldc ''
 /*     */     //   1018: astore #21
-/*     */     //   1020: goto -> 1212
+/*     */     //   1020: goto -> 1163
 /*     */     //   1023: aload #18
-/*     */     //   1025: ifnull -> 1212
-/*     */     //   1028: aconst_null
-/*     */     //   1029: astore #24
-/*     */     //   1031: aconst_null
-/*     */     //   1032: astore #25
-/*     */     //   1034: aload #18
-/*     */     //   1036: ldc_w 'one {'
-/*     */     //   1039: invokevirtual indexOf : (Ljava/lang/String;)I
-/*     */     //   1042: istore #26
-/*     */     //   1044: aload #18
-/*     */     //   1046: ldc_w 'other {'
-/*     */     //   1049: invokevirtual indexOf : (Ljava/lang/String;)I
-/*     */     //   1052: istore #27
-/*     */     //   1054: iload #26
-/*     */     //   1056: iflt -> 1099
-/*     */     //   1059: iload #26
-/*     */     //   1061: ldc_w 'one {'
-/*     */     //   1064: invokevirtual length : ()I
-/*     */     //   1067: iadd
-/*     */     //   1068: istore #28
-/*     */     //   1070: aload #18
-/*     */     //   1072: iload #28
-/*     */     //   1074: iconst_1
-/*     */     //   1075: isub
-/*     */     //   1076: invokestatic findMatchingBrace : (Ljava/lang/String;I)I
-/*     */     //   1079: istore #29
-/*     */     //   1081: iload #29
-/*     */     //   1083: iload #28
-/*     */     //   1085: if_icmple -> 1099
-/*     */     //   1088: aload #18
-/*     */     //   1090: iload #28
-/*     */     //   1092: iload #29
-/*     */     //   1094: invokevirtual substring : (II)Ljava/lang/String;
-/*     */     //   1097: astore #24
-/*     */     //   1099: iload #27
-/*     */     //   1101: iflt -> 1144
-/*     */     //   1104: iload #27
-/*     */     //   1106: ldc_w 'other {'
-/*     */     //   1109: invokevirtual length : ()I
-/*     */     //   1112: iadd
-/*     */     //   1113: istore #28
-/*     */     //   1115: aload #18
-/*     */     //   1117: iload #28
-/*     */     //   1119: iconst_1
-/*     */     //   1120: isub
-/*     */     //   1121: invokestatic findMatchingBrace : (Ljava/lang/String;I)I
-/*     */     //   1124: istore #29
-/*     */     //   1126: iload #29
-/*     */     //   1128: iload #28
-/*     */     //   1130: if_icmple -> 1144
-/*     */     //   1133: aload #18
-/*     */     //   1135: iload #28
-/*     */     //   1137: iload #29
-/*     */     //   1139: invokevirtual substring : (II)Ljava/lang/String;
-/*     */     //   1142: astore #25
-/*     */     //   1144: aload #19
-/*     */     //   1146: invokevirtual toString : ()Ljava/lang/String;
-/*     */     //   1149: invokestatic parseInt : (Ljava/lang/String;)I
-/*     */     //   1152: istore #28
-/*     */     //   1154: iload #28
-/*     */     //   1156: iconst_1
-/*     */     //   1157: if_icmpne -> 1172
-/*     */     //   1160: aload #24
-/*     */     //   1162: ifnull -> 1172
-/*     */     //   1165: aload #24
-/*     */     //   1167: astore #29
-/*     */     //   1169: goto -> 1200
-/*     */     //   1172: aload #25
-/*     */     //   1174: ifnull -> 1184
-/*     */     //   1177: aload #25
-/*     */     //   1179: astore #29
-/*     */     //   1181: goto -> 1200
-/*     */     //   1184: aload #24
-/*     */     //   1186: ifnull -> 1196
-/*     */     //   1189: aload #24
-/*     */     //   1191: astore #29
-/*     */     //   1193: goto -> 1200
-/*     */     //   1196: ldc ''
-/*     */     //   1198: astore #29
-/*     */     //   1200: aload #29
-/*     */     //   1202: aload_1
-/*     */     //   1203: aload_2
-/*     */     //   1204: invokestatic formatText : (Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)Ljava/lang/String;
-/*     */     //   1207: astore #21
-/*     */     //   1209: goto -> 1212
-/*     */     //   1212: aload #17
-/*     */     //   1214: ifnonnull -> 1363
-/*     */     //   1217: aload #19
-/*     */     //   1219: dup
-/*     */     //   1220: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
-/*     */     //   1223: pop
-/*     */     //   1224: astore #22
-/*     */     //   1226: iconst_0
-/*     */     //   1227: istore #23
-/*     */     //   1229: aload #22
-/*     */     //   1231: iload #23
-/*     */     //   1233: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
-/*     */     //   1238: tableswitch default -> 1359, 0 -> 1272, 1 -> 1287, 2 -> 1305, 3 -> 1323, 4 -> 1341
-/*     */     //   1272: aload #22
-/*     */     //   1274: checkcast com/hypixel/hytale/protocol/StringParamValue
-/*     */     //   1277: astore #24
-/*     */     //   1279: aload #24
-/*     */     //   1281: getfield value : Ljava/lang/String;
-/*     */     //   1284: goto -> 1361
-/*     */     //   1287: aload #22
-/*     */     //   1289: checkcast com/hypixel/hytale/protocol/BoolParamValue
-/*     */     //   1292: astore #25
-/*     */     //   1294: aload #25
-/*     */     //   1296: getfield value : Z
-/*     */     //   1299: invokestatic toString : (Z)Ljava/lang/String;
-/*     */     //   1302: goto -> 1361
-/*     */     //   1305: aload #22
-/*     */     //   1307: checkcast com/hypixel/hytale/protocol/DoubleParamValue
-/*     */     //   1310: astore #26
-/*     */     //   1312: aload #26
-/*     */     //   1314: getfield value : D
-/*     */     //   1317: invokestatic toString : (D)Ljava/lang/String;
-/*     */     //   1320: goto -> 1361
-/*     */     //   1323: aload #22
-/*     */     //   1325: checkcast com/hypixel/hytale/protocol/IntParamValue
-/*     */     //   1328: astore #27
-/*     */     //   1330: aload #27
-/*     */     //   1332: getfield value : I
-/*     */     //   1335: invokestatic toString : (I)Ljava/lang/String;
-/*     */     //   1338: goto -> 1361
-/*     */     //   1341: aload #22
-/*     */     //   1343: checkcast com/hypixel/hytale/protocol/LongParamValue
-/*     */     //   1346: astore #28
-/*     */     //   1348: aload #28
-/*     */     //   1350: getfield value : J
-/*     */     //   1353: invokestatic toString : (J)Ljava/lang/String;
-/*     */     //   1356: goto -> 1361
-/*     */     //   1359: ldc ''
-/*     */     //   1361: astore #21
-/*     */     //   1363: aload #4
-/*     */     //   1365: aload #21
-/*     */     //   1367: invokevirtual append : (Ljava/lang/String;)Ljava/lang/StringBuilder;
-/*     */     //   1370: pop
-/*     */     //   1371: goto -> 1385
-/*     */     //   1374: aload #4
-/*     */     //   1376: aload_0
-/*     */     //   1377: iload #6
-/*     */     //   1379: iload #8
-/*     */     //   1381: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
-/*     */     //   1384: pop
-/*     */     //   1385: iload #8
-/*     */     //   1387: istore #6
-/*     */     //   1389: iload #8
-/*     */     //   1391: iconst_1
-/*     */     //   1392: iadd
-/*     */     //   1393: istore #5
-/*     */     //   1395: goto -> 1461
-/*     */     //   1398: iload #7
-/*     */     //   1400: bipush #125
-/*     */     //   1402: if_icmpne -> 1461
-/*     */     //   1405: iload #6
-/*     */     //   1407: iconst_1
-/*     */     //   1408: iadd
-/*     */     //   1409: iload_3
-/*     */     //   1410: if_icmpge -> 1461
-/*     */     //   1413: aload_0
-/*     */     //   1414: iload #6
-/*     */     //   1416: iconst_1
-/*     */     //   1417: iadd
-/*     */     //   1418: invokevirtual charAt : (I)C
-/*     */     //   1421: bipush #125
-/*     */     //   1423: if_icmpne -> 1461
-/*     */     //   1426: iload #6
+/*     */     //   1025: ifnull -> 1163
+/*     */     //   1028: aload #18
+/*     */     //   1030: invokestatic parsePluralOptions : (Ljava/lang/String;)Ljava/util/Map;
+/*     */     //   1033: astore #24
+/*     */     //   1035: aload #19
+/*     */     //   1037: invokevirtual toString : ()Ljava/lang/String;
+/*     */     //   1040: invokestatic parseInt : (Ljava/lang/String;)I
+/*     */     //   1043: istore #25
+/*     */     //   1045: iload #25
+/*     */     //   1047: ldc 'en-US'
+/*     */     //   1049: invokestatic getPluralCategory : (ILjava/lang/String;)Ljava/lang/String;
+/*     */     //   1052: astore #26
+/*     */     //   1054: aload #24
+/*     */     //   1056: aload #26
+/*     */     //   1058: invokeinterface containsKey : (Ljava/lang/Object;)Z
+/*     */     //   1063: ifeq -> 1083
+/*     */     //   1066: aload #24
+/*     */     //   1068: aload #26
+/*     */     //   1070: invokeinterface get : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */     //   1075: checkcast java/lang/String
+/*     */     //   1078: astore #27
+/*     */     //   1080: goto -> 1151
+/*     */     //   1083: aload #24
+/*     */     //   1085: ldc_w 'other'
+/*     */     //   1088: invokeinterface containsKey : (Ljava/lang/Object;)Z
+/*     */     //   1093: ifeq -> 1114
+/*     */     //   1096: aload #24
+/*     */     //   1098: ldc_w 'other'
+/*     */     //   1101: invokeinterface get : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */     //   1106: checkcast java/lang/String
+/*     */     //   1109: astore #27
+/*     */     //   1111: goto -> 1151
+/*     */     //   1114: aload #24
+/*     */     //   1116: invokeinterface isEmpty : ()Z
+/*     */     //   1121: ifeq -> 1129
+/*     */     //   1124: ldc ''
+/*     */     //   1126: goto -> 1149
+/*     */     //   1129: aload #24
+/*     */     //   1131: invokeinterface values : ()Ljava/util/Collection;
+/*     */     //   1136: invokeinterface iterator : ()Ljava/util/Iterator;
+/*     */     //   1141: invokeinterface next : ()Ljava/lang/Object;
+/*     */     //   1146: checkcast java/lang/String
+/*     */     //   1149: astore #27
+/*     */     //   1151: aload #27
+/*     */     //   1153: aload_1
+/*     */     //   1154: aload_2
+/*     */     //   1155: invokestatic formatText : (Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)Ljava/lang/String;
+/*     */     //   1158: astore #21
+/*     */     //   1160: goto -> 1163
+/*     */     //   1163: aload #17
+/*     */     //   1165: ifnonnull -> 1315
+/*     */     //   1168: aload #19
+/*     */     //   1170: dup
+/*     */     //   1171: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */     //   1174: pop
+/*     */     //   1175: astore #22
+/*     */     //   1177: iconst_0
+/*     */     //   1178: istore #23
+/*     */     //   1180: aload #22
+/*     */     //   1182: iload #23
+/*     */     //   1184: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
+/*     */     //   1189: tableswitch default -> 1311, 0 -> 1224, 1 -> 1239, 2 -> 1257, 3 -> 1275, 4 -> 1293
+/*     */     //   1224: aload #22
+/*     */     //   1226: checkcast com/hypixel/hytale/protocol/StringParamValue
+/*     */     //   1229: astore #24
+/*     */     //   1231: aload #24
+/*     */     //   1233: getfield value : Ljava/lang/String;
+/*     */     //   1236: goto -> 1313
+/*     */     //   1239: aload #22
+/*     */     //   1241: checkcast com/hypixel/hytale/protocol/BoolParamValue
+/*     */     //   1244: astore #25
+/*     */     //   1246: aload #25
+/*     */     //   1248: getfield value : Z
+/*     */     //   1251: invokestatic toString : (Z)Ljava/lang/String;
+/*     */     //   1254: goto -> 1313
+/*     */     //   1257: aload #22
+/*     */     //   1259: checkcast com/hypixel/hytale/protocol/DoubleParamValue
+/*     */     //   1262: astore #26
+/*     */     //   1264: aload #26
+/*     */     //   1266: getfield value : D
+/*     */     //   1269: invokestatic toString : (D)Ljava/lang/String;
+/*     */     //   1272: goto -> 1313
+/*     */     //   1275: aload #22
+/*     */     //   1277: checkcast com/hypixel/hytale/protocol/IntParamValue
+/*     */     //   1280: astore #27
+/*     */     //   1282: aload #27
+/*     */     //   1284: getfield value : I
+/*     */     //   1287: invokestatic toString : (I)Ljava/lang/String;
+/*     */     //   1290: goto -> 1313
+/*     */     //   1293: aload #22
+/*     */     //   1295: checkcast com/hypixel/hytale/protocol/LongParamValue
+/*     */     //   1298: astore #28
+/*     */     //   1300: aload #28
+/*     */     //   1302: getfield value : J
+/*     */     //   1305: invokestatic toString : (J)Ljava/lang/String;
+/*     */     //   1308: goto -> 1313
+/*     */     //   1311: ldc ''
+/*     */     //   1313: astore #21
+/*     */     //   1315: aload #4
+/*     */     //   1317: aload #21
+/*     */     //   1319: invokevirtual append : (Ljava/lang/String;)Ljava/lang/StringBuilder;
+/*     */     //   1322: pop
+/*     */     //   1323: goto -> 1337
+/*     */     //   1326: aload #4
+/*     */     //   1328: aload_0
+/*     */     //   1329: iload #6
+/*     */     //   1331: iload #8
+/*     */     //   1333: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
+/*     */     //   1336: pop
+/*     */     //   1337: iload #8
+/*     */     //   1339: istore #6
+/*     */     //   1341: iload #8
+/*     */     //   1343: iconst_1
+/*     */     //   1344: iadd
+/*     */     //   1345: istore #5
+/*     */     //   1347: goto -> 1413
+/*     */     //   1350: iload #7
+/*     */     //   1352: bipush #125
+/*     */     //   1354: if_icmpne -> 1413
+/*     */     //   1357: iload #6
+/*     */     //   1359: iconst_1
+/*     */     //   1360: iadd
+/*     */     //   1361: iload_3
+/*     */     //   1362: if_icmpge -> 1413
+/*     */     //   1365: aload_0
+/*     */     //   1366: iload #6
+/*     */     //   1368: iconst_1
+/*     */     //   1369: iadd
+/*     */     //   1370: invokevirtual charAt : (I)C
+/*     */     //   1373: bipush #125
+/*     */     //   1375: if_icmpne -> 1413
+/*     */     //   1378: iload #6
+/*     */     //   1380: iload #5
+/*     */     //   1382: if_icmple -> 1396
+/*     */     //   1385: aload #4
+/*     */     //   1387: aload_0
+/*     */     //   1388: iload #5
+/*     */     //   1390: iload #6
+/*     */     //   1392: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
+/*     */     //   1395: pop
+/*     */     //   1396: aload #4
+/*     */     //   1398: bipush #125
+/*     */     //   1400: invokevirtual append : (C)Ljava/lang/StringBuilder;
+/*     */     //   1403: pop
+/*     */     //   1404: iinc #6, 1
+/*     */     //   1407: iload #6
+/*     */     //   1409: iconst_1
+/*     */     //   1410: iadd
+/*     */     //   1411: istore #5
+/*     */     //   1413: iinc #6, 1
+/*     */     //   1416: goto -> 48
+/*     */     //   1419: iload #5
+/*     */     //   1421: iload_3
+/*     */     //   1422: if_icmpge -> 1435
+/*     */     //   1425: aload #4
+/*     */     //   1427: aload_0
 /*     */     //   1428: iload #5
-/*     */     //   1430: if_icmple -> 1444
-/*     */     //   1433: aload #4
-/*     */     //   1435: aload_0
-/*     */     //   1436: iload #5
-/*     */     //   1438: iload #6
-/*     */     //   1440: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
-/*     */     //   1443: pop
-/*     */     //   1444: aload #4
-/*     */     //   1446: bipush #125
-/*     */     //   1448: invokevirtual append : (C)Ljava/lang/StringBuilder;
-/*     */     //   1451: pop
-/*     */     //   1452: iinc #6, 1
-/*     */     //   1455: iload #6
-/*     */     //   1457: iconst_1
-/*     */     //   1458: iadd
-/*     */     //   1459: istore #5
-/*     */     //   1461: iinc #6, 1
-/*     */     //   1464: goto -> 48
-/*     */     //   1467: iload #5
-/*     */     //   1469: iload_3
-/*     */     //   1470: if_icmpge -> 1483
-/*     */     //   1473: aload #4
-/*     */     //   1475: aload_0
-/*     */     //   1476: iload #5
-/*     */     //   1478: iload_3
-/*     */     //   1479: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
-/*     */     //   1482: pop
-/*     */     //   1483: aload #4
-/*     */     //   1485: invokevirtual toString : ()Ljava/lang/String;
-/*     */     //   1488: areturn
+/*     */     //   1430: iload_3
+/*     */     //   1431: invokevirtual append : (Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;
+/*     */     //   1434: pop
+/*     */     //   1435: aload #4
+/*     */     //   1437: invokevirtual toString : ()Ljava/lang/String;
+/*     */     //   1440: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #76	-> 0
-/*     */     //   #77	-> 14
-/*     */     //   #79	-> 24
-/*     */     //   #80	-> 29
-/*     */     //   #81	-> 42
-/*     */     //   #83	-> 45
-/*     */     //   #84	-> 54
-/*     */     //   #87	-> 62
-/*     */     //   #88	-> 69
-/*     */     //   #90	-> 90
-/*     */     //   #91	-> 108
-/*     */     //   #92	-> 116
-/*     */     //   #93	-> 119
-/*     */     //   #94	-> 125
-/*     */     //   #98	-> 128
-/*     */     //   #99	-> 136
-/*     */     //   #102	-> 144
-/*     */     //   #104	-> 162
-/*     */     //   #106	-> 168
-/*     */     //   #107	-> 180
-/*     */     //   #110	-> 203
-/*     */     //   #111	-> 207
-/*     */     //   #112	-> 228
-/*     */     //   #113	-> 240
-/*     */     //   #114	-> 252
-/*     */     //   #117	-> 275
-/*     */     //   #118	-> 278
-/*     */     //   #119	-> 290
-/*     */     //   #120	-> 296
-/*     */     //   #121	-> 310
-/*     */     //   #122	-> 322
-/*     */     //   #123	-> 334
-/*     */     //   #127	-> 352
-/*     */     //   #128	-> 355
-/*     */     //   #129	-> 367
-/*     */     //   #130	-> 373
-/*     */     //   #131	-> 385
-/*     */     //   #132	-> 397
-/*     */     //   #135	-> 415
-/*     */     //   #136	-> 436
-/*     */     //   #137	-> 457
-/*     */     //   #138	-> 462
-/*     */     //   #139	-> 470
-/*     */     //   #140	-> 484
-/*     */     //   #141	-> 492
-/*     */     //   #142	-> 507
-/*     */     //   #143	-> 512
-/*     */     //   #145	-> 536
-/*     */     //   #147	-> 547
-/*     */     //   #148	-> 550
-/*     */     //   #149	-> 555
-/*     */     //   #151	-> 559
-/*     */     //   #153	-> 608
-/*     */     //   #154	-> 623
-/*     */     //   #156	-> 633
-/*     */     //   #159	-> 636
-/*     */     //   #160	-> 651
-/*     */     //   #162	-> 661
-/*     */     //   #166	-> 664
-/*     */     //   #168	-> 708
-/*     */     //   #169	-> 764
-/*     */     //   #170	-> 779
-/*     */     //   #171	-> 804
-/*     */     //   #172	-> 823
-/*     */     //   #173	-> 841
-/*     */     //   #174	-> 859
-/*     */     //   #175	-> 861
-/*     */     //   #176	-> 863
-/*     */     //   #181	-> 866
-/*     */     //   #182	-> 920
-/*     */     //   #183	-> 935
-/*     */     //   #184	-> 960
-/*     */     //   #185	-> 980
-/*     */     //   #186	-> 998
-/*     */     //   #187	-> 1016
-/*     */     //   #188	-> 1018
-/*     */     //   #192	-> 1020
-/*     */     //   #197	-> 1023
-/*     */     //   #198	-> 1028
-/*     */     //   #199	-> 1034
-/*     */     //   #200	-> 1044
-/*     */     //   #201	-> 1054
-/*     */     //   #202	-> 1059
-/*     */     //   #203	-> 1070
-/*     */     //   #204	-> 1081
-/*     */     //   #205	-> 1088
-/*     */     //   #209	-> 1099
-/*     */     //   #210	-> 1104
-/*     */     //   #211	-> 1115
-/*     */     //   #212	-> 1126
-/*     */     //   #213	-> 1133
-/*     */     //   #218	-> 1144
-/*     */     //   #220	-> 1154
-/*     */     //   #221	-> 1165
-/*     */     //   #223	-> 1172
-/*     */     //   #224	-> 1177
-/*     */     //   #225	-> 1184
-/*     */     //   #226	-> 1189
-/*     */     //   #228	-> 1196
-/*     */     //   #231	-> 1200
-/*     */     //   #232	-> 1209
-/*     */     //   #241	-> 1212
-/*     */     //   #242	-> 1217
-/*     */     //   #243	-> 1272
-/*     */     //   #244	-> 1287
-/*     */     //   #245	-> 1305
-/*     */     //   #246	-> 1323
-/*     */     //   #247	-> 1341
-/*     */     //   #248	-> 1359
-/*     */     //   #249	-> 1361
-/*     */     //   #252	-> 1363
-/*     */     //   #253	-> 1371
-/*     */     //   #255	-> 1374
-/*     */     //   #258	-> 1385
-/*     */     //   #259	-> 1389
-/*     */     //   #260	-> 1395
-/*     */     //   #264	-> 1398
-/*     */     //   #265	-> 1426
-/*     */     //   #266	-> 1444
-/*     */     //   #267	-> 1452
-/*     */     //   #268	-> 1455
-/*     */     //   #83	-> 1461
-/*     */     //   #273	-> 1467
-/*     */     //   #275	-> 1483
+/*     */     //   #70	-> 0
+/*     */     //   #71	-> 14
+/*     */     //   #73	-> 24
+/*     */     //   #74	-> 29
+/*     */     //   #75	-> 42
+/*     */     //   #77	-> 45
+/*     */     //   #78	-> 54
+/*     */     //   #81	-> 62
+/*     */     //   #82	-> 69
+/*     */     //   #84	-> 90
+/*     */     //   #85	-> 108
+/*     */     //   #86	-> 116
+/*     */     //   #87	-> 119
+/*     */     //   #88	-> 125
+/*     */     //   #92	-> 128
+/*     */     //   #93	-> 136
+/*     */     //   #96	-> 144
+/*     */     //   #98	-> 162
+/*     */     //   #100	-> 168
+/*     */     //   #101	-> 180
+/*     */     //   #104	-> 203
+/*     */     //   #105	-> 207
+/*     */     //   #106	-> 228
+/*     */     //   #107	-> 240
+/*     */     //   #108	-> 252
+/*     */     //   #111	-> 275
+/*     */     //   #112	-> 278
+/*     */     //   #113	-> 290
+/*     */     //   #114	-> 296
+/*     */     //   #115	-> 310
+/*     */     //   #116	-> 322
+/*     */     //   #117	-> 334
+/*     */     //   #121	-> 352
+/*     */     //   #122	-> 355
+/*     */     //   #123	-> 367
+/*     */     //   #124	-> 373
+/*     */     //   #125	-> 385
+/*     */     //   #126	-> 397
+/*     */     //   #129	-> 415
+/*     */     //   #130	-> 436
+/*     */     //   #131	-> 457
+/*     */     //   #132	-> 462
+/*     */     //   #133	-> 470
+/*     */     //   #134	-> 484
+/*     */     //   #135	-> 492
+/*     */     //   #136	-> 507
+/*     */     //   #137	-> 512
+/*     */     //   #139	-> 536
+/*     */     //   #141	-> 547
+/*     */     //   #142	-> 550
+/*     */     //   #143	-> 555
+/*     */     //   #145	-> 559
+/*     */     //   #147	-> 608
+/*     */     //   #148	-> 623
+/*     */     //   #150	-> 633
+/*     */     //   #153	-> 636
+/*     */     //   #154	-> 651
+/*     */     //   #156	-> 661
+/*     */     //   #160	-> 664
+/*     */     //   #162	-> 708
+/*     */     //   #163	-> 764
+/*     */     //   #164	-> 779
+/*     */     //   #165	-> 804
+/*     */     //   #166	-> 823
+/*     */     //   #167	-> 841
+/*     */     //   #168	-> 859
+/*     */     //   #169	-> 861
+/*     */     //   #170	-> 863
+/*     */     //   #175	-> 866
+/*     */     //   #176	-> 920
+/*     */     //   #177	-> 935
+/*     */     //   #178	-> 960
+/*     */     //   #179	-> 980
+/*     */     //   #180	-> 998
+/*     */     //   #181	-> 1016
+/*     */     //   #182	-> 1018
+/*     */     //   #186	-> 1020
+/*     */     //   #191	-> 1023
+/*     */     //   #192	-> 1028
+/*     */     //   #194	-> 1035
+/*     */     //   #195	-> 1045
+/*     */     //   #198	-> 1054
+/*     */     //   #199	-> 1066
+/*     */     //   #200	-> 1083
+/*     */     //   #201	-> 1096
+/*     */     //   #204	-> 1114
+/*     */     //   #207	-> 1151
+/*     */     //   #208	-> 1160
+/*     */     //   #217	-> 1163
+/*     */     //   #218	-> 1168
+/*     */     //   #219	-> 1224
+/*     */     //   #220	-> 1239
+/*     */     //   #221	-> 1257
+/*     */     //   #222	-> 1275
+/*     */     //   #223	-> 1293
+/*     */     //   #224	-> 1311
+/*     */     //   #225	-> 1313
+/*     */     //   #228	-> 1315
+/*     */     //   #229	-> 1323
+/*     */     //   #231	-> 1326
+/*     */     //   #234	-> 1337
+/*     */     //   #235	-> 1341
+/*     */     //   #236	-> 1347
+/*     */     //   #240	-> 1350
+/*     */     //   #241	-> 1378
+/*     */     //   #242	-> 1396
+/*     */     //   #243	-> 1404
+/*     */     //   #244	-> 1407
+/*     */     //   #77	-> 1413
+/*     */     //   #249	-> 1419
+/*     */     //   #251	-> 1435
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   296	56	18	formatStart	I
@@ -940,60 +876,45 @@
 /*     */     //   967	13	30	d	Lcom/hypixel/hytale/protocol/DoubleParamValue;
 /*     */     //   987	11	31	iv	Lcom/hypixel/hytale/protocol/IntParamValue;
 /*     */     //   1005	11	32	l	Lcom/hypixel/hytale/protocol/LongParamValue;
-/*     */     //   1070	29	28	oneStart	I
-/*     */     //   1081	18	29	oneEnd	I
-/*     */     //   1115	29	28	otherStart	I
-/*     */     //   1126	18	29	otherEnd	I
-/*     */     //   1169	3	29	selected	Ljava/lang/String;
-/*     */     //   1181	3	29	selected	Ljava/lang/String;
-/*     */     //   1193	3	29	selected	Ljava/lang/String;
-/*     */     //   1031	178	24	oneText	Ljava/lang/String;
-/*     */     //   1034	175	25	otherText	Ljava/lang/String;
-/*     */     //   1044	165	26	oneIdx	I
-/*     */     //   1054	155	27	otherIdx	I
-/*     */     //   1154	55	28	value	I
-/*     */     //   1200	9	29	selected	Ljava/lang/String;
-/*     */     //   1279	8	24	s	Lcom/hypixel/hytale/protocol/StringParamValue;
-/*     */     //   1294	11	25	b	Lcom/hypixel/hytale/protocol/BoolParamValue;
-/*     */     //   1312	11	26	d	Lcom/hypixel/hytale/protocol/DoubleParamValue;
-/*     */     //   1330	11	27	iv	Lcom/hypixel/hytale/protocol/IntParamValue;
-/*     */     //   1348	11	28	l	Lcom/hypixel/hytale/protocol/LongParamValue;
-/*     */     //   559	812	21	formattedReplacement	Ljava/lang/String;
-/*     */     //   136	1262	8	end	I
-/*     */     //   168	1230	9	contentStart	I
-/*     */     //   180	1218	10	c1	I
-/*     */     //   203	1195	11	c2	I
-/*     */     //   207	1191	12	nameStart	I
-/*     */     //   228	1170	13	nameEndExclusive	I
-/*     */     //   240	1158	14	ns	I
-/*     */     //   252	1146	15	nl	I
-/*     */     //   275	1123	16	key	Ljava/lang/String;
-/*     */     //   278	1120	17	format	Ljava/lang/String;
-/*     */     //   355	1043	18	options	Ljava/lang/String;
-/*     */     //   436	962	19	replacement	Lcom/hypixel/hytale/protocol/ParamValue;
-/*     */     //   457	941	20	replacementMessage	Lcom/hypixel/hytale/protocol/FormattedMessage;
-/*     */     //   62	1399	7	ch	C
-/*     */     //   48	1419	6	i	I
-/*     */     //   0	1489	0	text	Ljava/lang/String;
-/*     */     //   0	1489	1	params	Ljava/util/Map;
-/*     */     //   0	1489	2	messageParams	Ljava/util/Map;
-/*     */     //   29	1460	3	len	I
-/*     */     //   42	1447	4	sb	Ljava/lang/StringBuilder;
-/*     */     //   45	1444	5	lastWritePos	I
+/*     */     //   1080	3	27	selected	Ljava/lang/String;
+/*     */     //   1111	3	27	selected	Ljava/lang/String;
+/*     */     //   1035	125	24	pluralTexts	Ljava/util/Map;
+/*     */     //   1045	115	25	value	I
+/*     */     //   1054	106	26	category	Ljava/lang/String;
+/*     */     //   1151	9	27	selected	Ljava/lang/String;
+/*     */     //   1231	8	24	s	Lcom/hypixel/hytale/protocol/StringParamValue;
+/*     */     //   1246	11	25	b	Lcom/hypixel/hytale/protocol/BoolParamValue;
+/*     */     //   1264	11	26	d	Lcom/hypixel/hytale/protocol/DoubleParamValue;
+/*     */     //   1282	11	27	iv	Lcom/hypixel/hytale/protocol/IntParamValue;
+/*     */     //   1300	11	28	l	Lcom/hypixel/hytale/protocol/LongParamValue;
+/*     */     //   559	764	21	formattedReplacement	Ljava/lang/String;
+/*     */     //   136	1214	8	end	I
+/*     */     //   168	1182	9	contentStart	I
+/*     */     //   180	1170	10	c1	I
+/*     */     //   203	1147	11	c2	I
+/*     */     //   207	1143	12	nameStart	I
+/*     */     //   228	1122	13	nameEndExclusive	I
+/*     */     //   240	1110	14	ns	I
+/*     */     //   252	1098	15	nl	I
+/*     */     //   275	1075	16	key	Ljava/lang/String;
+/*     */     //   278	1072	17	format	Ljava/lang/String;
+/*     */     //   355	995	18	options	Ljava/lang/String;
+/*     */     //   436	914	19	replacement	Lcom/hypixel/hytale/protocol/ParamValue;
+/*     */     //   457	893	20	replacementMessage	Lcom/hypixel/hytale/protocol/FormattedMessage;
+/*     */     //   62	1351	7	ch	C
+/*     */     //   48	1371	6	i	I
+/*     */     //   0	1441	0	text	Ljava/lang/String;
+/*     */     //   0	1441	1	params	Ljava/util/Map;
+/*     */     //   0	1441	2	messageParams	Ljava/util/Map;
+/*     */     //   29	1412	3	len	I
+/*     */     //   42	1399	4	sb	Ljava/lang/StringBuilder;
+/*     */     //   45	1396	5	lastWritePos	I
 /*     */     // Local variable type table:
 /*     */     //   start	length	slot	name	signature
-/*     */     //   0	1489	1	params	Ljava/util/Map<Ljava/lang/String;Lcom/hypixel/hytale/protocol/ParamValue;>;
-/*     */     //   0	1489	2	messageParams	Ljava/util/Map<Ljava/lang/String;Lcom/hypixel/hytale/protocol/FormattedMessage;>;
+/*     */     //   1035	125	24	pluralTexts	Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;
+/*     */     //   0	1441	1	params	Ljava/util/Map<Ljava/lang/String;Lcom/hypixel/hytale/protocol/ParamValue;>;
+/*     */     //   0	1441	2	messageParams	Ljava/util/Map<Ljava/lang/String;Lcom/hypixel/hytale/protocol/FormattedMessage;>;
 /*     */   }
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -1087,30 +1008,213 @@
 /*     */ 
 /*     */   
 /*     */   private static int findMatchingBrace(@Nonnull String text, int start) {
-/* 280 */     int depth = 0;
-/* 281 */     int len = text.length();
-/* 282 */     for (int i = start; i < len; i++) {
-/* 283 */       if (text.charAt(i) == '{') {
-/* 284 */         depth++;
+/* 256 */     int depth = 0;
+/* 257 */     int len = text.length();
+/* 258 */     for (int i = start; i < len; i++) {
+/* 259 */       if (text.charAt(i) == '{') {
+/* 260 */         depth++;
 /*     */       } else {
-/* 286 */         depth--;
-/* 287 */         if (text.charAt(i) == '}' && depth == 0) return i;
+/* 262 */         depth--;
+/* 263 */         if (text.charAt(i) == '}' && depth == 0) return i;
 /*     */       
 /*     */       } 
 /*     */     } 
-/* 291 */     return -1;
+/* 267 */     return -1;
 /*     */   }
 /*     */   
 /*     */   private static int trimStart(@Nonnull String text, int start, int end) {
-/* 295 */     int i = start;
-/* 296 */     for (; i <= end && Character.isWhitespace(text.charAt(i)); i++);
-/* 297 */     return i;
+/* 271 */     int i = start;
+/* 272 */     for (; i <= end && Character.isWhitespace(text.charAt(i)); i++);
+/* 273 */     return i;
 /*     */   }
 /*     */   
 /*     */   private static int trimEnd(@Nonnull String text, int start, int end) {
-/* 301 */     int i = start;
-/* 302 */     for (; end >= i && Character.isWhitespace(text.charAt(i)); end--);
-/* 303 */     return (end >= i) ? (end - i + 1) : 0;
+/* 277 */     int i = start;
+/* 278 */     for (; end >= i && Character.isWhitespace(text.charAt(i)); end--);
+/* 279 */     return (end >= i) ? (end - i + 1) : 0;
+/*     */   }
+/*     */   
+/* 282 */   private static final String[] ICU_PLURAL_KEYWORDS = new String[] { "zero", "one", "two", "few", "many", "other" };
+/*     */   
+/*     */   @Nonnull
+/*     */   private static Map<String, String> parsePluralOptions(@Nonnull String options) {
+/* 286 */     HashMap<String, String> result = new HashMap<>();
+/*     */     
+/* 288 */     for (String keyword : ICU_PLURAL_KEYWORDS) {
+/* 289 */       String searchPattern = keyword + " {";
+/* 290 */       int idx = options.indexOf(searchPattern);
+/* 291 */       if (idx >= 0) {
+/*     */         
+/* 293 */         int braceStart = idx + keyword.length() + 1;
+/* 294 */         int end = findMatchingBrace(options, braceStart);
+/* 295 */         if (end > braceStart + 1) {
+/* 296 */           result.put(keyword, options.substring(braceStart + 1, end));
+/*     */         }
+/*     */       } 
+/*     */     } 
+/* 300 */     return result;
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getPluralCategory(int n, @Nonnull String locale) {
+/* 308 */     String lang = locale.contains("-") ? locale.substring(0, locale.indexOf('-')) : locale;
+/*     */ 
+/*     */     
+/* 311 */     switch (lang) { case "en": case "fr": case "de": case "pt": return 
+/*     */ 
+/*     */ 
+/*     */           
+/* 315 */           (locale.equals("pt-BR") || locale.equals("pt_BR")) ? getPortugueseBrazilianPluralCategory(n) : getPortuguesePluralCategory(n);
+/*     */       case "ru": 
+/*     */       case "es": 
+/*     */       case "pl": 
+/*     */       case "tr": 
+/*     */       case "uk": 
+/*     */       case "it": 
+/*     */       case "nl": 
+/*     */       case "da": 
+/*     */       case "fi": 
+/*     */       case "no": case "nb": case "nn": 
+/*     */       case "zh": 
+/*     */       case "ja": 
+/*     */       case "ko":
+/* 329 */        }  return getEnglishPluralCategory(n);
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getEnglishPluralCategory(int n) {
+/* 336 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getFrenchPluralCategory(int n) {
+/* 342 */     return (n == 0 || n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getGermanPluralCategory(int n) {
+/* 348 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getPortuguesePluralCategory(int n) {
+/* 354 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getPortugueseBrazilianPluralCategory(int n) {
+/* 360 */     return (n == 0 || n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getRussianPluralCategory(int n) {
+/* 366 */     int absN = Math.abs(n);
+/* 367 */     int mod10 = absN % 10;
+/* 368 */     int mod100 = absN % 100;
+/*     */     
+/* 370 */     if (mod10 == 1 && mod100 != 11) return "one"; 
+/* 371 */     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "few"; 
+/* 372 */     if (mod10 == 0 || (mod10 >= 5 && mod10 <= 9) || (mod100 >= 11 && mod100 <= 14)) return "many";
+/*     */     
+/* 374 */     return "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getSpanishPluralCategory(int n) {
+/* 380 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getPolishPluralCategory(int n) {
+/* 386 */     int absN = Math.abs(n);
+/* 387 */     int mod10 = absN % 10;
+/* 388 */     int mod100 = absN % 100;
+/*     */     
+/* 390 */     if (n == 1) return "one"; 
+/* 391 */     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "few"; 
+/* 392 */     if (mod10 == 0 || mod10 == 1 || (mod10 >= 5 && mod10 <= 9) || (mod100 >= 12 && mod100 <= 14)) return "many";
+/*     */     
+/* 394 */     return "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getTurkishPluralCategory(int n) {
+/* 400 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getUkrainianPluralCategory(int n) {
+/* 406 */     int absN = Math.abs(n);
+/* 407 */     int mod10 = absN % 10;
+/* 408 */     int mod100 = absN % 100;
+/*     */     
+/* 410 */     if (mod10 == 1 && mod100 != 11) return "one"; 
+/* 411 */     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "few"; 
+/* 412 */     if (mod10 == 0 || (mod10 >= 5 && mod10 <= 9) || (mod100 >= 11 && mod100 <= 14)) return "many";
+/*     */     
+/* 414 */     return "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getItalianPluralCategory(int n) {
+/* 420 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getDutchPluralCategory(int n) {
+/* 426 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getDanishPluralCategory(int n) {
+/* 432 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getFinnishPluralCategory(int n) {
+/* 438 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getNorwegianPluralCategory(int n) {
+/* 444 */     return (n == 1) ? "one" : "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getChinesePluralCategory(int n) {
+/* 450 */     return "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getJapanesePluralCategory(int n) {
+/* 456 */     return "other";
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   private static String getKoreanPluralCategory(int n) {
+/* 462 */     return "other";
 /*     */   }
 /*     */ }
 

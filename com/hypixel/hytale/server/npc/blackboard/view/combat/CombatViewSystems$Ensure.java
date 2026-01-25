@@ -21,26 +21,24 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class Ensure
 /*    */   extends HolderSystem<EntityStore>
 /*    */ {
 /*    */   private final ComponentType<EntityStore, CombatViewSystems.CombatData> combatDataComponentType;
 /*    */   
 /*    */   public Ensure(ComponentType<EntityStore, CombatViewSystems.CombatData> combatDataComponentType) {
-/* 32 */     this.combatDataComponentType = combatDataComponentType;
+/* 30 */     this.combatDataComponentType = combatDataComponentType;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public Query<EntityStore> getQuery() {
-/* 38 */     return (Query<EntityStore>)AllLegacyEntityTypesQuery.INSTANCE;
+/* 36 */     return (Query<EntityStore>)AllLegacyEntityTypesQuery.INSTANCE;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 43 */     holder.ensureComponent(this.combatDataComponentType);
+/* 41 */     holder.ensureComponent(this.combatDataComponentType);
 /*    */   }
 /*    */   
 /*    */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}

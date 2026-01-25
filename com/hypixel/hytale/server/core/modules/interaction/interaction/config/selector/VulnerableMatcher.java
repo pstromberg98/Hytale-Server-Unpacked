@@ -24,18 +24,19 @@
 /* 24 */     .documentation("Used to match any entity that is attackable"))
 /* 25 */     .build();
 /*    */ 
+/*    */ 
+/*    */ 
 /*    */   
-/*    */   public boolean test0(Ref<EntityStore> attacker, @Nonnull Ref<EntityStore> target, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 29 */     boolean invulnerable = commandBuffer.getArchetype(target).contains(Invulnerable.getComponentType());
-/* 30 */     return !invulnerable;
+/*    */   public boolean test0(@Nonnull Ref<EntityStore> sourceRef, @Nonnull Ref<EntityStore> targetRef, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 31 */     return !commandBuffer.getArchetype(targetRef).contains(Invulnerable.getComponentType());
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public EntityMatcher toPacket() {
-/* 36 */     EntityMatcher packet = super.toPacket();
-/* 37 */     packet.type = EntityMatcherType.VulnerableMatcher;
-/* 38 */     return packet;
+/* 37 */     EntityMatcher packet = super.toPacket();
+/* 38 */     packet.type = EntityMatcherType.VulnerableMatcher;
+/* 39 */     return packet;
 /*    */   }
 /*    */ }
 

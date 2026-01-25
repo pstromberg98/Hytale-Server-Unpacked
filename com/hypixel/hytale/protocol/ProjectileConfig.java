@@ -57,12 +57,12 @@
 /*  57 */     byte nullBits = buf.getByte(offset);
 /*  58 */     if ((nullBits & 0x1) != 0) obj.physicsConfig = PhysicsConfig.deserialize(buf, offset + 1); 
 /*  59 */     obj.launchForce = buf.getDoubleLE(offset + 123);
-/*  60 */     if ((nullBits & 0x4) != 0) obj.spawnOffset = Vector3f.deserialize(buf, offset + 131); 
-/*  61 */     if ((nullBits & 0x8) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 143); 
+/*  60 */     if ((nullBits & 0x2) != 0) obj.spawnOffset = Vector3f.deserialize(buf, offset + 131); 
+/*  61 */     if ((nullBits & 0x4) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 143); 
 /*  62 */     obj.launchLocalSoundEventIndex = buf.getIntLE(offset + 155);
 /*  63 */     obj.projectileSoundEventIndex = buf.getIntLE(offset + 159);
 /*     */     
-/*  65 */     if ((nullBits & 0x2) != 0) {
+/*  65 */     if ((nullBits & 0x8) != 0) {
 /*  66 */       int varPos0 = offset + 171 + buf.getIntLE(offset + 163);
 /*  67 */       obj.model = Model.deserialize(buf, varPos0);
 /*     */     } 
@@ -88,7 +88,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  89 */     byte nullBits = buf.getByte(offset);
 /*  90 */     int maxEnd = 171;
-/*  91 */     if ((nullBits & 0x2) != 0) {
+/*  91 */     if ((nullBits & 0x8) != 0) {
 /*  92 */       int fieldOffset0 = buf.getIntLE(offset + 163);
 /*  93 */       int pos0 = offset + 171 + fieldOffset0;
 /*  94 */       pos0 += Model.computeBytesConsumed(buf, pos0);
@@ -109,9 +109,9 @@
 /* 109 */     int startPos = buf.writerIndex();
 /* 110 */     byte nullBits = 0;
 /* 111 */     if (this.physicsConfig != null) nullBits = (byte)(nullBits | 0x1); 
-/* 112 */     if (this.model != null) nullBits = (byte)(nullBits | 0x2); 
-/* 113 */     if (this.spawnOffset != null) nullBits = (byte)(nullBits | 0x4); 
-/* 114 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x8); 
+/* 112 */     if (this.spawnOffset != null) nullBits = (byte)(nullBits | 0x2); 
+/* 113 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x4); 
+/* 114 */     if (this.model != null) nullBits = (byte)(nullBits | 0x8); 
 /* 115 */     if (this.interactions != null) nullBits = (byte)(nullBits | 0x10); 
 /* 116 */     buf.writeByte(nullBits);
 /*     */     
@@ -159,7 +159,7 @@
 /* 159 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 162 */     if ((nullBits & 0x2) != 0) {
+/* 162 */     if ((nullBits & 0x8) != 0) {
 /* 163 */       int modelOffset = buffer.getIntLE(offset + 163);
 /* 164 */       if (modelOffset < 0) {
 /* 165 */         return ValidationResult.error("Invalid offset for Model");

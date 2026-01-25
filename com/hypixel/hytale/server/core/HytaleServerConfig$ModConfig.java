@@ -1070,6 +1070,76 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class ModConfig
 /*      */ {
 /*      */   public static final BuilderCodec<ModConfig> CODEC;
@@ -1079,7 +1149,7 @@
 /*      */   private SemverRange requiredVersion;
 /*      */   
 /*      */   static {
-/* 1082 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(ModConfig.class, ModConfig::new).append(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (modConfig, enabled) -> modConfig.enabled = enabled, modConfig -> modConfig.enabled).add()).append(new KeyedCodec("RequiredVersion", SemverRange.CODEC), (modConfig, semverRange) -> modConfig.requiredVersion = semverRange, modConfig -> modConfig.requiredVersion).add()).build();
+/* 1152 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(ModConfig.class, ModConfig::new).append(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (modConfig, enabled) -> modConfig.enabled = enabled, modConfig -> modConfig.enabled).add()).append(new KeyedCodec("RequiredVersion", SemverRange.CODEC), (modConfig, semverRange) -> modConfig.requiredVersion = semverRange, modConfig -> modConfig.requiredVersion).add()).build();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1089,20 +1159,20 @@
 /*      */   
 /*      */   @Nullable
 /*      */   public Boolean getEnabled() {
-/* 1092 */     return this.enabled;
+/* 1162 */     return this.enabled;
 /*      */   }
 /*      */   
 /*      */   public void setEnabled(Boolean enabled) {
-/* 1096 */     this.enabled = enabled;
+/* 1166 */     this.enabled = enabled;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public SemverRange getRequiredVersion() {
-/* 1101 */     return this.requiredVersion;
+/* 1171 */     return this.requiredVersion;
 /*      */   }
 /*      */   
 /*      */   public void setRequiredVersion(SemverRange requiredVersion) {
-/* 1105 */     this.requiredVersion = requiredVersion;
+/* 1175 */     this.requiredVersion = requiredVersion;
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1113,9 +1183,9 @@
 /*      */ 
 /*      */   
 /*      */   public static void setBoot(HytaleServerConfig serverConfig, PluginIdentifier identifier, boolean enabled) {
-/* 1116 */     ((ModConfig)serverConfig.getModConfig()
-/* 1117 */       .computeIfAbsent((K)identifier, id -> new ModConfig()))
-/* 1118 */       .enabled = Boolean.valueOf(enabled);
+/* 1186 */     ((ModConfig)serverConfig.getModConfig()
+/* 1187 */       .computeIfAbsent((K)identifier, id -> new ModConfig()))
+/* 1188 */       .enabled = Boolean.valueOf(enabled);
 /*      */   }
 /*      */ }
 

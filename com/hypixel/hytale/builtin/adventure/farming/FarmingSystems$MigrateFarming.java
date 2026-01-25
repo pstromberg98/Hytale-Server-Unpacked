@@ -586,18 +586,40 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ @Deprecated(forRemoval = true)
 /*     */ public class MigrateFarming
 /*     */   extends BlockModule.MigrationSystem
 /*     */ {
 /*     */   public void onEntityAdd(@Nonnull Holder<ChunkStore> holder, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store) {
-/* 594 */     FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
-/* 595 */     FarmingBlock farming = new FarmingBlock();
-/* 596 */     farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
-/* 597 */     farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
-/* 598 */     farming.setSpreadRate(oldState.getSpreadRate());
-/* 599 */     holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
-/* 600 */     holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 616 */     FarmingBlockState oldState = (FarmingBlockState)holder.getComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
+/* 617 */     FarmingBlock farming = new FarmingBlock();
+/* 618 */     farming.setGrowthProgress(oldState.getCurrentFarmingStageIndex());
+/* 619 */     farming.setCurrentStageSet(oldState.getCurrentFarmingStageSetName());
+/* 620 */     farming.setSpreadRate(oldState.getSpreadRate());
+/* 621 */     holder.putComponent(FarmingBlock.getComponentType(), (Component)farming);
+/* 622 */     holder.removeComponent(FarmingPlugin.get().getFarmingBlockStateComponentType());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -608,7 +630,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public Query<ChunkStore> getQuery() {
-/* 611 */     return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
+/* 633 */     return (Query)FarmingPlugin.get().getFarmingBlockStateComponentType();
 /*     */   }
 /*     */ }
 

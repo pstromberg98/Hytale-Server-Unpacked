@@ -494,30 +494,31 @@
 /*     */     
 /* 495 */     _internal_ordered3DAxis(results, primary, center, xSearchRadius, ySearchRadius, zSearchRadius, newDepth);
 /*     */ 
+/*     */ 
 /*     */     
-/* 498 */     double plane = get(node.vector, axis);
-/* 499 */     double component = get(center, axis);
-/* 500 */     double radius = (axis == 0) ? xSearchRadius : ((axis == 1) ? ySearchRadius : zSearchRadius);
-/* 501 */     if (Math.abs(component - plane) <= radius) {
-/* 502 */       _internal_ordered3DAxis(results, secondary, center, xSearchRadius, ySearchRadius, zSearchRadius, newDepth);
+/* 499 */     double plane = get(node.vector, axis);
+/* 500 */     double component = get(center, axis);
+/* 501 */     double radius = (axis == 0) ? xSearchRadius : ((axis == 1) ? zSearchRadius : ySearchRadius);
+/* 502 */     if (Math.abs(component - plane) <= radius) {
+/* 503 */       _internal_ordered3DAxis(results, secondary, center, xSearchRadius, ySearchRadius, zSearchRadius, newDepth);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   private static int compare(@Nonnull Vector3d v1, @Nonnull Vector3d v2, int axis) {
-/* 507 */     switch (axis) { case 0: 
+/* 508 */     switch (axis) { case 0: 
 /*     */       case 1:
 /*     */       
 /*     */       case 2:
-/* 511 */        }  throw new IllegalArgumentException("Invalid axis: " + axis);
+/* 512 */        }  throw new IllegalArgumentException("Invalid axis: " + axis);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   private static double get(@Nonnull Vector3d v, int axis) {
-/* 516 */     switch (axis) { case 0: 
+/* 517 */     switch (axis) { case 0: 
 /*     */       case 1:
 /*     */       
 /*     */       case 2:
-/* 520 */        }  throw new IllegalArgumentException("Invalid axis: " + axis);
+/* 521 */        }  throw new IllegalArgumentException("Invalid axis: " + axis);
 /*     */   }
 /*     */ 
 /*     */   
@@ -531,23 +532,23 @@
 /*     */     private Node<T> two;
 /*     */     
 /*     */     public Node(Vector3d vector, List<T> data) {
-/* 534 */       this.vector = vector;
-/* 535 */       this.data = data;
+/* 535 */       this.vector = vector;
+/* 536 */       this.data = data;
 /*     */     }
 /*     */     
 /*     */     public void reset(Vector3d vector, List<T> data) {
-/* 539 */       this.vector = vector;
-/* 540 */       this.data = data;
-/* 541 */       this.one = null;
-/* 542 */       this.two = null;
+/* 540 */       this.vector = vector;
+/* 541 */       this.data = data;
+/* 542 */       this.one = null;
+/* 543 */       this.two = null;
 /*     */     }
 /*     */     
 /*     */     @Nonnull
 /*     */     public String dump(int depth) {
-/* 547 */       int nextDepth = depth + 1;
-/* 548 */       return "vector=" + String.valueOf(this.vector) + ", data=" + String.valueOf(this.data) + ",\n" + " "
-/* 549 */         .repeat(depth) + "one=" + ((this.one == null) ? null : this.one.dump(nextDepth)) + ",\n" + " "
-/* 550 */         .repeat(depth) + "two=" + ((this.two == null) ? null : this.two.dump(nextDepth));
+/* 548 */       int nextDepth = depth + 1;
+/* 549 */       return "vector=" + String.valueOf(this.vector) + ", data=" + String.valueOf(this.data) + ",\n" + " "
+/* 550 */         .repeat(depth) + "one=" + ((this.one == null) ? null : this.one.dump(nextDepth)) + ",\n" + " "
+/* 551 */         .repeat(depth) + "two=" + ((this.two == null) ? null : this.two.dump(nextDepth));
 /*     */     }
 /*     */   }
 /*     */   
@@ -556,8 +557,8 @@
 /*     */     private double distanceSq;
 /*     */     
 /*     */     public ClosestState(KDTree.Node<T> node, double distanceSq) {
-/* 559 */       this.node = node;
-/* 560 */       this.distanceSq = distanceSq;
+/* 560 */       this.node = node;
+/* 561 */       this.distanceSq = distanceSq;
 /*     */     }
 /*     */   }
 /*     */   
@@ -566,8 +567,8 @@
 /*     */     private final List<T> values;
 /*     */     
 /*     */     public OrderedEntry(double distanceSq, List<T> values) {
-/* 569 */       this.distanceSq = distanceSq;
-/* 570 */       this.values = values;
+/* 570 */       this.distanceSq = distanceSq;
+/* 571 */       this.values = values;
 /*     */     }
 /*     */   }
 /*     */ }

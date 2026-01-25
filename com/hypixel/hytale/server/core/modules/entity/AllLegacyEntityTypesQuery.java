@@ -11,23 +11,27 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ @Deprecated
 /*    */ public class AllLegacyEntityTypesQuery
 /*    */   implements Query<EntityStore>
 /*    */ {
-/* 18 */   public static final AllLegacyEntityTypesQuery INSTANCE = new AllLegacyEntityTypesQuery();
+/*    */   @Nonnull
+/* 22 */   public static final AllLegacyEntityTypesQuery INSTANCE = new AllLegacyEntityTypesQuery();
 /*    */ 
 /*    */   
 /*    */   public boolean test(@Nonnull Archetype<EntityStore> archetype) {
-/* 22 */     return EntityUtils.hasEntity(archetype);
+/* 26 */     return EntityUtils.hasEntity(archetype);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public boolean requiresComponentType(ComponentType<EntityStore, ?> componentType) {
-/* 27 */     return false;
+/* 31 */     return false;
 /*    */   }
 /*    */   
-/*    */   public void validateRegistry(ComponentRegistry<EntityStore> registry) {}
+/*    */   public void validateRegistry(@Nonnull ComponentRegistry<EntityStore> registry) {}
 /*    */   
 /*    */   public void validate() {}
 /*    */ }

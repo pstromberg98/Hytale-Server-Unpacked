@@ -70,19 +70,19 @@
 /*  70 */     obj.maxFluidLevel = buf.getIntLE(offset + 1);
 /*  71 */     obj.requiresAlphaBlending = (buf.getByte(offset + 5) != 0);
 /*  72 */     obj.opacity = Opacity.fromValue(buf.getByte(offset + 6));
-/*  73 */     if ((nullBits & 0x8) != 0) obj.light = ColorLight.deserialize(buf, offset + 7); 
+/*  73 */     if ((nullBits & 0x1) != 0) obj.light = ColorLight.deserialize(buf, offset + 7); 
 /*  74 */     obj.fluidFXIndex = buf.getIntLE(offset + 11);
 /*  75 */     obj.blockSoundSetIndex = buf.getIntLE(offset + 15);
-/*  76 */     if ((nullBits & 0x20) != 0) obj.particleColor = Color.deserialize(buf, offset + 19);
+/*  76 */     if ((nullBits & 0x2) != 0) obj.particleColor = Color.deserialize(buf, offset + 19);
 /*     */     
-/*  78 */     if ((nullBits & 0x1) != 0) {
+/*  78 */     if ((nullBits & 0x4) != 0) {
 /*  79 */       int varPos0 = offset + 42 + buf.getIntLE(offset + 22);
 /*  80 */       int idLen = VarInt.peek(buf, varPos0);
 /*  81 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  82 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  83 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  85 */     if ((nullBits & 0x2) != 0) {
+/*  85 */     if ((nullBits & 0x8) != 0) {
 /*  86 */       int varPos1 = offset + 42 + buf.getIntLE(offset + 26);
 /*  87 */       int cubeTexturesCount = VarInt.peek(buf, varPos1);
 /*  88 */       if (cubeTexturesCount < 0) throw ProtocolException.negativeLength("CubeTextures", cubeTexturesCount); 
@@ -97,7 +97,7 @@
 /*  97 */         elemPos += BlockTextures.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/* 100 */     if ((nullBits & 0x4) != 0) {
+/* 100 */     if ((nullBits & 0x10) != 0) {
 /* 101 */       int varPos2 = offset + 42 + buf.getIntLE(offset + 30);
 /* 102 */       int shaderEffectCount = VarInt.peek(buf, varPos2);
 /* 103 */       if (shaderEffectCount < 0) throw ProtocolException.negativeLength("ShaderEffect", shaderEffectCount); 
@@ -111,7 +111,7 @@
 /* 111 */         obj.shaderEffect[i] = ShaderType.fromValue(buf.getByte(elemPos)); elemPos++;
 /*     */       } 
 /*     */     } 
-/* 114 */     if ((nullBits & 0x10) != 0) {
+/* 114 */     if ((nullBits & 0x20) != 0) {
 /* 115 */       int varPos3 = offset + 42 + buf.getIntLE(offset + 34);
 /* 116 */       int blockParticleSetIdLen = VarInt.peek(buf, varPos3);
 /* 117 */       if (blockParticleSetIdLen < 0) throw ProtocolException.negativeLength("BlockParticleSetId", blockParticleSetIdLen); 
@@ -138,26 +138,26 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 139 */     byte nullBits = buf.getByte(offset);
 /* 140 */     int maxEnd = 42;
-/* 141 */     if ((nullBits & 0x1) != 0) {
+/* 141 */     if ((nullBits & 0x4) != 0) {
 /* 142 */       int fieldOffset0 = buf.getIntLE(offset + 22);
 /* 143 */       int pos0 = offset + 42 + fieldOffset0;
 /* 144 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 145 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 147 */     if ((nullBits & 0x2) != 0) {
+/* 147 */     if ((nullBits & 0x8) != 0) {
 /* 148 */       int fieldOffset1 = buf.getIntLE(offset + 26);
 /* 149 */       int pos1 = offset + 42 + fieldOffset1;
 /* 150 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
 /* 151 */       for (int i = 0; i < arrLen; ) { pos1 += BlockTextures.computeBytesConsumed(buf, pos1); i++; }
 /* 152 */        if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 154 */     if ((nullBits & 0x4) != 0) {
+/* 154 */     if ((nullBits & 0x10) != 0) {
 /* 155 */       int fieldOffset2 = buf.getIntLE(offset + 30);
 /* 156 */       int pos2 = offset + 42 + fieldOffset2;
 /* 157 */       int arrLen = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + arrLen * 1;
 /* 158 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 160 */     if ((nullBits & 0x10) != 0) {
+/* 160 */     if ((nullBits & 0x20) != 0) {
 /* 161 */       int fieldOffset3 = buf.getIntLE(offset + 34);
 /* 162 */       int pos3 = offset + 42 + fieldOffset3;
 /* 163 */       int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl;
@@ -176,12 +176,12 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 177 */     int startPos = buf.writerIndex();
 /* 178 */     byte nullBits = 0;
-/* 179 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 180 */     if (this.cubeTextures != null) nullBits = (byte)(nullBits | 0x2); 
-/* 181 */     if (this.shaderEffect != null) nullBits = (byte)(nullBits | 0x4); 
-/* 182 */     if (this.light != null) nullBits = (byte)(nullBits | 0x8); 
-/* 183 */     if (this.blockParticleSetId != null) nullBits = (byte)(nullBits | 0x10); 
-/* 184 */     if (this.particleColor != null) nullBits = (byte)(nullBits | 0x20); 
+/* 179 */     if (this.light != null) nullBits = (byte)(nullBits | 0x1); 
+/* 180 */     if (this.particleColor != null) nullBits = (byte)(nullBits | 0x2); 
+/* 181 */     if (this.id != null) nullBits = (byte)(nullBits | 0x4); 
+/* 182 */     if (this.cubeTextures != null) nullBits = (byte)(nullBits | 0x8); 
+/* 183 */     if (this.shaderEffect != null) nullBits = (byte)(nullBits | 0x10); 
+/* 184 */     if (this.blockParticleSetId != null) nullBits = (byte)(nullBits | 0x20); 
 /* 185 */     if (this.tagIndexes != null) nullBits = (byte)(nullBits | 0x40); 
 /* 186 */     buf.writeByte(nullBits);
 /*     */     
@@ -261,7 +261,7 @@
 /* 261 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 264 */     if ((nullBits & 0x1) != 0) {
+/* 264 */     if ((nullBits & 0x4) != 0) {
 /* 265 */       int idOffset = buffer.getIntLE(offset + 22);
 /* 266 */       if (idOffset < 0) {
 /* 267 */         return ValidationResult.error("Invalid offset for Id");
@@ -284,7 +284,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 287 */     if ((nullBits & 0x2) != 0) {
+/* 287 */     if ((nullBits & 0x8) != 0) {
 /* 288 */       int cubeTexturesOffset = buffer.getIntLE(offset + 26);
 /* 289 */       if (cubeTexturesOffset < 0) {
 /* 290 */         return ValidationResult.error("Invalid offset for CubeTextures");
@@ -310,7 +310,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 313 */     if ((nullBits & 0x4) != 0) {
+/* 313 */     if ((nullBits & 0x10) != 0) {
 /* 314 */       int shaderEffectOffset = buffer.getIntLE(offset + 30);
 /* 315 */       if (shaderEffectOffset < 0) {
 /* 316 */         return ValidationResult.error("Invalid offset for ShaderEffect");
@@ -333,7 +333,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 336 */     if ((nullBits & 0x10) != 0) {
+/* 336 */     if ((nullBits & 0x20) != 0) {
 /* 337 */       int blockParticleSetIdOffset = buffer.getIntLE(offset + 34);
 /* 338 */       if (blockParticleSetIdOffset < 0) {
 /* 339 */         return ValidationResult.error("Invalid offset for BlockParticleSetId");

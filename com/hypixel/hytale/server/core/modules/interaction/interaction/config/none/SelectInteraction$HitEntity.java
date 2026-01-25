@@ -402,28 +402,103 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class HitEntity
 /*     */   implements NetworkSerializable<HitEntity>
 /*     */ {
+/*     */   @Nonnull
 /*     */   public static final BuilderCodec<HitEntity> CODEC;
 /*     */   protected String next;
 /*     */   protected SelectInteraction.EntityMatcher[] matchers;
 /*     */   
 /*     */   static {
-/* 413 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HitEntity.class, HitEntity::new).appendInherited(new KeyedCodec("Next", (Codec)RootInteraction.CHILD_ASSET_CODEC), (o, i) -> o.next = i, o -> o.next, (o, p) -> o.next = p.next).addValidatorLate(() -> RootInteraction.VALIDATOR_CACHE.getValidator().late()).addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("Matchers", (Codec)new ArrayCodec((Codec)SelectInteraction.EntityMatcher.CODEC, x$0 -> new SelectInteraction.EntityMatcher[x$0])), (o, i) -> o.matchers = i, o -> o.matchers, (o, p) -> o.matchers = p.matchers).addValidator(Validators.nonNull()).add()).build();
+/* 481 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(HitEntity.class, HitEntity::new).appendInherited(new KeyedCodec("Next", (Codec)RootInteraction.CHILD_ASSET_CODEC), (o, i) -> o.next = i, o -> o.next, (o, p) -> o.next = p.next).addValidatorLate(() -> RootInteraction.VALIDATOR_CACHE.getValidator().late()).addValidator(Validators.nonNull()).add()).appendInherited(new KeyedCodec("Matchers", (Codec)new ArrayCodec((Codec)SelectInteraction.EntityMatcher.CODEC, x$0 -> new SelectInteraction.EntityMatcher[x$0])), (o, i) -> o.matchers = i, o -> o.matchers, (o, p) -> o.matchers = p.matchers).addValidator(Validators.nonNull()).add()).build();
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public HitEntity toPacket() {
-/* 421 */     EntityMatcher[] protoMatchers = new EntityMatcher[this.matchers.length];
-/* 422 */     for (int i = 0; i < this.matchers.length; i++) {
-/* 423 */       protoMatchers[i] = this.matchers[i].toPacket();
+/* 496 */     EntityMatcher[] protoMatchers = new EntityMatcher[this.matchers.length];
+/* 497 */     for (int i = 0; i < this.matchers.length; i++) {
+/* 498 */       protoMatchers[i] = this.matchers[i].toPacket();
 /*     */     }
-/* 425 */     return new HitEntity(
-/* 426 */         RootInteraction.getRootInteractionIdOrUnknown(this.next), protoMatchers);
+/* 500 */     return new HitEntity(
+/* 501 */         RootInteraction.getRootInteractionIdOrUnknown(this.next), protoMatchers);
 /*     */   }
 /*     */ }
 

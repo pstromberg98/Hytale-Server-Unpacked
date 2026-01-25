@@ -32,53 +32,49 @@
 /*  32 */   private static final Message MESSAGE_FAILED = Message.translation("server.commands.auth.login.browser.failed").color(Color.RED);
 /*     */   @Nonnull
 /*  34 */   private static final Message MESSAGE_PENDING = Message.translation("server.commands.auth.login.pending").color(Color.YELLOW);
-/*     */   @Nonnull
-/*  36 */   private static final Message MESSAGE_PERSISTENCE_MEMORY = Message.translation("server.commands.auth.login.persistence.memory").color(Color.ORANGE);
-/*     */   @Nonnull
-/*  38 */   private static final Message MESSAGE_PERSISTENCE_SAVED = Message.translation("server.commands.auth.login.persistence.saved").color(Color.GREEN);
 /*     */   
 /*     */   private static class AuthFlow
 /*     */     extends OAuthBrowserFlow {
 /*     */     public void onFlowInfo(String authUrl) {
-/*  43 */       AbstractCommand.LOGGER.at(Level.INFO).log("Starting OAuth browser flow...");
-/*  44 */       AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
-/*  45 */       AbstractCommand.LOGGER.at(Level.INFO).log("Please open this URL in your browser to authenticate:");
-/*  46 */       AbstractCommand.LOGGER.at(Level.INFO).log("%s", authUrl);
-/*  47 */       AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
+/*  39 */       AbstractCommand.LOGGER.at(Level.INFO).log("Starting OAuth browser flow...");
+/*  40 */       AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
+/*  41 */       AbstractCommand.LOGGER.at(Level.INFO).log("Please open this URL in your browser to authenticate:");
+/*  42 */       AbstractCommand.LOGGER.at(Level.INFO).log("%s", authUrl);
+/*  43 */       AbstractCommand.LOGGER.at(Level.INFO).log("===================================================================");
 /*     */ 
 /*     */       
-/*  50 */       if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+/*  46 */       if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 /*     */         try {
-/*  52 */           Desktop.getDesktop().browse(new URI(authUrl));
-/*  53 */           AbstractCommand.LOGGER.at(Level.INFO).log("Browser opened automatically.");
-/*  54 */         } catch (Exception e) {
-/*  55 */           AbstractCommand.LOGGER.at(Level.INFO).log("Could not open browser automatically. Please open the URL manually.");
+/*  48 */           Desktop.getDesktop().browse(new URI(authUrl));
+/*  49 */           AbstractCommand.LOGGER.at(Level.INFO).log("Browser opened automatically.");
+/*  50 */         } catch (Exception e) {
+/*  51 */           AbstractCommand.LOGGER.at(Level.INFO).log("Could not open browser automatically. Please open the URL manually.");
 /*     */         } 
 /*     */       }
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public AuthLoginBrowserCommand() {
-/*  62 */     super("browser", "server.commands.auth.login.browser.desc");
+/*  58 */     super("browser", "server.commands.auth.login.browser.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void executeSync(@Nonnull CommandContext context) {
-/*  67 */     ServerAuthManager authManager = ServerAuthManager.getInstance();
+/*  63 */     ServerAuthManager authManager = ServerAuthManager.getInstance();
 /*     */     
-/*  69 */     if (authManager.isSingleplayer()) {
-/*  70 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
+/*  65 */     if (authManager.isSingleplayer()) {
+/*  66 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  74 */     if (authManager.hasSessionToken() && authManager.hasIdentityToken()) {
-/*  75 */       context.sendMessage(MESSAGE_ALREADY_AUTHENTICATED);
+/*  70 */     if (authManager.hasSessionToken() && authManager.hasIdentityToken()) {
+/*  71 */       context.sendMessage(MESSAGE_ALREADY_AUTHENTICATED);
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  79 */     context.sendMessage(MESSAGE_STARTING);
+/*  75 */     context.sendMessage(MESSAGE_STARTING);
 /*     */     
-/*  81 */     authManager.startFlowAsync(new AuthFlow()).thenAccept(result -> {
+/*  77 */     authManager.startFlowAsync(new AuthFlow()).thenAccept(result -> {
 /*     */           SessionServiceClient.GameProfile[] profiles;
 /*     */           switch (result) {
 /*     */             case SUCCESS:
@@ -97,13 +93,17 @@
 /*     */           } 
 /*     */         });
 /*     */   } static void sendPersistenceFeedback(@Nonnull CommandContext context) {
-/* 100 */     AuthCredentialStoreProvider provider = HytaleServer.get().getConfig().getAuthCredentialStoreProvider();
-/* 101 */     if (provider instanceof com.hypixel.hytale.server.core.auth.MemoryAuthCredentialStoreProvider) {
-/* 102 */       String availableTypes = String.join(", ", AuthCredentialStoreProvider.CODEC.getRegisteredIds());
-/* 103 */       context.sendMessage(MESSAGE_PERSISTENCE_MEMORY.param("types", availableTypes));
+/*  96 */     AuthCredentialStoreProvider provider = HytaleServer.get().getConfig().getAuthCredentialStoreProvider();
+/*  97 */     if (provider instanceof com.hypixel.hytale.server.core.auth.MemoryAuthCredentialStoreProvider) {
+/*  98 */       String availableTypes = String.join(", ", AuthCredentialStoreProvider.CODEC.getRegisteredIds());
+/*  99 */       context.sendMessage(Message.translation("server.commands.auth.login.persistence.memory")
+/* 100 */           .color(Color.ORANGE)
+/* 101 */           .param("types", availableTypes));
 /*     */     } else {
-/* 105 */       String typeName = (String)AuthCredentialStoreProvider.CODEC.getIdFor(provider.getClass());
-/* 106 */       context.sendMessage(MESSAGE_PERSISTENCE_SAVED.param("type", typeName));
+/* 103 */       String typeName = (String)AuthCredentialStoreProvider.CODEC.getIdFor(provider.getClass());
+/* 104 */       context.sendMessage(Message.translation("server.commands.auth.login.persistence.saved")
+/* 105 */           .color(Color.GREEN)
+/* 106 */           .param("type", typeName));
 /*     */     } 
 /*     */   }
 /*     */ }

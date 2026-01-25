@@ -1,6 +1,7 @@
 /*     */ package com.hypixel.hytale.server.core.entity.entities.player.windows;
 /*     */ 
 /*     */ import com.google.gson.JsonObject;
+/*     */ import com.hypixel.hytale.component.ComponentAccessor;
 /*     */ import com.hypixel.hytale.component.Ref;
 /*     */ import com.hypixel.hytale.component.Store;
 /*     */ import com.hypixel.hytale.event.EventPriority;
@@ -27,21 +28,17 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public abstract class Window
 /*     */ {
-/*  36 */   public static final Map<WindowType, Supplier<? extends Window>> CLIENT_REQUESTABLE_WINDOW_TYPES = new ConcurrentHashMap<>();
+/*  33 */   public static final Map<WindowType, Supplier<? extends Window>> CLIENT_REQUESTABLE_WINDOW_TYPES = new ConcurrentHashMap<>();
 /*     */   
 /*     */   @Nonnull
-/*  39 */   protected static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/*  36 */   protected static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  44 */   protected final SyncEventBusRegistry<Void, WindowCloseEvent> closeEventRegistry = new SyncEventBusRegistry(LOGGER, WindowCloseEvent.class);
+/*  41 */   protected final SyncEventBusRegistry<Void, WindowCloseEvent> closeEventRegistry = new SyncEventBusRegistry(LOGGER, WindowCloseEvent.class);
 /*     */ 
 /*     */ 
 /*     */ 
@@ -53,13 +50,13 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  56 */   protected final AtomicBoolean isDirty = new AtomicBoolean();
+/*  53 */   protected final AtomicBoolean isDirty = new AtomicBoolean();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  62 */   protected final AtomicBoolean needRebuild = new AtomicBoolean();
+/*  59 */   protected final AtomicBoolean needRebuild = new AtomicBoolean();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -85,7 +82,7 @@
 /*     */ 
 /*     */   
 /*     */   public Window(@Nonnull WindowType windowType) {
-/*  88 */     this.windowType = windowType;
+/*  85 */     this.windowType = windowType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -95,9 +92,10 @@
 /*     */ 
 /*     */   
 /*     */   public void init(@Nonnull PlayerRef playerRef, @Nonnull WindowManager manager) {
-/*  98 */     this.playerRef = playerRef;
-/*  99 */     this.manager = manager;
+/*  95 */     this.playerRef = playerRef;
+/*  96 */     this.manager = manager;
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -109,33 +107,42 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */   
-/*     */   protected abstract boolean onOpen0();
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ 
 /*     */   
-/*     */   protected abstract void onClose0();
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
-/*     */   protected boolean onOpen() {
-/* 126 */     return onOpen0();
+/*     */   protected boolean onOpen(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 113 */     return onOpen0(ref, store);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   protected void onClose() {
+/*     */   protected abstract boolean onOpen0(@Nonnull Ref<EntityStore> paramRef, @Nonnull Store<EntityStore> paramStore);
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   protected void onClose(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
 /*     */     try {
-/* 134 */       onClose0();
+/* 133 */       onClose0(ref, componentAccessor);
 /*     */     } finally {
-/* 136 */       this.closeEventRegistry.dispatchFor(null).dispatch((IBaseEvent)new WindowCloseEvent());
+/* 135 */       this.closeEventRegistry.dispatchFor(null).dispatch((IBaseEvent)new WindowCloseEvent());
 /*     */     } 
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   protected abstract void onClose0(@Nonnull Ref<EntityStore> paramRef, @Nonnull ComponentAccessor<EntityStore> paramComponentAccessor);
 /*     */ 
 /*     */ 
 /*     */ 
@@ -152,7 +159,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public WindowType getType() {
-/* 155 */     return this.windowType;
+/* 162 */     return this.windowType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -161,14 +168,14 @@
 /*     */ 
 /*     */   
 /*     */   public void setId(int id) {
-/* 164 */     this.id = id;
+/* 171 */     this.id = id;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public int getId() {
-/* 171 */     return this.id;
+/* 178 */     return this.id;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -176,43 +183,43 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public PlayerRef getPlayerRef() {
-/* 179 */     return this.playerRef;
+/* 186 */     return this.playerRef;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public void close() {
-/* 186 */     assert this.manager != null;
-/* 187 */     this.manager.closeWindow(this.id);
+/*     */   public void close(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
+/* 193 */     assert this.manager != null;
+/* 194 */     this.manager.closeWindow(ref, this.id, componentAccessor);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   protected void invalidate() {
-/* 194 */     this.isDirty.set(true);
+/* 201 */     this.isDirty.set(true);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   protected void setNeedRebuild() {
-/* 201 */     this.needRebuild.set(true);
-/* 202 */     getData().addProperty("needRebuild", Boolean.TRUE);
+/* 208 */     this.needRebuild.set(true);
+/* 209 */     getData().addProperty("needRebuild", Boolean.TRUE);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   protected boolean consumeIsDirty() {
-/* 209 */     return this.isDirty.getAndSet(false);
+/* 216 */     return this.isDirty.getAndSet(false);
 /*     */   }
 /*     */   
 /*     */   protected void consumeNeedRebuild() {
-/* 213 */     if (this.needRebuild.get()) {
-/* 214 */       getData().remove("needRebuild");
-/* 215 */       this.needRebuild.set(false);
+/* 220 */     if (this.needRebuild.get()) {
+/* 221 */       getData().remove("needRebuild");
+/* 222 */       this.needRebuild.set(false);
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -224,7 +231,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public EventRegistration registerCloseEvent(@Nonnull Consumer<WindowCloseEvent> consumer) {
-/* 227 */     return this.closeEventRegistry.register((short)0, null, consumer);
+/* 234 */     return this.closeEventRegistry.register((short)0, null, consumer);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -236,7 +243,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public EventRegistration registerCloseEvent(short priority, @Nonnull Consumer<WindowCloseEvent> consumer) {
-/* 239 */     return this.closeEventRegistry.register(priority, null, consumer);
+/* 246 */     return this.closeEventRegistry.register(priority, null, consumer);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -248,27 +255,27 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public EventRegistration registerCloseEvent(@Nonnull EventPriority priority, @Nonnull Consumer<WindowCloseEvent> consumer) {
-/* 251 */     return this.closeEventRegistry.register(priority.getValue(), null, consumer);
+/* 258 */     return this.closeEventRegistry.register(priority.getValue(), null, consumer);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean equals(@Nullable Object o) {
-/* 256 */     if (this == o) return true; 
-/* 257 */     if (o == null || getClass() != o.getClass()) return false;
+/* 263 */     if (this == o) return true; 
+/* 264 */     if (o == null || getClass() != o.getClass()) return false;
 /*     */     
-/* 259 */     Window window = (Window)o;
+/* 266 */     Window window = (Window)o;
 /*     */     
-/* 261 */     if (this.id != window.id) return false; 
-/* 262 */     if (!Objects.equals(this.windowType, window.windowType)) return false; 
-/* 263 */     return Objects.equals(this.playerRef, window.playerRef);
+/* 268 */     if (this.id != window.id) return false; 
+/* 269 */     if (!Objects.equals(this.windowType, window.windowType)) return false; 
+/* 270 */     return Objects.equals(this.playerRef, window.playerRef);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 268 */     int result = this.windowType.hashCode();
-/* 269 */     result = 31 * result + this.id;
-/* 270 */     result = 31 * result + ((this.playerRef != null) ? this.playerRef.hashCode() : 0);
-/* 271 */     return result;
+/* 275 */     int result = this.windowType.hashCode();
+/* 276 */     result = 31 * result + this.id;
+/* 277 */     result = 31 * result + ((this.playerRef != null) ? this.playerRef.hashCode() : 0);
+/* 278 */     return result;
 /*     */   }
 /*     */   
 /*     */   public static class WindowCloseEvent implements IEvent<Void> {}

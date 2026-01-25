@@ -38,10 +38,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class SteeringSystem
 /*     */   extends SteppableTickingSystem
 /*     */ {
@@ -53,73 +49,75 @@
 /*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public SteeringSystem(@Nonnull ComponentType<EntityStore, NPCEntity> npcEntityComponent) {
-/*  56 */     this.npcEntityComponent = npcEntityComponent;
-/*  57 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, AvoidanceSystem.class), new SystemDependency(Order.AFTER, KnockbackSystems.ApplyKnockback.class), new SystemDependency(Order.BEFORE, TransformSystems.EntityTrackerUpdate.class));
+/*  52 */     this.npcEntityComponent = npcEntityComponent;
+/*  53 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, AvoidanceSystem.class), new SystemDependency(Order.AFTER, KnockbackSystems.ApplyKnockback.class), new SystemDependency(Order.BEFORE, TransformSystems.EntityTrackerUpdate.class));
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/*  63 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcEntityComponent });
+/*  59 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcEntityComponent, (Query)TransformComponent.getComponentType() });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/*  69 */     return this.dependencies;
+/*  65 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/*  74 */     return false;
+/*  70 */     return false;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  80 */     return this.query;
+/*  76 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void steppedTick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  85 */     NPCEntity npc = (NPCEntity)archetypeChunk.getComponent(index, this.npcEntityComponent);
-/*  86 */     assert npc != null;
+/*  81 */     NPCEntity npcComponent = (NPCEntity)archetypeChunk.getComponent(index, this.npcEntityComponent);
+/*  82 */     assert npcComponent != null;
 /*     */     
-/*  88 */     TransformComponent npcTransformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/*  89 */     assert npcTransformComponent != null;
+/*  84 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/*  85 */     assert transformComponent != null;
 /*     */     
-/*  91 */     Role role = npc.getRole();
-/*  92 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/*  87 */     Role role = npcComponent.getRole();
+/*  88 */     if (role == null)
+/*     */       return; 
+/*  90 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     try {
-/*  97 */       if (role.getDebugSupport().isDebugMotionSteering()) {
-/*  98 */         Vector3d position = npcTransformComponent.getPosition();
-/*  99 */         double x = position.getX();
-/* 100 */         double z = position.getZ();
-/* 101 */         float yaw = npcTransformComponent.getRotation().getYaw();
+/*  95 */       if (role.getDebugSupport().isDebugMotionSteering()) {
+/*  96 */         Vector3d position = transformComponent.getPosition();
+/*  97 */         double x = position.getX();
+/*  98 */         double z = position.getZ();
+/*  99 */         float yaw = transformComponent.getRotation().getYaw();
 /*     */         
-/* 103 */         role.getActiveMotionController().steer(ref, role, role.getBodySteering(), role.getHeadSteering(), dt, (ComponentAccessor)commandBuffer);
+/* 101 */         role.getActiveMotionController().steer(ref, role, role.getBodySteering(), role.getHeadSteering(), dt, (ComponentAccessor)commandBuffer);
 /*     */         
-/* 105 */         x = position.getX() - x;
-/* 106 */         z = position.getZ() - z;
+/* 103 */         x = position.getX() - x;
+/* 104 */         z = position.getZ() - z;
 /*     */         
-/* 108 */         double l = Math.sqrt(x * x + z * z);
-/* 109 */         double v = l / dt;
-/* 110 */         double vx = x / dt;
-/* 111 */         double vz = z / dt;
-/* 112 */         double vh = (l > 0.0D) ? PhysicsMath.normalizeTurnAngle(PhysicsMath.headingFromDirection(x, z)) : 0.0D;
+/* 106 */         double l = Math.sqrt(x * x + z * z);
+/* 107 */         double v = l / dt;
+/* 108 */         double vx = x / dt;
+/* 109 */         double vz = z / dt;
+/* 110 */         double vh = (l > 0.0D) ? PhysicsMath.normalizeTurnAngle(PhysicsMath.headingFromDirection(x, z)) : 0.0D;
 /*     */         
-/* 114 */         NPCPlugin.get().getLogger().at(Level.FINER).log("=   Role    = t =%.4f v =%.4f vx=%.4f vz=%.4f h =%.4f nh=%.4f vh=%.4f", Float.valueOf(dt), 
-/* 115 */             Double.valueOf(v), Double.valueOf(vx), Double.valueOf(vz), Float.valueOf(57.295776F * yaw), Float.valueOf(57.295776F * yaw), 
-/* 116 */             Double.valueOf(57.2957763671875D * vh));
+/* 112 */         NPCPlugin.get().getLogger().at(Level.FINER).log("=   Role    = t =%.4f v =%.4f vx=%.4f vz=%.4f h =%.4f nh=%.4f vh=%.4f", Float.valueOf(dt), 
+/* 113 */             Double.valueOf(v), Double.valueOf(vx), Double.valueOf(vz), Float.valueOf(57.295776F * yaw), Float.valueOf(57.295776F * yaw), 
+/* 114 */             Double.valueOf(57.2957763671875D * vh));
 /*     */       } else {
-/* 118 */         role.getActiveMotionController().steer(ref, role, role.getBodySteering(), role.getHeadSteering(), dt, (ComponentAccessor)commandBuffer);
+/* 116 */         role.getActiveMotionController().steer(ref, role, role.getBodySteering(), role.getHeadSteering(), dt, (ComponentAccessor)commandBuffer);
 /*     */       } 
-/* 120 */     } catch (IllegalArgumentException|IllegalStateException e) {
-/* 121 */       ((HytaleLogger.Api)NPCPlugin.get().getLogger().at(Level.SEVERE).withCause(e)).log();
-/* 122 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 118 */     } catch (IllegalArgumentException|IllegalStateException e) {
+/* 119 */       ((HytaleLogger.Api)NPCPlugin.get().getLogger().at(Level.SEVERE).withCause(e)).log();
+/* 120 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */     } 
 /*     */   }
 /*     */ }

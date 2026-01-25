@@ -495,38 +495,41 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class ClearChanges
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   private final ComponentType<EntityStore, EntityStatMap> componentType;
-/* 502 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.AFTER, EntityStatsSystems.EntityTrackerUpdate.class));
+/* 505 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.AFTER, EntityStatsSystems.EntityTrackerUpdate.class));
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public ClearChanges(ComponentType<EntityStore, EntityStatMap> componentType) {
-/* 507 */     this.componentType = componentType;
+/* 510 */     this.componentType = componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 512 */     return (Query)this.componentType;
+/* 515 */     return (Query)this.componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 518 */     return this.dependencies;
+/* 521 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 523 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 526 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 528 */     EntityStatMap statMap = (EntityStatMap)archetypeChunk.getComponent(index, this.componentType);
-/* 529 */     statMap.clearUpdates();
+/* 531 */     EntityStatMap statMap = (EntityStatMap)archetypeChunk.getComponent(index, this.componentType);
+/* 532 */     statMap.clearUpdates();
 /*     */   }
 /*     */ }
 

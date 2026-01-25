@@ -125,32 +125,49 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class IndexedStorageChunkSaver
 /*     */   extends BufferChunkSaver
 /*     */   implements MetricProvider
 /*     */ {
-/*     */   protected IndexedStorageChunkSaver(@Nonnull Store<ChunkStore> store) {
-/* 133 */     super(store);
+/*     */   private final boolean flushOnWrite;
+/*     */   
+/*     */   protected IndexedStorageChunkSaver(@Nonnull Store<ChunkStore> store, boolean flushOnWrite) {
+/* 149 */     super(store);
+/* 150 */     this.flushOnWrite = flushOnWrite;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void close() throws IOException {
-/* 138 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
-/* 139 */     indexedStorageCache.close();
+/* 155 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
+/* 156 */     indexedStorageCache.close();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<Void> saveBuffer(int x, int z, @Nonnull ByteBuffer buffer) {
-/* 145 */     int regionX = x >> 5;
-/* 146 */     int regionZ = z >> 5;
-/* 147 */     int localX = x & 0x1F;
-/* 148 */     int localZ = z & 0x1F;
-/* 149 */     int index = ChunkUtil.indexColumn(localX, localZ);
+/* 162 */     int regionX = x >> 5;
+/* 163 */     int regionZ = z >> 5;
+/* 164 */     int localX = x & 0x1F;
+/* 165 */     int localZ = z & 0x1F;
+/* 166 */     int index = ChunkUtil.indexColumn(localX, localZ);
 /*     */     
-/* 151 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
-/* 152 */     return CompletableFuture.runAsync(SneakyThrow.sneakyRunnable(() -> {
-/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrCreate(regionX, regionZ);
+/* 168 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
+/* 169 */     return CompletableFuture.runAsync(SneakyThrow.sneakyRunnable(() -> {
+/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrCreate(regionX, regionZ, this.flushOnWrite);
 /*     */             chunks.writeBlob(index, buffer);
 /*     */           }));
 /*     */   }
@@ -158,15 +175,15 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<Void> removeBuffer(int x, int z) {
-/* 161 */     int regionX = x >> 5;
-/* 162 */     int regionZ = z >> 5;
-/* 163 */     int localX = x & 0x1F;
-/* 164 */     int localZ = z & 0x1F;
-/* 165 */     int index = ChunkUtil.indexColumn(localX, localZ);
+/* 178 */     int regionX = x >> 5;
+/* 179 */     int regionZ = z >> 5;
+/* 180 */     int localX = x & 0x1F;
+/* 181 */     int localZ = z & 0x1F;
+/* 182 */     int index = ChunkUtil.indexColumn(localX, localZ);
 /*     */     
-/* 167 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
-/* 168 */     return CompletableFuture.runAsync(SneakyThrow.sneakyRunnable(() -> {
-/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrTryOpen(regionX, regionZ);
+/* 184 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
+/* 185 */     return CompletableFuture.runAsync(SneakyThrow.sneakyRunnable(() -> {
+/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrTryOpen(regionX, regionZ, this.flushOnWrite);
 /*     */             if (chunks != null)
 /*     */               chunks.removeBlob(index); 
 /*     */           }));
@@ -174,17 +191,17 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public LongSet getIndexes() throws IOException {
-/* 177 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).getIndexes();
+/* 194 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).getIndexes();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void flush() throws IOException {
-/* 182 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).flush();
+/* 199 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).flush();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public MetricResults toMetricResults() {
-/* 187 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).toMetricResults();
+/* 204 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).toMetricResults();
 /*     */   }
 /*     */ }
 

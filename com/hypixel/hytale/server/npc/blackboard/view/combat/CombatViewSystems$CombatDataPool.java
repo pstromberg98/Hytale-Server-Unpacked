@@ -171,35 +171,31 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class CombatDataPool
 /*     */   implements Resource<EntityStore>
 /*     */ {
 /*     */   public static ResourceType<EntityStore, CombatDataPool> getResourceType() {
-/* 182 */     return NPCPlugin.get().getCombatDataPoolResourceType();
+/* 178 */     return NPCPlugin.get().getCombatDataPoolResourceType();
 /*     */   }
 /*     */   
-/* 185 */   private final ArrayDeque<InterpretedCombatData> combatDataPool = new ArrayDeque<>();
+/* 181 */   private final ArrayDeque<InterpretedCombatData> combatDataPool = new ArrayDeque<>();
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Resource<EntityStore> clone() {
-/* 191 */     return new CombatDataPool();
+/* 187 */     return new CombatDataPool();
 /*     */   }
 /*     */   
 /*     */   public InterpretedCombatData getEmptyCombatData() {
-/* 195 */     if (this.combatDataPool.isEmpty()) {
-/* 196 */       return new InterpretedCombatData();
+/* 191 */     if (this.combatDataPool.isEmpty()) {
+/* 192 */       return new InterpretedCombatData();
 /*     */     }
-/* 198 */     return this.combatDataPool.poll();
+/* 194 */     return this.combatDataPool.poll();
 /*     */   }
 /*     */   
 /*     */   public void releaseCombatData(@Nonnull InterpretedCombatData combatData) {
-/* 202 */     this.combatDataPool.push(combatData);
+/* 198 */     this.combatDataPool.push(combatData);
 /*     */   }
 /*     */ }
 

@@ -1,6 +1,7 @@
 /*     */ package com.hypixel.hytale.builtin.crafting.interaction;
 /*     */ 
 /*     */ import com.hypixel.hytale.builtin.crafting.state.ProcessingBenchState;
+/*     */ import com.hypixel.hytale.builtin.crafting.window.BenchWindow;
 /*     */ import com.hypixel.hytale.builtin.crafting.window.ProcessingBenchWindow;
 /*     */ import com.hypixel.hytale.codec.builder.BuilderCodec;
 /*     */ import com.hypixel.hytale.component.CommandBuffer;
@@ -33,7 +34,6 @@
 /*     */ import java.util.logging.Level;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ public class OpenProcessingBenchInteraction
@@ -78,7 +78,7 @@
 /*  78 */     UUID uuid = uuidComponent.getUuid();
 /*  79 */     ProcessingBenchWindow window = new ProcessingBenchWindow(benchState);
 /*     */     
-/*  81 */     Map<UUID, ProcessingBenchWindow> windows = benchState.getWindows();
+/*  81 */     Map<UUID, BenchWindow> windows = benchState.getWindows();
 /*  82 */     if (windows.putIfAbsent(uuid, window) == null) {
 /*  83 */       benchState.updateFuelValues();
 /*     */       

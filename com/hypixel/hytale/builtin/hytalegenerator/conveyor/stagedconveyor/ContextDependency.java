@@ -36,39 +36,38 @@
 /*     */   }
 /*     */   
 /*     */   @Nonnull
-/*     */   public Bounds3i getTotalPropBounds_voxelGrid() {
-/*  40 */     Vector3i readMin_voxelGrid = getReadRange().scale(-1);
-/*  41 */     Vector3i readMax_voxelGrid = getReadRange().add(Vector3i.ALL_ONES);
+/*     */   public Bounds3i getReadBounds_voxelGrid() {
+/*  40 */     return new Bounds3i(
+/*  41 */         getReadRange().clone().scale(-1), 
+/*  42 */         getReadRange().clone().add(Vector3i.ALL_ONES));
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*     */   public Bounds3i getWriteBounds_voxelGrid() {
+/*  48 */     Vector3i readMin_voxelGrid = getReadRange().scale(-1);
+/*  49 */     Vector3i readMax_voxelGrid = getReadRange().add(Vector3i.ALL_ONES);
 /*     */     
-/*  43 */     Vector3i writeMin_voxelGrid = getWriteRange().scale(-1);
-/*  44 */     Vector3i writeMax_voxelGrid = getWriteRange().add(Vector3i.ALL_ONES);
+/*  51 */     Vector3i writeMin_voxelGrid = getWriteRange().scale(-1);
+/*  52 */     Vector3i writeMax_voxelGrid = getWriteRange().add(Vector3i.ALL_ONES);
 /*     */     
-/*  46 */     Bounds3i readBounds_voxelGrid = new Bounds3i(readMin_voxelGrid, readMax_voxelGrid);
-/*  47 */     Bounds3i writeBounds_voxelGrid = new Bounds3i(writeMin_voxelGrid, writeMax_voxelGrid);
+/*  54 */     Bounds3i readBounds_voxelGrid = new Bounds3i(readMin_voxelGrid, readMax_voxelGrid);
+/*  55 */     Bounds3i writeBounds_voxelGrid = new Bounds3i(writeMin_voxelGrid, writeMax_voxelGrid);
 /*     */     
-/*  49 */     writeBounds_voxelGrid.stack(readBounds_voxelGrid);
-/*  50 */     return writeBounds_voxelGrid;
+/*  57 */     writeBounds_voxelGrid.stack(readBounds_voxelGrid);
+/*  58 */     return writeBounds_voxelGrid;
 /*     */   }
 /*     */   
 /*     */   private void update() {
-/*  54 */     this.trashRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> 
-/*  55 */         (r < 0 || w < 0) ? 0 : (r + w));
+/*  62 */     this.trashRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> 
+/*  63 */         (r < 0 || w < 0) ? 0 : (r + w));
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/*  62 */     this.externalDependencyRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> (r < 0) ? -w : Math.max(r, retriever.from(this.trashRange)));
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */     
-/*  70 */     this.positioningRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> (r < 0) ? -w : r);
-/*     */ 
+/*  70 */     this.externalDependencyRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> (r < 0) ? -w : Math.max(r, retriever.from(this.trashRange)));
 /*     */ 
 /*     */ 
 /*     */ 
@@ -76,42 +75,36 @@
 /*     */ 
 /*     */ 
 /*     */     
-/*  79 */     this.trashRange.y = 0;
-/*  80 */     this.externalDependencyRange.y = 0;
-/*  81 */     this.positioningRange.y = 0;
-/*  82 */     this.readRange.y = 0;
-/*  83 */     this.writeRange.y = 0;
+/*  78 */     this.positioningRange = VectorUtil.fromOperation(this.readRange, this.writeRange, (r, w, retriever) -> (r < 0) ? -w : r);
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*  87 */     this.trashRange.y = 0;
+/*  88 */     this.externalDependencyRange.y = 0;
+/*  89 */     this.positioningRange.y = 0;
+/*  90 */     this.readRange.y = 0;
+/*  91 */     this.writeRange.y = 0;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public ContextDependency stackOver(@Nonnull ContextDependency other) {
-/*  90 */     Vector3i totalRead = new Vector3i();
-/*  91 */     Vector3i totalWrite = new Vector3i();
+/*  98 */     Vector3i totalRead = new Vector3i();
+/*  99 */     Vector3i totalWrite = new Vector3i();
 /*     */     
-/*  93 */     Vector3i r1 = getReadRange();
-/*  94 */     Vector3i w1 = getWriteRange();
-/*  95 */     Vector3i r2 = other.getReadRange();
-/*  96 */     Vector3i w2 = other.getWriteRange();
+/* 101 */     Vector3i r1 = getReadRange();
+/* 102 */     Vector3i w1 = getWriteRange();
+/* 103 */     Vector3i r2 = other.getReadRange();
+/* 104 */     Vector3i w2 = other.getWriteRange();
 /*     */     
-/*  98 */     totalRead = VectorUtil.fromOperation(value -> 
-/*  99 */         (value.from(r1) < 0 && value.from(r2) < 0) ? -1 : ((value.from(r1) < 0) ? value.from(r2) : ((value.from(r2) < 0) ? value.from(r1) : (value.from(r1) + value.from(w1) + value.from(r2)))));
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */     
-/* 112 */     totalWrite = VectorUtil.fromOperation(value -> 
-/* 113 */         (value.from(r1) < 0 && value.from(r2) < 0) ? -Math.min(value.from(w1), value.from(w2)) : ((value.from(r1) < 0) ? value.from(w2) : ((value.from(r2) < 0) ? value.from(w1) : value.from(w2))));
-/*     */ 
+/* 106 */     totalRead = VectorUtil.fromOperation(value -> 
+/* 107 */         (value.from(r1) < 0 && value.from(r2) < 0) ? -1 : ((value.from(r1) < 0) ? value.from(r2) : ((value.from(r2) < 0) ? value.from(r1) : (value.from(r1) + value.from(w1) + value.from(r2)))));
 /*     */ 
 /*     */ 
 /*     */ 
@@ -124,95 +117,123 @@
 /*     */ 
 /*     */ 
 /*     */     
-/* 127 */     return new ContextDependency(totalRead, totalWrite);
+/* 120 */     totalWrite = VectorUtil.fromOperation(value -> 
+/* 121 */         (value.from(r1) < 0 && value.from(r2) < 0) ? -Math.min(value.from(w1), value.from(w2)) : ((value.from(r1) < 0) ? value.from(w2) : ((value.from(r2) < 0) ? value.from(w1) : value.from(w2))));
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/* 135 */     return new ContextDependency(totalRead, totalWrite);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getReadRange() {
-/* 132 */     return this.readRange.clone();
+/* 140 */     return this.readRange.clone();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getWriteRange() {
-/* 137 */     return this.writeRange.clone();
+/* 145 */     return this.writeRange.clone();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getTrashRange() {
-/* 142 */     return this.trashRange.clone();
+/* 150 */     return this.trashRange.clone();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getExternalDependencyRange() {
-/* 147 */     return this.externalDependencyRange.clone();
+/* 155 */     return this.externalDependencyRange.clone();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i getPositioningRange() {
-/* 152 */     return this.positioningRange.clone();
+/* 160 */     return this.positioningRange.clone();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static Vector3i getRequiredPadOf(@Nonnull List<ContextDependency> dependencies) {
-/* 157 */     Vector3i pad = new Vector3i();
-/* 158 */     for (ContextDependency dependency : dependencies) {
-/* 159 */       pad.add(dependency.getExternalDependencyRange());
+/* 165 */     Vector3i pad = new Vector3i();
+/* 166 */     for (ContextDependency dependency : dependencies) {
+/* 167 */       pad.add(dependency.getExternalDependencyRange());
 /*     */     }
-/* 161 */     return pad;
+/* 169 */     return pad;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static Map<Integer, ContextDependency> cloneMap(@Nonnull Map<Integer, ContextDependency> map) {
-/* 166 */     HashMap<Integer, ContextDependency> out = new HashMap<>(map.size());
-/* 167 */     map.forEach((k, v) -> out.put(k, v.clone()));
-/* 168 */     return out;
+/* 174 */     HashMap<Integer, ContextDependency> out = new HashMap<>(map.size());
+/* 175 */     map.forEach((k, v) -> out.put(k, v.clone()));
+/* 176 */     return out;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public static Map<Integer, ContextDependency> stackMaps(@Nonnull Map<Integer, ContextDependency> under, @Nonnull Map<Integer, ContextDependency> over) {
-/* 174 */     Map<Integer, ContextDependency> out = new HashMap<>();
-/* 175 */     for (Map.Entry<Integer, ContextDependency> entry : over.entrySet()) {
-/* 176 */       if (!under.containsKey(entry.getKey())) {
+/* 182 */     Map<Integer, ContextDependency> out = new HashMap<>();
+/* 183 */     for (Map.Entry<Integer, ContextDependency> entry : over.entrySet()) {
+/* 184 */       if (!under.containsKey(entry.getKey())) {
 /*     */         
-/* 178 */         out.put(entry.getKey(), entry.getValue());
+/* 186 */         out.put(entry.getKey(), entry.getValue());
 /*     */         
 /*     */         continue;
 /*     */       } 
-/* 182 */       out.put(entry.getKey(), ((ContextDependency)entry.getValue()).stackOver(under.get(entry.getKey())));
+/* 190 */       out.put(entry.getKey(), ((ContextDependency)entry.getValue()).stackOver(under.get(entry.getKey())));
 /*     */     } 
 /*     */ 
 /*     */     
-/* 186 */     for (Map.Entry<Integer, ContextDependency> entry : under.entrySet()) {
-/* 187 */       if (!over.containsKey(entry.getKey())) {
-/* 188 */         out.put(entry.getKey(), entry.getValue());
+/* 194 */     for (Map.Entry<Integer, ContextDependency> entry : under.entrySet()) {
+/* 195 */       if (!over.containsKey(entry.getKey())) {
+/* 196 */         out.put(entry.getKey(), entry.getValue());
 /*     */       }
 /*     */     } 
-/* 191 */     return out;
+/* 199 */     return out;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public static ContextDependency mostOf(@Nonnull List<ContextDependency> dependencies) {
-/* 196 */     ContextDependency out = EMPTY;
-/* 197 */     for (ContextDependency d : dependencies) {
-/* 198 */       out = mostOf(out, d);
+/* 204 */     ContextDependency out = EMPTY;
+/* 205 */     for (ContextDependency d : dependencies) {
+/* 206 */       out = mostOf(out, d);
 /*     */     }
-/* 200 */     return out;
+/* 208 */     return out;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public static ContextDependency mostOf(@Nonnull ContextDependency a, @Nonnull ContextDependency b) {
-/* 206 */     Vector3i read = Vector3i.max(a.readRange, b.readRange);
-/* 207 */     Vector3i write = Vector3i.max(a.writeRange, b.writeRange);
+/* 214 */     Vector3i read = Vector3i.max(a.readRange, b.readRange);
+/* 215 */     Vector3i write = Vector3i.max(a.writeRange, b.writeRange);
 /*     */     
-/* 209 */     return new ContextDependency(read, write);
+/* 217 */     return new ContextDependency(read, write);
+/*     */   }
+/*     */   
+/*     */   @Nonnull
+/*     */   public static ContextDependency from(@Nonnull Bounds3i readBounds, @Nonnull Bounds3i writeBounds) {
+/* 222 */     return new ContextDependency(rangeFromBounds(readBounds), rangeFromBounds(writeBounds));
+/*     */   }
+/*     */   
+/*     */   private static Vector3i rangeFromBounds(@Nonnull Bounds3i readBounds) {
+/* 226 */     Vector3i readRange = new Vector3i();
+/* 227 */     readRange.x = Math.max(Math.abs(readBounds.min.x), Math.abs(readBounds.max.x - 1));
+/* 228 */     readRange.y = Math.max(Math.abs(readBounds.min.y), Math.abs(readBounds.max.y - 1));
+/* 229 */     readRange.z = Math.max(Math.abs(readBounds.min.z), Math.abs(readBounds.max.z - 1));
+/* 230 */     return readRange;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public ContextDependency clone() {
-/* 215 */     return new ContextDependency(this.readRange, this.writeRange);
+/* 236 */     return new ContextDependency(this.readRange, this.writeRange);
 /*     */   }
 /*     */ }
 

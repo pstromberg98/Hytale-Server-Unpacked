@@ -615,32 +615,33 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class SpawnedDeathAnimation
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
-/* 621 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
+/* 622 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
 /*     */         
-/* 623 */         (Query)DeathComponent.getComponentType(), 
-/* 624 */         (Query)MovementStatesComponent.getComponentType() });
+/* 624 */         (Query)DeathComponent.getComponentType(), 
+/* 625 */         (Query)MovementStatesComponent.getComponentType() });
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 630 */     return QUERY;
+/* 631 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 635 */     DeathComponent deathComponent = (DeathComponent)commandBuffer.getComponent(ref, DeathComponent.getComponentType());
-/* 636 */     assert deathComponent != null;
+/* 636 */     DeathComponent deathComponent = (DeathComponent)commandBuffer.getComponent(ref, DeathComponent.getComponentType());
+/* 637 */     assert deathComponent != null;
 /*     */     
-/* 638 */     ModelComponent modelComponent = (ModelComponent)commandBuffer.getComponent(ref, ModelComponent.getComponentType());
+/* 639 */     ModelComponent modelComponent = (ModelComponent)commandBuffer.getComponent(ref, ModelComponent.getComponentType());
 /*     */     
-/* 640 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)commandBuffer.getComponent(ref, MovementStatesComponent.getComponentType());
-/* 641 */     assert movementStatesComponent != null;
+/* 641 */     MovementStatesComponent movementStatesComponent = (MovementStatesComponent)commandBuffer.getComponent(ref, MovementStatesComponent.getComponentType());
+/* 642 */     assert movementStatesComponent != null;
 /*     */     
-/* 643 */     DeathSystems.playDeathAnimation(ref, deathComponent, modelComponent, movementStatesComponent, (ComponentAccessor<EntityStore>)commandBuffer);
+/* 644 */     DeathSystems.playDeathAnimation(ref, deathComponent, modelComponent, movementStatesComponent, (ComponentAccessor<EntityStore>)commandBuffer);
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}

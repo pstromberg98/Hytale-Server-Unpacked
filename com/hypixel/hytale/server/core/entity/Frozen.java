@@ -5,6 +5,11 @@
 /*    */ import com.hypixel.hytale.component.ComponentType;
 /*    */ import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -15,25 +20,39 @@
 /*    */ public class Frozen
 /*    */   implements Component<EntityStore>
 /*    */ {
-/* 18 */   public static final BuilderCodec<Frozen> CODEC = BuilderCodec.builder(Frozen.class, Frozen::get)
-/* 19 */     .build();
+/*    */   @Nonnull
+/* 24 */   public static final BuilderCodec<Frozen> CODEC = BuilderCodec.builder(Frozen.class, Frozen::get)
+/* 25 */     .build();
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   public static ComponentType<EntityStore, Frozen> getComponentType() {
-/* 22 */     return EntityModule.get().getFrozenComponentType();
+/* 31 */     return EntityModule.get().getFrozenComponentType();
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
-/* 25 */   private static final Frozen INSTANCE = new Frozen();
+/* 37 */   private static final Frozen INSTANCE = new Frozen();
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   public static Frozen get() {
-/* 28 */     return INSTANCE;
+/* 43 */     return INSTANCE;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public Component<EntityStore> clone() {
-/* 36 */     return get();
+/* 55 */     return get();
 /*    */   }
 /*    */ }
 

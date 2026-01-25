@@ -44,8 +44,6 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class EntityRemoved
 /*    */   extends HolderSystem<EntityStore>
 /*    */ {
@@ -53,13 +51,13 @@
 /*    */   private final ResourceType<EntityStore, CombatViewSystems.CombatDataPool> dataPoolResourceType;
 /*    */   
 /*    */   public EntityRemoved(ComponentType<EntityStore, CombatViewSystems.CombatData> combatDataComponentType, ResourceType<EntityStore, CombatViewSystems.CombatDataPool> dataPoolResourceType) {
-/* 56 */     this.combatDataComponentType = combatDataComponentType;
-/* 57 */     this.dataPoolResourceType = dataPoolResourceType;
+/* 54 */     this.combatDataComponentType = combatDataComponentType;
+/* 55 */     this.dataPoolResourceType = dataPoolResourceType;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public Query<EntityStore> getQuery() {
-/* 62 */     return (Query)this.combatDataComponentType;
+/* 60 */     return (Query)this.combatDataComponentType;
 /*    */   }
 /*    */ 
 /*    */ 
@@ -69,9 +67,9 @@
 /*    */ 
 /*    */   
 /*    */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 72 */     CombatViewSystems.CombatData combatData = (CombatViewSystems.CombatData)holder.getComponent(this.combatDataComponentType);
-/* 73 */     CombatViewSystems.CombatDataPool dataPool = (CombatViewSystems.CombatDataPool)store.getResource(this.dataPoolResourceType);
-/* 74 */     CombatViewSystems.clearCombatData(combatData, dataPool);
+/* 70 */     CombatViewSystems.CombatData combatData = (CombatViewSystems.CombatData)holder.getComponent(this.combatDataComponentType);
+/* 71 */     CombatViewSystems.CombatDataPool dataPool = (CombatViewSystems.CombatDataPool)store.getResource(this.dataPoolResourceType);
+/* 72 */     CombatViewSystems.clearCombatData(combatData, dataPool);
 /*    */   }
 /*    */ }
 

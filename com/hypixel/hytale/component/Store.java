@@ -1722,171 +1722,174 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */   
-/*      */   public <T extends EntityDataSystem<ECS_TYPE, Q, R>, Q, R> void fetch(@Nonnull Collection<Ref<ECS_TYPE>> refs, @Nonnull SystemType<ECS_TYPE, T> systemType, Q query, @Nonnull List<R> results) {
-/* 1727 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1728 */     assertThread();
+/*      */   public <T extends EntityDataSystem<ECS_TYPE, Q, R>, Q, R> void fetch(@Nonnull Collection<Ref<ECS_TYPE>> refs, @Nonnull SystemType<ECS_TYPE, T> systemType, @Nonnull Q query, @Nonnull List<R> results) {
+/* 1730 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1731 */     assertThread();
 /*      */     
-/* 1730 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 1733 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
 /*      */     
-/* 1732 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
-/* 1733 */     this.fetchTask.init();
-/* 1734 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)systemType);
+/* 1735 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
+/* 1736 */     this.fetchTask.init();
+/* 1737 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)systemType);
 /*      */     
-/* 1736 */     this.processing.lock();
+/* 1739 */     this.processing.lock();
 /*      */     try {
-/* 1738 */       int systemIndex = -1;
-/* 1739 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1740 */         EntityDataSystem entityDataSystem = data.<EntityDataSystem>getSystem(systemIndex, systemType);
+/* 1741 */       int systemIndex = -1;
+/* 1742 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1743 */         EntityDataSystem entityDataSystem = data.<EntityDataSystem>getSystem(systemIndex, systemType);
 /*      */         
-/* 1742 */         for (Ref<ECS_TYPE> ref : refs) {
-/* 1743 */           int entityIndex = ref.getIndex();
-/* 1744 */           int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
-/* 1745 */           BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
-/* 1746 */           if (entityProcessedBySystemIndexes.get(systemIndex)) {
-/* 1747 */             int index = this.entityChunkIndex[entityIndex];
-/* 1748 */             ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 1745 */         for (Ref<ECS_TYPE> ref : refs) {
+/* 1746 */           int entityIndex = ref.getIndex();
+/* 1747 */           int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
+/* 1748 */           BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
+/* 1749 */           if (entityProcessedBySystemIndexes.get(systemIndex)) {
+/* 1750 */             int index = this.entityChunkIndex[entityIndex];
+/* 1751 */             ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
 /*      */             
-/* 1750 */             entityDataSystem.fetch(index, archetypeChunk, this, commandBuffer, query, results);
+/* 1753 */             entityDataSystem.fetch(index, archetypeChunk, this, commandBuffer, query, results);
 /*      */           } 
 /*      */         } 
 /*      */       } 
 /*      */       
-/* 1755 */       EntityDataSystem.SystemTaskData.invokeParallelTask(this.fetchTask, commandBuffer, results);
+/* 1758 */       EntityDataSystem.SystemTaskData.invokeParallelTask(this.fetchTask, commandBuffer, results);
 /*      */     } finally {
-/* 1757 */       this.processing.unlock();
+/* 1760 */       this.processing.unlock();
 /*      */     } 
 /*      */     
-/* 1760 */     commandBuffer.consume();
+/* 1763 */     commandBuffer.consume();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <Event extends EcsEvent> void invoke(@Nonnull Ref<ECS_TYPE> ref, @Nonnull Event param) {
-/* 1765 */     EntityEventType<ECS_TYPE, ?> eventType = this.registry.getEntityEventTypeForClass(param.getClass());
-/* 1766 */     if (eventType == null)
+/* 1768 */     EntityEventType<ECS_TYPE, ?> eventType = this.registry.getEntityEventTypeForClass(param.getClass());
+/* 1769 */     if (eventType == null)
 /*      */       return; 
-/* 1768 */     invoke(eventType, ref, param);
+/* 1771 */     invoke(eventType, ref, param);
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <Event extends EcsEvent> void invoke(@Nonnull EntityEventType<ECS_TYPE, Event> systemType, @Nonnull Ref<ECS_TYPE> ref, @Nonnull Event param) {
-/* 1773 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1774 */     assertThread();
+/* 1776 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1777 */     assertThread();
 /*      */     
-/* 1776 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 1777 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
-/* 1778 */     commandBuffer.track(ref);
+/* 1779 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 1780 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
+/* 1781 */     commandBuffer.track(ref);
 /*      */     
-/* 1780 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
+/* 1783 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
 /*      */     
-/* 1782 */     this.processing.lock();
+/* 1785 */     this.processing.lock();
 /*      */     try {
-/* 1784 */       int entityIndex = ref.getIndex();
-/* 1785 */       int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
-/* 1786 */       BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
-/* 1787 */       ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 1788 */       int index = this.entityChunkIndex[entityIndex];
+/* 1787 */       int entityIndex = ref.getIndex();
+/* 1788 */       int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
+/* 1789 */       BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
+/* 1790 */       ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 1791 */       int index = this.entityChunkIndex[entityIndex];
 /*      */       
-/* 1790 */       int systemIndex = -1;
-/* 1791 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1792 */         systemIndex = entityProcessedBySystemIndexes.nextSetBit(systemIndex);
-/* 1793 */         if (systemIndex < 0)
-/* 1794 */           break;  if (!systemIndexes.get(systemIndex))
+/* 1793 */       int systemIndex = -1;
+/* 1794 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1795 */         systemIndex = entityProcessedBySystemIndexes.nextSetBit(systemIndex);
+/* 1796 */         if (systemIndex < 0)
+/* 1797 */           break;  if (!systemIndexes.get(systemIndex))
 /*      */           continue; 
-/* 1796 */         EntityEventSystem<ECS_TYPE, Event> system = data.<EntityEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
-/* 1797 */         system.handleInternal(index, archetypeChunk, this, commandBuffer, (EcsEvent)param);
+/* 1799 */         EntityEventSystem<ECS_TYPE, Event> system = data.<EntityEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
+/* 1800 */         system.handleInternal(index, archetypeChunk, this, commandBuffer, (EcsEvent)param);
 /*      */         
-/* 1799 */         if (commandBuffer.consumeWasTrackedRefRemoved())
+/* 1802 */         if (commandBuffer.consumeWasTrackedRefRemoved())
 /*      */           break; 
 /*      */       } 
 /*      */     } finally {
-/* 1803 */       this.processing.unlock();
+/* 1806 */       this.processing.unlock();
 /*      */     } 
 /*      */     
-/* 1806 */     commandBuffer.consume();
+/* 1809 */     commandBuffer.consume();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <Event extends EcsEvent> void invoke(@Nonnull Event param) {
-/* 1811 */     WorldEventType<ECS_TYPE, ?> eventType = this.registry.getWorldEventTypeForClass(param.getClass());
-/* 1812 */     if (eventType == null)
+/* 1814 */     WorldEventType<ECS_TYPE, ?> eventType = this.registry.getWorldEventTypeForClass(param.getClass());
+/* 1815 */     if (eventType == null)
 /*      */       return; 
-/* 1814 */     invoke(eventType, param);
+/* 1817 */     invoke(eventType, param);
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public <Event extends EcsEvent> void invoke(@Nonnull WorldEventType<ECS_TYPE, Event> systemType, @Nonnull Event param) {
-/* 1819 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1820 */     assertThread();
+/* 1822 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1823 */     assertThread();
 /*      */     
-/* 1822 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 1823 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
-/* 1824 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
+/* 1825 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 1826 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
+/* 1827 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
 /*      */     
-/* 1826 */     this.processing.lock();
+/* 1829 */     this.processing.lock();
 /*      */     try {
-/* 1828 */       int systemIndex = -1;
-/* 1829 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1830 */         WorldEventSystem<ECS_TYPE, Event> system = data.<WorldEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
-/* 1831 */         system.handleInternal(this, commandBuffer, (EcsEvent)param);
+/* 1831 */       int systemIndex = -1;
+/* 1832 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1833 */         WorldEventSystem<ECS_TYPE, Event> system = data.<WorldEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
+/* 1834 */         system.handleInternal(this, commandBuffer, (EcsEvent)param);
 /*      */       } 
 /*      */     } finally {
 /*      */       
-/* 1835 */       this.processing.unlock();
+/* 1838 */       this.processing.unlock();
 /*      */     } 
 /*      */     
-/* 1838 */     commandBuffer.consume();
+/* 1841 */     commandBuffer.consume();
 /*      */   }
 /*      */   
 /*      */   protected <Event extends EcsEvent> void internal_invoke(CommandBuffer<ECS_TYPE> sourceCommandBuffer, Ref<ECS_TYPE> ref, Event param) {
-/* 1842 */     EntityEventType<ECS_TYPE, ?> eventType = this.registry.getEntityEventTypeForClass(param.getClass());
-/* 1843 */     if (eventType == null)
+/* 1845 */     EntityEventType<ECS_TYPE, ?> eventType = this.registry.getEntityEventTypeForClass(param.getClass());
+/* 1846 */     if (eventType == null)
 /*      */       return; 
-/* 1845 */     internal_invoke(sourceCommandBuffer, eventType, ref, param);
+/* 1848 */     internal_invoke(sourceCommandBuffer, eventType, ref, param);
 /*      */   }
 /*      */   
 /*      */   protected <Event extends EcsEvent> void internal_invoke(CommandBuffer<ECS_TYPE> sourceCommandBuffer, @Nonnull EntityEventType<ECS_TYPE, Event> systemType, Ref<ECS_TYPE> ref, Event param) {
-/* 1849 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 1850 */     CommandBuffer<ECS_TYPE> commandBuffer = sourceCommandBuffer.fork();
-/* 1851 */     commandBuffer.track(ref);
+/* 1852 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 1853 */     CommandBuffer<ECS_TYPE> commandBuffer = sourceCommandBuffer.fork();
+/* 1854 */     commandBuffer.track(ref);
 /*      */     
-/* 1853 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
+/* 1856 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
 /*      */     
-/* 1855 */     int entityIndex = ref.getIndex();
-/* 1856 */     int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
-/* 1857 */     BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
-/* 1858 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 1859 */     int index = this.entityChunkIndex[entityIndex];
+/* 1858 */     int entityIndex = ref.getIndex();
+/* 1859 */     int archetypeIndex = this.entityToArchetypeChunk[entityIndex];
+/* 1860 */     BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
+/* 1861 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 1862 */     int index = this.entityChunkIndex[entityIndex];
 /*      */     
-/* 1861 */     int systemIndex = -1;
-/* 1862 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1863 */       systemIndex = entityProcessedBySystemIndexes.nextSetBit(systemIndex);
-/* 1864 */       if (systemIndex < 0)
-/* 1865 */         break;  if (!systemIndexes.get(systemIndex))
-/* 1866 */         continue;  EntityEventSystem<ECS_TYPE, Event> system = data.<EntityEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
-/* 1867 */       system.handleInternal(index, archetypeChunk, this, commandBuffer, (EcsEvent)param);
+/* 1864 */     int systemIndex = -1;
+/* 1865 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1866 */       systemIndex = entityProcessedBySystemIndexes.nextSetBit(systemIndex);
+/* 1867 */       if (systemIndex < 0)
+/* 1868 */         break;  if (!systemIndexes.get(systemIndex))
+/* 1869 */         continue;  EntityEventSystem<ECS_TYPE, Event> system = data.<EntityEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
+/* 1870 */       system.handleInternal(index, archetypeChunk, this, commandBuffer, (EcsEvent)param);
 /*      */       
-/* 1869 */       if (commandBuffer.consumeWasTrackedRefRemoved())
+/* 1872 */       if (commandBuffer.consumeWasTrackedRefRemoved())
 /*      */         break; 
 /*      */     } 
-/* 1872 */     commandBuffer.mergeParallel(sourceCommandBuffer);
+/* 1875 */     commandBuffer.mergeParallel(sourceCommandBuffer);
 /*      */   }
 /*      */   
 /*      */   protected <Event extends EcsEvent> void internal_invoke(CommandBuffer<ECS_TYPE> sourceCommandBuffer, Event param) {
-/* 1876 */     WorldEventType<ECS_TYPE, ?> eventType = this.registry.getWorldEventTypeForClass(param.getClass());
-/* 1877 */     if (eventType == null)
+/* 1879 */     WorldEventType<ECS_TYPE, ?> eventType = this.registry.getWorldEventTypeForClass(param.getClass());
+/* 1880 */     if (eventType == null)
 /*      */       return; 
-/* 1879 */     internal_invoke(sourceCommandBuffer, eventType, param);
+/* 1882 */     internal_invoke(sourceCommandBuffer, eventType, param);
 /*      */   }
 /*      */   
 /*      */   protected <Event extends EcsEvent> void internal_invoke(CommandBuffer<ECS_TYPE> sourceCommandBuffer, @Nonnull WorldEventType<ECS_TYPE, Event> systemType, Event param) {
-/* 1883 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 1884 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
+/* 1886 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 1887 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType<ECS_TYPE, Event>)systemType);
 /*      */     
-/* 1886 */     int systemIndex = -1;
-/* 1887 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1888 */       WorldEventSystem<ECS_TYPE, Event> system = data.<WorldEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
-/* 1889 */       system.handleInternal(this, sourceCommandBuffer, (EcsEvent)param);
+/* 1889 */     int systemIndex = -1;
+/* 1890 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1891 */       WorldEventSystem<ECS_TYPE, Event> system = data.<WorldEventSystem<ECS_TYPE, Event>>getSystem(systemIndex, (SystemType)systemType);
+/* 1892 */       system.handleInternal(this, sourceCommandBuffer, (EcsEvent)param);
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -1894,42 +1897,42 @@
 /*      */ 
 /*      */   
 /*      */   public void tick(float dt) {
-/* 1897 */     tickInternal(dt, (SystemType)this.registry.getTickingSystemType());
+/* 1900 */     tickInternal(dt, (SystemType)this.registry.getTickingSystemType());
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public void pausedTick(float dt) {
-/* 1904 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1905 */     assertThread();
+/* 1907 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1908 */     assertThread();
 /*      */     
-/* 1907 */     tickInternal(dt, (SystemType)this.registry.getRunWhenPausedSystemType());
+/* 1910 */     tickInternal(dt, (SystemType)this.registry.getRunWhenPausedSystemType());
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   private <Tickable extends TickableSystem<ECS_TYPE>> void tickInternal(float dt, SystemType<ECS_TYPE, Tickable> tickingSystemType) {
-/* 1912 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1913 */     assertThread();
+/* 1915 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1916 */     assertThread();
 /*      */     
-/* 1915 */     this.registry.getDataUpdateLock().readLock().lock();
+/* 1918 */     this.registry.getDataUpdateLock().readLock().lock();
 /*      */     try {
-/* 1917 */       ComponentRegistry.Data<ECS_TYPE> data = this.registry.doDataUpdate();
+/* 1920 */       ComponentRegistry.Data<ECS_TYPE> data = this.registry.doDataUpdate();
 /*      */ 
 /*      */ 
 /*      */       
-/* 1921 */       BitSet systemIndexes = data.getSystemIndexesForType(tickingSystemType);
+/* 1924 */       BitSet systemIndexes = data.getSystemIndexesForType(tickingSystemType);
 /*      */       
-/* 1923 */       int systemIndex = -1;
-/* 1924 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 1925 */         TickableSystem tickableSystem = data.<TickableSystem>getSystem(systemIndex, tickingSystemType);
-/* 1926 */         long start = System.nanoTime();
-/* 1927 */         tickableSystem.tick(dt, systemIndex, this);
-/* 1928 */         long end = System.nanoTime();
-/* 1929 */         this.systemMetrics[systemIndex].add(end, end - start);
+/* 1926 */       int systemIndex = -1;
+/* 1927 */       while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 1928 */         TickableSystem tickableSystem = data.<TickableSystem>getSystem(systemIndex, tickingSystemType);
+/* 1929 */         long start = System.nanoTime();
+/* 1930 */         tickableSystem.tick(dt, systemIndex, this);
+/* 1931 */         long end = System.nanoTime();
+/* 1932 */         this.systemMetrics[systemIndex].add(end, end - start);
 /*      */       } 
 /*      */     } finally {
-/* 1932 */       this.registry.getDataUpdateLock().readLock().unlock();
+/* 1935 */       this.registry.getDataUpdateLock().readLock().unlock();
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -1951,34 +1954,34 @@
 /*      */ 
 /*      */   
 /*      */   public void tick(ArchetypeTickingSystem<ECS_TYPE> system, float dt, int systemIndex) {
-/* 1954 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
-/* 1955 */     assertThread();
+/* 1957 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!"); 
+/* 1958 */     assertThread();
 /*      */     
-/* 1957 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
-/* 1958 */     this.parallelTask.init();
+/* 1960 */     CommandBuffer<ECS_TYPE> commandBuffer = takeCommandBuffer();
+/* 1961 */     this.parallelTask.init();
 /*      */     
-/* 1960 */     boolean oldDisableProcessingAssert = this.disableProcessingAssert;
-/* 1961 */     this.disableProcessingAssert = system instanceof DisableProcessingAssert;
+/* 1963 */     boolean oldDisableProcessingAssert = this.disableProcessingAssert;
+/* 1964 */     this.disableProcessingAssert = system instanceof DisableProcessingAssert;
 /*      */     
-/* 1963 */     this.processing.lock();
+/* 1966 */     this.processing.lock();
 /*      */     
 /*      */     try {
-/* 1966 */       BitSet indexes = this.systemIndexToArchetypeChunkIndexes[systemIndex];
+/* 1969 */       BitSet indexes = this.systemIndexToArchetypeChunkIndexes[systemIndex];
 /*      */ 
 /*      */       
-/* 1969 */       int index = -1;
-/* 1970 */       while ((index = indexes.nextSetBit(index + 1)) >= 0) {
-/* 1971 */         system.tick(dt, this.archetypeChunks[index], this, commandBuffer);
+/* 1972 */       int index = -1;
+/* 1973 */       while ((index = indexes.nextSetBit(index + 1)) >= 0) {
+/* 1974 */         system.tick(dt, this.archetypeChunks[index], this, commandBuffer);
 /*      */       }
 /*      */       
-/* 1974 */       EntityTickingSystem.SystemTaskData.invokeParallelTask(this.parallelTask, commandBuffer);
+/* 1977 */       EntityTickingSystem.SystemTaskData.invokeParallelTask(this.parallelTask, commandBuffer);
 /*      */     } finally {
-/* 1976 */       this.processing.unlock();
+/* 1979 */       this.processing.unlock();
 /*      */       
-/* 1978 */       this.disableProcessingAssert = oldDisableProcessingAssert;
+/* 1981 */       this.disableProcessingAssert = oldDisableProcessingAssert;
 /*      */     } 
 /*      */     
-/* 1981 */     commandBuffer.consume();
+/* 1984 */     commandBuffer.consume();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1986,76 +1989,76 @@
 /*      */ 
 /*      */   
 /*      */   void updateData(@Nonnull ComponentRegistry.Data<ECS_TYPE> oldData, @Nonnull ComponentRegistry.Data<ECS_TYPE> data) {
-/* 1989 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!");
+/* 1992 */     if (this.shutdown) throw new IllegalStateException("Store is shutdown!");
 /*      */     
-/* 1991 */     int resourceSize = data.getResourceSize();
-/* 1992 */     this.resources = Arrays.<Resource<ECS_TYPE>>copyOf(this.resources, resourceSize);
-/* 1993 */     for (int index = 0; index < this.resources.length; index++) {
-/* 1994 */       ResourceType<ECS_TYPE, ? extends Resource<ECS_TYPE>> resourceType = (ResourceType)data.getResourceType(index);
-/* 1995 */       if (this.resources[index] == null && resourceType != null) {
-/* 1996 */         this.resources[index] = this.resourceStorage.<Resource<ECS_TYPE>, ECS_TYPE>load(this, data, (ResourceType)resourceType).join();
-/* 1997 */       } else if (this.resources[index] != null && resourceType == null) {
-/* 1998 */         this.resources[index] = null;
+/* 1994 */     int resourceSize = data.getResourceSize();
+/* 1995 */     this.resources = Arrays.<Resource<ECS_TYPE>>copyOf(this.resources, resourceSize);
+/* 1996 */     for (int index = 0; index < this.resources.length; index++) {
+/* 1997 */       ResourceType<ECS_TYPE, ? extends Resource<ECS_TYPE>> resourceType = (ResourceType)data.getResourceType(index);
+/* 1998 */       if (this.resources[index] == null && resourceType != null) {
+/* 1999 */         this.resources[index] = this.resourceStorage.<Resource<ECS_TYPE>, ECS_TYPE>load(this, data, (ResourceType)resourceType).join();
+/* 2000 */       } else if (this.resources[index] != null && resourceType == null) {
+/* 2001 */         this.resources[index] = null;
 /*      */       } 
 /*      */     } 
 /*      */ 
 /*      */     
-/* 2003 */     boolean systemChanged = false;
-/* 2004 */     for (int i = 0; i < data.getDataChangeCount(); i++) {
-/* 2005 */       DataChange dataChange = data.getDataChange(i);
-/* 2006 */       systemChanged |= dataChange instanceof SystemChange;
-/* 2007 */       updateData(oldData, data, dataChange);
+/* 2006 */     boolean systemChanged = false;
+/* 2007 */     for (int i = 0; i < data.getDataChangeCount(); i++) {
+/* 2008 */       DataChange dataChange = data.getDataChange(i);
+/* 2009 */       systemChanged |= dataChange instanceof SystemChange;
+/* 2010 */       updateData(oldData, data, dataChange);
 /*      */     } 
 /*      */     
-/* 2010 */     HistoricMetric[] oldSystemMetrics = this.systemMetrics;
-/* 2011 */     this.systemMetrics = new HistoricMetric[data.getSystemSize()];
+/* 2013 */     HistoricMetric[] oldSystemMetrics = this.systemMetrics;
+/* 2014 */     this.systemMetrics = new HistoricMetric[data.getSystemSize()];
 /*      */     
-/* 2013 */     SystemType<ECS_TYPE, TickableSystem<ECS_TYPE>> tickingSystemType = this.registry.getTickableSystemType();
-/* 2014 */     BitSet systemIndexes = data.getSystemIndexesForType(tickingSystemType);
+/* 2016 */     SystemType<ECS_TYPE, TickableSystem<ECS_TYPE>> tickingSystemType = this.registry.getTickableSystemType();
+/* 2017 */     BitSet systemIndexes = data.getSystemIndexesForType(tickingSystemType);
 /*      */     
-/* 2016 */     int systemIndex = -1;
-/* 2017 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 2018 */       ISystem<ECS_TYPE> system = data.getSystem(systemIndex);
-/* 2019 */       int oldSystemIndex = oldData.indexOf(system);
-/* 2020 */       if (oldSystemIndex >= 0) {
-/* 2021 */         this.systemMetrics[systemIndex] = oldSystemMetrics[oldSystemIndex];
+/* 2019 */     int systemIndex = -1;
+/* 2020 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 2021 */       ISystem<ECS_TYPE> system = data.getSystem(systemIndex);
+/* 2022 */       int oldSystemIndex = oldData.indexOf(system);
+/* 2023 */       if (oldSystemIndex >= 0) {
+/* 2024 */         this.systemMetrics[systemIndex] = oldSystemMetrics[oldSystemIndex];
 /*      */         continue;
 /*      */       } 
-/* 2024 */       this.systemMetrics[systemIndex] = HistoricMetric.builder(33333333L, TimeUnit.NANOSECONDS)
-/* 2025 */         .addPeriod(1L, TimeUnit.SECONDS)
-/* 2026 */         .addPeriod(1L, TimeUnit.MINUTES)
-/* 2027 */         .addPeriod(5L, TimeUnit.MINUTES)
-/* 2028 */         .build();
+/* 2027 */       this.systemMetrics[systemIndex] = HistoricMetric.builder(33333333L, TimeUnit.NANOSECONDS)
+/* 2028 */         .addPeriod(1L, TimeUnit.SECONDS)
+/* 2029 */         .addPeriod(1L, TimeUnit.MINUTES)
+/* 2030 */         .addPeriod(5L, TimeUnit.MINUTES)
+/* 2031 */         .build();
 /*      */     } 
 /*      */ 
 /*      */ 
 /*      */     
-/* 2033 */     if (systemChanged) updateArchetypeIndexes(data); 
+/* 2036 */     if (systemChanged) updateArchetypeIndexes(data); 
 /*      */   }
 /*      */   
 /*      */   private void updateData(@Nonnull ComponentRegistry.Data<ECS_TYPE> oldData, @Nonnull ComponentRegistry.Data<ECS_TYPE> newData, DataChange dataChange) {
-/* 2037 */     this.processing.lock();
+/* 2040 */     this.processing.lock();
 /*      */     
 /*      */     try {
-/* 2040 */       updateData0(oldData, newData, dataChange);
+/* 2043 */       updateData0(oldData, newData, dataChange);
 /*      */     } finally {
-/* 2042 */       this.processing.unlock();
+/* 2045 */       this.processing.unlock();
 /*      */     } 
 /*      */     
-/* 2045 */     if (dataChange instanceof SystemChange) {
+/* 2048 */     if (dataChange instanceof SystemChange) {
 /*      */       
-/* 2047 */       SystemChange<ECS_TYPE> systemChange = (SystemChange<ECS_TYPE>)dataChange;
-/* 2048 */       ISystem<ECS_TYPE> system = systemChange.getSystem();
+/* 2050 */       SystemChange<ECS_TYPE> systemChange = (SystemChange<ECS_TYPE>)dataChange;
+/* 2051 */       ISystem<ECS_TYPE> system = systemChange.getSystem();
 /*      */       
-/* 2050 */       switch (systemChange.getType()) {
+/* 2053 */       switch (systemChange.getType()) {
 /*      */         case REGISTERED:
-/* 2052 */           if (system instanceof StoreSystem) {
-/* 2053 */             ((StoreSystem)system).onSystemAddedToStore(this);
+/* 2055 */           if (system instanceof StoreSystem) {
+/* 2056 */             ((StoreSystem)system).onSystemAddedToStore(this);
 /*      */           }
 /*      */           break;
 /*      */         case UNREGISTERED:
-/* 2057 */           if (system instanceof StoreSystem) {
-/* 2058 */             ((StoreSystem)system).onSystemRemovedFromStore(this);
+/* 2060 */           if (system instanceof StoreSystem) {
+/* 2061 */             ((StoreSystem)system).onSystemRemovedFromStore(this);
 /*      */           }
 /*      */           break;
 /*      */       } 
@@ -2063,44 +2066,44 @@
 /*      */   }
 /*      */   
 /*      */   private void updateData0(@Nonnull ComponentRegistry.Data<ECS_TYPE> oldData, @Nonnull ComponentRegistry.Data<ECS_TYPE> newData, DataChange dataChange) {
-/* 2066 */     if (dataChange instanceof ComponentChange) {
+/* 2069 */     if (dataChange instanceof ComponentChange) {
 /*      */       String componentId; Codec<Component<ECS_TYPE>> componentCodec; Holder<ECS_TYPE> tempInternalEntityHolder; int oldArchetypeSize, archetypeIndex, highestUsedIndex;
-/* 2068 */       ComponentChange<ECS_TYPE, ? extends Component<ECS_TYPE>> componentChange = (ComponentChange<ECS_TYPE, ? extends Component<ECS_TYPE>>)dataChange;
-/* 2069 */       ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = componentChange.getComponentType();
+/* 2071 */       ComponentChange<ECS_TYPE, ? extends Component<ECS_TYPE>> componentChange = (ComponentChange<ECS_TYPE, ? extends Component<ECS_TYPE>>)dataChange;
+/* 2072 */       ComponentType<ECS_TYPE, ? extends Component<ECS_TYPE>> componentType = componentChange.getComponentType();
 /*      */       
-/* 2071 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = this.registry.getUnknownComponentType();
+/* 2074 */       ComponentType<ECS_TYPE, UnknownComponents<ECS_TYPE>> unknownComponentType = this.registry.getUnknownComponentType();
 /*      */ 
 /*      */ 
 /*      */       
-/* 2075 */       switch (componentChange.getType()) {
+/* 2078 */       switch (componentChange.getType()) {
 /*      */         case REGISTERED:
-/* 2077 */           componentId = newData.getComponentId(componentType);
+/* 2080 */           componentId = newData.getComponentId(componentType);
 /*      */           
-/* 2079 */           componentCodec = newData.getComponentCodec((ComponentType)componentType);
+/* 2082 */           componentCodec = newData.getComponentCodec((ComponentType)componentType);
 /*      */ 
 /*      */           
-/* 2082 */           if (componentCodec != null) {
-/* 2083 */             Holder<ECS_TYPE> holder = this.registry._internal_newEntityHolder();
+/* 2085 */           if (componentCodec != null) {
+/* 2086 */             Holder<ECS_TYPE> holder = this.registry._internal_newEntityHolder();
 /*      */             
-/* 2085 */             int i = this.archetypeSize;
-/* 2086 */             for (int j = 0; j < i; j++) {
-/* 2087 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[j];
-/* 2088 */               if (archetypeChunk != null) {
+/* 2088 */             int i = this.archetypeSize;
+/* 2089 */             for (int j = 0; j < i; j++) {
+/* 2090 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[j];
+/* 2091 */               if (archetypeChunk != null) {
 /*      */                 
-/* 2090 */                 Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
+/* 2093 */                 Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
 /*      */ 
 /*      */                 
-/* 2093 */                 if (!archetype.contains(componentType))
+/* 2096 */                 if (!archetype.contains(componentType))
 /*      */                 {
 /*      */                   
-/* 2096 */                   if (archetype.contains(unknownComponentType)) {
+/* 2099 */                   if (archetype.contains(unknownComponentType)) {
 /*      */ 
 /*      */                     
-/* 2099 */                     Archetype<ECS_TYPE> newArchetype = Archetype.add(archetype, componentType);
-/* 2100 */                     int toArchetypeIndex = findOrCreateArchetypeChunk(newArchetype);
-/* 2101 */                     ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
+/* 2102 */                     Archetype<ECS_TYPE> newArchetype = Archetype.add(archetype, componentType);
+/* 2103 */                     int toArchetypeIndex = findOrCreateArchetypeChunk(newArchetype);
+/* 2104 */                     ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
 /*      */                     
-/* 2103 */                     archetypeChunk.transferSomeTo(holder, toArchetypeChunk, index -> {
+/* 2106 */                     archetypeChunk.transferSomeTo(holder, toArchetypeChunk, index -> {
 /*      */                           UnknownComponents<ECS_TYPE> unknownComponents = (UnknownComponents<ECS_TYPE>)archetypeChunk.getComponent(index, unknownComponentType);
 /*      */                           
 /*      */                           assert unknownComponents != null;
@@ -2116,61 +2119,61 @@
 /*      */                           this.entityToArchetypeChunk[ref.getIndex()] = toArchetypeIndex;
 /*      */                           this.entityChunkIndex[ref.getIndex()] = newChunkEntityRef;
 /*      */                         });
-/* 2119 */                     if (archetypeChunk.size() == 0) {
-/* 2120 */                       this.archetypeToIndexMap.removeInt(this.archetypeChunks[j].getArchetype());
-/* 2121 */                       this.archetypeChunks[j] = null;
-/* 2122 */                       for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
-/* 2123 */                         this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(j);
+/* 2122 */                     if (archetypeChunk.size() == 0) {
+/* 2123 */                       this.archetypeToIndexMap.removeInt(this.archetypeChunks[j].getArchetype());
+/* 2124 */                       this.archetypeChunks[j] = null;
+/* 2125 */                       for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
+/* 2126 */                         this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(j);
 /*      */                       }
-/* 2125 */                       this.archetypeChunkIndexesToSystemIndex[j].clear();
-/* 2126 */                       this.archetypeChunkReuse.set(j);
+/* 2128 */                       this.archetypeChunkIndexesToSystemIndex[j].clear();
+/* 2129 */                       this.archetypeChunkReuse.set(j);
 /*      */                     } 
 /*      */                     
-/* 2129 */                     if (toArchetypeChunk.size() == 0)
-/* 2130 */                     { this.archetypeToIndexMap.removeInt(this.archetypeChunks[toArchetypeIndex].getArchetype());
-/* 2131 */                       this.archetypeChunks[toArchetypeIndex] = null;
-/* 2132 */                       for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
-/* 2133 */                         this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(toArchetypeIndex);
+/* 2132 */                     if (toArchetypeChunk.size() == 0)
+/* 2133 */                     { this.archetypeToIndexMap.removeInt(this.archetypeChunks[toArchetypeIndex].getArchetype());
+/* 2134 */                       this.archetypeChunks[toArchetypeIndex] = null;
+/* 2135 */                       for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
+/* 2136 */                         this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(toArchetypeIndex);
 /*      */                       }
-/* 2135 */                       this.archetypeChunkIndexesToSystemIndex[toArchetypeIndex].clear();
-/* 2136 */                       this.archetypeChunkReuse.set(toArchetypeIndex); } 
+/* 2138 */                       this.archetypeChunkIndexesToSystemIndex[toArchetypeIndex].clear();
+/* 2139 */                       this.archetypeChunkReuse.set(toArchetypeIndex); } 
 /*      */                   }  } 
 /*      */               } 
 /*      */             } 
 /*      */           }  break;
 /*      */         case UNREGISTERED:
-/* 2142 */           tempInternalEntityHolder = this.registry._internal_newEntityHolder();
+/* 2145 */           tempInternalEntityHolder = this.registry._internal_newEntityHolder();
 /*      */           
-/* 2144 */           componentId = oldData.getComponentId(componentType);
+/* 2147 */           componentId = oldData.getComponentId(componentType);
 /*      */           
-/* 2146 */           componentCodec = oldData.getComponentCodec((ComponentType)componentType);
+/* 2149 */           componentCodec = oldData.getComponentCodec((ComponentType)componentType);
 /*      */           
-/* 2148 */           oldArchetypeSize = this.archetypeSize;
-/* 2149 */           for (archetypeIndex = 0; archetypeIndex < oldArchetypeSize; archetypeIndex++) {
-/* 2150 */             ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 2151 */             if (archetypeChunk != null) {
+/* 2151 */           oldArchetypeSize = this.archetypeSize;
+/* 2152 */           for (archetypeIndex = 0; archetypeIndex < oldArchetypeSize; archetypeIndex++) {
+/* 2153 */             ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 2154 */             if (archetypeChunk != null) {
 /*      */               
-/* 2153 */               Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
-/* 2154 */               if (archetype.contains(componentType)) {
+/* 2156 */               Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
+/* 2157 */               if (archetype.contains(componentType)) {
 /*      */ 
 /*      */                 
-/* 2157 */                 this.archetypeToIndexMap.removeInt(this.archetypeChunks[archetypeIndex].getArchetype());
-/* 2158 */                 this.archetypeChunks[archetypeIndex] = null;
-/* 2159 */                 for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
-/* 2160 */                   this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(archetypeIndex);
+/* 2160 */                 this.archetypeToIndexMap.removeInt(this.archetypeChunks[archetypeIndex].getArchetype());
+/* 2161 */                 this.archetypeChunks[archetypeIndex] = null;
+/* 2162 */                 for (int systemIndex = 0; systemIndex < oldData.getSystemSize(); systemIndex++) {
+/* 2163 */                   this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(archetypeIndex);
 /*      */                 }
-/* 2162 */                 this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
-/* 2163 */                 this.archetypeChunkReuse.set(archetypeIndex);
+/* 2165 */                 this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
+/* 2166 */                 this.archetypeChunkReuse.set(archetypeIndex);
 /*      */ 
 /*      */                 
-/* 2166 */                 Archetype<ECS_TYPE> newArchetype = Archetype.remove(archetype, componentType);
-/* 2167 */                 if (componentCodec != null && !newArchetype.contains(unknownComponentType)) {
-/* 2168 */                   newArchetype = Archetype.add(newArchetype, unknownComponentType);
+/* 2169 */                 Archetype<ECS_TYPE> newArchetype = Archetype.remove(archetype, componentType);
+/* 2170 */                 if (componentCodec != null && !newArchetype.contains(unknownComponentType)) {
+/* 2171 */                   newArchetype = Archetype.add(newArchetype, unknownComponentType);
 /*      */                 }
-/* 2170 */                 int toArchetypeIndex = findOrCreateArchetypeChunk(newArchetype);
-/* 2171 */                 ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
+/* 2173 */                 int toArchetypeIndex = findOrCreateArchetypeChunk(newArchetype);
+/* 2174 */                 ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
 /*      */                 
-/* 2173 */                 archetypeChunk.transferTo(tempInternalEntityHolder, toArchetypeChunk, entity -> {
+/* 2176 */                 archetypeChunk.transferTo(tempInternalEntityHolder, toArchetypeChunk, entity -> {
 /*      */                       if (componentCodec != null) {
 /*      */                         UnknownComponents<ECS_TYPE> unknownComponents;
 /*      */                         
@@ -2195,39 +2198,39 @@
 /*      */               } 
 /*      */             } 
 /*      */           } 
-/* 2198 */           highestUsedIndex = this.archetypeChunkReuse.previousClearBit(oldArchetypeSize - 1);
-/* 2199 */           this.archetypeSize = highestUsedIndex + 1;
-/* 2200 */           this.archetypeChunkReuse.clear(this.archetypeSize, oldArchetypeSize);
+/* 2201 */           highestUsedIndex = this.archetypeChunkReuse.previousClearBit(oldArchetypeSize - 1);
+/* 2202 */           this.archetypeSize = highestUsedIndex + 1;
+/* 2203 */           this.archetypeChunkReuse.clear(this.archetypeSize, oldArchetypeSize);
 /*      */           break;
 /*      */       } 
-/* 2203 */     } else if (dataChange instanceof SystemChange) {
+/* 2206 */     } else if (dataChange instanceof SystemChange) {
 /*      */       
-/* 2205 */       SystemChange<ECS_TYPE> systemChange = (SystemChange<ECS_TYPE>)dataChange;
-/* 2206 */       ISystem<ECS_TYPE> system = systemChange.getSystem();
+/* 2208 */       SystemChange<ECS_TYPE> systemChange = (SystemChange<ECS_TYPE>)dataChange;
+/* 2209 */       ISystem<ECS_TYPE> system = systemChange.getSystem();
 /*      */       
-/* 2208 */       switch (systemChange.getType()) {
+/* 2211 */       switch (systemChange.getType()) {
 /*      */         case REGISTERED:
-/* 2210 */           if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
-/* 2211 */             for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
-/* 2212 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 2213 */               if (archetypeChunk != null)
+/* 2213 */           if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
+/* 2214 */             for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
+/* 2215 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 2216 */               if (archetypeChunk != null)
 /*      */               {
 /*      */                 
-/* 2216 */                 if (archetypeChunkSystem.test(this.registry, archetypeChunk.getArchetype()))
-/* 2217 */                   archetypeChunkSystem.onSystemAddedToArchetypeChunk(archetypeChunk); 
+/* 2219 */                 if (archetypeChunkSystem.test(this.registry, archetypeChunk.getArchetype()))
+/* 2220 */                   archetypeChunkSystem.onSystemAddedToArchetypeChunk(archetypeChunk); 
 /*      */               }
 /*      */             }  }
 /*      */           
 /*      */           break;
 /*      */         case UNREGISTERED:
-/* 2223 */           if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
-/* 2224 */             for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
-/* 2225 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 2226 */               if (archetypeChunk != null)
+/* 2226 */           if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
+/* 2227 */             for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
+/* 2228 */               ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 2229 */               if (archetypeChunk != null)
 /*      */               {
 /*      */                 
-/* 2229 */                 if (archetypeChunkSystem.test(this.registry, archetypeChunk.getArchetype()))
-/* 2230 */                   archetypeChunkSystem.onSystemRemovedFromArchetypeChunk(archetypeChunk); 
+/* 2232 */                 if (archetypeChunkSystem.test(this.registry, archetypeChunk.getArchetype()))
+/* 2233 */                   archetypeChunkSystem.onSystemRemovedFromArchetypeChunk(archetypeChunk); 
 /*      */               }
 /*      */             }  }
 /*      */           
@@ -2237,54 +2240,54 @@
 /*      */   }
 /*      */   
 /*      */   private void updateArchetypeIndexes(@Nonnull ComponentRegistry.Data<ECS_TYPE> data) {
-/* 2240 */     int systemSize = data.getSystemSize();
+/* 2243 */     int systemSize = data.getSystemSize();
 /*      */ 
 /*      */     
-/* 2243 */     int oldLength = this.systemIndexToArchetypeChunkIndexes.length;
-/* 2244 */     if (oldLength < systemSize) {
-/* 2245 */       this.systemIndexToArchetypeChunkIndexes = Arrays.<BitSet>copyOf(this.systemIndexToArchetypeChunkIndexes, systemSize);
-/* 2246 */       for (int j = oldLength; j < systemSize; j++) {
-/* 2247 */         this.systemIndexToArchetypeChunkIndexes[j] = new BitSet(this.archetypeSize);
+/* 2246 */     int oldLength = this.systemIndexToArchetypeChunkIndexes.length;
+/* 2247 */     if (oldLength < systemSize) {
+/* 2248 */       this.systemIndexToArchetypeChunkIndexes = Arrays.<BitSet>copyOf(this.systemIndexToArchetypeChunkIndexes, systemSize);
+/* 2249 */       for (int j = oldLength; j < systemSize; j++) {
+/* 2250 */         this.systemIndexToArchetypeChunkIndexes[j] = new BitSet(this.archetypeSize);
 /*      */       }
 /*      */     } 
 /*      */ 
 /*      */     
-/* 2252 */     for (int systemIndex = 0; systemIndex < oldLength; systemIndex++) {
-/* 2253 */       this.systemIndexToArchetypeChunkIndexes[systemIndex].clear();
+/* 2255 */     for (int systemIndex = 0; systemIndex < oldLength; systemIndex++) {
+/* 2256 */       this.systemIndexToArchetypeChunkIndexes[systemIndex].clear();
 /*      */     }
 /*      */ 
 /*      */     
-/* 2257 */     for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
-/* 2258 */       this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
+/* 2260 */     for (int archetypeIndex = 0; archetypeIndex < this.archetypeSize; archetypeIndex++) {
+/* 2261 */       this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
 /*      */     }
 /*      */ 
 /*      */     
-/* 2262 */     SystemType<ECS_TYPE, QuerySystem<ECS_TYPE>> entityQuerySystemType = this.registry.getQuerySystemType();
-/* 2263 */     BitSet systemIndexes = data.getSystemIndexesForType(entityQuerySystemType);
+/* 2265 */     SystemType<ECS_TYPE, QuerySystem<ECS_TYPE>> entityQuerySystemType = this.registry.getQuerySystemType();
+/* 2266 */     BitSet systemIndexes = data.getSystemIndexesForType(entityQuerySystemType);
 /*      */     
-/* 2265 */     int i = -1;
-/* 2266 */     while ((i = systemIndexes.nextSetBit(i + 1)) >= 0) {
-/* 2267 */       QuerySystem<ECS_TYPE> system = data.<QuerySystem<ECS_TYPE>>getSystem(i, entityQuerySystemType);
+/* 2268 */     int i = -1;
+/* 2269 */     while ((i = systemIndexes.nextSetBit(i + 1)) >= 0) {
+/* 2270 */       QuerySystem<ECS_TYPE> system = data.<QuerySystem<ECS_TYPE>>getSystem(i, entityQuerySystemType);
 /*      */ 
 /*      */       
-/* 2270 */       BitSet archetypeChunkIndexes = this.systemIndexToArchetypeChunkIndexes[i];
+/* 2273 */       BitSet archetypeChunkIndexes = this.systemIndexToArchetypeChunkIndexes[i];
 /*      */       
-/* 2272 */       for (int j = 0; j < this.archetypeSize; j++) {
-/* 2273 */         ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[j];
-/* 2274 */         if (archetypeChunk != null)
+/* 2275 */       for (int j = 0; j < this.archetypeSize; j++) {
+/* 2276 */         ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[j];
+/* 2277 */         if (archetypeChunk != null)
 /*      */         {
 /*      */           
-/* 2277 */           if (system.test(this.registry, archetypeChunk.getArchetype())) {
-/* 2278 */             archetypeChunkIndexes.set(j);
-/* 2279 */             this.archetypeChunkIndexesToSystemIndex[j].set(i);
+/* 2280 */           if (system.test(this.registry, archetypeChunk.getArchetype())) {
+/* 2281 */             archetypeChunkIndexes.set(j);
+/* 2282 */             this.archetypeChunkIndexesToSystemIndex[j].set(i);
 /*      */           }  } 
 /*      */       } 
 /*      */     } 
 /*      */   }
 /*      */   
 /*      */   public void assertWriteProcessing() {
-/* 2286 */     if (this.processing.isHeld() && !this.disableProcessingAssert) {
-/* 2287 */       throw new IllegalStateException("Store is currently processing! Ensure you aren't calling a store method from a system.");
+/* 2289 */     if (this.processing.isHeld() && !this.disableProcessingAssert) {
+/* 2290 */       throw new IllegalStateException("Store is currently processing! Ensure you aren't calling a store method from a system.");
 /*      */     }
 /*      */   }
 /*      */ 
@@ -2294,35 +2297,35 @@
 /*      */   
 /*      */   @Deprecated
 /*      */   public boolean isProcessing() {
-/* 2297 */     return this.processing.isHeld();
+/* 2300 */     return this.processing.isHeld();
 /*      */   }
 /*      */   
 /*      */   public void assertThread() {
-/* 2301 */     Thread currentThread = Thread.currentThread();
-/* 2302 */     if (!currentThread.equals(this.thread) && this.thread.isAlive()) {
-/* 2303 */       throw new IllegalStateException("Assert not in thread! " + String.valueOf(this.thread) + " but was in " + String.valueOf(currentThread));
+/* 2304 */     Thread currentThread = Thread.currentThread();
+/* 2305 */     if (!currentThread.equals(this.thread) && this.thread.isAlive()) {
+/* 2306 */       throw new IllegalStateException("Assert not in thread! " + String.valueOf(this.thread) + " but was in " + String.valueOf(currentThread));
 /*      */     }
 /*      */   }
 /*      */   
 /*      */   public boolean isInThread() {
-/* 2308 */     return Thread.currentThread().equals(this.thread);
+/* 2311 */     return Thread.currentThread().equals(this.thread);
 /*      */   }
 /*      */   
 /*      */   public boolean isAliveInDifferentThread() {
-/* 2312 */     return (this.thread.isAlive() && !Thread.currentThread().equals(this.thread));
+/* 2315 */     return (this.thread.isAlive() && !Thread.currentThread().equals(this.thread));
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public String toString() {
-/* 2319 */     return "Store{super()=" + String.valueOf(getClass()) + "@" + hashCode() + ", registry=" + 
-/* 2320 */       String.valueOf(this.registry.getClass()) + "@" + this.registry.hashCode() + ", shutdown=" + this.shutdown + ", storeIndex=" + this.storeIndex + ", systemIndexToArchetypeChunkIndexes=" + 
+/* 2322 */     return "Store{super()=" + String.valueOf(getClass()) + "@" + hashCode() + ", registry=" + 
+/* 2323 */       String.valueOf(this.registry.getClass()) + "@" + this.registry.hashCode() + ", shutdown=" + this.shutdown + ", storeIndex=" + this.storeIndex + ", systemIndexToArchetypeChunkIndexes=" + 
 /*      */ 
 /*      */       
-/* 2323 */       Arrays.toString((Object[])this.systemIndexToArchetypeChunkIndexes) + ", archetypeSize=" + this.archetypeSize + ", archetypeChunks=" + 
+/* 2326 */       Arrays.toString((Object[])this.systemIndexToArchetypeChunkIndexes) + ", archetypeSize=" + this.archetypeSize + ", archetypeChunks=" + 
 /*      */       
-/* 2325 */       Arrays.toString((Object[])this.archetypeChunks) + "}";
+/* 2328 */       Arrays.toString((Object[])this.archetypeChunks) + "}";
 /*      */   }
 /*      */ 
 /*      */ 
@@ -2333,7 +2336,7 @@
 /*      */   private static class ProcessingCounter
 /*      */     implements Lock
 /*      */   {
-/* 2336 */     private int count = 0;
+/* 2339 */     private int count = 0;
 /*      */ 
 /*      */ 
 /*      */ 
@@ -2341,168 +2344,168 @@
 /*      */ 
 /*      */     
 /*      */     public boolean isHeld() {
-/* 2344 */       return (this.count > 0);
+/* 2347 */       return (this.count > 0);
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public void lock() {
-/* 2349 */       this.count++;
+/* 2352 */       this.count++;
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public void lockInterruptibly() {
-/* 2354 */       throw new UnsupportedOperationException("lockInterruptibly() is not supported");
+/* 2357 */       throw new UnsupportedOperationException("lockInterruptibly() is not supported");
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public boolean tryLock() {
-/* 2359 */       throw new UnsupportedOperationException("tryLock() is not supported");
+/* 2362 */       throw new UnsupportedOperationException("tryLock() is not supported");
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public boolean tryLock(long time, @Nonnull TimeUnit unit) {
-/* 2364 */       throw new UnsupportedOperationException("tryLock() is not supported");
+/* 2367 */       throw new UnsupportedOperationException("tryLock() is not supported");
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     public void unlock() {
-/* 2369 */       this.count--;
+/* 2372 */       this.count--;
 /*      */     }
 /*      */ 
 /*      */     
 /*      */     @Nonnull
 /*      */     public Condition newCondition() {
-/* 2375 */       throw new UnsupportedOperationException("Conditions are not supported");
+/* 2378 */       throw new UnsupportedOperationException("Conditions are not supported");
 /*      */     }
 /*      */   }
 /*      */   
 /*      */   private <T extends Component<ECS_TYPE>> void datachunk_addComponent(@Nonnull Ref<ECS_TYPE> ref, int fromArchetypeIndex, @Nonnull ComponentType<ECS_TYPE, T> componentType, @Nonnull T component, @Nonnull CommandBuffer<ECS_TYPE> commandBuffer) {
-/* 2380 */     int entityIndex = ref.getIndex();
+/* 2383 */     int entityIndex = ref.getIndex();
 /*      */     
-/* 2382 */     ArchetypeChunk<ECS_TYPE> fromArchetypeChunk = this.archetypeChunks[fromArchetypeIndex];
-/* 2383 */     int oldChunkEntityRef = this.entityChunkIndex[entityIndex];
-/* 2384 */     Holder<ECS_TYPE> holder = this.registry._internal_newEntityHolder();
-/* 2385 */     fromArchetypeChunk.removeEntity(oldChunkEntityRef, holder);
+/* 2385 */     ArchetypeChunk<ECS_TYPE> fromArchetypeChunk = this.archetypeChunks[fromArchetypeIndex];
+/* 2386 */     int oldChunkEntityRef = this.entityChunkIndex[entityIndex];
+/* 2387 */     Holder<ECS_TYPE> holder = this.registry._internal_newEntityHolder();
+/* 2388 */     fromArchetypeChunk.removeEntity(oldChunkEntityRef, holder);
 /*      */ 
 /*      */     
-/* 2388 */     holder.addComponent(componentType, component);
+/* 2391 */     holder.addComponent(componentType, component);
 /*      */ 
 /*      */     
-/* 2391 */     int toArchetypeIndex = findOrCreateArchetypeChunk(holder.getArchetype());
-/* 2392 */     ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
-/* 2393 */     int chunkEntityRef = toArchetypeChunk.addEntity(ref, holder);
+/* 2394 */     int toArchetypeIndex = findOrCreateArchetypeChunk(holder.getArchetype());
+/* 2395 */     ArchetypeChunk<ECS_TYPE> toArchetypeChunk = this.archetypeChunks[toArchetypeIndex];
+/* 2396 */     int chunkEntityRef = toArchetypeChunk.addEntity(ref, holder);
 /*      */     
-/* 2395 */     this.entityToArchetypeChunk[entityIndex] = toArchetypeIndex;
-/* 2396 */     this.entityChunkIndex[entityIndex] = chunkEntityRef;
+/* 2398 */     this.entityToArchetypeChunk[entityIndex] = toArchetypeIndex;
+/* 2399 */     this.entityChunkIndex[entityIndex] = chunkEntityRef;
 /*      */ 
 /*      */     
-/* 2399 */     BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[toArchetypeIndex];
+/* 2402 */     BitSet entityProcessedBySystemIndexes = this.archetypeChunkIndexesToSystemIndex[toArchetypeIndex];
 /*      */     
-/* 2401 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 2402 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)this.registry.getRefChangeSystemType());
+/* 2404 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 2405 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)this.registry.getRefChangeSystemType());
 /*      */     
-/* 2404 */     int systemIndex = -1;
-/* 2405 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 2406 */       if (entityProcessedBySystemIndexes.get(systemIndex)) {
-/* 2407 */         RefChangeSystem<ECS_TYPE, T> system = (RefChangeSystem)data.getSystem(systemIndex);
-/* 2408 */         if (system.componentType().getIndex() == componentType.getIndex()) {
-/* 2409 */           system.onComponentAdded(ref, (Component)component, this, commandBuffer);
+/* 2407 */     int systemIndex = -1;
+/* 2408 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 2409 */       if (entityProcessedBySystemIndexes.get(systemIndex)) {
+/* 2410 */         RefChangeSystem<ECS_TYPE, T> system = (RefChangeSystem)data.getSystem(systemIndex);
+/* 2411 */         if (system.componentType().getIndex() == componentType.getIndex()) {
+/* 2412 */           system.onComponentAdded(ref, (Component)component, this, commandBuffer);
 /*      */         }
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 2414 */     if (fromArchetypeChunk.size() == 0) removeArchetypeChunk(fromArchetypeIndex); 
+/* 2417 */     if (fromArchetypeChunk.size() == 0) removeArchetypeChunk(fromArchetypeIndex); 
 /*      */   }
 /*      */   
 /*      */   private int findOrCreateArchetypeChunk(@Nonnull Archetype<ECS_TYPE> archetype) {
-/* 2418 */     int archetypeIndex = this.archetypeToIndexMap.getInt(archetype);
-/* 2419 */     if (archetypeIndex != Integer.MIN_VALUE) return archetypeIndex;
+/* 2421 */     int archetypeIndex = this.archetypeToIndexMap.getInt(archetype);
+/* 2422 */     if (archetypeIndex != Integer.MIN_VALUE) return archetypeIndex;
 /*      */     
-/* 2421 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 2424 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
 /*      */ 
 /*      */     
-/* 2424 */     if (this.archetypeChunkReuse.isEmpty()) {
-/* 2425 */       archetypeIndex = this.archetypeSize++;
+/* 2427 */     if (this.archetypeChunkReuse.isEmpty()) {
+/* 2428 */       archetypeIndex = this.archetypeSize++;
 /*      */     } else {
-/* 2427 */       archetypeIndex = this.archetypeChunkReuse.nextSetBit(0);
-/* 2428 */       this.archetypeChunkReuse.clear(archetypeIndex);
+/* 2430 */       archetypeIndex = this.archetypeChunkReuse.nextSetBit(0);
+/* 2431 */       this.archetypeChunkReuse.clear(archetypeIndex);
 /*      */     } 
 /*      */     
-/* 2431 */     int oldLength = this.archetypeChunks.length;
-/* 2432 */     if (oldLength <= archetypeIndex) {
-/* 2433 */       int newLength = ArrayUtil.grow(archetypeIndex);
-/* 2434 */       this.archetypeChunks = Arrays.<ArchetypeChunk<ECS_TYPE>>copyOf(this.archetypeChunks, newLength);
-/* 2435 */       this.archetypeChunkIndexesToSystemIndex = Arrays.<BitSet>copyOf(this.archetypeChunkIndexesToSystemIndex, newLength);
+/* 2434 */     int oldLength = this.archetypeChunks.length;
+/* 2435 */     if (oldLength <= archetypeIndex) {
+/* 2436 */       int newLength = ArrayUtil.grow(archetypeIndex);
+/* 2437 */       this.archetypeChunks = Arrays.<ArchetypeChunk<ECS_TYPE>>copyOf(this.archetypeChunks, newLength);
+/* 2438 */       this.archetypeChunkIndexesToSystemIndex = Arrays.<BitSet>copyOf(this.archetypeChunkIndexesToSystemIndex, newLength);
 /*      */       
-/* 2437 */       int systemSize = data.getSystemSize();
-/* 2438 */       for (int i = oldLength; i < newLength; i++) {
-/* 2439 */         this.archetypeChunkIndexesToSystemIndex[i] = new BitSet(systemSize);
+/* 2440 */       int systemSize = data.getSystemSize();
+/* 2441 */       for (int i = oldLength; i < newLength; i++) {
+/* 2442 */         this.archetypeChunkIndexesToSystemIndex[i] = new BitSet(systemSize);
 /*      */       }
 /*      */     } 
 /*      */     
-/* 2443 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = new ArchetypeChunk<>(this, archetype);
-/* 2444 */     this.archetypeChunks[archetypeIndex] = archetypeChunk;
-/* 2445 */     this.archetypeToIndexMap.put(archetype, archetypeIndex);
+/* 2446 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = new ArchetypeChunk<>(this, archetype);
+/* 2447 */     this.archetypeChunks[archetypeIndex] = archetypeChunk;
+/* 2448 */     this.archetypeToIndexMap.put(archetype, archetypeIndex);
 /*      */     
-/* 2447 */     BitSet archetypeChunkToSystemIndex = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
+/* 2450 */     BitSet archetypeChunkToSystemIndex = this.archetypeChunkIndexesToSystemIndex[archetypeIndex];
 /*      */ 
 /*      */     
-/* 2450 */     SystemType<ECS_TYPE, QuerySystem<ECS_TYPE>> entityQuerySystemType = this.registry.getQuerySystemType();
-/* 2451 */     BitSet systemIndexes = data.getSystemIndexesForType(entityQuerySystemType);
+/* 2453 */     SystemType<ECS_TYPE, QuerySystem<ECS_TYPE>> entityQuerySystemType = this.registry.getQuerySystemType();
+/* 2454 */     BitSet systemIndexes = data.getSystemIndexesForType(entityQuerySystemType);
 /*      */     
-/* 2453 */     int systemIndex = -1;
-/* 2454 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/*      */ 
-/*      */       
-/* 2457 */       QuerySystem<ECS_TYPE> system = data.<QuerySystem<ECS_TYPE>>getSystem(systemIndex, entityQuerySystemType);
+/* 2456 */     int systemIndex = -1;
+/* 2457 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
 /*      */ 
 /*      */       
-/* 2460 */       if (system.test(this.registry, archetype)) {
-/* 2461 */         this.systemIndexToArchetypeChunkIndexes[systemIndex].set(archetypeIndex);
-/* 2462 */         archetypeChunkToSystemIndex.set(systemIndex);
+/* 2460 */       QuerySystem<ECS_TYPE> system = data.<QuerySystem<ECS_TYPE>>getSystem(systemIndex, entityQuerySystemType);
+/*      */ 
+/*      */       
+/* 2463 */       if (system.test(this.registry, archetype)) {
+/* 2464 */         this.systemIndexToArchetypeChunkIndexes[systemIndex].set(archetypeIndex);
+/* 2465 */         archetypeChunkToSystemIndex.set(systemIndex);
 /*      */ 
 /*      */         
-/* 2465 */         if (system instanceof ArchetypeChunkSystem) {
-/* 2466 */           ((ArchetypeChunkSystem)system).onSystemAddedToArchetypeChunk(archetypeChunk);
+/* 2468 */         if (system instanceof ArchetypeChunkSystem) {
+/* 2469 */           ((ArchetypeChunkSystem)system).onSystemAddedToArchetypeChunk(archetypeChunk);
 /*      */         }
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 2471 */     return archetypeIndex;
+/* 2474 */     return archetypeIndex;
 /*      */   }
 /*      */   
 /*      */   private void removeArchetypeChunk(int archetypeIndex) {
-/* 2475 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
-/* 2476 */     Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
-/* 2477 */     this.archetypeToIndexMap.removeInt(archetype);
-/* 2478 */     this.archetypeChunks[archetypeIndex] = null;
-/* 2479 */     this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
+/* 2478 */     ArchetypeChunk<ECS_TYPE> archetypeChunk = this.archetypeChunks[archetypeIndex];
+/* 2479 */     Archetype<ECS_TYPE> archetype = archetypeChunk.getArchetype();
+/* 2480 */     this.archetypeToIndexMap.removeInt(archetype);
+/* 2481 */     this.archetypeChunks[archetypeIndex] = null;
+/* 2482 */     this.archetypeChunkIndexesToSystemIndex[archetypeIndex].clear();
 /*      */     
-/* 2481 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
-/* 2482 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)this.registry.getQuerySystemType());
+/* 2484 */     ComponentRegistry.Data<ECS_TYPE> data = this.registry._internal_getData();
+/* 2485 */     BitSet systemIndexes = data.getSystemIndexesForType((SystemType)this.registry.getQuerySystemType());
 /*      */     
-/* 2484 */     int systemIndex = -1;
-/* 2485 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
-/* 2486 */       this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(archetypeIndex);
+/* 2487 */     int systemIndex = -1;
+/* 2488 */     while ((systemIndex = systemIndexes.nextSetBit(systemIndex + 1)) >= 0) {
+/* 2489 */       this.systemIndexToArchetypeChunkIndexes[systemIndex].clear(archetypeIndex);
 /*      */       
-/* 2488 */       ISystem<ECS_TYPE> system = data.getSystem(systemIndex);
-/* 2489 */       if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
+/* 2491 */       ISystem<ECS_TYPE> system = data.getSystem(systemIndex);
+/* 2492 */       if (system instanceof ArchetypeChunkSystem) { ArchetypeChunkSystem<ECS_TYPE> archetypeChunkSystem = (ArchetypeChunkSystem<ECS_TYPE>)system;
 /*      */ 
 /*      */         
-/* 2492 */         if (archetypeChunkSystem.test(this.registry, archetype))
+/* 2495 */         if (archetypeChunkSystem.test(this.registry, archetype))
 /*      */         {
-/* 2494 */           archetypeChunkSystem.onSystemRemovedFromArchetypeChunk(archetypeChunk);
+/* 2497 */           archetypeChunkSystem.onSystemRemovedFromArchetypeChunk(archetypeChunk);
 /*      */         } }
 /*      */     
 /*      */     } 
 /*      */ 
 /*      */     
-/* 2500 */     if (archetypeIndex == this.archetypeSize - 1) {
-/* 2501 */       int highestUsedIndex = this.archetypeChunkReuse.previousClearBit(archetypeIndex - 1);
-/* 2502 */       this.archetypeSize = highestUsedIndex + 1;
-/* 2503 */       this.archetypeChunkReuse.clear(this.archetypeSize, archetypeIndex);
+/* 2503 */     if (archetypeIndex == this.archetypeSize - 1) {
+/* 2504 */       int highestUsedIndex = this.archetypeChunkReuse.previousClearBit(archetypeIndex - 1);
+/* 2505 */       this.archetypeSize = highestUsedIndex + 1;
+/* 2506 */       this.archetypeChunkReuse.clear(this.archetypeSize, archetypeIndex);
 /*      */     } else {
-/* 2505 */       this.archetypeChunkReuse.set(archetypeIndex);
+/* 2508 */       this.archetypeChunkReuse.set(archetypeIndex);
 /*      */     } 
 /*      */   }
 /*      */ }

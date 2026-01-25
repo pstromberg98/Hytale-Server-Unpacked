@@ -220,62 +220,66 @@
 /*     */   public CheckDespawn(ComponentType<EntityStore, LegacySpawnBeaconEntity> componentType, ComponentType<EntityStore, InitialBeaconDelay> initialBeaconDelayComponentType) {
 /* 221 */     this.componentType = componentType;
 /* 222 */     this.npcComponentType = NPCEntity.getComponentType();
-/* 223 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, (Query)Query.not((Query)initialBeaconDelayComponentType) });
+/* 223 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, 
+/*     */           
+/* 225 */           (Query)UUIDComponent.getComponentType(), 
+/* 226 */           (Query)Query.not((Query)initialBeaconDelayComponentType) });
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 229 */     return this.query;
+/* 233 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 234 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 238 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 239 */     LegacySpawnBeaconEntity legacySpawnBeaconComponent = (LegacySpawnBeaconEntity)archetypeChunk.getComponent(index, this.componentType);
-/* 240 */     assert legacySpawnBeaconComponent != null;
+/* 243 */     LegacySpawnBeaconEntity legacySpawnBeaconComponent = (LegacySpawnBeaconEntity)archetypeChunk.getComponent(index, this.componentType);
+/* 244 */     assert legacySpawnBeaconComponent != null;
 /*     */     
-/* 242 */     UUIDComponent uuidComponent = (UUIDComponent)archetypeChunk.getComponent(index, UUIDComponent.getComponentType());
-/* 243 */     assert uuidComponent != null;
+/* 246 */     UUIDComponent uuidComponent = (UUIDComponent)archetypeChunk.getComponent(index, UUIDComponent.getComponentType());
+/* 247 */     assert uuidComponent != null;
 /*     */     
-/* 245 */     BeaconSpawnController spawnController = legacySpawnBeaconComponent.getSpawnController();
-/* 246 */     Instant despawnSelfAfter = legacySpawnBeaconComponent.getDespawnSelfAfter();
+/* 249 */     BeaconSpawnController spawnController = legacySpawnBeaconComponent.getSpawnController();
+/* 250 */     Instant despawnSelfAfter = legacySpawnBeaconComponent.getDespawnSelfAfter();
 /*     */     
-/* 248 */     WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
+/* 252 */     WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
 /*     */     
-/* 250 */     if (despawnSelfAfter != null && worldTimeResource.getGameTime().isAfter(despawnSelfAfter)) {
-/* 251 */       despawnAllSpawns(spawnController.getSpawnedEntities(), commandBuffer);
-/* 252 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 254 */     if (despawnSelfAfter != null && worldTimeResource.getGameTime().isAfter(despawnSelfAfter)) {
+/* 255 */       despawnAllSpawns(spawnController.getSpawnedEntities(), commandBuffer);
+/* 256 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 256 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 257 */     BeaconSpawnWrapper spawnWrapper = legacySpawnBeaconComponent.getSpawnWrapper();
-/* 258 */     if (spawnWrapper.shouldDespawn(world, worldTimeResource)) {
-/* 259 */       LOGGER.at(Level.FINE).log("Removing spawn beacon %s due to matching despawn parameters", uuidComponent.getUuid());
-/* 260 */       despawnAllSpawns(spawnController.getSpawnedEntities(), commandBuffer);
-/* 261 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 260 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 261 */     BeaconSpawnWrapper spawnWrapper = legacySpawnBeaconComponent.getSpawnWrapper();
+/* 262 */     if (spawnWrapper.shouldDespawn(world, worldTimeResource)) {
+/* 263 */       LOGGER.at(Level.FINE).log("Removing spawn beacon %s due to matching despawn parameters", uuidComponent.getUuid());
+/* 264 */       despawnAllSpawns(spawnController.getSpawnedEntities(), commandBuffer);
+/* 265 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private void despawnAllSpawns(@Nonnull List<Ref<EntityStore>> spawnedEntities, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 266 */     for (int i = 0; i < spawnedEntities.size(); i++) {
-/* 267 */       Ref<EntityStore> ref = spawnedEntities.get(i);
-/* 268 */       if (ref.isValid()) {
+/* 270 */     for (int i = 0; i < spawnedEntities.size(); i++) {
+/* 271 */       Ref<EntityStore> ref = spawnedEntities.get(i);
+/* 272 */       if (ref.isValid()) {
 /*     */         
-/* 270 */         NPCEntity npc = (NPCEntity)commandBuffer.getComponent(ref, this.npcComponentType);
-/* 271 */         if (npc != null)
+/* 274 */         NPCEntity npc = (NPCEntity)commandBuffer.getComponent(ref, this.npcComponentType);
+/* 275 */         if (npc != null)
 /*     */         {
 /*     */           
-/* 274 */           if (!npc.getRole().getStateSupport().isInBusyState() && !npc.isDespawning())
+/* 278 */           if (!npc.getRole().getStateSupport().isInBusyState() && !npc.isDespawning())
 /*     */           {
-/* 276 */             npc.setToDespawn(); }  } 
+/* 280 */             npc.setToDespawn(); }  } 
 /*     */       } 
-/* 278 */     }  spawnedEntities.clear();
+/* 282 */     }  spawnedEntities.clear();
 /*     */   }
 /*     */ }
 

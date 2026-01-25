@@ -247,16 +247,16 @@
 /* 247 */       LOGGER.at(Level.SEVERE).log("Player is in a chunk that can't be loaded! Moving (-%d,0,0)! %s", 32, transformComponent);
 /*     */       
 /* 249 */       Vector3d position = transformComponent.getPosition();
-/* 250 */       Vector3f bodyRotation = transformComponent.getRotation();
-/* 251 */       Vector3d targetPosition = position.clone().subtract(32.0D, 0.0D, 0.0D);
+/* 250 */       Vector3d targetPosition = position.clone().subtract(32.0D, 0.0D, 0.0D);
+/* 251 */       Vector3f bodyRotation = transformComponent.getRotation();
 /*     */       
-/* 253 */       PlayerRef playerRefComponent = (PlayerRef)entityComponentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/* 254 */       assert playerRefComponent != null;
+/* 253 */       Teleport teleportComponent = Teleport.createForPlayer(targetPosition, bodyRotation);
+/* 254 */       entityComponentAccessor.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */       
-/* 256 */       Teleport teleportComponent = Teleport.createForPlayer(targetPosition, bodyRotation);
-/*     */       
-/* 258 */       entityComponentAccessor.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
-/* 259 */       playerRefComponent.sendMessage(MESSAGE_GENERAL_PLAYER_IN_INVALID_CHUNK);
+/* 256 */       PlayerRef playerRefComponent = (PlayerRef)entityComponentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/* 257 */       if (playerRefComponent != null) {
+/* 258 */         playerRefComponent.sendMessage(MESSAGE_GENERAL_PLAYER_IN_INVALID_CHUNK);
+/*     */       }
 /*     */     } 
 /*     */   }
 /*     */ 

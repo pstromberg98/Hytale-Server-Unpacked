@@ -219,6 +219,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class VerticalRange
 /*     */ {
 /*     */   public double current;
@@ -226,13 +228,13 @@
 /*     */   public double max;
 /*     */   
 /*     */   public void assign(double current, double min, double max) {
-/* 229 */     this.current = current;
-/* 230 */     this.min = min;
-/* 231 */     this.max = max;
+/* 231 */     this.current = current;
+/* 232 */     this.min = min;
+/* 233 */     this.max = max;
 /*     */   }
 /*     */   
 /*     */   public boolean isWithinRange() {
-/* 235 */     return (this.current >= this.min && this.current <= this.max);
+/* 237 */     return (this.current >= this.min && this.current <= this.max);
 /*     */   }
 /*     */ }
 

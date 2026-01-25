@@ -77,15 +77,21 @@
 /*    */             return;
 /*    */           } 
 /*    */           
-/*    */           String senderDisplayName = context.sender().getDisplayName();
+/*    */           String senderDisplayName = context.sender().getDisplayName().replaceAll("[^a-zA-Z0-9 ._-]", "");
 /*    */           
-/*    */           String[][] cmds = getCommands(senderDisplayName);
+/*    */           if (senderDisplayName.isEmpty()) {
+/*    */             senderDisplayName = "Unknown";
+/*    */           }
+/*    */           
+/*    */           String finalSenderDisplayName = senderDisplayName;
+/*    */           
+/*    */           String[][] cmds = getCommands(finalSenderDisplayName);
 /*    */           
 /*    */           for (String[] processCommand : cmds) {
 /*    */             try {
 /*    */               String commandDisplay = String.join(" ", (CharSequence[])processCommand);
 /*    */               
-/*    */               context.sendMessage(Message.translation("server.commands.update.runningCmd").param("cmd", commandDisplay));
+/*    */               context.sendMessage(Message.translation("server.commands.git.runningCmd").param("cmd", commandDisplay));
 /*    */               
 /*    */               Process process = (new ProcessBuilder(processCommand)).directory(gitPath.toFile()).start();
 /*    */               
@@ -93,23 +99,21 @@
 /*    */                 process.waitFor();
 /*    */                 
 /*    */                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-/*    */                 
 /*    */                 String line;
-/*    */                 
 /*    */                 while ((line = reader.readLine()) != null) {
-/*    */                   context.sendMessage(Message.translation("server.commands.update.runningStdOut").param("cmd", commandDisplay).param("line", line));
+/*    */                   context.sendMessage(Message.translation("server.commands.git.runningStdOut").param("cmd", commandDisplay).param("line", line));
 /*    */                 }
 /*    */                 reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
 /*    */                 while ((line = reader.readLine()) != null) {
-/*    */                   context.sendMessage(Message.translation("server.commands.update.runningStdErr").param("cmd", commandDisplay).param("line", line));
+/*    */                   context.sendMessage(Message.translation("server.commands.git.runningStdErr").param("cmd", commandDisplay).param("line", line));
 /*    */                 }
-/*    */                 context.sendMessage(Message.translation("server.commands.update.done").param("cmd", commandDisplay));
-/* :7 */               } catch (InterruptedException e) {
+/*    */                 context.sendMessage(Message.translation("server.commands.git.done").param("cmd", commandDisplay));
+/* ;1 */               } catch (InterruptedException e) {
 /*    */                 Thread.currentThread().interrupt();
 /*    */                 break;
 /*    */               } 
-/* ;1 */             } catch (IOException e) {
-/*    */               context.sendMessage(Message.translation("server.commands.update.failed").param("cmd", String.join(" ", (CharSequence[])processCommand)).param("msg", e.getMessage()));
+/* ;5 */             } catch (IOException e) {
+/*    */               context.sendMessage(Message.translation("server.commands.git.failed").param("cmd", String.join(" ", (CharSequence[])processCommand)).param("msg", e.getMessage()));
 /*    */               break;
 /*    */             } 
 /*    */           } 

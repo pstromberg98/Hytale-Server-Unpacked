@@ -25,7 +25,7 @@
 /*     */   extends AbstractCommandCollection
 /*     */ {
 /*     */   public UpdateAssetsCommand() {
-/*  28 */     super("assets", "server.commands.update.assets.desc");
+/*  28 */     super("assets", "server.commands.git.assets.desc");
 /*  29 */     addSubCommand((AbstractCommand)new UpdateAssetsStatusCommand());
 /*  30 */     addSubCommand((AbstractCommand)new UpdateAssetsResetCommand());
 /*  31 */     addSubCommand((AbstractCommand)new UpdateAssetsPullCommand());
@@ -80,7 +80,7 @@
 /*     */             String commandDisplay = String.join(" ", (CharSequence[])processCommand);
 /*     */             
 /*     */             try {
-/*     */               context.sendMessage(Message.translation("server.commands.update.running").param("cmd", commandDisplay));
+/*     */               context.sendMessage(Message.translation("server.commands.git.running").param("cmd", commandDisplay));
 /*     */               
 /*     */               Process process = (new ProcessBuilder(processCommand)).directory(gitPath.toFile()).start();
 /*     */               
@@ -92,18 +92,18 @@
 /*     */                 String line;
 /*     */                 
 /*     */                 while ((line = reader.readLine()) != null) {
-/*     */                   context.sendMessage(Message.translation("server.commands.update.runningStdOut").param("cmd", commandDisplay).param("line", line));
+/*     */                   context.sendMessage(Message.translation("server.commands.git.runningStdOut").param("cmd", commandDisplay).param("line", line));
 /*     */                 }
 /*     */                 reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
 /*     */                 while ((line = reader.readLine()) != null) {
-/*     */                   context.sendMessage(Message.translation("server.commands.update.runningStdErr").param("cmd", commandDisplay).param("line", line));
+/*     */                   context.sendMessage(Message.translation("server.commands.git.runningStdErr").param("cmd", commandDisplay).param("line", line));
 /*     */                 }
-/*     */                 context.sendMessage(Message.translation("server.commands.update.done").param("cmd", commandDisplay));
+/*     */                 context.sendMessage(Message.translation("server.commands.git.done").param("cmd", commandDisplay));
 /* 102 */               } catch (InterruptedException e) {
 /*     */                 Thread.currentThread().interrupt();
 /*     */               } 
 /* 105 */             } catch (IOException e) {
-/*     */               context.sendMessage(Message.translation("server.commands.update.failed").param("cmd", commandDisplay).param("msg", e.getMessage()));
+/*     */               context.sendMessage(Message.translation("server.commands.git.failed").param("cmd", commandDisplay).param("msg", e.getMessage()));
 /*     */             } 
 /*     */           });
 /*     */     }
@@ -119,7 +119,7 @@
 /*     */     extends UpdateAssetsGitCommand
 /*     */   {
 /*     */     public UpdateAssetsStatusCommand() {
-/* 122 */       super("status", "server.commands.update.assets.status.desc");
+/* 122 */       super("status", "server.commands.git.assets.status.desc");
 /*     */     }
 /*     */ 
 /*     */     
@@ -137,7 +137,7 @@
 /*     */     extends UpdateAssetsGitCommand
 /*     */   {
 /*     */     public UpdateAssetsResetCommand() {
-/* 140 */       super("reset", "server.commands.update.assets.reset.desc");
+/* 140 */       super("reset", "server.commands.git.assets.reset.desc");
 /*     */     }
 /*     */ 
 /*     */     
@@ -155,7 +155,7 @@
 /*     */     extends UpdateAssetsGitCommand
 /*     */   {
 /*     */     public UpdateAssetsPullCommand() {
-/* 158 */       super("pull", "server.commands.update.assets.pull.desc");
+/* 158 */       super("pull", "server.commands.git.assets.pull.desc");
 /*     */     }
 /*     */ 
 /*     */     

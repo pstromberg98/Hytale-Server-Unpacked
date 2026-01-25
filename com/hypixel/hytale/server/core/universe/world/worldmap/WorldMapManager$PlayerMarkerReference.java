@@ -327,7 +327,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class PlayerMarkerReference
 /*     */   implements WorldMapManager.MarkerReference
 /*     */ {
@@ -337,7 +336,7 @@
 /*     */   private String markerId;
 /*     */   
 /*     */   static {
-/* 340 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PlayerMarkerReference.class, PlayerMarkerReference::new).addField(new KeyedCodec("Player", (Codec)Codec.UUID_BINARY), (playerMarkerReference, uuid) -> playerMarkerReference.player = uuid, playerMarkerReference -> playerMarkerReference.player)).addField(new KeyedCodec("World", (Codec)Codec.STRING), (playerMarkerReference, s) -> playerMarkerReference.world = s, playerMarkerReference -> playerMarkerReference.world)).addField(new KeyedCodec("MarkerId", (Codec)Codec.STRING), (playerMarkerReference, s) -> playerMarkerReference.markerId = s, playerMarkerReference -> playerMarkerReference.markerId)).build();
+/* 339 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PlayerMarkerReference.class, PlayerMarkerReference::new).addField(new KeyedCodec("Player", (Codec)Codec.UUID_BINARY), (playerMarkerReference, uuid) -> playerMarkerReference.player = uuid, playerMarkerReference -> playerMarkerReference.player)).addField(new KeyedCodec("World", (Codec)Codec.STRING), (playerMarkerReference, s) -> playerMarkerReference.world = s, playerMarkerReference -> playerMarkerReference.world)).addField(new KeyedCodec("MarkerId", (Codec)Codec.STRING), (playerMarkerReference, s) -> playerMarkerReference.markerId = s, playerMarkerReference -> playerMarkerReference.markerId)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -347,49 +346,49 @@
 /*     */ 
 /*     */   
 /*     */   public PlayerMarkerReference(@Nonnull UUID player, @Nonnull String world, @Nonnull String markerId) {
-/* 350 */     this.player = player;
-/* 351 */     this.world = world;
-/* 352 */     this.markerId = markerId;
+/* 349 */     this.player = player;
+/* 350 */     this.world = world;
+/* 351 */     this.markerId = markerId;
 /*     */   }
 /*     */   
 /*     */   public UUID getPlayer() {
-/* 356 */     return this.player;
+/* 355 */     return this.player;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public String getMarkerId() {
-/* 361 */     return this.markerId;
+/* 360 */     return this.markerId;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void remove() {
-/* 366 */     PlayerRef playerRef = Universe.get().getPlayer(this.player);
-/* 367 */     if (playerRef != null) {
+/* 365 */     PlayerRef playerRef = Universe.get().getPlayer(this.player);
+/* 366 */     if (playerRef != null) {
 /*     */       
-/* 369 */       Player playerComponent = (Player)playerRef.getComponent(Player.getComponentType());
-/* 370 */       removeMarkerFromOnlinePlayer(playerComponent);
+/* 368 */       Player playerComponent = (Player)playerRef.getComponent(Player.getComponentType());
+/* 369 */       removeMarkerFromOnlinePlayer(playerComponent);
 /*     */     } else {
-/* 372 */       removeMarkerFromOfflinePlayer();
+/* 371 */       removeMarkerFromOfflinePlayer();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private void removeMarkerFromOnlinePlayer(@Nonnull Player player) {
-/* 377 */     PlayerConfigData data = player.getPlayerConfigData();
+/* 376 */     PlayerConfigData data = player.getPlayerConfigData();
 /*     */ 
 /*     */ 
 /*     */     
-/* 381 */     String world = this.world;
-/* 382 */     if (world == null) world = player.getWorld().getName();
+/* 380 */     String world = this.world;
+/* 381 */     if (world == null) world = player.getWorld().getName();
 /*     */     
-/* 384 */     removeMarkerFromData(data, world, this.markerId);
+/* 383 */     removeMarkerFromData(data, world, this.markerId);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private void removeMarkerFromOfflinePlayer() {
-/* 391 */     Universe.get().getPlayerStorage().load(this.player)
-/* 392 */       .thenApply(holder -> {
+/* 390 */     Universe.get().getPlayerStorage().load(this.player)
+/* 391 */       .thenApply(holder -> {
 /*     */           Player player = (Player)holder.getComponent(Player.getComponentType());
 /*     */           
 /*     */           PlayerConfigData data = player.getPlayerConfigData();
@@ -401,31 +400,31 @@
 /*     */           }
 /*     */           removeMarkerFromData(data, world, this.markerId);
 /*     */           return holder;
-/* 404 */         }).thenCompose(holder -> Universe.get().getPlayerStorage().save(this.player, holder));
+/* 403 */         }).thenCompose(holder -> Universe.get().getPlayerStorage().save(this.player, holder));
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   private static MapMarker removeMarkerFromData(@Nonnull PlayerConfigData data, @Nonnull String worldName, @Nonnull String markerId) {
-/* 409 */     PlayerWorldData perWorldData = data.getPerWorldData(worldName);
-/* 410 */     MapMarker[] worldMapMarkers = perWorldData.getWorldMapMarkers();
-/* 411 */     if (worldMapMarkers == null) return null;
+/* 408 */     PlayerWorldData perWorldData = data.getPerWorldData(worldName);
+/* 409 */     MapMarker[] worldMapMarkers = perWorldData.getWorldMapMarkers();
+/* 410 */     if (worldMapMarkers == null) return null;
 /*     */     
-/* 413 */     int index = -1;
-/* 414 */     for (int i = 0; i < worldMapMarkers.length; i++) {
-/* 415 */       if ((worldMapMarkers[i]).id.equals(markerId)) {
-/* 416 */         index = i;
+/* 412 */     int index = -1;
+/* 413 */     for (int i = 0; i < worldMapMarkers.length; i++) {
+/* 414 */       if ((worldMapMarkers[i]).id.equals(markerId)) {
+/* 415 */         index = i;
 /*     */         
 /*     */         break;
 /*     */       } 
 /*     */     } 
-/* 421 */     if (index == -1) return null;
+/* 420 */     if (index == -1) return null;
 /*     */     
-/* 423 */     MapMarker[] newWorldMapMarkers = new MapMarker[worldMapMarkers.length - 1];
-/* 424 */     System.arraycopy(worldMapMarkers, 0, newWorldMapMarkers, 0, index);
-/* 425 */     System.arraycopy(worldMapMarkers, index + 1, newWorldMapMarkers, index, newWorldMapMarkers.length - index);
-/* 426 */     perWorldData.setWorldMapMarkers(newWorldMapMarkers);
+/* 422 */     MapMarker[] newWorldMapMarkers = new MapMarker[worldMapMarkers.length - 1];
+/* 423 */     System.arraycopy(worldMapMarkers, 0, newWorldMapMarkers, 0, index);
+/* 424 */     System.arraycopy(worldMapMarkers, index + 1, newWorldMapMarkers, index, newWorldMapMarkers.length - index);
+/* 425 */     perWorldData.setWorldMapMarkers(newWorldMapMarkers);
 /*     */     
-/* 428 */     return worldMapMarkers[index];
+/* 427 */     return worldMapMarkers[index];
 /*     */   }
 /*     */ }
 

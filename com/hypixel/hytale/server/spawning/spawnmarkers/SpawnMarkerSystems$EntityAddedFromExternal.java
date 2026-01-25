@@ -199,31 +199,154 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class EntityAddedFromExternal
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
 /*     */   private final Query<EntityStore> query;
-/*     */   private final ComponentType<EntityStore, SpawnMarkerEntity> componentType;
+/*     */   @Nonnull
+/*     */   private final ComponentType<EntityStore, SpawnMarkerEntity> spawnMarkerEntityComponentType;
 /*     */   @Nonnull
 /*     */   private final Set<Dependency<EntityStore>> dependencies;
 /*     */   
-/*     */   public EntityAddedFromExternal(ComponentType<EntityStore, SpawnMarkerEntity> componentType) {
-/* 212 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, (Query)Query.or(new Query[] { (Query)FromPrefab.getComponentType(), (Query)FromWorldGen.getComponentType() }) });
-/* 213 */     this.componentType = componentType;
-/* 214 */     this.dependencies = Set.of(new SystemDependency(Order.BEFORE, SpawnMarkerSystems.EntityAdded.class), new SystemDependency(Order.AFTER, SpawnMarkerSystems.CacheMarker.class));
+/*     */   public EntityAddedFromExternal(@Nonnull ComponentType<EntityStore, SpawnMarkerEntity> spawnMarkerEntityComponentType) {
+/* 330 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)spawnMarkerEntityComponentType, (Query)Query.or(new Query[] { (Query)FromPrefab.getComponentType(), (Query)FromWorldGen.getComponentType() }) });
+/* 331 */     this.spawnMarkerEntityComponentType = spawnMarkerEntityComponentType;
+/* 332 */     this.dependencies = Set.of(new SystemDependency(Order.BEFORE, SpawnMarkerSystems.EntityAdded.class), new SystemDependency(Order.AFTER, SpawnMarkerSystems.CacheMarker.class));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 219 */     SpawnMarkerEntity entity = (SpawnMarkerEntity)store.getComponent(ref, this.componentType);
-/* 220 */     entity.setSpawnCount(0);
-/* 221 */     entity.setRespawnCounter(0.0D);
-/* 222 */     entity.setSpawnAfter(null);
-/* 223 */     entity.setGameTimeRespawn(null);
-/* 224 */     if (entity.getCachedMarker().getDeactivationDistance() > 0.0D) entity.setStoredFlock(new StoredFlock());
-/*     */   
+/* 337 */     SpawnMarkerEntity spawnMarkerEntityComponent = (SpawnMarkerEntity)store.getComponent(ref, this.spawnMarkerEntityComponentType);
+/* 338 */     assert spawnMarkerEntityComponent != null;
+/*     */     
+/* 340 */     spawnMarkerEntityComponent.setSpawnCount(0);
+/* 341 */     spawnMarkerEntityComponent.setRespawnCounter(0.0D);
+/* 342 */     spawnMarkerEntityComponent.setSpawnAfter(null);
+/* 343 */     spawnMarkerEntityComponent.setGameTimeRespawn(null);
+/*     */     
+/* 345 */     if (spawnMarkerEntityComponent.getCachedMarker().getDeactivationDistance() > 0.0D) {
+/* 346 */       spawnMarkerEntityComponent.setStoredFlock(new StoredFlock());
+/*     */     }
 /*     */   }
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}
@@ -231,19 +354,19 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 234 */     return this.dependencies;
+/* 357 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 240 */     return this.query;
+/* 363 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 246 */     return EntityModule.get().getPreClearMarkersGroup();
+/* 369 */     return EntityModule.get().getPreClearMarkersGroup();
 /*     */   }
 /*     */ }
 

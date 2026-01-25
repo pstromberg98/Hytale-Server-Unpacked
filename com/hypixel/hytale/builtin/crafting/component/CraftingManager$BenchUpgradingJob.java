@@ -1138,6 +1138,147 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ class BenchUpgradingJob
 /*      */ {
 /*      */   @Nonnull
@@ -1147,20 +1288,20 @@
 /*      */   private float lastSentPercent;
 /*      */   
 /*      */   private BenchUpgradingJob(@Nonnull BenchWindow window, float timeSeconds) {
-/* 1150 */     this.window = window;
-/* 1151 */     this.timeSeconds = timeSeconds;
+/* 1291 */     this.window = window;
+/* 1292 */     this.timeSeconds = timeSeconds;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public String toString() {
-/* 1156 */     return "BenchUpgradingJob{window=" + String.valueOf(this.window) + ", timeSeconds=" + this.timeSeconds + "}";
+/* 1297 */     return "BenchUpgradingJob{window=" + String.valueOf(this.window) + ", timeSeconds=" + this.timeSeconds + "}";
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public float computeLoadingPercent() {
-/* 1163 */     return (this.timeSeconds <= 0.0F) ? 1.0F : Math.min(this.timeSecondsCompleted / this.timeSeconds, 1.0F);
+/* 1304 */     return (this.timeSeconds <= 0.0F) ? 1.0F : Math.min(this.timeSecondsCompleted / this.timeSeconds, 1.0F);
 /*      */   }
 /*      */ }
 

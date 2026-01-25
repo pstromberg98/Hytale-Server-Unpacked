@@ -198,13 +198,13 @@
 /* 198 */     return true;
 /*     */   }
 /*     */   
-/*     */   public static void removeItemInHand(@Nonnull Inventory inventory) {
+/*     */   public static void removeItemInHand(@Nonnull Inventory inventory, int count) {
 /* 202 */     if (ItemStack.isEmpty(inventory.getItemInHand()))
 /*     */       return; 
 /* 204 */     byte activeHotbarSlot = inventory.getActiveHotbarSlot();
 /* 205 */     if (activeHotbarSlot == -1)
 /*     */       return; 
-/* 207 */     inventory.getHotbar().removeItemStackFromSlot((short)activeHotbarSlot);
+/* 207 */     inventory.getHotbar().removeItemStackFromSlot((short)activeHotbarSlot, count);
 /*     */   }
 /*     */   
 /*     */   public static boolean checkHotbarSlot(@Nonnull Inventory inventory, byte slot) {

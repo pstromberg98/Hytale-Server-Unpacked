@@ -206,25 +206,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyBlockStateRefSystem<T extends BlockState>
 /*     */   extends RefSystem<ChunkStore>
 /*     */   implements DisableProcessingAssert
 /*     */ {
-/* 217 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/* 213 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */   
 /*     */   private final ComponentType<ChunkStore, T> componentType;
 /*     */   
 /*     */   public LegacyBlockStateRefSystem(ComponentType<ChunkStore, T> componentType) {
-/* 222 */     this.componentType = componentType;
+/* 218 */     this.componentType = componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<ChunkStore> getQuery() {
-/* 227 */     return (Query)this.componentType;
+/* 223 */     return (Query)this.componentType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -234,45 +230,45 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 237 */     BlockState blockState = (BlockState)store.getComponent(ref, this.componentType);
-/* 238 */     int index = blockState.getIndex();
+/* 233 */     BlockState blockState = (BlockState)store.getComponent(ref, this.componentType);
+/* 234 */     int index = blockState.getIndex();
 /*     */ 
 /*     */     
-/* 241 */     WorldChunk chunk = blockState.getChunk();
-/* 242 */     if (chunk == null) {
-/* 243 */       Vector3i position = blockState.getBlockPosition();
-/* 244 */       int chunkX = MathUtil.floor(position.getX()) >> 5;
-/* 245 */       int chunkZ = MathUtil.floor(position.getZ()) >> 5;
+/* 237 */     WorldChunk chunk = blockState.getChunk();
+/* 238 */     if (chunk == null) {
+/* 239 */       Vector3i position = blockState.getBlockPosition();
+/* 240 */       int chunkX = MathUtil.floor(position.getX()) >> 5;
+/* 241 */       int chunkZ = MathUtil.floor(position.getZ()) >> 5;
 /*     */ 
 /*     */       
-/* 248 */       World world = ((ChunkStore)store.getExternalData()).getWorld();
-/* 249 */       WorldChunk worldChunk = world.getChunkIfInMemory(ChunkUtil.indexChunk(chunkX, chunkZ));
-/* 250 */       if (worldChunk != null && !worldChunk.not(ChunkFlag.INIT)) {
+/* 244 */       World world = ((ChunkStore)store.getExternalData()).getWorld();
+/* 245 */       WorldChunk worldChunk = world.getChunkIfInMemory(ChunkUtil.indexChunk(chunkX, chunkZ));
+/* 246 */       if (worldChunk != null && !worldChunk.not(ChunkFlag.INIT)) {
 /*     */         
-/* 252 */         if (worldChunk.not(ChunkFlag.TICKING)) {
-/* 253 */           commandBuffer.run(_store -> {
+/* 248 */         if (worldChunk.not(ChunkFlag.TICKING)) {
+/* 249 */           commandBuffer.run(_store -> {
 /*     */                 Holder<ChunkStore> holder = _store.removeEntity(ref, RemoveReason.UNLOAD);
 /*     */                 
 /*     */                 worldChunk.getBlockComponentChunk().addEntityHolder(index, holder);
 /*     */               });
 /*     */         }
-/* 259 */         int x = ChunkUtil.xFromBlockInColumn(index);
-/* 260 */         int y = ChunkUtil.yFromBlockInColumn(index);
-/* 261 */         int z = ChunkUtil.zFromBlockInColumn(index);
+/* 255 */         int x = ChunkUtil.xFromBlockInColumn(index);
+/* 256 */         int y = ChunkUtil.yFromBlockInColumn(index);
+/* 257 */         int z = ChunkUtil.zFromBlockInColumn(index);
 /*     */         
-/* 263 */         blockState.setPosition(worldChunk, new Vector3i(x, y, z));
+/* 259 */         blockState.setPosition(worldChunk, new Vector3i(x, y, z));
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 267 */     blockState.setReference(ref);
+/* 263 */     blockState.setReference(ref);
 /*     */     
-/* 269 */     if (blockState.initialized.get())
+/* 265 */     if (blockState.initialized.get())
 /*     */       return; 
-/* 271 */     if (!blockState.initialize(blockState.getChunk().getBlockType(blockState.getPosition()))) {
-/* 272 */       LOGGER.at(Level.WARNING).log("Block State failed initialize: %s, %s, %s", blockState, blockState.getPosition(), chunk);
-/* 273 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
+/* 267 */     if (!blockState.initialize(blockState.getChunk().getBlockType(blockState.getPosition()))) {
+/* 268 */       LOGGER.at(Level.WARNING).log("Block State failed initialize: %s, %s, %s", blockState, blockState.getPosition(), chunk);
+/* 269 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
 /*     */     } else {
-/* 275 */       blockState.initialized.set(true);
+/* 271 */       blockState.initialized.set(true);
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -284,7 +280,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 287 */     return "LegacyBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
+/* 283 */     return "LegacyBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
 /*     */   }
 /*     */ }
 

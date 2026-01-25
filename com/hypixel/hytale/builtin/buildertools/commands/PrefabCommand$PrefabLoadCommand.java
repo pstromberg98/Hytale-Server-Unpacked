@@ -87,13 +87,79 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class PrefabLoadCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   public PrefabLoadCommand() {
-/*  94 */     super("load", "server.commands.prefab.load.desc");
-/*  95 */     requirePermission("hytale.editor.prefab.use");
-/*  96 */     addUsageVariant((AbstractCommand)new PrefabCommand.PrefabLoadByNameCommand());
+/* 160 */     super("load", "server.commands.prefab.load.desc");
+/* 161 */     requirePermission("hytale.editor.prefab.use");
+/* 162 */     addUsageVariant((AbstractCommand)new PrefabCommand.PrefabLoadByNameCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -102,15 +168,15 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 105 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 106 */     assert playerComponent != null;
+/* 171 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 172 */     assert playerComponent != null;
 /*     */ 
 /*     */     
-/* 109 */     List<PrefabStore.AssetPackPrefabPath> assetPaths = PrefabStore.get().getAllAssetPrefabPaths();
-/* 110 */     Path defaultRoot = assetPaths.isEmpty() ? PrefabStore.get().getServerPrefabsPath() : ((PrefabStore.AssetPackPrefabPath)assetPaths.getFirst()).prefabsPath();
+/* 175 */     List<PrefabStore.AssetPackPrefabPath> assetPaths = PrefabStore.get().getAllAssetPrefabPaths();
+/* 176 */     Path defaultRoot = assetPaths.isEmpty() ? PrefabStore.get().getServerPrefabsPath() : ((PrefabStore.AssetPackPrefabPath)assetPaths.getFirst()).prefabsPath();
 /*     */     
-/* 112 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
-/* 113 */     playerComponent.getPageManager().openCustomPage(ref, store, (CustomUIPage)new PrefabPage(playerRef, defaultRoot, builderState));
+/* 178 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
+/* 179 */     playerComponent.getPageManager().openCustomPage(ref, store, (CustomUIPage)new PrefabPage(playerRef, defaultRoot, builderState));
 /*     */   }
 /*     */ }
 

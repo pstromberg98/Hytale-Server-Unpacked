@@ -229,6 +229,61 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class RefillState
 /*     */ {
 /*     */   public static final BuilderCodec<RefillState> CODEC;
@@ -236,35 +291,35 @@
 /*     */   protected String transformFluid;
 /*     */   
 /*     */   static {
-/* 239 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RefillState.class, RefillState::new).append(new KeyedCodec("AllowedFluids", (Codec)new ArrayCodec((Codec)Codec.STRING, x$0 -> new String[x$0])), (interaction, value) -> interaction.allowedFluids = value, interaction -> interaction.allowedFluids).addValidator(Validators.nonNull()).add()).addField(new KeyedCodec("TransformFluid", (Codec)Codec.STRING), (interaction, value) -> interaction.transformFluid = value, interaction -> interaction.transformFluid)).addField(new KeyedCodec("Durability", (Codec)Codec.DOUBLE), (interaction, value) -> interaction.durability = value.doubleValue(), interaction -> Double.valueOf(interaction.durability))).build();
+/* 294 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(RefillState.class, RefillState::new).append(new KeyedCodec("AllowedFluids", (Codec)new ArrayCodec((Codec)Codec.STRING, x$0 -> new String[x$0])), (interaction, value) -> interaction.allowedFluids = value, interaction -> interaction.allowedFluids).addValidator(Validators.nonNull()).add()).addField(new KeyedCodec("TransformFluid", (Codec)Codec.STRING), (interaction, value) -> interaction.transformFluid = value, interaction -> interaction.transformFluid)).addField(new KeyedCodec("Durability", (Codec)Codec.DOUBLE), (interaction, value) -> interaction.durability = value.doubleValue(), interaction -> Double.valueOf(interaction.durability))).build();
 /*     */   }
 /*     */ 
 /*     */   
-/* 243 */   protected double durability = -1.0D;
+/* 298 */   protected double durability = -1.0D;
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public String[] getAllowedFluids() {
-/* 249 */     return this.allowedFluids;
+/* 304 */     return this.allowedFluids;
 /*     */   }
 /*     */   
 /*     */   public String getTransformFluid() {
-/* 253 */     return this.transformFluid;
+/* 308 */     return this.transformFluid;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public double getDurability() {
-/* 260 */     return this.durability;
+/* 315 */     return this.durability;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 267 */     return "RefillState{allowedFluids=" + Arrays.toString((Object[])this.allowedFluids) + ", transformFluid='" + this.transformFluid + "', durability=" + this.durability + "}";
+/* 322 */     return "RefillState{allowedFluids=" + Arrays.toString((Object[])this.allowedFluids) + ", transformFluid='" + this.transformFluid + "', durability=" + this.durability + "}";
 /*     */   }
 /*     */ }
 

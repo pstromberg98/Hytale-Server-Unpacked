@@ -64,47 +64,47 @@
 /*     */   public static ItemQuality deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  65 */     ItemQuality obj = new ItemQuality();
 /*  66 */     byte nullBits = buf.getByte(offset);
-/*  67 */     if ((nullBits & 0x40) != 0) obj.textColor = Color.deserialize(buf, offset + 1); 
+/*  67 */     if ((nullBits & 0x1) != 0) obj.textColor = Color.deserialize(buf, offset + 1); 
 /*  68 */     obj.visibleQualityLabel = (buf.getByte(offset + 4) != 0);
 /*  69 */     obj.renderSpecialSlot = (buf.getByte(offset + 5) != 0);
 /*  70 */     obj.hideFromSearch = (buf.getByte(offset + 6) != 0);
 /*     */     
-/*  72 */     if ((nullBits & 0x1) != 0) {
+/*  72 */     if ((nullBits & 0x2) != 0) {
 /*  73 */       int varPos0 = offset + 35 + buf.getIntLE(offset + 7);
 /*  74 */       int idLen = VarInt.peek(buf, varPos0);
 /*  75 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  76 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  77 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  79 */     if ((nullBits & 0x2) != 0) {
+/*  79 */     if ((nullBits & 0x4) != 0) {
 /*  80 */       int varPos1 = offset + 35 + buf.getIntLE(offset + 11);
 /*  81 */       int itemTooltipTextureLen = VarInt.peek(buf, varPos1);
 /*  82 */       if (itemTooltipTextureLen < 0) throw ProtocolException.negativeLength("ItemTooltipTexture", itemTooltipTextureLen); 
 /*  83 */       if (itemTooltipTextureLen > 4096000) throw ProtocolException.stringTooLong("ItemTooltipTexture", itemTooltipTextureLen, 4096000); 
 /*  84 */       obj.itemTooltipTexture = PacketIO.readVarString(buf, varPos1, PacketIO.UTF8);
 /*     */     } 
-/*  86 */     if ((nullBits & 0x4) != 0) {
+/*  86 */     if ((nullBits & 0x8) != 0) {
 /*  87 */       int varPos2 = offset + 35 + buf.getIntLE(offset + 15);
 /*  88 */       int itemTooltipArrowTextureLen = VarInt.peek(buf, varPos2);
 /*  89 */       if (itemTooltipArrowTextureLen < 0) throw ProtocolException.negativeLength("ItemTooltipArrowTexture", itemTooltipArrowTextureLen); 
 /*  90 */       if (itemTooltipArrowTextureLen > 4096000) throw ProtocolException.stringTooLong("ItemTooltipArrowTexture", itemTooltipArrowTextureLen, 4096000); 
 /*  91 */       obj.itemTooltipArrowTexture = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*     */     } 
-/*  93 */     if ((nullBits & 0x8) != 0) {
+/*  93 */     if ((nullBits & 0x10) != 0) {
 /*  94 */       int varPos3 = offset + 35 + buf.getIntLE(offset + 19);
 /*  95 */       int slotTextureLen = VarInt.peek(buf, varPos3);
 /*  96 */       if (slotTextureLen < 0) throw ProtocolException.negativeLength("SlotTexture", slotTextureLen); 
 /*  97 */       if (slotTextureLen > 4096000) throw ProtocolException.stringTooLong("SlotTexture", slotTextureLen, 4096000); 
 /*  98 */       obj.slotTexture = PacketIO.readVarString(buf, varPos3, PacketIO.UTF8);
 /*     */     } 
-/* 100 */     if ((nullBits & 0x10) != 0) {
+/* 100 */     if ((nullBits & 0x20) != 0) {
 /* 101 */       int varPos4 = offset + 35 + buf.getIntLE(offset + 23);
 /* 102 */       int blockSlotTextureLen = VarInt.peek(buf, varPos4);
 /* 103 */       if (blockSlotTextureLen < 0) throw ProtocolException.negativeLength("BlockSlotTexture", blockSlotTextureLen); 
 /* 104 */       if (blockSlotTextureLen > 4096000) throw ProtocolException.stringTooLong("BlockSlotTexture", blockSlotTextureLen, 4096000); 
 /* 105 */       obj.blockSlotTexture = PacketIO.readVarString(buf, varPos4, PacketIO.UTF8);
 /*     */     } 
-/* 107 */     if ((nullBits & 0x20) != 0) {
+/* 107 */     if ((nullBits & 0x40) != 0) {
 /* 108 */       int varPos5 = offset + 35 + buf.getIntLE(offset + 27);
 /* 109 */       int specialSlotTextureLen = VarInt.peek(buf, varPos5);
 /* 110 */       if (specialSlotTextureLen < 0) throw ProtocolException.negativeLength("SpecialSlotTexture", specialSlotTextureLen); 
@@ -125,37 +125,37 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 126 */     byte nullBits = buf.getByte(offset);
 /* 127 */     int maxEnd = 35;
-/* 128 */     if ((nullBits & 0x1) != 0) {
+/* 128 */     if ((nullBits & 0x2) != 0) {
 /* 129 */       int fieldOffset0 = buf.getIntLE(offset + 7);
 /* 130 */       int pos0 = offset + 35 + fieldOffset0;
 /* 131 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 132 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 134 */     if ((nullBits & 0x2) != 0) {
+/* 134 */     if ((nullBits & 0x4) != 0) {
 /* 135 */       int fieldOffset1 = buf.getIntLE(offset + 11);
 /* 136 */       int pos1 = offset + 35 + fieldOffset1;
 /* 137 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
 /* 138 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 140 */     if ((nullBits & 0x4) != 0) {
+/* 140 */     if ((nullBits & 0x8) != 0) {
 /* 141 */       int fieldOffset2 = buf.getIntLE(offset + 15);
 /* 142 */       int pos2 = offset + 35 + fieldOffset2;
 /* 143 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /* 144 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 146 */     if ((nullBits & 0x8) != 0) {
+/* 146 */     if ((nullBits & 0x10) != 0) {
 /* 147 */       int fieldOffset3 = buf.getIntLE(offset + 19);
 /* 148 */       int pos3 = offset + 35 + fieldOffset3;
 /* 149 */       int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl;
 /* 150 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 152 */     if ((nullBits & 0x10) != 0) {
+/* 152 */     if ((nullBits & 0x20) != 0) {
 /* 153 */       int fieldOffset4 = buf.getIntLE(offset + 23);
 /* 154 */       int pos4 = offset + 35 + fieldOffset4;
 /* 155 */       int sl = VarInt.peek(buf, pos4); pos4 += VarInt.length(buf, pos4) + sl;
 /* 156 */       if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*     */     } 
-/* 158 */     if ((nullBits & 0x20) != 0) {
+/* 158 */     if ((nullBits & 0x40) != 0) {
 /* 159 */       int fieldOffset5 = buf.getIntLE(offset + 27);
 /* 160 */       int pos5 = offset + 35 + fieldOffset5;
 /* 161 */       int sl = VarInt.peek(buf, pos5); pos5 += VarInt.length(buf, pos5) + sl;
@@ -174,13 +174,13 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 175 */     int startPos = buf.writerIndex();
 /* 176 */     byte nullBits = 0;
-/* 177 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 178 */     if (this.itemTooltipTexture != null) nullBits = (byte)(nullBits | 0x2); 
-/* 179 */     if (this.itemTooltipArrowTexture != null) nullBits = (byte)(nullBits | 0x4); 
-/* 180 */     if (this.slotTexture != null) nullBits = (byte)(nullBits | 0x8); 
-/* 181 */     if (this.blockSlotTexture != null) nullBits = (byte)(nullBits | 0x10); 
-/* 182 */     if (this.specialSlotTexture != null) nullBits = (byte)(nullBits | 0x20); 
-/* 183 */     if (this.textColor != null) nullBits = (byte)(nullBits | 0x40); 
+/* 177 */     if (this.textColor != null) nullBits = (byte)(nullBits | 0x1); 
+/* 178 */     if (this.id != null) nullBits = (byte)(nullBits | 0x2); 
+/* 179 */     if (this.itemTooltipTexture != null) nullBits = (byte)(nullBits | 0x4); 
+/* 180 */     if (this.itemTooltipArrowTexture != null) nullBits = (byte)(nullBits | 0x8); 
+/* 181 */     if (this.slotTexture != null) nullBits = (byte)(nullBits | 0x10); 
+/* 182 */     if (this.blockSlotTexture != null) nullBits = (byte)(nullBits | 0x20); 
+/* 183 */     if (this.specialSlotTexture != null) nullBits = (byte)(nullBits | 0x40); 
 /* 184 */     if (this.localizationKey != null) nullBits = (byte)(nullBits | 0x80); 
 /* 185 */     buf.writeByte(nullBits);
 /*     */     
@@ -271,7 +271,7 @@
 /* 271 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 274 */     if ((nullBits & 0x1) != 0) {
+/* 274 */     if ((nullBits & 0x2) != 0) {
 /* 275 */       int idOffset = buffer.getIntLE(offset + 7);
 /* 276 */       if (idOffset < 0) {
 /* 277 */         return ValidationResult.error("Invalid offset for Id");
@@ -294,7 +294,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 297 */     if ((nullBits & 0x2) != 0) {
+/* 297 */     if ((nullBits & 0x4) != 0) {
 /* 298 */       int itemTooltipTextureOffset = buffer.getIntLE(offset + 11);
 /* 299 */       if (itemTooltipTextureOffset < 0) {
 /* 300 */         return ValidationResult.error("Invalid offset for ItemTooltipTexture");
@@ -317,7 +317,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 320 */     if ((nullBits & 0x4) != 0) {
+/* 320 */     if ((nullBits & 0x8) != 0) {
 /* 321 */       int itemTooltipArrowTextureOffset = buffer.getIntLE(offset + 15);
 /* 322 */       if (itemTooltipArrowTextureOffset < 0) {
 /* 323 */         return ValidationResult.error("Invalid offset for ItemTooltipArrowTexture");
@@ -340,7 +340,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 343 */     if ((nullBits & 0x8) != 0) {
+/* 343 */     if ((nullBits & 0x10) != 0) {
 /* 344 */       int slotTextureOffset = buffer.getIntLE(offset + 19);
 /* 345 */       if (slotTextureOffset < 0) {
 /* 346 */         return ValidationResult.error("Invalid offset for SlotTexture");
@@ -363,7 +363,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 366 */     if ((nullBits & 0x10) != 0) {
+/* 366 */     if ((nullBits & 0x20) != 0) {
 /* 367 */       int blockSlotTextureOffset = buffer.getIntLE(offset + 23);
 /* 368 */       if (blockSlotTextureOffset < 0) {
 /* 369 */         return ValidationResult.error("Invalid offset for BlockSlotTexture");
@@ -386,7 +386,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 389 */     if ((nullBits & 0x20) != 0) {
+/* 389 */     if ((nullBits & 0x40) != 0) {
 /* 390 */       int specialSlotTextureOffset = buffer.getIntLE(offset + 27);
 /* 391 */       if (specialSlotTextureOffset < 0) {
 /* 392 */         return ValidationResult.error("Invalid offset for SpecialSlotTexture");

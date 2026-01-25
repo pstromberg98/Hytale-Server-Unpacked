@@ -19,50 +19,46 @@
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 22 */   private static final Message MESSAGE_COMMANDS_OP_REMOVED = Message.translation("server.commands.op.removed");
-/*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_OP_REMOVED_TARGET = Message.translation("server.commands.op.removed.target");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_OP_NOT_OP = Message.translation("server.commands.op.notOp");
+/* 22 */   private static final Message MESSAGE_COMMANDS_OP_REMOVED_TARGET = Message.translation("server.commands.op.removed.target");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 32 */   private final RequiredArg<UUID> playerArg = withRequiredArg("player", "server.commands.op.remove.player.desc", (ArgumentType)ArgTypes.PLAYER_UUID);
+/* 28 */   private final RequiredArg<UUID> playerArg = withRequiredArg("player", "server.commands.op.remove.player.desc", (ArgumentType)ArgTypes.PLAYER_UUID);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public OpRemoveCommand() {
-/* 38 */     super("remove", "server.commands.op.remove.desc");
-/* 39 */     requirePermission(HytalePermissions.fromCommand("op.remove"));
+/* 34 */     super("remove", "server.commands.op.remove.desc");
+/* 35 */     requirePermission(HytalePermissions.fromCommand("op.remove"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 44 */     UUID uuid = (UUID)this.playerArg.get(context);
-/* 45 */     PermissionsModule permissionsModule = PermissionsModule.get();
-/* 46 */     String opGroup = "OP";
+/* 40 */     UUID uuid = (UUID)this.playerArg.get(context);
+/* 41 */     PermissionsModule permissionsModule = PermissionsModule.get();
+/* 42 */     String opGroup = "OP";
 /*    */ 
 /*    */     
-/* 49 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
-/* 50 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
-/* 51 */     Message displayMessage = Message.raw(displayName).bold(true);
+/* 45 */     PlayerRef playerRef = Universe.get().getPlayer(uuid);
+/* 46 */     String displayName = (playerRef != null) ? playerRef.getUsername() : uuid.toString();
+/* 47 */     Message displayMessage = Message.raw(displayName).bold(true);
 /*    */     
-/* 53 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
-/* 54 */     if (groups.contains("OP")) {
-/* 55 */       permissionsModule.removeUserFromGroup(uuid, "OP");
-/* 56 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED
-/* 57 */           .param("username", displayMessage));
+/* 49 */     Set<String> groups = permissionsModule.getGroupsForUser(uuid);
+/* 50 */     if (groups.contains("OP")) {
+/* 51 */       permissionsModule.removeUserFromGroup(uuid, "OP");
+/* 52 */       context.sendMessage(Message.translation("server.commands.op.removed")
+/* 53 */           .param("username", displayMessage));
 /*    */ 
 /*    */       
-/* 60 */       if (playerRef != null) {
-/* 61 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_REMOVED_TARGET);
+/* 56 */       if (playerRef != null) {
+/* 57 */         playerRef.sendMessage(MESSAGE_COMMANDS_OP_REMOVED_TARGET);
 /*    */       }
 /*    */     } else {
-/* 64 */       context.sendMessage(MESSAGE_COMMANDS_OP_NOT_OP
-/* 65 */           .param("username", displayMessage));
+/* 60 */       context.sendMessage(Message.translation("server.commands.op.notOp")
+/* 61 */           .param("username", displayMessage));
 /*    */     } 
 /*    */   }
 /*    */ }

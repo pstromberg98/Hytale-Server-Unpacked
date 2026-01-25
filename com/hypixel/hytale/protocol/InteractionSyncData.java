@@ -121,17 +121,17 @@
 /* 121 */     obj.chargeValue = buf.getFloatLE(offset + 47);
 /* 122 */     obj.chainingIndex = buf.getIntLE(offset + 51);
 /* 123 */     obj.flagIndex = buf.getIntLE(offset + 55);
-/* 124 */     if ((nullBits[0] & 0x10) != 0) obj.attackerPos = Position.deserialize(buf, offset + 59); 
-/* 125 */     if ((nullBits[0] & 0x20) != 0) obj.attackerRot = Direction.deserialize(buf, offset + 83); 
-/* 126 */     if ((nullBits[0] & 0x40) != 0) obj.raycastHit = Position.deserialize(buf, offset + 95); 
+/* 124 */     if ((nullBits[0] & 0x4) != 0) obj.attackerPos = Position.deserialize(buf, offset + 59); 
+/* 125 */     if ((nullBits[0] & 0x8) != 0) obj.attackerRot = Direction.deserialize(buf, offset + 83); 
+/* 126 */     if ((nullBits[0] & 0x10) != 0) obj.raycastHit = Position.deserialize(buf, offset + 95); 
 /* 127 */     obj.raycastDistance = buf.getFloatLE(offset + 119);
-/* 128 */     if ((nullBits[0] & 0x80) != 0) obj.raycastNormal = Vector3f.deserialize(buf, offset + 123); 
+/* 128 */     if ((nullBits[0] & 0x20) != 0) obj.raycastNormal = Vector3f.deserialize(buf, offset + 123); 
 /* 129 */     obj.movementDirection = MovementDirection.fromValue(buf.getByte(offset + 135));
 /* 130 */     obj.applyForceState = ApplyForceState.fromValue(buf.getByte(offset + 136));
 /* 131 */     obj.nextLabel = buf.getIntLE(offset + 137);
-/* 132 */     if ((nullBits[1] & 0x1) != 0) obj.generatedUUID = PacketIO.readUUID(buf, offset + 141);
+/* 132 */     if ((nullBits[0] & 0x40) != 0) obj.generatedUUID = PacketIO.readUUID(buf, offset + 141);
 /*     */     
-/* 134 */     if ((nullBits[0] & 0x4) != 0) {
+/* 134 */     if ((nullBits[0] & 0x80) != 0) {
 /* 135 */       int varPos0 = offset + 165 + buf.getIntLE(offset + 157);
 /* 136 */       int forkCountsCount = VarInt.peek(buf, varPos0);
 /* 137 */       if (forkCountsCount < 0) throw ProtocolException.negativeLength("ForkCounts", forkCountsCount); 
@@ -146,7 +146,7 @@
 /* 146 */           throw ProtocolException.duplicateKey("forkCounts", key); 
 /*     */       } 
 /*     */     } 
-/* 149 */     if ((nullBits[0] & 0x8) != 0) {
+/* 149 */     if ((nullBits[1] & 0x1) != 0) {
 /* 150 */       int varPos1 = offset + 165 + buf.getIntLE(offset + 161);
 /* 151 */       int hitEntitiesCount = VarInt.peek(buf, varPos1);
 /* 152 */       if (hitEntitiesCount < 0) throw ProtocolException.negativeLength("HitEntities", hitEntitiesCount); 
@@ -168,14 +168,14 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 169 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 170 */     int maxEnd = 165;
-/* 171 */     if ((nullBits[0] & 0x4) != 0) {
+/* 171 */     if ((nullBits[0] & 0x80) != 0) {
 /* 172 */       int fieldOffset0 = buf.getIntLE(offset + 157);
 /* 173 */       int pos0 = offset + 165 + fieldOffset0;
 /* 174 */       int dictLen = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0);
 /* 175 */       for (int i = 0; i < dictLen; ) { pos0++; pos0 += 4; i++; }
 /* 176 */        if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 178 */     if ((nullBits[0] & 0x8) != 0) {
+/* 178 */     if ((nullBits[1] & 0x1) != 0) {
 /* 179 */       int fieldOffset1 = buf.getIntLE(offset + 161);
 /* 180 */       int pos1 = offset + 165 + fieldOffset1;
 /* 181 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
@@ -191,13 +191,13 @@
 /* 191 */     byte[] nullBits = new byte[2];
 /* 192 */     if (this.blockPosition != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
 /* 193 */     if (this.blockRotation != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/* 194 */     if (this.forkCounts != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/* 195 */     if (this.hitEntities != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/* 196 */     if (this.attackerPos != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/* 197 */     if (this.attackerRot != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/* 198 */     if (this.raycastHit != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/* 199 */     if (this.raycastNormal != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/* 200 */     if (this.generatedUUID != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/* 194 */     if (this.attackerPos != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/* 195 */     if (this.attackerRot != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/* 196 */     if (this.raycastHit != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/* 197 */     if (this.raycastNormal != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/* 198 */     if (this.generatedUUID != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/* 199 */     if (this.forkCounts != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/* 200 */     if (this.hitEntities != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
 /* 201 */     buf.writeBytes(nullBits);
 /*     */     
 /* 203 */     buf.writeByte(this.state.getValue());
@@ -260,7 +260,7 @@
 /*     */     
 /* 261 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 2);
 /*     */     
-/* 263 */     if ((nullBits[0] & 0x4) != 0) {
+/* 263 */     if ((nullBits[0] & 0x80) != 0) {
 /* 264 */       int forkCountsOffset = buffer.getIntLE(offset + 157);
 /* 265 */       if (forkCountsOffset < 0) {
 /* 266 */         return ValidationResult.error("Invalid offset for ForkCounts");
@@ -287,7 +287,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 290 */     if ((nullBits[0] & 0x8) != 0) {
+/* 290 */     if ((nullBits[1] & 0x1) != 0) {
 /* 291 */       int hitEntitiesOffset = buffer.getIntLE(offset + 161);
 /* 292 */       if (hitEntitiesOffset < 0) {
 /* 293 */         return ValidationResult.error("Invalid offset for HitEntities");

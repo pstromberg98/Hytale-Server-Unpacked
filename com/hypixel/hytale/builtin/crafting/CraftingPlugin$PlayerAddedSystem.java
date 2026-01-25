@@ -349,19 +349,20 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class PlayerAddedSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
-/* 355 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), PlayerRef.getComponentType() });
+/* 356 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Archetype.of(new ComponentType[] { Player.getComponentType(), PlayerRef.getComponentType() });
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 359 */     return QUERY;
+/* 360 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 364 */     CraftingPlugin.sendKnownRecipes(ref, (ComponentAccessor<EntityStore>)commandBuffer);
+/* 365 */     CraftingPlugin.sendKnownRecipes(ref, (ComponentAccessor<EntityStore>)commandBuffer);
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}

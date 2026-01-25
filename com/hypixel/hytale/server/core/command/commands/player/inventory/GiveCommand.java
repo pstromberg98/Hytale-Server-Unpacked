@@ -23,48 +23,42 @@
 /*     */ import javax.annotation.Nonnull;
 /*     */ import org.bson.BsonDocument;
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class GiveCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/*  30 */   private static final Message MESSAGE_COMMANDS_GIVE_RECEIVED = Message.translation("server.commands.give.received");
-/*     */   @Nonnull
-/*  32 */   private static final Message MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE = Message.translation("server.commands.give.insufficientInvSpace");
-/*     */   @Nonnull
-/*  34 */   private static final Message MESSAGE_COMMANDS_GIVE_INVALID_METADATA = Message.translation("server.commands.give.invalidMetadata");
+/*  34 */   private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  40 */   private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
+/*  40 */   private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  46 */   private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
+/*  46 */   private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  52 */   private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
-/*     */   @Nonnull
-/*  58 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
+/*  52 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public GiveCommand() {
-/*  64 */     super("give", "server.commands.give.desc");
-/*  65 */     requirePermission(HytalePermissions.fromCommand("give.self"));
-/*  66 */     addUsageVariant((AbstractCommand)new GiveOtherCommand());
-/*  67 */     addSubCommand((AbstractCommand)new GiveArmorCommand());
+/*  58 */     super("give", "server.commands.give.desc");
+/*  59 */     requirePermission(HytalePermissions.fromCommand("give.self"));
+/*  60 */     addUsageVariant((AbstractCommand)new GiveOtherCommand());
+/*  61 */     addSubCommand((AbstractCommand)new GiveArmorCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -73,49 +67,49 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  76 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/*  77 */     assert playerComponent != null;
+/*  70 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/*  71 */     assert playerComponent != null;
 /*     */ 
 /*     */     
-/*  80 */     Item item = (Item)this.itemArg.get(context);
+/*  74 */     Item item = (Item)this.itemArg.get(context);
 /*     */ 
 /*     */     
-/*  83 */     Integer quantity = (Integer)this.quantityArg.get(context);
+/*  77 */     Integer quantity = (Integer)this.quantityArg.get(context);
 /*     */ 
 /*     */     
-/*  86 */     double durability = Double.MAX_VALUE;
-/*  87 */     if (this.durabilityArg.provided(context)) {
-/*  88 */       durability = ((Double)this.durabilityArg.get(context)).doubleValue();
+/*  80 */     double durability = Double.MAX_VALUE;
+/*  81 */     if (this.durabilityArg.provided(context)) {
+/*  82 */       durability = ((Double)this.durabilityArg.get(context)).doubleValue();
 /*     */     }
 /*     */ 
 /*     */     
-/*  92 */     BsonDocument metadata = null;
-/*  93 */     if (this.metadataArg.provided(context)) {
-/*  94 */       String metadataStr = (String)this.metadataArg.get(context);
+/*  86 */     BsonDocument metadata = null;
+/*  87 */     if (this.metadataArg.provided(context)) {
+/*  88 */       String metadataStr = (String)this.metadataArg.get(context);
 /*     */       try {
-/*  96 */         metadata = BsonDocument.parse(metadataStr);
-/*  97 */       } catch (Exception e) {
-/*  98 */         context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA
-/*  99 */             .param("error", e.getMessage()));
+/*  90 */         metadata = BsonDocument.parse(metadataStr);
+/*  91 */       } catch (Exception e) {
+/*  92 */         context.sendMessage(Message.translation("server.commands.give.invalidMetadata")
+/*  93 */             .param("error", e.getMessage()));
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 105 */     ItemStack stack = (new ItemStack(item.getId(), quantity.intValue(), metadata)).withDurability(durability);
-/* 106 */     ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(stack);
+/*  99 */     ItemStack stack = (new ItemStack(item.getId(), quantity.intValue(), metadata)).withDurability(durability);
+/* 100 */     ItemStackTransaction transaction = playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(stack);
 /*     */     
-/* 108 */     ItemStack remainder = transaction.getRemainder();
-/* 109 */     Message itemNameMessage = Message.translation(item.getTranslationKey());
+/* 102 */     ItemStack remainder = transaction.getRemainder();
+/* 103 */     Message itemNameMessage = Message.translation(item.getTranslationKey());
 /*     */     
-/* 111 */     if (remainder == null || remainder.isEmpty()) {
-/* 112 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_RECEIVED
-/* 113 */           .param("quantity", quantity.intValue())
-/* 114 */           .param("item", itemNameMessage));
+/* 105 */     if (remainder == null || remainder.isEmpty()) {
+/* 106 */       context.sendMessage(Message.translation("server.commands.give.received")
+/* 107 */           .param("quantity", quantity.intValue())
+/* 108 */           .param("item", itemNameMessage));
 /*     */     } else {
-/* 116 */       context.sendMessage(MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE
-/* 117 */           .param("quantity", quantity.intValue())
-/* 118 */           .param("item", itemNameMessage));
+/* 110 */       context.sendMessage(Message.translation("server.commands.give.insufficientInvSpace")
+/* 111 */           .param("quantity", quantity.intValue())
+/* 112 */           .param("item", itemNameMessage));
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -124,66 +118,60 @@
 /*     */     extends CommandBase
 /*     */   {
 /*     */     @Nonnull
-/* 127 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/*     */     @Nonnull
-/* 129 */     private static final Message MESSAGE_COMMANDS_GIVE_GAVE = Message.translation("server.commands.give.gave");
-/*     */     @Nonnull
-/* 131 */     private static final Message MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE = Message.translation("server.commands.give.insufficientInvSpace");
-/*     */     @Nonnull
-/* 133 */     private static final Message MESSAGE_COMMANDS_GIVE_INVALID_METADATA = Message.translation("server.commands.give.invalidMetadata");
+/* 121 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 139 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 127 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 145 */     private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
+/* 133 */     private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 151 */     private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
+/* 139 */     private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 157 */     private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
+/* 145 */     private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 163 */     private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
+/* 151 */     private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     GiveOtherCommand() {
-/* 169 */       super("server.commands.give.other.desc");
-/* 170 */       requirePermission(HytalePermissions.fromCommand("give.other"));
+/* 157 */       super("server.commands.give.other.desc");
+/* 158 */       requirePermission(HytalePermissions.fromCommand("give.other"));
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void executeSync(@Nonnull CommandContext context) {
-/* 175 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
-/* 176 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
+/* 163 */       PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
+/* 164 */       Ref<EntityStore> ref = targetPlayerRef.getReference();
 /*     */       
-/* 178 */       if (ref == null || !ref.isValid()) {
-/* 179 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/* 166 */       if (ref == null || !ref.isValid()) {
+/* 167 */         context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 183 */       Store<EntityStore> store = ref.getStore();
-/* 184 */       World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 171 */       Store<EntityStore> store = ref.getStore();
+/* 172 */       World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */       
-/* 186 */       world.execute(() -> {
+/* 174 */       world.execute(() -> {
 /*     */             Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */             
 /*     */             if (playerComponent == null) {
@@ -211,8 +199,8 @@
 /*     */               String metadataStr = (String)this.metadataArg.get(context);
 /*     */               try {
 /*     */                 metadata = BsonDocument.parse(metadataStr);
-/* 214 */               } catch (Exception e) {
-/*     */                 context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA.param("error", e.getMessage()));
+/* 202 */               } catch (Exception e) {
+/*     */                 context.sendMessage(Message.translation("server.commands.give.invalidMetadata").param("error", e.getMessage()));
 /*     */                 return;
 /*     */               } 
 /*     */             } 
@@ -221,9 +209,9 @@
 /*     */             ItemStack remainder = transaction.getRemainder();
 /*     */             Message itemNameMessage = Message.translation(item.getTranslationKey());
 /*     */             if (remainder == null || remainder.isEmpty()) {
-/*     */               context.sendMessage(MESSAGE_COMMANDS_GIVE_GAVE.param("targetUsername", targetPlayerRef.getUsername()).param("quantity", quantity.intValue()).param("item", itemNameMessage));
+/*     */               context.sendMessage(Message.translation("server.commands.give.gave").param("targetUsername", targetPlayerRef.getUsername()).param("quantity", quantity.intValue()).param("item", itemNameMessage));
 /*     */             } else {
-/*     */               context.sendMessage(MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE.param("quantity", quantity.intValue()).param("item", itemNameMessage));
+/*     */               context.sendMessage(Message.translation("server.commands.give.insufficientInvSpace").param("quantity", quantity.intValue()).param("item", itemNameMessage));
 /*     */             } 
 /*     */           });
 /*     */     }

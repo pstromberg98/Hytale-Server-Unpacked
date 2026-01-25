@@ -59,11 +59,11 @@
 /*  59 */     DisplayDebug obj = new DisplayDebug();
 /*  60 */     byte nullBits = buf.getByte(offset);
 /*  61 */     obj.shape = DebugShape.fromValue(buf.getByte(offset + 1));
-/*  62 */     if ((nullBits & 0x2) != 0) obj.color = Vector3f.deserialize(buf, offset + 2); 
+/*  62 */     if ((nullBits & 0x1) != 0) obj.color = Vector3f.deserialize(buf, offset + 2); 
 /*  63 */     obj.time = buf.getFloatLE(offset + 14);
 /*  64 */     obj.fade = (buf.getByte(offset + 18) != 0);
 /*     */     
-/*  66 */     if ((nullBits & 0x1) != 0) {
+/*  66 */     if ((nullBits & 0x2) != 0) {
 /*  67 */       int varPos0 = offset + 27 + buf.getIntLE(offset + 19);
 /*  68 */       int matrixCount = VarInt.peek(buf, varPos0);
 /*  69 */       if (matrixCount < 0) throw ProtocolException.negativeLength("Matrix", matrixCount); 
@@ -96,7 +96,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  97 */     byte nullBits = buf.getByte(offset);
 /*  98 */     int maxEnd = 27;
-/*  99 */     if ((nullBits & 0x1) != 0) {
+/*  99 */     if ((nullBits & 0x2) != 0) {
 /* 100 */       int fieldOffset0 = buf.getIntLE(offset + 19);
 /* 101 */       int pos0 = offset + 27 + fieldOffset0;
 /* 102 */       int arrLen = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + arrLen * 4;
@@ -116,8 +116,8 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 117 */     int startPos = buf.writerIndex();
 /* 118 */     byte nullBits = 0;
-/* 119 */     if (this.matrix != null) nullBits = (byte)(nullBits | 0x1); 
-/* 120 */     if (this.color != null) nullBits = (byte)(nullBits | 0x2); 
+/* 119 */     if (this.color != null) nullBits = (byte)(nullBits | 0x1); 
+/* 120 */     if (this.matrix != null) nullBits = (byte)(nullBits | 0x2); 
 /* 121 */     if (this.frustumProjection != null) nullBits = (byte)(nullBits | 0x4); 
 /* 122 */     buf.writeByte(nullBits);
 /*     */     
@@ -163,7 +163,7 @@
 /* 163 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 166 */     if ((nullBits & 0x1) != 0) {
+/* 166 */     if ((nullBits & 0x2) != 0) {
 /* 167 */       int matrixOffset = buffer.getIntLE(offset + 19);
 /* 168 */       if (matrixOffset < 0) {
 /* 169 */         return ValidationResult.error("Invalid offset for Matrix");

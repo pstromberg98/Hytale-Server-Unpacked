@@ -15,35 +15,31 @@
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 18 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_CPU_FULL_USAGE_INFO = Message.translation("server.commands.server.stats.cpu.fullUsageInfo");
-/*    */   @Nonnull
-/* 20 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE = Message.translation("server.commands.server.stats.fullInfoUnavailable");
-/*    */   @Nonnull
-/* 22 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_CPU_USAGE_INFO = Message.translation("server.commands.server.stats.cpu.usageInfo");
+/* 18 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE = Message.translation("server.commands.server.stats.fullInfoUnavailable");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ServerStatsCpuCommand() {
-/* 28 */     super("cpu", "server.commands.server.stats.cpu.desc");
+/* 24 */     super("cpu", "server.commands.server.stats.cpu.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 33 */     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-/* 34 */     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+/* 29 */     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+/* 30 */     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
 /*    */     
-/* 36 */     if (operatingSystemMXBean instanceof OperatingSystemMXBean) { OperatingSystemMXBean sunOSBean = (OperatingSystemMXBean)operatingSystemMXBean;
-/* 37 */       context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_CPU_FULL_USAGE_INFO
-/* 38 */           .param("systemLoad", sunOSBean.getSystemCpuLoad())
-/* 39 */           .param("processLoad", sunOSBean.getProcessCpuLoad())); }
+/* 32 */     if (operatingSystemMXBean instanceof OperatingSystemMXBean) { OperatingSystemMXBean sunOSBean = (OperatingSystemMXBean)operatingSystemMXBean;
+/* 33 */       context.sendMessage(Message.translation("server.commands.server.stats.cpu.fullUsageInfo")
+/* 34 */           .param("systemLoad", sunOSBean.getSystemCpuLoad())
+/* 35 */           .param("processLoad", sunOSBean.getProcessCpuLoad())); }
 /*    */     else
-/* 41 */     { context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE); }
+/* 37 */     { context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE); }
 /*    */ 
 /*    */     
-/* 44 */     context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_CPU_USAGE_INFO
-/* 45 */         .param("loadAverage", operatingSystemMXBean.getSystemLoadAverage())
-/* 46 */         .param("processUptime", FormatUtil.timeUnitToString(runtimeMXBean.getUptime(), TimeUnit.MILLISECONDS)));
+/* 40 */     context.sendMessage(Message.translation("server.commands.server.stats.cpu.usageInfo")
+/* 41 */         .param("loadAverage", operatingSystemMXBean.getSystemLoadAverage())
+/* 42 */         .param("processUptime", FormatUtil.timeUnitToString(runtimeMXBean.getUptime(), TimeUnit.MILLISECONDS)));
 /*    */   }
 /*    */ }
 

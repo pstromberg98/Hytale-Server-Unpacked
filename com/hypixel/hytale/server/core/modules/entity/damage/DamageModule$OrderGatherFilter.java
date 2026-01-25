@@ -143,20 +143,19 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ @Deprecated
 /*     */ public class OrderGatherFilter
 /*     */   implements ISystem<EntityStore>
 /*     */ {
-/* 151 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemGroupDependency(Order.AFTER, 
-/* 152 */         DamageModule.get().getGatherDamageGroup()), new SystemGroupDependency(Order.BEFORE, 
-/* 153 */         DamageModule.get().getFilterDamageGroup()));
+/* 150 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemGroupDependency(Order.AFTER, 
+/* 151 */         DamageModule.get().getGatherDamageGroup()), new SystemGroupDependency(Order.BEFORE, 
+/* 152 */         DamageModule.get().getFilterDamageGroup()));
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 159 */     return this.dependencies;
+/* 158 */     return this.dependencies;
 /*     */   }
 /*     */ }
 

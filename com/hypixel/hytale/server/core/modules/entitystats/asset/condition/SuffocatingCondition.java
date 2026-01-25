@@ -45,40 +45,38 @@
 /*    */   }
 /*    */ 
 /*    */ 
-/*    */ 
 /*    */   
 /*    */   public boolean eval0(@Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull Ref<EntityStore> ref, @Nonnull Instant currentTime) {
 /*    */     LivingEntity livingEntity;
-/* 52 */     Entity entity = EntityUtils.getEntity(ref, componentAccessor);
-/* 53 */     if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
-/* 54 */     else { return false; }
+/* 51 */     Entity entity = EntityUtils.getEntity(ref, componentAccessor); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
+/* 52 */     else { return false; }
 /*    */ 
 /*    */     
-/* 57 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
+/* 55 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
 /*    */     
-/* 59 */     Transform lookVec = TargetUtil.getLook(ref, componentAccessor);
-/* 60 */     Vector3d position = lookVec.getPosition();
+/* 57 */     Transform lookVec = TargetUtil.getLook(ref, componentAccessor);
+/* 58 */     Vector3d position = lookVec.getPosition();
 /*    */     
-/* 62 */     ChunkStore chunkStore = world.getChunkStore();
-/* 63 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(position.x, position.z);
-/* 64 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/* 60 */     ChunkStore chunkStore = world.getChunkStore();
+/* 61 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(position.x, position.z);
+/* 62 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*    */ 
 /*    */     
-/* 67 */     if (chunkRef == null || !chunkRef.isValid()) {
-/* 68 */       return false;
+/* 65 */     if (chunkRef == null || !chunkRef.isValid()) {
+/* 66 */       return false;
 /*    */     }
 /*    */     
-/* 71 */     long packed = WorldUtil.getPackedMaterialAndFluidAtPosition(chunkRef, (ComponentAccessor)chunkStore.getStore(), position.x, position.y, position.z);
-/* 72 */     BlockMaterial material = BlockMaterial.VALUES[MathUtil.unpackLeft(packed)];
-/* 73 */     int fluidId = MathUtil.unpackRight(packed);
+/* 69 */     long packed = WorldUtil.getPackedMaterialAndFluidAtPosition(chunkRef, (ComponentAccessor)chunkStore.getStore(), position.x, position.y, position.z);
+/* 70 */     BlockMaterial material = BlockMaterial.VALUES[MathUtil.unpackLeft(packed)];
+/* 71 */     int fluidId = MathUtil.unpackRight(packed);
 /*    */     
-/* 75 */     return !livingEntity.canBreathe(ref, material, fluidId, componentAccessor);
+/* 73 */     return !livingEntity.canBreathe(ref, material, fluidId, componentAccessor);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 81 */     return "SuffocatingCondition{} " + super.toString();
+/* 79 */     return "SuffocatingCondition{} " + super.toString();
 /*    */   }
 /*    */ }
 

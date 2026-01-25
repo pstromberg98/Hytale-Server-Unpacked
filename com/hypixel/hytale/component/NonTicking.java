@@ -1,5 +1,9 @@
 /*    */ package com.hypixel.hytale.component;
 /*    */ 
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -14,16 +18,24 @@
 /*    */ public class NonTicking<ECS_TYPE>
 /*    */   implements Component<ECS_TYPE>
 /*    */ {
-/* 17 */   private static final NonTicking<?> INSTANCE = new NonTicking();
+/*    */   @Nonnull
+/* 22 */   private static final NonTicking<?> INSTANCE = new NonTicking();
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */   
 /*    */   public static <ECS_TYPE> NonTicking<ECS_TYPE> get() {
-/* 21 */     return (NonTicking)INSTANCE;
+/* 32 */     return (NonTicking)INSTANCE;
 /*    */   }
+/*    */ 
 /*    */ 
 /*    */   
 /*    */   public Component<ECS_TYPE> clone() {
-/* 26 */     return get();
+/* 38 */     return get();
 /*    */   }
 /*    */ }
 

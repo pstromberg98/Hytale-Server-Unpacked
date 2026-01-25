@@ -40,16 +40,16 @@
 /*     */   public static AnimationSet deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  41 */     AnimationSet obj = new AnimationSet();
 /*  42 */     byte nullBits = buf.getByte(offset);
-/*  43 */     if ((nullBits & 0x4) != 0) obj.nextAnimationDelay = Rangef.deserialize(buf, offset + 1);
+/*  43 */     if ((nullBits & 0x1) != 0) obj.nextAnimationDelay = Rangef.deserialize(buf, offset + 1);
 /*     */     
-/*  45 */     if ((nullBits & 0x1) != 0) {
+/*  45 */     if ((nullBits & 0x2) != 0) {
 /*  46 */       int varPos0 = offset + 17 + buf.getIntLE(offset + 9);
 /*  47 */       int idLen = VarInt.peek(buf, varPos0);
 /*  48 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  49 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  50 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  52 */     if ((nullBits & 0x2) != 0) {
+/*  52 */     if ((nullBits & 0x4) != 0) {
 /*  53 */       int varPos1 = offset + 17 + buf.getIntLE(offset + 13);
 /*  54 */       int animationsCount = VarInt.peek(buf, varPos1);
 /*  55 */       if (animationsCount < 0) throw ProtocolException.negativeLength("Animations", animationsCount); 
@@ -71,13 +71,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  72 */     byte nullBits = buf.getByte(offset);
 /*  73 */     int maxEnd = 17;
-/*  74 */     if ((nullBits & 0x1) != 0) {
+/*  74 */     if ((nullBits & 0x2) != 0) {
 /*  75 */       int fieldOffset0 = buf.getIntLE(offset + 9);
 /*  76 */       int pos0 = offset + 17 + fieldOffset0;
 /*  77 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  78 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  80 */     if ((nullBits & 0x2) != 0) {
+/*  80 */     if ((nullBits & 0x4) != 0) {
 /*  81 */       int fieldOffset1 = buf.getIntLE(offset + 13);
 /*  82 */       int pos1 = offset + 17 + fieldOffset1;
 /*  83 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
@@ -91,9 +91,9 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  92 */     int startPos = buf.writerIndex();
 /*  93 */     byte nullBits = 0;
-/*  94 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/*  95 */     if (this.animations != null) nullBits = (byte)(nullBits | 0x2); 
-/*  96 */     if (this.nextAnimationDelay != null) nullBits = (byte)(nullBits | 0x4); 
+/*  94 */     if (this.nextAnimationDelay != null) nullBits = (byte)(nullBits | 0x1); 
+/*  95 */     if (this.id != null) nullBits = (byte)(nullBits | 0x2); 
+/*  96 */     if (this.animations != null) nullBits = (byte)(nullBits | 0x4); 
 /*  97 */     buf.writeByte(nullBits);
 /*     */     
 /*  99 */     if (this.nextAnimationDelay != null) { this.nextAnimationDelay.serialize(buf); } else { buf.writeZero(8); }
@@ -139,7 +139,7 @@
 /* 139 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 142 */     if ((nullBits & 0x1) != 0) {
+/* 142 */     if ((nullBits & 0x2) != 0) {
 /* 143 */       int idOffset = buffer.getIntLE(offset + 9);
 /* 144 */       if (idOffset < 0) {
 /* 145 */         return ValidationResult.error("Invalid offset for Id");
@@ -162,7 +162,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 165 */     if ((nullBits & 0x2) != 0) {
+/* 165 */     if ((nullBits & 0x4) != 0) {
 /* 166 */       int animationsOffset = buffer.getIntLE(offset + 13);
 /* 167 */       if (animationsOffset < 0) {
 /* 168 */         return ValidationResult.error("Invalid offset for Animations");

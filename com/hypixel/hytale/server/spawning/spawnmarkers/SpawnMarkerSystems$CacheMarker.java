@@ -122,31 +122,97 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class CacheMarker
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
-/*     */   private final ComponentType<EntityStore, SpawnMarkerEntity> componentType;
+/*     */   private final ComponentType<EntityStore, SpawnMarkerEntity> spawnMarkerComponentType;
 /*     */   
-/*     */   public CacheMarker(ComponentType<EntityStore, SpawnMarkerEntity> componentType) {
-/* 131 */     this.componentType = componentType;
+/*     */   public CacheMarker(@Nonnull ComponentType<EntityStore, SpawnMarkerEntity> spawnMarkerComponentType) {
+/* 195 */     this.spawnMarkerComponentType = spawnMarkerComponentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 136 */     return (Query)this.componentType;
+/* 200 */     return (Query)this.spawnMarkerComponentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 141 */     SpawnMarkerEntity entity = (SpawnMarkerEntity)store.getComponent(ref, this.componentType);
-/* 142 */     SpawnMarker marker = (SpawnMarker)SpawnMarker.getAssetMap().getAsset(entity.getSpawnMarkerId());
-/* 143 */     if (marker == null) {
+/* 205 */     SpawnMarkerEntity spawnMarkerEntityComponent = (SpawnMarkerEntity)store.getComponent(ref, this.spawnMarkerComponentType);
+/* 206 */     assert spawnMarkerEntityComponent != null;
+/*     */     
+/* 208 */     SpawnMarker spawnMarker = (SpawnMarker)SpawnMarker.getAssetMap().getAsset(spawnMarkerEntityComponent.getSpawnMarkerId());
+/* 209 */     if (spawnMarker == null) {
 /*     */       
-/* 145 */       SpawnMarkerSystems.LOGGER.at(Level.SEVERE).log("Marker %s removed due to missing spawn marker type: %s", ref, entity.getSpawnMarkerId());
-/* 146 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
+/* 211 */       SpawnMarkerSystems.LOGGER.at(Level.SEVERE).log("Marker %s removed due to missing spawn marker type: %s", ref, spawnMarkerEntityComponent.getSpawnMarkerId());
+/* 212 */       commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
 /*     */       return;
 /*     */     } 
-/* 149 */     entity.setCachedMarker(marker);
+/* 215 */     spawnMarkerEntityComponent.setCachedMarker(spawnMarker);
 /*     */   }
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}

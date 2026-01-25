@@ -47,12 +47,12 @@
 /*  47 */     WorldParticle obj = new WorldParticle();
 /*  48 */     byte nullBits = buf.getByte(offset);
 /*  49 */     obj.scale = buf.getFloatLE(offset + 1);
-/*  50 */     if ((nullBits & 0x2) != 0) obj.color = Color.deserialize(buf, offset + 5); 
-/*  51 */     if ((nullBits & 0x4) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 8); 
-/*  52 */     if ((nullBits & 0x8) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 20);
+/*  50 */     if ((nullBits & 0x1) != 0) obj.color = Color.deserialize(buf, offset + 5); 
+/*  51 */     if ((nullBits & 0x2) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 8); 
+/*  52 */     if ((nullBits & 0x4) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 20);
 /*     */     
 /*  54 */     int pos = offset + 32;
-/*  55 */     if ((nullBits & 0x1) != 0) { int systemIdLen = VarInt.peek(buf, pos);
+/*  55 */     if ((nullBits & 0x8) != 0) { int systemIdLen = VarInt.peek(buf, pos);
 /*  56 */       if (systemIdLen < 0) throw ProtocolException.negativeLength("SystemId", systemIdLen); 
 /*  57 */       if (systemIdLen > 4096000) throw ProtocolException.stringTooLong("SystemId", systemIdLen, 4096000); 
 /*  58 */       int systemIdVarLen = VarInt.length(buf, pos);
@@ -65,17 +65,17 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  66 */     byte nullBits = buf.getByte(offset);
 /*  67 */     int pos = offset + 32;
-/*  68 */     if ((nullBits & 0x1) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/*  68 */     if ((nullBits & 0x8) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /*  69 */      return pos - offset;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  74 */     byte nullBits = 0;
-/*  75 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x1); 
-/*  76 */     if (this.color != null) nullBits = (byte)(nullBits | 0x2); 
-/*  77 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x4); 
-/*  78 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x8); 
+/*  75 */     if (this.color != null) nullBits = (byte)(nullBits | 0x1); 
+/*  76 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x2); 
+/*  77 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x4); 
+/*  78 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x8); 
 /*  79 */     buf.writeByte(nullBits);
 /*     */     
 /*  81 */     buf.writeFloatLE(this.scale);
@@ -103,7 +103,7 @@
 /*     */     
 /* 104 */     int pos = offset + 32;
 /*     */     
-/* 106 */     if ((nullBits & 0x1) != 0) {
+/* 106 */     if ((nullBits & 0x8) != 0) {
 /* 107 */       int systemIdLen = VarInt.peek(buffer, pos);
 /* 108 */       if (systemIdLen < 0) {
 /* 109 */         return ValidationResult.error("Invalid string length for SystemId");

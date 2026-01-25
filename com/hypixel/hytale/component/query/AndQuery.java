@@ -3,44 +3,65 @@
 /*    */ import com.hypixel.hytale.component.Archetype;
 /*    */ import com.hypixel.hytale.component.ComponentRegistry;
 /*    */ import com.hypixel.hytale.component.ComponentType;
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */ public class AndQuery<ECS_TYPE>
 /*    */   implements Query<ECS_TYPE>
 /*    */ {
+/*    */   @Nonnull
 /*    */   private final Query<ECS_TYPE>[] queries;
 /*    */   
 /*    */   @SafeVarargs
-/*    */   public AndQuery(Query<ECS_TYPE>... queries) {
-/* 16 */     this.queries = queries;
+/*    */   public AndQuery(@Nonnull Query<ECS_TYPE>... queries) {
+/* 29 */     this.queries = queries;
+/*    */ 
+/*    */     
+/* 32 */     for (int i = 0; i < queries.length; i++) {
+/* 33 */       Query<ECS_TYPE> query = queries[i];
+/* 34 */       if (query == null) {
+/* 35 */         throw new IllegalArgumentException("Query in AndQuery cannot be null (Index: " + i + ")");
+/*    */       }
+/*    */     } 
 /*    */   }
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public boolean test(Archetype<ECS_TYPE> archetype) {
-/* 22 */     for (Query<ECS_TYPE> query : this.queries) {
-/* 23 */       if (!query.test(archetype)) return false; 
+/* 43 */     for (Query<ECS_TYPE> query : this.queries) {
+/* 44 */       if (!query.test(archetype)) return false; 
 /*    */     } 
-/* 25 */     return true;
+/* 46 */     return true;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public boolean requiresComponentType(ComponentType<ECS_TYPE, ?> componentType) {
-/* 30 */     for (Query<ECS_TYPE> query : this.queries) {
-/* 31 */       if (query.requiresComponentType(componentType)) return true; 
+/* 51 */     for (Query<ECS_TYPE> query : this.queries) {
+/* 52 */       if (query.requiresComponentType(componentType)) return true; 
 /*    */     } 
-/* 33 */     return false;
+/* 54 */     return false;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   public void validateRegistry(ComponentRegistry<ECS_TYPE> registry) {
-/* 38 */     for (Query<ECS_TYPE> query : this.queries) query.validateRegistry(registry);
+/*    */   public void validateRegistry(@Nonnull ComponentRegistry<ECS_TYPE> registry) {
+/* 59 */     for (Query<ECS_TYPE> query : this.queries) query.validateRegistry(registry);
 /*    */   
 /*    */   }
 /*    */   
 /*    */   public void validate() {
-/* 43 */     for (Query<ECS_TYPE> query : this.queries) query.validate(); 
+/* 64 */     for (Query<ECS_TYPE> query : this.queries) query.validate(); 
 /*    */   }
 /*    */ }
 

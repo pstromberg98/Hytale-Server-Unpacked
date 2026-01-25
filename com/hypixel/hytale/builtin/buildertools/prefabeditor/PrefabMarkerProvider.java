@@ -2,28 +2,26 @@
 /*    */ 
 /*    */ import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 /*    */ import com.hypixel.hytale.protocol.packets.worldmap.MapMarker;
-/*    */ import com.hypixel.hytale.server.core.asset.type.gameplay.GameplayConfig;
 /*    */ import com.hypixel.hytale.server.core.entity.entities.Player;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
-/*    */ import com.hypixel.hytale.server.core.universe.world.WorldMapTracker;
 /*    */ import com.hypixel.hytale.server.core.universe.world.worldmap.WorldMapManager;
+/*    */ import com.hypixel.hytale.server.core.universe.world.worldmap.markers.MapMarkerTracker;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ public class PrefabMarkerProvider implements WorldMapManager.MarkerProvider {
-/* 13 */   public static final PrefabMarkerProvider INSTANCE = new PrefabMarkerProvider();
-/*    */ 
+/* 12 */   public static final PrefabMarkerProvider INSTANCE = new PrefabMarkerProvider();
 /*    */ 
 /*    */   
-/*    */   public void update(@Nonnull World world, @Nonnull GameplayConfig gameplayConfig, @Nonnull WorldMapTracker tracker, int chunkViewRadius, int playerChunkX, int playerChunkZ) {
-/* 18 */     PrefabEditSessionManager sessionManager = BuilderToolsPlugin.get().getPrefabEditSessionManager();
-/* 19 */     Player player = tracker.getPlayer();
-/* 20 */     PrefabEditSession session = sessionManager.getPrefabEditSession(player.getUuid());
+/*    */   public void update(@Nonnull World world, @Nonnull MapMarkerTracker tracker, int chunkViewRadius, int playerChunkX, int playerChunkZ) {
+/* 16 */     PrefabEditSessionManager sessionManager = BuilderToolsPlugin.get().getPrefabEditSessionManager();
+/* 17 */     Player player = tracker.getPlayer();
+/* 18 */     PrefabEditSession session = sessionManager.getPrefabEditSession(player.getUuid());
 /*    */     
-/* 22 */     if (session == null || !session.getWorldName().equals(world.getName()))
+/* 20 */     if (session == null || !session.getWorldName().equals(world.getName()))
 /*    */       return; 
-/* 24 */     for (PrefabEditingMetadata metadata : session.getLoadedPrefabMetadata().values()) {
-/* 25 */       MapMarker marker = PrefabEditSession.createPrefabMarker(metadata);
-/* 26 */       tracker.trySendMarker(chunkViewRadius, playerChunkX, playerChunkZ, marker);
+/* 22 */     for (PrefabEditingMetadata metadata : session.getLoadedPrefabMetadata().values()) {
+/* 23 */       MapMarker marker = PrefabEditSession.createPrefabMarker(metadata);
+/* 24 */       tracker.trySendMarker(chunkViewRadius, playerChunkX, playerChunkZ, marker);
 /*    */     } 
 /*    */   }
 /*    */ }

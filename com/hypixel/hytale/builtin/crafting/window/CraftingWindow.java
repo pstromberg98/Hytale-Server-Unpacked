@@ -29,105 +29,107 @@
 /*     */ import java.util.Set;
 /*     */ import javax.annotation.Nonnull;
 /*     */ 
-/*     */ public abstract class CraftingWindow
-/*     */   extends BenchWindow
-/*     */ {
-/*     */   public static final int SET_BLOCK_SETTINGS = 6;
+/*     */ public abstract class CraftingWindow extends BenchWindow {
+/*     */   @Nonnull
 /*     */   protected static final String CRAFT_COMPLETED = "CraftCompleted";
+/*     */   @Nonnull
 /*     */   protected static final String CRAFT_COMPLETED_INSTANT = "CraftCompletedInstant";
 /*     */   
-/*     */   public CraftingWindow(@Nonnull WindowType windowType, BenchState benchState) {
-/*  40 */     super(windowType, benchState);
+/*     */   public CraftingWindow(@Nonnull WindowType windowType, @Nonnull BenchState benchState) {
+/*  39 */     super(windowType, benchState);
 /*     */     
-/*  42 */     JsonArray categories = new JsonArray();
+/*  41 */     JsonArray categories = new JsonArray();
 /*     */     
-/*  44 */     Bench bench = this.bench; if (bench instanceof CraftingBench) { CraftingBench craftingBench = (CraftingBench)bench;
+/*  43 */     Bench bench = this.bench; if (bench instanceof CraftingBench) { CraftingBench craftingBench = (CraftingBench)bench;
 /*     */ 
 /*     */       
-/*  47 */       for (CraftingBench.BenchCategory benchCategory : craftingBench.getCategories()) {
-/*  48 */         JsonObject category = new JsonObject();
-/*  49 */         categories.add((JsonElement)category);
+/*  46 */       for (CraftingBench.BenchCategory benchCategory : craftingBench.getCategories()) {
+/*  47 */         JsonObject category = new JsonObject();
+/*  48 */         categories.add((JsonElement)category);
 /*     */         
-/*  51 */         category.addProperty("id", benchCategory.getId());
-/*  52 */         category.addProperty("name", benchCategory.getName());
-/*  53 */         category.addProperty("icon", benchCategory.getIcon());
+/*  50 */         category.addProperty("id", benchCategory.getId());
+/*  51 */         category.addProperty("name", benchCategory.getName());
+/*  52 */         category.addProperty("icon", benchCategory.getIcon());
 /*     */         
-/*  55 */         Set<String> recipes = CraftingPlugin.getAvailableRecipesForCategory(this.bench.getId(), benchCategory.getId());
-/*  56 */         if (recipes != null) {
-/*  57 */           JsonArray recipesArray = new JsonArray();
-/*  58 */           for (String recipeId : recipes) {
-/*  59 */             recipesArray.add(recipeId);
+/*  54 */         Set<String> recipes = CraftingPlugin.getAvailableRecipesForCategory(this.bench.getId(), benchCategory.getId());
+/*  55 */         if (recipes != null) {
+/*  56 */           JsonArray recipesArray = new JsonArray();
+/*  57 */           for (String recipeId : recipes) {
+/*  58 */             recipesArray.add(recipeId);
 /*     */           }
-/*  61 */           category.add("craftableRecipes", (JsonElement)recipesArray);
+/*  60 */           category.add("craftableRecipes", (JsonElement)recipesArray);
 /*     */         } 
 /*     */         
-/*  64 */         if (benchCategory.getItemCategories() != null) {
+/*  63 */         if (benchCategory.getItemCategories() != null) {
 /*     */           
-/*  66 */           JsonArray itemCategories = new JsonArray();
-/*  67 */           for (CraftingBench.BenchItemCategory benchItemCategory : benchCategory.getItemCategories()) {
-/*  68 */             JsonObject itemCategory = new JsonObject();
-/*  69 */             itemCategory.addProperty("id", benchItemCategory.getId());
-/*  70 */             itemCategory.addProperty("icon", benchItemCategory.getIcon());
-/*  71 */             itemCategory.addProperty("diagram", benchItemCategory.getDiagram());
-/*  72 */             itemCategory.addProperty("slots", Integer.valueOf(benchItemCategory.getSlots()));
-/*  73 */             itemCategory.addProperty("specialSlot", Boolean.valueOf(benchItemCategory.isSpecialSlot()));
-/*  74 */             itemCategories.add((JsonElement)itemCategory);
+/*  65 */           JsonArray itemCategories = new JsonArray();
+/*  66 */           for (CraftingBench.BenchItemCategory benchItemCategory : benchCategory.getItemCategories()) {
+/*  67 */             JsonObject itemCategory = new JsonObject();
+/*  68 */             itemCategory.addProperty("id", benchItemCategory.getId());
+/*  69 */             itemCategory.addProperty("icon", benchItemCategory.getIcon());
+/*  70 */             itemCategory.addProperty("diagram", benchItemCategory.getDiagram());
+/*  71 */             itemCategory.addProperty("slots", Integer.valueOf(benchItemCategory.getSlots()));
+/*  72 */             itemCategory.addProperty("specialSlot", Boolean.valueOf(benchItemCategory.isSpecialSlot()));
+/*  73 */             itemCategories.add((JsonElement)itemCategory);
 /*     */           } 
-/*  76 */           category.add("itemCategories", (JsonElement)itemCategories);
+/*  75 */           category.add("itemCategories", (JsonElement)itemCategories);
 /*     */         } 
-/*  78 */       }  this.windowData.add("categories", (JsonElement)categories); }
+/*  77 */       }  this.windowData.add("categories", (JsonElement)categories); }
 /*     */   
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   protected boolean onOpen0() {
-/*  84 */     super.onOpen0();
+/*     */   protected boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/*  83 */     super.onOpen0(ref, store);
 /*     */     
-/*  86 */     PlayerRef playerRef = getPlayerRef();
-/*  87 */     Ref<EntityStore> ref = playerRef.getReference();
-/*  88 */     Store<EntityStore> store = ref.getStore();
+/*  85 */     GameplayConfig gameplayConfig = ((EntityStore)store.getExternalData()).getWorld().getGameplayConfig();
+/*  86 */     MemoriesGameplayConfig memoriesConfig = MemoriesGameplayConfig.get(gameplayConfig);
 /*     */     
-/*  90 */     GameplayConfig gameplayConfig = ((EntityStore)store.getExternalData()).getWorld().getGameplayConfig();
-/*  91 */     MemoriesGameplayConfig memoriesConfig = MemoriesGameplayConfig.get(gameplayConfig);
-/*  92 */     if (memoriesConfig != null) {
-/*  93 */       int[] memoriesAmountPerLevel = memoriesConfig.getMemoriesAmountPerLevel();
-/*  94 */       if (memoriesAmountPerLevel != null && memoriesAmountPerLevel.length > 1) {
-/*  95 */         JsonArray memoriesPerLevel = new JsonArray();
-/*  96 */         for (int i = 0; i < memoriesAmountPerLevel.length; i++) {
-/*  97 */           memoriesPerLevel.add(Integer.valueOf(memoriesAmountPerLevel[i]));
+/*  88 */     if (memoriesConfig != null) {
+/*  89 */       int[] memoriesAmountPerLevel = memoriesConfig.getMemoriesAmountPerLevel();
+/*  90 */       if (memoriesAmountPerLevel != null && memoriesAmountPerLevel.length > 1) {
+/*  91 */         JsonArray memoriesPerLevel = new JsonArray();
+/*  92 */         for (int i = 0; i < memoriesAmountPerLevel.length; i++) {
+/*  93 */           memoriesPerLevel.add(Integer.valueOf(memoriesAmountPerLevel[i]));
 /*     */         }
-/*  99 */         this.windowData.add("memoriesPerLevel", (JsonElement)memoriesPerLevel);
+/*  95 */         this.windowData.add("memoriesPerLevel", (JsonElement)memoriesPerLevel);
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 103 */     if (this.bench.getLocalOpenSoundEventIndex() != 0) {
-/* 104 */       SoundUtil.playSoundEvent2d(ref, this.bench.getLocalOpenSoundEventIndex(), SoundCategory.UI, (ComponentAccessor)store);
+/*  99 */     if (this.bench.getLocalOpenSoundEventIndex() != 0) {
+/* 100 */       SoundUtil.playSoundEvent2d(ref, this.bench.getLocalOpenSoundEventIndex(), SoundCategory.UI, (ComponentAccessor)store);
 /*     */     }
 /*     */     
-/* 107 */     return true;
+/* 103 */     return true;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void onClose0() {
-/* 112 */     super.onClose0();
-/*     */     
-/* 114 */     PlayerRef playerRef = getPlayerRef();
-/* 115 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 116 */     Store<EntityStore> store = ref.getStore();
-/* 117 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*     */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
+/* 108 */     super.onClose0(ref, componentAccessor);
+/* 109 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
 /*     */ 
 /*     */     
-/* 120 */     setBlockInteractionState(this.benchState.getTierStateName(), world, 6);
+/* 112 */     setBlockInteractionState(this.benchState.getTierStateName(), world);
 /*     */     
-/* 122 */     if (this.bench.getLocalCloseSoundEventIndex() != 0) {
-/* 123 */       SoundUtil.playSoundEvent2d(ref, this.bench.getLocalCloseSoundEventIndex(), SoundCategory.UI, (ComponentAccessor)store);
+/* 114 */     if (this.bench.getLocalCloseSoundEventIndex() != 0) {
+/* 115 */       SoundUtil.playSoundEvent2d(ref, this.bench.getLocalCloseSoundEventIndex(), SoundCategory.UI, componentAccessor);
 /*     */     }
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   public void setBlockInteractionState(@Nonnull String state, @Nonnull World world, int setBlockSettings) {
-/* 128 */     WorldChunk worldChunk = world.getChunk(ChunkUtil.indexChunkFromBlock(this.x, this.z));
+/*     */   public void setBlockInteractionState(@Nonnull String state, @Nonnull World world) {
+/* 126 */     WorldChunk worldChunk = world.getChunk(ChunkUtil.indexChunkFromBlock(this.x, this.z));
+/* 127 */     if (worldChunk == null)
+/*     */       return; 
 /* 129 */     BlockType blockType = worldChunk.getBlockType(this.x, this.y, this.z);
-/* 130 */     worldChunk.setBlockInteractionState(this.x, this.y, this.z, blockType, state, true);
+/* 130 */     if (blockType == null)
+/*     */       return; 
+/* 132 */     worldChunk.setBlockInteractionState(this.x, this.y, this.z, blockType, state, true);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -140,24 +142,27 @@
 /*     */ 
 /*     */   
 /*     */   public static boolean craftSimpleItem(@Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull CraftingManager craftingManager, @Nonnull CraftRecipeAction action) {
-/* 143 */     String recipeId = action.recipeId;
-/* 144 */     int quantity = action.quantity;
+/* 145 */     String recipeId = action.recipeId;
+/* 146 */     int quantity = action.quantity;
 /*     */     
-/* 146 */     if (recipeId == null) return false;
+/* 148 */     if (recipeId == null) return false;
 /*     */     
-/* 148 */     CraftingRecipe recipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
-/* 149 */     if (recipe == null) {
-/* 150 */       PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 150 */     CraftingRecipe recipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
+/* 151 */     if (recipe == null) {
+/* 152 */       PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 153 */       assert playerRef != null;
 /*     */ 
 /*     */       
-/* 153 */       playerRef.getPacketHandler().disconnect("Attempted to craft unknown recipe!");
-/* 154 */       return false;
+/* 156 */       playerRef.getPacketHandler().disconnect("Attempted to craft unknown recipe!");
+/* 157 */       return false;
 /*     */     } 
 /*     */     
-/* 157 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 160 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 161 */     assert playerComponent != null;
+/*     */ 
 /*     */     
-/* 159 */     craftingManager.craftItem(ref, (ComponentAccessor)store, recipe, quantity, (ItemContainer)player.getInventory().getCombinedBackpackStorageHotbar());
-/* 160 */     return true;
+/* 164 */     craftingManager.craftItem(ref, (ComponentAccessor)store, recipe, quantity, (ItemContainer)playerComponent.getInventory().getCombinedBackpackStorageHotbar());
+/* 165 */     return true;
 /*     */   }
 /*     */ }
 

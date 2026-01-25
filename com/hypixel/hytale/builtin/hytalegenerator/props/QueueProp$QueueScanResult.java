@@ -67,6 +67,19 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ class QueueScanResult
 /*    */   implements ScanResult
 /*    */ {
@@ -75,15 +88,15 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public static QueueScanResult cast(ScanResult scanResult) {
-/* 78 */     if (!(scanResult instanceof QueueScanResult)) {
-/* 79 */       throw new IllegalArgumentException("The provided ScanResult isn't compatible with this prop.");
+/* 91 */     if (!(scanResult instanceof QueueScanResult)) {
+/* 92 */       throw new IllegalArgumentException("The provided ScanResult isn't compatible with this prop.");
 /*    */     }
-/* 81 */     return (QueueScanResult)scanResult;
+/* 94 */     return (QueueScanResult)scanResult;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public boolean isNegative() {
-/* 86 */     return (this.propScanResult == null || this.propScanResult.isNegative());
+/* 99 */     return (this.propScanResult == null || this.propScanResult.isNegative());
 /*    */   }
 /*    */ }
 

@@ -281,84 +281,78 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyLateInitBlockStateSystem<T extends BlockState>
 /*     */   extends EntityTickingSystem<ChunkStore>
 /*     */   implements DisableProcessingAssert
 /*     */ {
-/* 294 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/* 288 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */   
 /*     */   private final ComponentType<ChunkStore, T> componentType;
 /*     */   @Nonnull
 /*     */   private final Query<ChunkStore> query;
 /*     */   
 /*     */   public LegacyLateInitBlockStateSystem(ComponentType<ChunkStore, T> componentType) {
-/* 301 */     this.componentType = componentType;
-/* 302 */     this.query = (Query<ChunkStore>)Query.and(new Query[] { (Query)componentType, (Query)BlockModule.BlockStateInfo.getComponentType() });
+/* 295 */     this.componentType = componentType;
+/* 296 */     this.query = (Query<ChunkStore>)Query.and(new Query[] { (Query)componentType, (Query)BlockModule.BlockStateInfo.getComponentType() });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<ChunkStore> getQuery() {
-/* 308 */     return this.query;
+/* 302 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<ChunkStore>> getDependencies() {
-/* 314 */     return RootDependency.firstSet();
+/* 308 */     return RootDependency.firstSet();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<ChunkStore> archetypeChunk, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 319 */     BlockState blockState = (BlockState)archetypeChunk.getComponent(index, this.componentType);
-/* 320 */     assert blockState != null;
+/* 313 */     BlockState blockState = (BlockState)archetypeChunk.getComponent(index, this.componentType);
+/* 314 */     assert blockState != null;
 /*     */     
-/* 322 */     BlockModule.BlockStateInfo blockStateInfoComponent = (BlockModule.BlockStateInfo)archetypeChunk.getComponent(index, BlockModule.BlockStateInfo.getComponentType());
-/* 323 */     assert blockStateInfoComponent != null;
+/* 316 */     BlockModule.BlockStateInfo blockStateInfoComponent = (BlockModule.BlockStateInfo)archetypeChunk.getComponent(index, BlockModule.BlockStateInfo.getComponentType());
+/* 317 */     assert blockStateInfoComponent != null;
 /*     */     
 /*     */     try {
-/* 326 */       if (!blockState.initialized.get()) {
-/* 327 */         blockState.initialized.set(true);
+/* 320 */       if (!blockState.initialized.get()) {
+/* 321 */         blockState.initialized.set(true);
 /*     */         
-/* 329 */         if (blockState.getReference() == null || !blockState.getReference().isValid()) {
-/* 330 */           blockState.setReference(archetypeChunk.getReferenceTo(index));
+/* 323 */         if (blockState.getReference() == null || !blockState.getReference().isValid()) {
+/* 324 */           blockState.setReference(archetypeChunk.getReferenceTo(index));
 /*     */         }
 /*     */         
-/* 333 */         World world = ((ChunkStore)store.getExternalData()).getWorld();
-/* 334 */         Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 327 */         World world = ((ChunkStore)store.getExternalData()).getWorld();
+/* 328 */         Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */         
-/* 336 */         WorldChunk worldChunkComponent = (WorldChunk)chunkStore.getComponent(blockStateInfoComponent.getChunkRef(), WorldChunk.getComponentType());
-/* 337 */         assert worldChunkComponent != null;
+/* 330 */         WorldChunk worldChunkComponent = (WorldChunk)chunkStore.getComponent(blockStateInfoComponent.getChunkRef(), WorldChunk.getComponentType());
+/* 331 */         assert worldChunkComponent != null;
 /*     */         
-/* 339 */         int x = ChunkUtil.xFromBlockInColumn(blockStateInfoComponent.getIndex());
-/* 340 */         int y = ChunkUtil.yFromBlockInColumn(blockStateInfoComponent.getIndex());
-/* 341 */         int z = ChunkUtil.zFromBlockInColumn(blockStateInfoComponent.getIndex());
+/* 333 */         int x = ChunkUtil.xFromBlockInColumn(blockStateInfoComponent.getIndex());
+/* 334 */         int y = ChunkUtil.yFromBlockInColumn(blockStateInfoComponent.getIndex());
+/* 335 */         int z = ChunkUtil.zFromBlockInColumn(blockStateInfoComponent.getIndex());
 /*     */         
-/* 343 */         blockState.setPosition(worldChunkComponent, new Vector3i(x, y, z));
+/* 337 */         blockState.setPosition(worldChunkComponent, new Vector3i(x, y, z));
 /*     */         
-/* 345 */         int blockIndex = worldChunkComponent.getBlock(x, y, z);
-/* 346 */         BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockIndex);
-/* 347 */         if (!blockState.initialize(blockType)) {
-/* 348 */           LOGGER.at(Level.SEVERE).log("Removing invalid block state %s", blockState);
-/* 349 */           commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 339 */         int blockIndex = worldChunkComponent.getBlock(x, y, z);
+/* 340 */         BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockIndex);
+/* 341 */         if (!blockState.initialize(blockType)) {
+/* 342 */           LOGGER.at(Level.SEVERE).log("Removing invalid block state %s", blockState);
+/* 343 */           commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */         } 
 /*     */       } 
-/* 352 */     } catch (Exception throwable) {
-/* 353 */       ((HytaleLogger.Api)LOGGER.at(Level.SEVERE).withCause(throwable)).log("Exception while re-init BlockState! Removing!! %s", blockState);
-/* 354 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
+/* 346 */     } catch (Exception throwable) {
+/* 347 */       ((HytaleLogger.Api)LOGGER.at(Level.SEVERE).withCause(throwable)).log("Exception while re-init BlockState! Removing!! %s", blockState);
+/* 348 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 361 */     return "LegacyLateInitBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
+/* 355 */     return "LegacyLateInitBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
 /*     */   }
 /*     */ }
 

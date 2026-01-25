@@ -46,18 +46,18 @@
 /*     */   public static ModelDisplay deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  47 */     ModelDisplay obj = new ModelDisplay();
 /*  48 */     byte nullBits = buf.getByte(offset);
-/*  49 */     if ((nullBits & 0x4) != 0) obj.translation = Vector3f.deserialize(buf, offset + 1); 
-/*  50 */     if ((nullBits & 0x8) != 0) obj.rotation = Vector3f.deserialize(buf, offset + 13); 
-/*  51 */     if ((nullBits & 0x10) != 0) obj.scale = Vector3f.deserialize(buf, offset + 25);
+/*  49 */     if ((nullBits & 0x1) != 0) obj.translation = Vector3f.deserialize(buf, offset + 1); 
+/*  50 */     if ((nullBits & 0x2) != 0) obj.rotation = Vector3f.deserialize(buf, offset + 13); 
+/*  51 */     if ((nullBits & 0x4) != 0) obj.scale = Vector3f.deserialize(buf, offset + 25);
 /*     */     
-/*  53 */     if ((nullBits & 0x1) != 0) {
+/*  53 */     if ((nullBits & 0x8) != 0) {
 /*  54 */       int varPos0 = offset + 45 + buf.getIntLE(offset + 37);
 /*  55 */       int nodeLen = VarInt.peek(buf, varPos0);
 /*  56 */       if (nodeLen < 0) throw ProtocolException.negativeLength("Node", nodeLen); 
 /*  57 */       if (nodeLen > 4096000) throw ProtocolException.stringTooLong("Node", nodeLen, 4096000); 
 /*  58 */       obj.node = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  60 */     if ((nullBits & 0x2) != 0) {
+/*  60 */     if ((nullBits & 0x10) != 0) {
 /*  61 */       int varPos1 = offset + 45 + buf.getIntLE(offset + 41);
 /*  62 */       int attachToLen = VarInt.peek(buf, varPos1);
 /*  63 */       if (attachToLen < 0) throw ProtocolException.negativeLength("AttachTo", attachToLen); 
@@ -71,13 +71,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  72 */     byte nullBits = buf.getByte(offset);
 /*  73 */     int maxEnd = 45;
-/*  74 */     if ((nullBits & 0x1) != 0) {
+/*  74 */     if ((nullBits & 0x8) != 0) {
 /*  75 */       int fieldOffset0 = buf.getIntLE(offset + 37);
 /*  76 */       int pos0 = offset + 45 + fieldOffset0;
 /*  77 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  78 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  80 */     if ((nullBits & 0x2) != 0) {
+/*  80 */     if ((nullBits & 0x10) != 0) {
 /*  81 */       int fieldOffset1 = buf.getIntLE(offset + 41);
 /*  82 */       int pos1 = offset + 45 + fieldOffset1;
 /*  83 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
@@ -90,11 +90,11 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  91 */     int startPos = buf.writerIndex();
 /*  92 */     byte nullBits = 0;
-/*  93 */     if (this.node != null) nullBits = (byte)(nullBits | 0x1); 
-/*  94 */     if (this.attachTo != null) nullBits = (byte)(nullBits | 0x2); 
-/*  95 */     if (this.translation != null) nullBits = (byte)(nullBits | 0x4); 
-/*  96 */     if (this.rotation != null) nullBits = (byte)(nullBits | 0x8); 
-/*  97 */     if (this.scale != null) nullBits = (byte)(nullBits | 0x10); 
+/*  93 */     if (this.translation != null) nullBits = (byte)(nullBits | 0x1); 
+/*  94 */     if (this.rotation != null) nullBits = (byte)(nullBits | 0x2); 
+/*  95 */     if (this.scale != null) nullBits = (byte)(nullBits | 0x4); 
+/*  96 */     if (this.node != null) nullBits = (byte)(nullBits | 0x8); 
+/*  97 */     if (this.attachTo != null) nullBits = (byte)(nullBits | 0x10); 
 /*  98 */     buf.writeByte(nullBits);
 /*     */     
 /* 100 */     if (this.translation != null) { this.translation.serialize(buf); } else { buf.writeZero(12); }
@@ -138,7 +138,7 @@
 /* 138 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 141 */     if ((nullBits & 0x1) != 0) {
+/* 141 */     if ((nullBits & 0x8) != 0) {
 /* 142 */       int nodeOffset = buffer.getIntLE(offset + 37);
 /* 143 */       if (nodeOffset < 0) {
 /* 144 */         return ValidationResult.error("Invalid offset for Node");
@@ -161,7 +161,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 164 */     if ((nullBits & 0x2) != 0) {
+/* 164 */     if ((nullBits & 0x10) != 0) {
 /* 165 */       int attachToOffset = buffer.getIntLE(offset + 41);
 /* 166 */       if (attachToOffset < 0) {
 /* 167 */         return ValidationResult.error("Invalid offset for AttachTo");

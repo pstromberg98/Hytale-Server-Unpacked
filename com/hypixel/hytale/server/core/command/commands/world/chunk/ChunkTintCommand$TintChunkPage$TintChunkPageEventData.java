@@ -368,13 +368,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class TintChunkPageEventData
 /*     */ {
 /*     */   public static final String KEY_COLOR = "@Color";
@@ -393,7 +386,7 @@
 /*     */   private ChunkTintCommand.TintChunkPage.TintChunkPageAction action;
 /*     */   
 /*     */   static {
-/* 396 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(TintChunkPageEventData.class, TintChunkPageEventData::new).addField(new KeyedCodec("@Color", (Codec)Codec.STRING), (entry, s) -> entry.color = s, entry -> entry.color)).addField(new KeyedCodec("@Radius", (Codec)Codec.INTEGER), (entry, s) -> entry.radius = s.intValue(), entry -> Integer.valueOf(entry.radius))).addField(new KeyedCodec("@Sigma", (Codec)Codec.INTEGER), (entry, s) -> entry.sigma = s.intValue(), entry -> Integer.valueOf(entry.sigma))).addField(new KeyedCodec("@BlurEnabled", (Codec)Codec.BOOLEAN), (entry, b) -> entry.isBlurEnabled = b.booleanValue(), entry -> Boolean.valueOf(entry.isBlurEnabled))).addField(new KeyedCodec("@HexColor", (Codec)Codec.STRING), (entry, s) -> entry.hexColor = s, entry -> entry.hexColor)).addField(new KeyedCodec("Submit", (Codec)new EnumCodec(ChunkTintCommand.TintChunkPage.TintChunkPageAction.class)), (entry, s) -> entry.action = s, entry -> entry.action)).build();
+/* 389 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(TintChunkPageEventData.class, TintChunkPageEventData::new).addField(new KeyedCodec("@Color", (Codec)Codec.STRING), (entry, s) -> entry.color = s, entry -> entry.color)).addField(new KeyedCodec("@Radius", (Codec)Codec.INTEGER), (entry, s) -> entry.radius = s.intValue(), entry -> Integer.valueOf(entry.radius))).addField(new KeyedCodec("@Sigma", (Codec)Codec.INTEGER), (entry, s) -> entry.sigma = s.intValue(), entry -> Integer.valueOf(entry.sigma))).addField(new KeyedCodec("@BlurEnabled", (Codec)Codec.BOOLEAN), (entry, b) -> entry.isBlurEnabled = b.booleanValue(), entry -> Boolean.valueOf(entry.isBlurEnabled))).addField(new KeyedCodec("@HexColor", (Codec)Codec.STRING), (entry, s) -> entry.hexColor = s, entry -> entry.hexColor)).addField(new KeyedCodec("Submit", (Codec)new EnumCodec(ChunkTintCommand.TintChunkPage.TintChunkPageAction.class)), (entry, s) -> entry.action = s, entry -> entry.action)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -403,27 +396,27 @@
 /*     */ 
 /*     */   
 /*     */   public String getColor() {
-/* 406 */     return this.color;
+/* 399 */     return this.color;
 /*     */   }
 /*     */   
 /*     */   public int getRadius() {
-/* 410 */     return this.radius;
+/* 403 */     return this.radius;
 /*     */   }
 /*     */   
 /*     */   public int getSigma() {
-/* 414 */     return this.sigma;
+/* 407 */     return this.sigma;
 /*     */   }
 /*     */   
 /*     */   public boolean isBlurEnabled() {
-/* 418 */     return this.isBlurEnabled;
+/* 411 */     return this.isBlurEnabled;
 /*     */   }
 /*     */   
 /*     */   public String getKeyHexColor() {
-/* 422 */     return this.hexColor;
+/* 415 */     return this.hexColor;
 /*     */   }
 /*     */   
 /*     */   public ChunkTintCommand.TintChunkPage.TintChunkPageAction getAction() {
-/* 426 */     return this.action;
+/* 419 */     return this.action;
 /*     */   }
 /*     */ }
 

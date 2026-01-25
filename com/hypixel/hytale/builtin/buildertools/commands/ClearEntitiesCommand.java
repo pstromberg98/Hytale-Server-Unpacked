@@ -21,13 +21,11 @@
 /*    */ public class ClearEntitiesCommand extends AbstractPlayerCommand {
 /*    */   @Nonnull
 /* 23 */   private static final Message MESSAGE_NO_SELECTION = Message.translation("server.commands.clearEntities.noSelection");
-/*    */   @Nonnull
-/* 25 */   private static final Message MESSAGE_CLEARED = Message.translation("server.commands.clearEntities.cleared");
 /*    */   
 /*    */   public ClearEntitiesCommand() {
-/* 28 */     super("clearEntities", "server.commands.clearEntities.desc");
-/* 29 */     setPermissionGroup(GameMode.Creative);
-/* 30 */     requirePermission("hytale.editor.selection.clipboard");
+/* 26 */     super("clearEntities", "server.commands.clearEntities.desc");
+/* 27 */     setPermissionGroup(GameMode.Creative);
+/* 28 */     requirePermission("hytale.editor.selection.clipboard");
 /*    */   }
 /*    */ 
 /*    */ 
@@ -36,34 +34,35 @@
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 39 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 40 */     assert playerComponent != null;
+/* 37 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 38 */     assert playerComponent != null;
 /*    */     
-/* 42 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
+/* 40 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
 /*    */       return; 
-/* 44 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
-/* 45 */     BlockSelection selection = builderState.getSelection();
+/* 42 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
+/* 43 */     BlockSelection selection = builderState.getSelection();
 /*    */     
-/* 47 */     if (selection == null) {
-/* 48 */       context.sendMessage(MESSAGE_NO_SELECTION);
+/* 45 */     if (selection == null) {
+/* 46 */       context.sendMessage(MESSAGE_NO_SELECTION);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 52 */     Vector3i min = selection.getSelectionMin();
-/* 53 */     Vector3i max = selection.getSelectionMax();
-/* 54 */     int width = max.getX() - min.getX();
-/* 55 */     int height = max.getY() - min.getY();
-/* 56 */     int depth = max.getZ() - min.getZ();
+/* 50 */     Vector3i min = selection.getSelectionMin();
+/* 51 */     Vector3i max = selection.getSelectionMax();
+/* 52 */     int width = max.getX() - min.getX();
+/* 53 */     int height = max.getY() - min.getY();
+/* 54 */     int depth = max.getZ() - min.getZ();
 /*    */     
-/* 58 */     ArrayList<Ref<EntityStore>> entitiesToRemove = new ArrayList<>();
-/* 59 */     Objects.requireNonNull(entitiesToRemove); BuilderToolsPlugin.forEachCopyableInSelection(world, min.getX(), min.getY(), min.getZ(), width, height, depth, entitiesToRemove::add);
+/* 56 */     ArrayList<Ref<EntityStore>> entitiesToRemove = new ArrayList<>();
+/* 57 */     Objects.requireNonNull(entitiesToRemove); BuilderToolsPlugin.forEachCopyableInSelection(world, min.getX(), min.getY(), min.getZ(), width, height, depth, entitiesToRemove::add);
 /*    */     
-/* 61 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
-/* 62 */     for (Ref<EntityStore> entityRef : entitiesToRemove) {
-/* 63 */       entityStore.removeEntity(entityRef, RemoveReason.REMOVE);
+/* 59 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
+/* 60 */     for (Ref<EntityStore> entityRef : entitiesToRemove) {
+/* 61 */       entityStore.removeEntity(entityRef, RemoveReason.REMOVE);
 /*    */     }
 /*    */     
-/* 66 */     context.sendMessage(MESSAGE_CLEARED.param("count", entitiesToRemove.size()));
+/* 64 */     context.sendMessage(Message.translation("server.commands.clearEntities.cleared")
+/* 65 */         .param("count", entitiesToRemove.size()));
 /*    */   }
 /*    */ }
 

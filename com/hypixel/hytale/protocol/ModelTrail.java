@@ -50,18 +50,18 @@
 /*  50 */     ModelTrail obj = new ModelTrail();
 /*  51 */     byte nullBits = buf.getByte(offset);
 /*  52 */     obj.targetEntityPart = EntityPart.fromValue(buf.getByte(offset + 1));
-/*  53 */     if ((nullBits & 0x4) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 2); 
-/*  54 */     if ((nullBits & 0x8) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 14); 
+/*  53 */     if ((nullBits & 0x1) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 2); 
+/*  54 */     if ((nullBits & 0x2) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 14); 
 /*  55 */     obj.fixedRotation = (buf.getByte(offset + 26) != 0);
 /*     */     
-/*  57 */     if ((nullBits & 0x1) != 0) {
+/*  57 */     if ((nullBits & 0x4) != 0) {
 /*  58 */       int varPos0 = offset + 35 + buf.getIntLE(offset + 27);
 /*  59 */       int trailIdLen = VarInt.peek(buf, varPos0);
 /*  60 */       if (trailIdLen < 0) throw ProtocolException.negativeLength("TrailId", trailIdLen); 
 /*  61 */       if (trailIdLen > 4096000) throw ProtocolException.stringTooLong("TrailId", trailIdLen, 4096000); 
 /*  62 */       obj.trailId = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  64 */     if ((nullBits & 0x2) != 0) {
+/*  64 */     if ((nullBits & 0x8) != 0) {
 /*  65 */       int varPos1 = offset + 35 + buf.getIntLE(offset + 31);
 /*  66 */       int targetNodeNameLen = VarInt.peek(buf, varPos1);
 /*  67 */       if (targetNodeNameLen < 0) throw ProtocolException.negativeLength("TargetNodeName", targetNodeNameLen); 
@@ -75,13 +75,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  76 */     byte nullBits = buf.getByte(offset);
 /*  77 */     int maxEnd = 35;
-/*  78 */     if ((nullBits & 0x1) != 0) {
+/*  78 */     if ((nullBits & 0x4) != 0) {
 /*  79 */       int fieldOffset0 = buf.getIntLE(offset + 27);
 /*  80 */       int pos0 = offset + 35 + fieldOffset0;
 /*  81 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  82 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  84 */     if ((nullBits & 0x2) != 0) {
+/*  84 */     if ((nullBits & 0x8) != 0) {
 /*  85 */       int fieldOffset1 = buf.getIntLE(offset + 31);
 /*  86 */       int pos1 = offset + 35 + fieldOffset1;
 /*  87 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
@@ -94,10 +94,10 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  95 */     int startPos = buf.writerIndex();
 /*  96 */     byte nullBits = 0;
-/*  97 */     if (this.trailId != null) nullBits = (byte)(nullBits | 0x1); 
-/*  98 */     if (this.targetNodeName != null) nullBits = (byte)(nullBits | 0x2); 
-/*  99 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x4); 
-/* 100 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x8); 
+/*  97 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x1); 
+/*  98 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x2); 
+/*  99 */     if (this.trailId != null) nullBits = (byte)(nullBits | 0x4); 
+/* 100 */     if (this.targetNodeName != null) nullBits = (byte)(nullBits | 0x8); 
 /* 101 */     buf.writeByte(nullBits);
 /*     */     
 /* 103 */     buf.writeByte(this.targetEntityPart.getValue());
@@ -142,7 +142,7 @@
 /* 142 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 145 */     if ((nullBits & 0x1) != 0) {
+/* 145 */     if ((nullBits & 0x4) != 0) {
 /* 146 */       int trailIdOffset = buffer.getIntLE(offset + 27);
 /* 147 */       if (trailIdOffset < 0) {
 /* 148 */         return ValidationResult.error("Invalid offset for TrailId");
@@ -165,7 +165,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 168 */     if ((nullBits & 0x2) != 0) {
+/* 168 */     if ((nullBits & 0x8) != 0) {
 /* 169 */       int targetNodeNameOffset = buffer.getIntLE(offset + 31);
 /* 170 */       if (targetNodeNameOffset < 0) {
 /* 171 */         return ValidationResult.error("Invalid offset for TargetNodeName");

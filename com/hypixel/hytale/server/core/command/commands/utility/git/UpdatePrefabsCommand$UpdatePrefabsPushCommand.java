@@ -188,17 +188,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class UpdatePrefabsPushCommand
 /*     */   extends UpdatePrefabsCommand.UpdatePrefabsGitCommand
 /*     */ {
 /*     */   public UpdatePrefabsPushCommand() {
-/* 195 */     super("push", "server.commands.update.prefabs.push.desc");
+/* 199 */     super("push", "server.commands.git.prefabs.push.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 201 */     return new String[][] { { "git", "push", "origin", "master" }, { "git", "submodule", "foreach", "git", "push" } };
+/* 205 */     return new String[][] { { "git", "push", "origin", "master" }, { "git", "submodule", "foreach", "git", "push" } };
 /*     */   }
 /*     */ }
 

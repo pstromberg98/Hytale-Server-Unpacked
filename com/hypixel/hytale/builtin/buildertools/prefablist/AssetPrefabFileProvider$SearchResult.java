@@ -212,6 +212,14 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ final class SearchResult
 /*     */   extends Record
 /*     */ {
@@ -228,7 +236,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #237	-> 0
+/*     */     //   #245	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/buildertools/prefablist/AssetPrefabFileProvider$SearchResult;
@@ -241,7 +249,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #237	-> 0
+/*     */     //   #245	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/buildertools/prefablist/AssetPrefabFileProvider$SearchResult;
@@ -255,7 +263,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #237	-> 0
+/*     */     //   #245	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/buildertools/prefablist/AssetPrefabFileProvider$SearchResult;
@@ -263,7 +271,7 @@
 /*     */   }
 /*     */   
 /*     */   private SearchResult(@Nonnull String relativePath, @Nonnull String displayName, int score) {
-/* 237 */     this.relativePath = relativePath; this.displayName = displayName; this.score = score; } @Nonnull public String relativePath() { return this.relativePath; } @Nonnull public String displayName() { return this.displayName; } public int score() { return this.score; }
+/* 245 */     this.relativePath = relativePath; this.displayName = displayName; this.score = score; } @Nonnull public String relativePath() { return this.relativePath; } @Nonnull public String displayName() { return this.displayName; } public int score() { return this.score; }
 /*     */ 
 /*     */ }
 

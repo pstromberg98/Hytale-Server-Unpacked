@@ -151,11 +151,12 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class CleanUpSystem
 /*     */   extends RefSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 158 */   private final ComponentType<EntityStore, InteractionManager> interactionComponentType = InteractionModule.get().getInteractionManagerComponent();
+/* 159 */   private final ComponentType<EntityStore, InteractionManager> interactionComponentType = InteractionModule.get().getInteractionManagerComponent();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -165,14 +166,14 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 168 */     InteractionManager interactionManager = (InteractionManager)store.getComponent(ref, this.interactionComponentType);
-/* 169 */     assert interactionManager != null;
-/* 170 */     interactionManager.clear();
+/* 169 */     InteractionManager interactionManager = (InteractionManager)store.getComponent(ref, this.interactionComponentType);
+/* 170 */     assert interactionManager != null;
+/* 171 */     interactionManager.clear();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 175 */     return (Query)this.interactionComponentType;
+/* 176 */     return (Query)this.interactionComponentType;
 /*     */   }
 /*     */ }
 

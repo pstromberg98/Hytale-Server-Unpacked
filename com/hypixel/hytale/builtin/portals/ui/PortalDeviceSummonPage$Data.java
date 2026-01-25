@@ -450,6 +450,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class Data
 /*     */ {
 /*     */   private static final String KEY_ACTION = "Action";
@@ -457,7 +459,7 @@
 /*     */   private String action;
 /*     */   
 /*     */   static {
-/* 460 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(Data.class, Data::new).append(new KeyedCodec("Action", (Codec)Codec.STRING), (entry, s) -> entry.action = s, entry -> entry.action).add()).build();
+/* 462 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(Data.class, Data::new).append(new KeyedCodec("Action", (Codec)Codec.STRING), (entry, s) -> entry.action = s, entry -> entry.action).add()).build();
 /*     */   }
 /*     */ }
 

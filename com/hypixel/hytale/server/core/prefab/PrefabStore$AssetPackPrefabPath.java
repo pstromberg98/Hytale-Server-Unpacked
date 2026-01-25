@@ -238,7 +238,7 @@
 /*     */   @Nonnull
 /*     */   public String getDisplayName() {
 /* 211 */     if (this.pack == null) return "Server"; 
-/* 212 */     if (isBasePack()) return "Assets"; 
+/* 212 */     if (isBasePack()) return "HytaleAssets"; 
 /* 213 */     PluginManifest manifest = this.pack.getManifest();
 /* 214 */     return (manifest != null) ? manifest.getName() : this.pack.getName();
 /*     */   }

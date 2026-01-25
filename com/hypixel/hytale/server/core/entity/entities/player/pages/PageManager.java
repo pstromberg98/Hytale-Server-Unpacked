@@ -133,7 +133,7 @@
 /*     */   public boolean setPageWithWindows(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull Page page, boolean canCloseThroughInteraction, @Nonnull Window... windows) {
 /* 134 */     if (this.windowManager == null) return false;
 /*     */     
-/* 136 */     List<OpenWindow> windowPackets = this.windowManager.openWindows(windows);
+/* 136 */     List<OpenWindow> windowPackets = this.windowManager.openWindows(ref, store, windows);
 /* 137 */     if (windowPackets == null) return false;
 /*     */     
 /* 139 */     setPage(ref, store, page, canCloseThroughInteraction);
@@ -156,7 +156,7 @@
 /*     */   public boolean openCustomPageWithWindows(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull CustomUIPage page, @Nonnull Window... windows) {
 /* 157 */     if (this.windowManager == null) return false;
 /*     */     
-/* 159 */     List<OpenWindow> windowPackets = this.windowManager.openWindows(windows);
+/* 159 */     List<OpenWindow> windowPackets = this.windowManager.openWindows(ref, store, windows);
 /* 160 */     if (windowPackets == null) return false;
 /*     */     
 /* 162 */     openCustomPage(ref, store, page);

@@ -55,13 +55,13 @@
 /*  55 */     AssetEditorCreateAsset obj = new AssetEditorCreateAsset();
 /*  56 */     byte nullBits = buf.getByte(offset);
 /*  57 */     obj.token = buf.getIntLE(offset + 1);
-/*  58 */     if ((nullBits & 0x4) != 0) obj.rebuildCaches = AssetEditorRebuildCaches.deserialize(buf, offset + 5);
+/*  58 */     if ((nullBits & 0x1) != 0) obj.rebuildCaches = AssetEditorRebuildCaches.deserialize(buf, offset + 5);
 /*     */     
-/*  60 */     if ((nullBits & 0x1) != 0) {
+/*  60 */     if ((nullBits & 0x2) != 0) {
 /*  61 */       int varPos0 = offset + 22 + buf.getIntLE(offset + 10);
 /*  62 */       obj.path = AssetPath.deserialize(buf, varPos0);
 /*     */     } 
-/*  64 */     if ((nullBits & 0x2) != 0) {
+/*  64 */     if ((nullBits & 0x4) != 0) {
 /*  65 */       int varPos1 = offset + 22 + buf.getIntLE(offset + 14);
 /*  66 */       int dataCount = VarInt.peek(buf, varPos1);
 /*  67 */       if (dataCount < 0) throw ProtocolException.negativeLength("Data", dataCount); 
@@ -88,13 +88,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  89 */     byte nullBits = buf.getByte(offset);
 /*  90 */     int maxEnd = 22;
-/*  91 */     if ((nullBits & 0x1) != 0) {
+/*  91 */     if ((nullBits & 0x2) != 0) {
 /*  92 */       int fieldOffset0 = buf.getIntLE(offset + 10);
 /*  93 */       int pos0 = offset + 22 + fieldOffset0;
 /*  94 */       pos0 += AssetPath.computeBytesConsumed(buf, pos0);
 /*  95 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  97 */     if ((nullBits & 0x2) != 0) {
+/*  97 */     if ((nullBits & 0x4) != 0) {
 /*  98 */       int fieldOffset1 = buf.getIntLE(offset + 14);
 /*  99 */       int pos1 = offset + 22 + fieldOffset1;
 /* 100 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + arrLen * 1;
@@ -114,9 +114,9 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 115 */     int startPos = buf.writerIndex();
 /* 116 */     byte nullBits = 0;
-/* 117 */     if (this.path != null) nullBits = (byte)(nullBits | 0x1); 
-/* 118 */     if (this.data != null) nullBits = (byte)(nullBits | 0x2); 
-/* 119 */     if (this.rebuildCaches != null) nullBits = (byte)(nullBits | 0x4); 
+/* 117 */     if (this.rebuildCaches != null) nullBits = (byte)(nullBits | 0x1); 
+/* 118 */     if (this.path != null) nullBits = (byte)(nullBits | 0x2); 
+/* 119 */     if (this.data != null) nullBits = (byte)(nullBits | 0x4); 
 /* 120 */     if (this.buttonId != null) nullBits = (byte)(nullBits | 0x8); 
 /* 121 */     buf.writeByte(nullBits);
 /*     */     
@@ -169,7 +169,7 @@
 /* 169 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 172 */     if ((nullBits & 0x1) != 0) {
+/* 172 */     if ((nullBits & 0x2) != 0) {
 /* 173 */       int pathOffset = buffer.getIntLE(offset + 10);
 /* 174 */       if (pathOffset < 0) {
 /* 175 */         return ValidationResult.error("Invalid offset for Path");
@@ -185,7 +185,7 @@
 /* 185 */       pos += AssetPath.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 188 */     if ((nullBits & 0x2) != 0) {
+/* 188 */     if ((nullBits & 0x4) != 0) {
 /* 189 */       int dataOffset = buffer.getIntLE(offset + 14);
 /* 190 */       if (dataOffset < 0) {
 /* 191 */         return ValidationResult.error("Invalid offset for Data");

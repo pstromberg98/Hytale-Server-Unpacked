@@ -560,14 +560,15 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ class OrderedEntry<T>
 /*     */ {
 /*     */   private final double distanceSq;
 /*     */   private final List<T> values;
 /*     */   
 /*     */   public OrderedEntry(double distanceSq, List<T> values) {
-/* 569 */     this.distanceSq = distanceSq;
-/* 570 */     this.values = values;
+/* 570 */     this.distanceSq = distanceSq;
+/* 571 */     this.values = values;
 /*     */   }
 /*     */ }
 

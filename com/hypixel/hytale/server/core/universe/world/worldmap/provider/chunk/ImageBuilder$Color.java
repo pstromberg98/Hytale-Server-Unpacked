@@ -473,6 +473,14 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class Color
 /*     */ {
 /*     */   public int r;
@@ -481,13 +489,13 @@
 /*     */   public int a;
 /*     */   
 /*     */   public int pack() {
-/* 484 */     return (this.r & 0xFF) << 24 | (this.g & 0xFF) << 16 | (this.b & 0xFF) << 8 | this.a & 0xFF;
+/* 492 */     return (this.r & 0xFF) << 24 | (this.g & 0xFF) << 16 | (this.b & 0xFF) << 8 | this.a & 0xFF;
 /*     */   }
 /*     */   
 /*     */   public void multiply(float value) {
-/* 488 */     this.r = Math.min(255, Math.max(0, (int)(this.r * value)));
-/* 489 */     this.g = Math.min(255, Math.max(0, (int)(this.g * value)));
-/* 490 */     this.b = Math.min(255, Math.max(0, (int)(this.b * value)));
+/* 496 */     this.r = Math.min(255, Math.max(0, (int)(this.r * value)));
+/* 497 */     this.g = Math.min(255, Math.max(0, (int)(this.g * value)));
+/* 498 */     this.b = Math.min(255, Math.max(0, (int)(this.b * value)));
 /*     */   }
 /*     */ }
 

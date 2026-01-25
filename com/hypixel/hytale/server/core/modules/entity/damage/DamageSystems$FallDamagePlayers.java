@@ -755,6 +755,15 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class FallDamagePlayers
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -762,47 +771,47 @@
 /*     */   static final float CURVE_MULTIPLIER = 2.0F;
 /*     */   public static final double MIN_DAMAGE = 10.0D;
 /*     */   @Nonnull
-/* 765 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
-/* 766 */         (Query)EntityStatMap.getComponentType(), 
-/* 767 */         (Query)MovementStatesComponent.getComponentType(), 
-/* 768 */         (Query)EntityModule.get().getPlayerComponentType(), 
-/* 769 */         (Query)PlayerInput.getComponentType()
+/* 774 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
+/* 775 */         (Query)EntityStatMap.getComponentType(), 
+/* 776 */         (Query)MovementStatesComponent.getComponentType(), 
+/* 777 */         (Query)EntityModule.get().getPlayerComponentType(), 
+/* 778 */         (Query)PlayerInput.getComponentType()
 /*     */       });
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 776 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PlayerSystems.ProcessPlayerInput.class));
+/* 785 */   private static final Set<Dependency<EntityStore>> DEPENDENCIES = (Set)Set.of(new SystemDependency(Order.BEFORE, PlayerSystems.ProcessPlayerInput.class));
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 783 */     return DamageModule.get().getGatherDamageGroup();
+/* 792 */     return DamageModule.get().getGatherDamageGroup();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 789 */     return QUERY;
+/* 798 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 795 */     return DEPENDENCIES;
+/* 804 */     return DEPENDENCIES;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
-/* 800 */     World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 801 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
+/* 809 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 810 */     if (!world.getWorldConfig().isFallDamageEnabled()) {
 /*     */       return;
 /*     */     }
 /*     */     
-/* 805 */     super.tick(dt, systemIndex, store);
+/* 814 */     super.tick(dt, systemIndex, store);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -1074,47 +1083,47 @@
 /*     */     //   551: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #810	-> 0
-/*     */     //   #811	-> 13
-/*     */     //   #813	-> 32
-/*     */     //   #814	-> 45
-/*     */     //   #815	-> 64
-/*     */     //   #817	-> 77
-/*     */     //   #818	-> 90
-/*     */     //   #820	-> 100
-/*     */     //   #821	-> 107
-/*     */     //   #822	-> 122
-/*     */     //   #824	-> 136
-/*     */     //   #825	-> 184
-/*     */     //   #826	-> 207
-/*     */     //   #827	-> 214
-/*     */     //   #828	-> 227
-/*     */     //   #830	-> 246
-/*     */     //   #831	-> 267
-/*     */     //   #832	-> 274
-/*     */     //   #833	-> 287
-/*     */     //   #835	-> 294
-/*     */     //   #836	-> 314
-/*     */     //   #837	-> 327
-/*     */     //   #839	-> 346
-/*     */     //   #840	-> 368
-/*     */     //   #841	-> 378
-/*     */     //   #843	-> 397
-/*     */     //   #844	-> 404
-/*     */     //   #846	-> 413
-/*     */     //   #849	-> 424
-/*     */     //   #850	-> 435
-/*     */     //   #851	-> 447
-/*     */     //   #852	-> 453
-/*     */     //   #853	-> 465
-/*     */     //   #857	-> 484
-/*     */     //   #858	-> 489
-/*     */     //   #859	-> 509
-/*     */     //   #860	-> 527
-/*     */     //   #864	-> 536
-/*     */     //   #866	-> 542
-/*     */     //   #821	-> 545
-/*     */     //   #871	-> 551
+/*     */     //   #819	-> 0
+/*     */     //   #820	-> 13
+/*     */     //   #822	-> 32
+/*     */     //   #823	-> 45
+/*     */     //   #824	-> 64
+/*     */     //   #826	-> 77
+/*     */     //   #827	-> 90
+/*     */     //   #829	-> 100
+/*     */     //   #830	-> 107
+/*     */     //   #831	-> 122
+/*     */     //   #833	-> 136
+/*     */     //   #834	-> 184
+/*     */     //   #835	-> 207
+/*     */     //   #836	-> 214
+/*     */     //   #837	-> 227
+/*     */     //   #839	-> 246
+/*     */     //   #840	-> 267
+/*     */     //   #841	-> 274
+/*     */     //   #842	-> 287
+/*     */     //   #844	-> 294
+/*     */     //   #845	-> 314
+/*     */     //   #846	-> 327
+/*     */     //   #848	-> 346
+/*     */     //   #849	-> 368
+/*     */     //   #850	-> 378
+/*     */     //   #852	-> 397
+/*     */     //   #853	-> 404
+/*     */     //   #855	-> 413
+/*     */     //   #858	-> 424
+/*     */     //   #859	-> 435
+/*     */     //   #860	-> 447
+/*     */     //   #861	-> 453
+/*     */     //   #862	-> 465
+/*     */     //   #866	-> 484
+/*     */     //   #867	-> 489
+/*     */     //   #868	-> 509
+/*     */     //   #869	-> 527
+/*     */     //   #873	-> 536
+/*     */     //   #875	-> 542
+/*     */     //   #830	-> 545
+/*     */     //   #880	-> 551
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   191	16	17	velocityEntry	Lcom/hypixel/hytale/server/core/modules/entity/player/PlayerInput$SetClientVelocity;
@@ -1184,7 +1193,7 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 875 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 884 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ }
 

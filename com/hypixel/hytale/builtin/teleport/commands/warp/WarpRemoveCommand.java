@@ -22,18 +22,16 @@
 /*    */ 
 /*    */ public class WarpRemoveCommand extends CommandBase {
 /* 24 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED = Message.translation("server.commands.teleport.warp.notLoaded");
-/* 25 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_UNKNOWN_WARP = Message.translation("server.commands.teleport.warp.unknownWarp");
-/* 26 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_REMOVED_WARP = Message.translation("server.commands.teleport.warp.removedWarp");
 /*    */   
 /*    */   @Nonnull
-/* 29 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.warp.remove.name.desc", (ArgumentType)ArgTypes.STRING);
+/* 27 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.warp.remove.name.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public WarpRemoveCommand() {
-/* 35 */     super("remove", "server.commands.warp.remove.desc");
-/* 36 */     requirePermission(HytalePermissions.fromCommand("warp.remove"));
+/* 33 */     super("remove", "server.commands.warp.remove.desc");
+/* 34 */     requirePermission(HytalePermissions.fromCommand("warp.remove"));
 /*    */   }
 /*    */ 
 /*    */ 
@@ -43,20 +41,22 @@
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 46 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
-/* 47 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
+/* 44 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
+/* 45 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 51 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
-/* 52 */     String warpName = ((String)this.nameArg.get(context)).toLowerCase();
-/* 53 */     Warp old = warps.remove(warpName);
+/* 49 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
+/* 50 */     String warpName = ((String)this.nameArg.get(context)).toLowerCase();
+/* 51 */     Warp old = warps.remove(warpName);
 /*    */     
-/* 55 */     if (old == null) {
-/* 56 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_UNKNOWN_WARP.param("name", warpName));
+/* 53 */     if (old == null) {
+/* 54 */       context.sendMessage(Message.translation("server.commands.teleport.warp.unknownWarp")
+/* 55 */           .param("name", warpName));
 /*    */     } else {
-/* 58 */       TeleportPlugin.get().saveWarps();
-/* 59 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_REMOVED_WARP.param("name", warpName));
+/* 57 */       TeleportPlugin.get().saveWarps();
+/* 58 */       context.sendMessage(Message.translation("server.commands.teleport.warp.removedWarp")
+/* 59 */           .param("name", warpName));
 /*    */ 
 /*    */       
 /* 62 */       World targetWorld = Universe.get().getWorld(old.getWorld());

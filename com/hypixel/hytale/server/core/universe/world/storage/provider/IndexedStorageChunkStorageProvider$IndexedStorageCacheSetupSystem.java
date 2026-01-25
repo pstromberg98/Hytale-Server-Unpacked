@@ -427,20 +427,43 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class IndexedStorageCacheSetupSystem
 /*     */   extends StoreSystem<ChunkStore>
 /*     */ {
 /*     */   @Nullable
 /*     */   public SystemGroup<ChunkStore> getGroup() {
-/* 435 */     return ChunkStore.INIT_GROUP;
+/* 458 */     return ChunkStore.INIT_GROUP;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void onSystemAddedToStore(@Nonnull Store<ChunkStore> store) {
-/* 442 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
-/* 443 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)store.getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).path = world.getSavePath().resolve("chunks");
+/* 465 */     World world = ((ChunkStore)store.getExternalData()).getWorld();
+/* 466 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)store.getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).path = world.getSavePath().resolve("chunks");
 /*     */   }
 /*     */   
 /*     */   public void onSystemRemovedFromStore(@Nonnull Store<ChunkStore> store) {}

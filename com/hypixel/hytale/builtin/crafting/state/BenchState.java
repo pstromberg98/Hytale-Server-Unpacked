@@ -1,5 +1,6 @@
 /*     */ package com.hypixel.hytale.builtin.crafting.state;
 /*     */ 
+/*     */ import com.hypixel.hytale.builtin.crafting.window.BenchWindow;
 /*     */ import com.hypixel.hytale.codec.Codec;
 /*     */ import com.hypixel.hytale.codec.KeyedCodec;
 /*     */ import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -13,6 +14,7 @@
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktype.config.bench.Bench;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktype.config.bench.BenchUpgradeRequirement;
+/*     */ import com.hypixel.hytale.server.core.entity.entities.player.windows.WindowManager;
 /*     */ import com.hypixel.hytale.server.core.inventory.ItemStack;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
@@ -21,8 +23,12 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import java.util.Arrays;
 /*     */ import java.util.List;
+/*     */ import java.util.Map;
+/*     */ import java.util.UUID;
+/*     */ import java.util.concurrent.ConcurrentHashMap;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -38,82 +44,84 @@
 /*     */   public static BuilderCodec<BenchState> CODEC;
 /*     */   
 /*     */   static {
-/*  41 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(BenchState.class, BenchState::new, BlockState.BASE_CODEC).appendInherited(new KeyedCodec("TierLevel", (Codec)Codec.INTEGER), (state, o) -> state.tierLevel = o.intValue(), state -> Integer.valueOf(state.tierLevel), (state, parent) -> state.tierLevel = parent.tierLevel).add()).appendInherited(new KeyedCodec("UpgradeItems", (Codec)new ArrayCodec((Codec)ItemStack.CODEC, x$0 -> new ItemStack[x$0])), (state, o) -> state.upgradeItems = o, state -> state.upgradeItems, (state, parent) -> state.upgradeItems = parent.upgradeItems).add()).build();
+/*  47 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(BenchState.class, BenchState::new, BlockState.BASE_CODEC).appendInherited(new KeyedCodec("TierLevel", (Codec)Codec.INTEGER), (state, o) -> state.tierLevel = o.intValue(), state -> Integer.valueOf(state.tierLevel), (state, parent) -> state.tierLevel = parent.tierLevel).add()).appendInherited(new KeyedCodec("UpgradeItems", (Codec)new ArrayCodec((Codec)ItemStack.CODEC, x$0 -> new ItemStack[x$0])), (state, o) -> state.upgradeItems = o, state -> state.upgradeItems, (state, parent) -> state.upgradeItems = parent.upgradeItems).add()).build();
 /*     */   }
-/*  43 */   private int tierLevel = 1;
+/*  49 */   private int tierLevel = 1;
 /*     */   
 /*     */   public int getTierLevel() {
-/*  46 */     return this.tierLevel;
+/*  52 */     return this.tierLevel;
 /*     */   }
 /*     */   
-/*  49 */   protected ItemStack[] upgradeItems = ItemStack.EMPTY_ARRAY;
+/*  55 */   protected ItemStack[] upgradeItems = ItemStack.EMPTY_ARRAY;
 /*     */   
 /*     */   protected Bench bench;
+/*     */   
+/*  59 */   protected final Map<UUID, BenchWindow> windows = new ConcurrentHashMap<>();
 /*     */ 
 /*     */   
 /*     */   public boolean initialize(@Nonnull BlockType blockType) {
-/*  55 */     if (!super.initialize(blockType)) return false;
+/*  63 */     if (!super.initialize(blockType)) return false;
 /*     */     
-/*  57 */     this.bench = blockType.getBench();
+/*  65 */     this.bench = blockType.getBench();
 /*     */     
-/*  59 */     if (this.bench == null) {
-/*  60 */       if (this.upgradeItems.length > 0) {
-/*  61 */         dropUpgradeItems();
+/*  67 */     if (this.bench == null) {
+/*  68 */       if (this.upgradeItems.length > 0) {
+/*  69 */         dropUpgradeItems();
 /*     */       }
-/*  63 */       return false;
+/*  71 */       return false;
 /*     */     } 
 /*     */     
-/*  66 */     return true;
+/*  74 */     return true;
 /*     */   }
 /*     */   
 /*     */   public void addUpgradeItems(List<ItemStack> consumed) {
-/*  70 */     consumed.addAll(Arrays.asList(this.upgradeItems));
-/*  71 */     this.upgradeItems = (ItemStack[])consumed.toArray(x$0 -> new ItemStack[x$0]);
-/*  72 */     markNeedsSave();
+/*  78 */     consumed.addAll(Arrays.asList(this.upgradeItems));
+/*  79 */     this.upgradeItems = (ItemStack[])consumed.toArray(x$0 -> new ItemStack[x$0]);
+/*  80 */     markNeedsSave();
 /*     */   }
 /*     */   
 /*     */   private void dropUpgradeItems() {
-/*  76 */     if (this.upgradeItems.length == 0)
+/*  84 */     if (this.upgradeItems.length == 0)
 /*     */       return; 
-/*  78 */     World world = getChunk().getWorld();
-/*  79 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
-/*  80 */     Vector3d dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
-/*  81 */     Holder[] arrayOfHolder = ItemComponent.generateItemDrops((ComponentAccessor)entityStore, List.of(this.upgradeItems), dropPosition, Vector3f.ZERO);
-/*  82 */     if (arrayOfHolder.length > 0) {
-/*  83 */       world.execute(() -> entityStore.addEntities(itemEntityHolders, AddReason.SPAWN));
+/*  86 */     World world = getChunk().getWorld();
+/*  87 */     Store<EntityStore> entityStore = world.getEntityStore().getStore();
+/*  88 */     Vector3d dropPosition = getBlockPosition().toVector3d().add(0.5D, 0.0D, 0.5D);
+/*  89 */     Holder[] arrayOfHolder = ItemComponent.generateItemDrops((ComponentAccessor)entityStore, List.of(this.upgradeItems), dropPosition, Vector3f.ZERO);
+/*  90 */     if (arrayOfHolder.length > 0) {
+/*  91 */       world.execute(() -> entityStore.addEntities(itemEntityHolders, AddReason.SPAWN));
 /*     */     }
 /*     */     
-/*  86 */     this.upgradeItems = ItemStack.EMPTY_ARRAY;
+/*  94 */     this.upgradeItems = ItemStack.EMPTY_ARRAY;
 /*     */   }
 /*     */   
 /*     */   public Bench getBench() {
-/*  90 */     return this.bench;
+/*  98 */     return this.bench;
 /*     */   }
 /*     */   
 /*     */   public void setTierLevel(int newTierLevel) {
-/*  94 */     if (this.tierLevel != newTierLevel) {
-/*  95 */       this.tierLevel = newTierLevel;
-/*  96 */       onTierLevelChange();
-/*  97 */       markNeedsSave();
+/* 102 */     if (this.tierLevel != newTierLevel) {
+/* 103 */       this.tierLevel = newTierLevel;
+/* 104 */       onTierLevelChange();
+/* 105 */       markNeedsSave();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public BenchUpgradeRequirement getNextLevelUpgradeMaterials() {
-/* 102 */     return this.bench.getUpgradeRequirement(this.tierLevel);
+/* 110 */     return this.bench.getUpgradeRequirement(this.tierLevel);
 /*     */   }
 /*     */   
 /*     */   protected void onTierLevelChange() {
-/* 106 */     getChunk().setBlockInteractionState(getBlockPosition(), getBaseBlockType(), getTierStateName());
+/* 114 */     getChunk().setBlockInteractionState(getBlockPosition(), getBaseBlockType(), getTierStateName());
 /*     */   }
 /*     */   
 /*     */   public BlockType getBaseBlockType() {
-/* 110 */     BlockType currentBlockType = getBlockType();
+/* 118 */     BlockType currentBlockType = getBlockType();
 /*     */     
-/* 112 */     String baseBlockKey = currentBlockType.getDefaultStateKey();
-/* 113 */     BlockType baseBlockType = (BlockType)BlockType.getAssetMap().getAsset(baseBlockKey);
-/* 114 */     if (baseBlockType == null) baseBlockType = currentBlockType;
+/* 120 */     String baseBlockKey = currentBlockType.getDefaultStateKey();
+/* 121 */     BlockType baseBlockType = (BlockType)BlockType.getAssetMap().getAsset(baseBlockKey);
+/* 122 */     if (baseBlockType == null) baseBlockType = currentBlockType;
 /*     */     
-/* 116 */     return baseBlockType;
+/* 124 */     return baseBlockType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -121,12 +129,18 @@
 /*     */ 
 /*     */   
 /*     */   public String getTierStateName() {
-/* 124 */     return (this.tierLevel > 1) ? ("Tier" + this.tierLevel) : "default";
+/* 132 */     return (this.tierLevel > 1) ? ("Tier" + this.tierLevel) : "default";
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onDestroy() {
-/* 129 */     dropUpgradeItems();
+/* 137 */     WindowManager.closeAndRemoveAll(this.windows);
+/* 138 */     dropUpgradeItems();
+/*     */   }
+/*     */   
+/*     */   @Nonnull
+/*     */   public Map<UUID, BenchWindow> getWindows() {
+/* 143 */     return this.windows;
 /*     */   }
 /*     */ }
 

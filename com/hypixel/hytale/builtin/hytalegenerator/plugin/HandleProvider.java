@@ -1,56 +1,40 @@
 /*    */ package com.hypixel.hytale.builtin.hytalegenerator.plugin;
 /*    */ 
 /*    */ import com.hypixel.hytale.builtin.hytalegenerator.chunkgenerator.ChunkRequest;
-/*    */ import com.hypixel.hytale.math.vector.Transform;
 /*    */ import com.hypixel.hytale.server.core.universe.world.worldgen.IWorldGen;
 /*    */ import com.hypixel.hytale.server.core.universe.world.worldgen.WorldGenLoadException;
 /*    */ import com.hypixel.hytale.server.core.universe.world.worldgen.provider.IWorldGenProvider;
 /*    */ import javax.annotation.Nonnull;
 /*    */ import javax.annotation.Nullable;
 /*    */ 
+/*    */ 
 /*    */ public class HandleProvider
-/*    */   implements IWorldGenProvider {
+/*    */   implements IWorldGenProvider
+/*    */ {
 /*    */   public static final String ID = "HytaleGenerator";
 /*    */   public static final String DEFAULT_WORLD_STRUCTURE_NAME = "Default";
-/* 15 */   public static final Transform DEFAULT_PLAYER_SPAWN = new Transform(0.0D, 140.0D, 0.0D);
-/*    */   
 /*    */   @Nonnull
 /*    */   private final HytaleGenerator plugin;
 /*    */   @Nonnull
-/* 20 */   private String worldStructureName = "Default";
-/*    */   @Nonnull
-/* 22 */   private Transform playerSpawn = DEFAULT_PLAYER_SPAWN;
+/* 19 */   private String worldStructureName = "Default";
 /*    */ 
 /*    */   
 /*    */   public HandleProvider(@Nonnull HytaleGenerator plugin) {
-/* 26 */     this.plugin = plugin;
+/* 23 */     this.plugin = plugin;
 /*    */   }
 /*    */   
 /*    */   public void setWorldStructureName(@Nullable String worldStructureName) {
-/* 30 */     this.worldStructureName = worldStructureName;
-/*    */   }
-/*    */   
-/*    */   public void setPlayerSpawn(@Nullable Transform worldSpawn) {
-/* 34 */     if (worldSpawn == null) {
-/* 35 */       this.playerSpawn = DEFAULT_PLAYER_SPAWN;
-/*    */       return;
-/*    */     } 
-/* 38 */     this.playerSpawn = worldSpawn.clone();
+/* 27 */     this.worldStructureName = worldStructureName;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public String getWorldStructureName() {
-/* 43 */     return this.worldStructureName;
-/*    */   }
-/*    */   
-/*    */   @Nonnull
-/*    */   public Transform getPlayerSpawn() {
-/* 48 */     return this.playerSpawn;
+/* 32 */     return this.worldStructureName;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public IWorldGen getGenerator() throws WorldGenLoadException {
-/* 53 */     return new Handle(this.plugin, new ChunkRequest.GeneratorProfile(this.worldStructureName, this.playerSpawn.clone(), 0));
+/* 37 */     return new Handle(this.plugin, new ChunkRequest.GeneratorProfile(this.worldStructureName, 0));
 /*    */   }
 /*    */ }
 

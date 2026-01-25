@@ -50,11 +50,11 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
 /*    */ class PlayerEffectClearOtherCommand
 /*    */   extends CommandBase
 /*    */ {
-/* 56 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/* 57 */   private static final Message MESSAGE_EFFECTS_CLEARED_OTHER = Message.translation("server.commands.player.effect.clear.success.other");
+/* 57 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*    */   
 /*    */   @Nonnull
 /* 60 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
@@ -88,7 +88,7 @@
 /*    */           EffectControllerComponent effectControllerComponent = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
 /*    */           assert effectControllerComponent != null;
 /*    */           effectControllerComponent.clearEffects(ref, (ComponentAccessor)store);
-/*    */           context.sendMessage(MESSAGE_EFFECTS_CLEARED_OTHER.param("username", playerRefComponent.getUsername()));
+/*    */           context.sendMessage(Message.translation("server.commands.player.effect.clear.success.other").param("username", playerRefComponent.getUsername()));
 /*    */         });
 /*    */   }
 /*    */ }

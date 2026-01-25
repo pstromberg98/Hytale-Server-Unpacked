@@ -40,11 +40,11 @@
 /*     */   public static FluidParticle deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  41 */     FluidParticle obj = new FluidParticle();
 /*  42 */     byte nullBits = buf.getByte(offset);
-/*  43 */     if ((nullBits & 0x2) != 0) obj.color = Color.deserialize(buf, offset + 1); 
+/*  43 */     if ((nullBits & 0x1) != 0) obj.color = Color.deserialize(buf, offset + 1); 
 /*  44 */     obj.scale = buf.getFloatLE(offset + 4);
 /*     */     
 /*  46 */     int pos = offset + 8;
-/*  47 */     if ((nullBits & 0x1) != 0) { int systemIdLen = VarInt.peek(buf, pos);
+/*  47 */     if ((nullBits & 0x2) != 0) { int systemIdLen = VarInt.peek(buf, pos);
 /*  48 */       if (systemIdLen < 0) throw ProtocolException.negativeLength("SystemId", systemIdLen); 
 /*  49 */       if (systemIdLen > 4096000) throw ProtocolException.stringTooLong("SystemId", systemIdLen, 4096000); 
 /*  50 */       int systemIdVarLen = VarInt.length(buf, pos);
@@ -57,15 +57,15 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  58 */     byte nullBits = buf.getByte(offset);
 /*  59 */     int pos = offset + 8;
-/*  60 */     if ((nullBits & 0x1) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
+/*  60 */     if ((nullBits & 0x2) != 0) { int sl = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + sl; }
 /*  61 */      return pos - offset;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  66 */     byte nullBits = 0;
-/*  67 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x1); 
-/*  68 */     if (this.color != null) nullBits = (byte)(nullBits | 0x2); 
+/*  67 */     if (this.color != null) nullBits = (byte)(nullBits | 0x1); 
+/*  68 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x2); 
 /*  69 */     buf.writeByte(nullBits);
 /*     */     
 /*  71 */     if (this.color != null) { this.color.serialize(buf); } else { buf.writeZero(3); }
@@ -91,7 +91,7 @@
 /*     */     
 /*  92 */     int pos = offset + 8;
 /*     */     
-/*  94 */     if ((nullBits & 0x1) != 0) {
+/*  94 */     if ((nullBits & 0x2) != 0) {
 /*  95 */       int systemIdLen = VarInt.peek(buffer, pos);
 /*  96 */       if (systemIdLen < 0) {
 /*  97 */         return ValidationResult.error("Invalid string length for SystemId");

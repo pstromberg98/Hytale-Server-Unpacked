@@ -24,6 +24,7 @@
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.teleport.PendingTeleport;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
+/*     */ import com.hypixel.hytale.server.core.modules.entity.teleport.TeleportRecord;
 /*     */ import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
 /*     */ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.client.SimpleBlockInteraction;
 /*     */ import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
@@ -33,10 +34,12 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import it.unimi.dsi.fastutil.objects.ObjectList;
+/*     */ import java.time.Duration;
 /*     */ import java.util.List;
 /*     */ import java.util.function.Supplier;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -45,87 +48,93 @@
 /*     */ {
 /*     */   @Nonnull
 /*     */   public static final BuilderCodec<TeleporterInteraction> CODEC;
-/*     */   @Nullable
-/*     */   private String particle;
 /*     */   
 /*     */   static {
-/*  52 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(TeleporterInteraction.class, TeleporterInteraction::new, SimpleBlockInteraction.CODEC).appendInherited(new KeyedCodec("Particle", (Codec)Codec.STRING), (interaction, s) -> interaction.particle = s, interaction -> interaction.particle, (interaction, parent) -> interaction.particle = parent.particle).documentation("The particle to play on the entity when teleporting.").add()).build();
+/*  53 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(TeleporterInteraction.class, TeleporterInteraction::new, SimpleBlockInteraction.CODEC).appendInherited(new KeyedCodec("Particle", (Codec)Codec.STRING), (interaction, s) -> interaction.particle = s, interaction -> interaction.particle, (interaction, parent) -> interaction.particle = parent.particle).documentation("The particle to play on the entity when teleporting.").add()).build();
 /*     */   }
+/*  55 */   private static final Duration TELEPORT_GLOBAL_COOLDOWN = Duration.ofMillis(250L);
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
+/*     */   
+/*     */   @Nullable
+/*     */   private String particle;
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public WaitForDataFrom getWaitForDataFrom() {
-/*  63 */     return WaitForDataFrom.Server;
+/*  66 */     return WaitForDataFrom.Server;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void interactWithBlock(@Nonnull World world, @Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull Vector3i targetBlock, @Nonnull CooldownHandler cooldownHandler) {
-/*  68 */     ChunkStore chunkStore = world.getChunkStore();
+/*  71 */     ChunkStore chunkStore = world.getChunkStore();
 /*     */     
-/*  70 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
-/*  71 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getChunkComponent(chunkIndex, BlockComponentChunk.getComponentType());
-/*  72 */     if (blockComponentChunk == null)
+/*  73 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlock.getX(), targetBlock.getZ());
+/*  74 */     BlockComponentChunk blockComponentChunk = (BlockComponentChunk)chunkStore.getChunkComponent(chunkIndex, BlockComponentChunk.getComponentType());
+/*  75 */     if (blockComponentChunk == null)
 /*     */       return; 
-/*  74 */     int blockIndex = ChunkUtil.indexBlockInColumn(targetBlock.x, targetBlock.y, targetBlock.z);
-/*  75 */     Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockIndex);
-/*  76 */     if (blockRef == null || !blockRef.isValid())
+/*  77 */     int blockIndex = ChunkUtil.indexBlockInColumn(targetBlock.x, targetBlock.y, targetBlock.z);
+/*  78 */     Ref<ChunkStore> blockRef = blockComponentChunk.getEntityReference(blockIndex);
+/*  79 */     if (blockRef == null || !blockRef.isValid())
 /*     */       return; 
-/*  78 */     BlockModule.BlockStateInfo blockStateInfoComponent = (BlockModule.BlockStateInfo)blockRef.getStore().getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
-/*  79 */     if (blockStateInfoComponent == null)
+/*  81 */     BlockModule.BlockStateInfo blockStateInfoComponent = (BlockModule.BlockStateInfo)blockRef.getStore().getComponent(blockRef, BlockModule.BlockStateInfo.getComponentType());
+/*  82 */     if (blockStateInfoComponent == null)
 /*     */       return; 
-/*  81 */     Ref<ChunkStore> chunkRef = blockStateInfoComponent.getChunkRef();
-/*  82 */     if (chunkRef == null && !chunkRef.isValid())
+/*  84 */     Ref<ChunkStore> chunkRef = blockStateInfoComponent.getChunkRef();
+/*  85 */     if (chunkRef == null && !chunkRef.isValid())
 /*     */       return; 
-/*  84 */     Teleporter teleporter = (Teleporter)chunkStore.getStore().getComponent(blockRef, Teleporter.getComponentType());
-/*  85 */     if (teleporter == null)
+/*  87 */     Teleporter teleporter = (Teleporter)chunkStore.getStore().getComponent(blockRef, Teleporter.getComponentType());
+/*  88 */     if (teleporter == null)
 /*     */       return; 
-/*  87 */     Ref<EntityStore> ref = context.getEntity();
+/*  90 */     Ref<EntityStore> ref = context.getEntity();
 /*     */     
-/*  89 */     Player playerComponent = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
-/*  90 */     if (playerComponent != null && playerComponent.isWaitingForClientReady()) {
+/*  92 */     Player playerComponent = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
+/*  93 */     if (playerComponent != null && playerComponent.isWaitingForClientReady()) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */     
-/*  96 */     Archetype<EntityStore> archetype = commandBuffer.getArchetype(ref);
-/*  97 */     if (archetype.contains(Teleport.getComponentType()) || archetype.contains(PendingTeleport.getComponentType())) {
-/*     */       return;
-/*     */     }
-/* 100 */     if (!teleporter.isValid()) {
-/* 101 */       WorldChunk worldChunkComponent = (WorldChunk)chunkRef.getStore().getComponent(chunkRef, WorldChunk.getComponentType());
-/* 102 */       assert worldChunkComponent != null;
-/*     */       
-/* 104 */       BlockType blockType = worldChunkComponent.getBlockType(targetBlock.x, targetBlock.y, targetBlock.z);
-/* 105 */       String currentState = blockType.getStateForBlock(blockType);
-/* 106 */       if (!"default".equals(currentState)) {
-/* 107 */         BlockType variantBlockType = blockType.getBlockForState("default");
-/* 108 */         if (variantBlockType != null) {
-/* 109 */           worldChunkComponent.setBlockInteractionState(targetBlock.x, targetBlock.y, targetBlock.z, variantBlockType, "default", true);
+/*  99 */     Archetype<EntityStore> archetype = commandBuffer.getArchetype(ref);
+/* 100 */     if (archetype.contains(Teleport.getComponentType()) || archetype.contains(PendingTeleport.getComponentType()))
+/*     */       return; 
+/* 102 */     WorldChunk worldChunkComponent = (WorldChunk)chunkRef.getStore().getComponent(chunkRef, WorldChunk.getComponentType());
+/* 103 */     assert worldChunkComponent != null;
+/*     */     
+/* 105 */     BlockType blockType = worldChunkComponent.getBlockType(targetBlock.x, targetBlock.y, targetBlock.z);
+/*     */ 
+/*     */     
+/* 108 */     if (!teleporter.isValid()) {
+/* 109 */       String currentState = blockType.getStateForBlock(blockType);
+/* 110 */       if (!"default".equals(currentState)) {
+/* 111 */         BlockType variantBlockType = blockType.getBlockForState("default");
+/* 112 */         if (variantBlockType != null) {
+/* 113 */           worldChunkComponent.setBlockInteractionState(targetBlock.x, targetBlock.y, targetBlock.z, variantBlockType, "default", true);
 /*     */         }
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 114 */     TransformComponent transformComponent = (TransformComponent)commandBuffer.getComponent(ref, TransformComponent.getComponentType());
-/* 115 */     assert transformComponent != null;
+/* 118 */     TransformComponent transformComponent = (TransformComponent)commandBuffer.getComponent(ref, TransformComponent.getComponentType());
+/* 119 */     assert transformComponent != null;
 /*     */     
-/* 117 */     Teleport teleportComponent = teleporter.toTeleport(transformComponent.getPosition(), transformComponent.getRotation(), targetBlock);
-/* 118 */     if (teleportComponent == null)
+/* 121 */     Teleport teleportComponent = teleporter.toTeleport(transformComponent.getPosition(), transformComponent.getRotation(), targetBlock);
+/* 122 */     if (teleportComponent == null)
 /*     */       return; 
-/* 120 */     commandBuffer.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 124 */     TeleportRecord recorder = (TeleportRecord)commandBuffer.getComponent(ref, TeleportRecord.getComponentType());
+/* 125 */     if (recorder != null && !recorder.hasElapsedSinceLastTeleport(TELEPORT_GLOBAL_COOLDOWN)) {
+/*     */       return;
+/*     */     }
 /*     */     
-/* 122 */     if (this.particle != null) {
-/* 123 */       Vector3d particlePosition = transformComponent.getPosition();
-/* 124 */       SpatialResource<Ref<EntityStore>, EntityStore> playerSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)commandBuffer.getResource(EntityModule.get().getPlayerSpatialResourceType());
-/* 125 */       ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
-/* 126 */       playerSpatialResource.getSpatialStructure().collect(particlePosition, 75.0D, (List)results);
+/* 129 */     commandBuffer.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/*     */     
+/* 131 */     if (this.particle != null) {
+/* 132 */       Vector3d particlePosition = transformComponent.getPosition();
+/* 133 */       SpatialResource<Ref<EntityStore>, EntityStore> playerSpatialResource = (SpatialResource<Ref<EntityStore>, EntityStore>)commandBuffer.getResource(EntityModule.get().getPlayerSpatialResourceType());
+/* 134 */       ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
+/* 135 */       playerSpatialResource.getSpatialStructure().collect(particlePosition, 75.0D, (List)results);
 /*     */       
-/* 128 */       ParticleUtil.spawnParticleEffect(this.particle, particlePosition, (List)results, (ComponentAccessor)commandBuffer);
+/* 137 */       ParticleUtil.spawnParticleEffect(this.particle, particlePosition, (List)results, (ComponentAccessor)commandBuffer);
 /*     */     } 
 /*     */   }
 /*     */   

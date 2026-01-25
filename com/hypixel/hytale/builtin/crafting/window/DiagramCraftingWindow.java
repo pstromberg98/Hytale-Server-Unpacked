@@ -42,92 +42,89 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class DiagramCraftingWindow
 /*     */   extends CraftingWindow
 /*     */   implements ItemContainerWindow
 /*     */ {
-/*  54 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/*  49 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */   
 /*     */   private String category;
 /*     */   
 /*     */   private String itemCategory;
 /*     */   
+/*     */   @Nullable
 /*     */   private CraftingBench.BenchItemCategory benchItemCategory;
 /*     */   
 /*     */   private SimpleItemContainer inputPrimaryContainer;
+/*     */   
 /*     */   private SimpleItemContainer inputSecondaryContainer;
 /*     */   private CombinedItemContainer combinedInputItemContainer;
 /*     */   private SimpleItemContainer outputContainer;
 /*     */   private CombinedItemContainer combinedItemContainer;
-/*     */   private EventRegistration inventoryRegistration;
+/*     */   private EventRegistration<?, ?> inventoryRegistration;
 /*     */   
-/*     */   public DiagramCraftingWindow(@Nonnull ComponentAccessor<EntityStore> store, BenchState benchState) {
-/*  70 */     super(WindowType.DiagramCrafting, benchState);
-/*  71 */     DiagramCraftingBench bench = (DiagramCraftingBench)this.bench;
+/*     */   public DiagramCraftingWindow(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> store, @Nonnull BenchState benchState) {
+/*  67 */     super(WindowType.DiagramCrafting, benchState);
+/*  68 */     DiagramCraftingBench bench = (DiagramCraftingBench)this.bench;
 /*     */     
-/*  73 */     if (bench.getCategories() != null && (bench.getCategories()).length > 0) {
-/*  74 */       CraftingBench.BenchCategory benchCategory = bench.getCategories()[0];
-/*  75 */       this.category = benchCategory.getId();
-/*  76 */       if (benchCategory.getItemCategories() != null && (benchCategory.getItemCategories()).length > 0) {
-/*  77 */         this.itemCategory = benchCategory.getItemCategories()[0].getId();
+/*  70 */     if (bench.getCategories() != null && (bench.getCategories()).length > 0) {
+/*  71 */       CraftingBench.BenchCategory benchCategory = bench.getCategories()[0];
+/*  72 */       this.category = benchCategory.getId();
+/*  73 */       if (benchCategory.getItemCategories() != null && (benchCategory.getItemCategories()).length > 0) {
+/*  74 */         this.itemCategory = benchCategory.getItemCategories()[0].getId();
 /*     */       }
 /*     */     } 
 /*     */     
-/*  81 */     this.benchItemCategory = getBenchItemCategory(this.category, this.itemCategory);
-/*  82 */     if (this.benchItemCategory == null) throw new IllegalArgumentException("Failed to get category!");
+/*  78 */     this.benchItemCategory = getBenchItemCategory(this.category, this.itemCategory);
+/*  79 */     if (this.benchItemCategory == null) {
+/*  80 */       throw new IllegalArgumentException("Failed to get category!");
+/*     */     }
 /*     */     
-/*  84 */     updateInventory(store, this.benchItemCategory);
+/*  83 */     updateInventory(ref, store, this.benchItemCategory);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void finalize() {
-/*  89 */     if (this.inventoryRegistration.isRegistered()) throw new IllegalStateException("Failed to unregister inventory event!");
+/*  88 */     if (this.inventoryRegistration.isRegistered()) throw new IllegalStateException("Failed to unregister inventory event!");
 /*     */   
 /*     */   }
 /*     */   
-/*     */   public boolean onOpen0() {
-/*  94 */     boolean result = super.onOpen0();
+/*     */   public boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/*  93 */     boolean result = super.onOpen0(ref, store);
 /*     */     
-/*  96 */     PlayerRef playerRef = getPlayerRef();
-/*  97 */     Ref<EntityStore> ref = playerRef.getReference();
-/*  98 */     Store<EntityStore> store = ref.getStore();
+/*  95 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/*  96 */     assert playerComponent != null;
 /*     */     
-/* 100 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/* 101 */     Inventory inventory = player.getInventory();
+/*  98 */     Inventory inventory = playerComponent.getInventory();
 /*     */     
-/* 103 */     updateInput((ItemContainer)null);
-/* 104 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
+/* 100 */     updateInput((ItemContainer)null, ref, store);
+/* 101 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
 /*     */           ObjectArrayList objectArrayList = new ObjectArrayList();
 /*     */           
 /*     */           this.windowData.add("slots", (JsonElement)generateSlots(inventory.getCombinedHotbarFirst(), (List<CraftingRecipe>)objectArrayList));
 /*     */           invalidate();
 /*     */         });
-/* 110 */     return result;
+/* 107 */     return result;
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void onClose0() {
-/* 115 */     PlayerRef playerRef = getPlayerRef();
-/* 116 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 117 */     Store<EntityStore> store = ref.getStore();
+/*     */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
+/* 112 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 113 */     assert playerComponent != null;
 /*     */     
-/* 119 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 115 */     List<ItemStack> itemStacks = this.combinedInputItemContainer.dropAllItemStacks();
+/* 116 */     SimpleItemContainer.addOrDropItemStacks(componentAccessor, ref, (ItemContainer)playerComponent.getInventory().getCombinedHotbarFirst(), itemStacks);
 /*     */     
-/* 121 */     List<ItemStack> itemStacks = this.combinedInputItemContainer.dropAllItemStacks();
-/* 122 */     SimpleItemContainer.addOrDropItemStacks((ComponentAccessor)store, ref, (ItemContainer)player.getInventory().getCombinedHotbarFirst(), itemStacks);
+/* 118 */     CraftingManager craftingManagerComponent = (CraftingManager)componentAccessor.getComponent(ref, CraftingManager.getComponentType());
+/* 119 */     assert craftingManagerComponent != null;
+/* 120 */     craftingManagerComponent.cancelAllCrafting(ref, componentAccessor);
 /*     */     
-/* 124 */     CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
-/* 125 */     craftingManager.cancelAllCrafting(ref, (ComponentAccessor)store);
+/* 122 */     this.inventoryRegistration.unregister();
 /*     */     
-/* 127 */     this.inventoryRegistration.unregister();
-/*     */     
-/* 129 */     super.onClose0();
+/* 124 */     super.onClose0(ref, componentAccessor);
 /*     */   }
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -162,234 +159,262 @@
 /*     */     //   4: checkcast com/hypixel/hytale/server/core/universe/world/storage/EntityStore
 /*     */     //   7: invokevirtual getWorld : ()Lcom/hypixel/hytale/server/core/universe/world/World;
 /*     */     //   10: astore #4
-/*     */     //   12: aload_0
-/*     */     //   13: invokevirtual getPlayerRef : ()Lcom/hypixel/hytale/server/core/universe/PlayerRef;
-/*     */     //   16: astore #5
-/*     */     //   18: aload_2
-/*     */     //   19: aload_1
-/*     */     //   20: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
-/*     */     //   23: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
-/*     */     //   26: checkcast com/hypixel/hytale/builtin/crafting/component/CraftingManager
-/*     */     //   29: astore #6
-/*     */     //   31: aload_3
-/*     */     //   32: dup
-/*     */     //   33: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
-/*     */     //   36: pop
-/*     */     //   37: astore #7
-/*     */     //   39: iconst_0
-/*     */     //   40: istore #8
-/*     */     //   42: aload #7
-/*     */     //   44: iload #8
-/*     */     //   46: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
-/*     */     //   51: tableswitch default -> 396, 0 -> 76, 1 -> 94, 2 -> 173
-/*     */     //   76: aload #7
-/*     */     //   78: checkcast com/hypixel/hytale/protocol/packets/window/CancelCraftingAction
-/*     */     //   81: astore #9
-/*     */     //   83: aload #6
-/*     */     //   85: aload_1
-/*     */     //   86: aload_2
-/*     */     //   87: invokevirtual cancelAllCrafting : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;)Z
-/*     */     //   90: pop
-/*     */     //   91: goto -> 396
-/*     */     //   94: aload #7
-/*     */     //   96: checkcast com/hypixel/hytale/protocol/packets/window/UpdateCategoryAction
-/*     */     //   99: astore #10
-/*     */     //   101: aload_0
-/*     */     //   102: aload #10
-/*     */     //   104: getfield category : Ljava/lang/String;
-/*     */     //   107: putfield category : Ljava/lang/String;
-/*     */     //   110: aload_0
-/*     */     //   111: aload #10
-/*     */     //   113: getfield itemCategory : Ljava/lang/String;
-/*     */     //   116: putfield itemCategory : Ljava/lang/String;
-/*     */     //   119: aload_0
-/*     */     //   120: aload_0
-/*     */     //   121: aload_0
-/*     */     //   122: getfield category : Ljava/lang/String;
-/*     */     //   125: aload_0
-/*     */     //   126: getfield itemCategory : Ljava/lang/String;
-/*     */     //   129: invokevirtual getBenchItemCategory : (Ljava/lang/String;Ljava/lang/String;)Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
-/*     */     //   132: putfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
-/*     */     //   135: aload_0
-/*     */     //   136: getfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
-/*     */     //   139: ifnull -> 154
-/*     */     //   142: aload_0
-/*     */     //   143: aload_2
-/*     */     //   144: aload_0
-/*     */     //   145: getfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
-/*     */     //   148: invokevirtual updateInventory : (Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;)V
-/*     */     //   151: goto -> 396
-/*     */     //   154: aload_0
-/*     */     //   155: invokevirtual getPlayerRef : ()Lcom/hypixel/hytale/server/core/universe/PlayerRef;
-/*     */     //   158: ldc 'server.ui.diagramcraftingwindow.invalidCategory'
-/*     */     //   160: invokestatic translation : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/Message;
-/*     */     //   163: invokevirtual sendMessage : (Lcom/hypixel/hytale/server/core/Message;)V
-/*     */     //   166: aload_0
-/*     */     //   167: invokevirtual close : ()V
-/*     */     //   170: goto -> 396
-/*     */     //   173: aload #7
-/*     */     //   175: checkcast com/hypixel/hytale/protocol/packets/window/CraftItemAction
-/*     */     //   178: astore #11
-/*     */     //   180: aload_0
-/*     */     //   181: getfield outputContainer : Lcom/hypixel/hytale/server/core/inventory/container/SimpleItemContainer;
-/*     */     //   184: iconst_0
-/*     */     //   185: invokevirtual getItemStack : (S)Lcom/hypixel/hytale/server/core/inventory/ItemStack;
-/*     */     //   188: astore #12
-/*     */     //   190: aload #12
-/*     */     //   192: ifnull -> 203
-/*     */     //   195: aload #12
-/*     */     //   197: invokevirtual isEmpty : ()Z
-/*     */     //   200: ifeq -> 214
+/*     */     //   12: aload_2
+/*     */     //   13: aload_1
+/*     */     //   14: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */     //   17: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */     //   20: checkcast com/hypixel/hytale/server/core/universe/PlayerRef
+/*     */     //   23: astore #5
+/*     */     //   25: getstatic com/hypixel/hytale/builtin/crafting/window/DiagramCraftingWindow.$assertionsDisabled : Z
+/*     */     //   28: ifne -> 44
+/*     */     //   31: aload #5
+/*     */     //   33: ifnonnull -> 44
+/*     */     //   36: new java/lang/AssertionError
+/*     */     //   39: dup
+/*     */     //   40: invokespecial <init> : ()V
+/*     */     //   43: athrow
+/*     */     //   44: aload_2
+/*     */     //   45: aload_1
+/*     */     //   46: invokestatic getComponentType : ()Lcom/hypixel/hytale/component/ComponentType;
+/*     */     //   49: invokevirtual getComponent : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentType;)Lcom/hypixel/hytale/component/Component;
+/*     */     //   52: checkcast com/hypixel/hytale/builtin/crafting/component/CraftingManager
+/*     */     //   55: astore #6
+/*     */     //   57: getstatic com/hypixel/hytale/builtin/crafting/window/DiagramCraftingWindow.$assertionsDisabled : Z
+/*     */     //   60: ifne -> 76
+/*     */     //   63: aload #6
+/*     */     //   65: ifnonnull -> 76
+/*     */     //   68: new java/lang/AssertionError
+/*     */     //   71: dup
+/*     */     //   72: invokespecial <init> : ()V
+/*     */     //   75: athrow
+/*     */     //   76: aload_3
+/*     */     //   77: dup
+/*     */     //   78: invokestatic requireNonNull : (Ljava/lang/Object;)Ljava/lang/Object;
+/*     */     //   81: pop
+/*     */     //   82: astore #7
+/*     */     //   84: iconst_0
+/*     */     //   85: istore #8
+/*     */     //   87: aload #7
+/*     */     //   89: iload #8
+/*     */     //   91: <illegal opcode> typeSwitch : (Ljava/lang/Object;I)I
+/*     */     //   96: tableswitch default -> 446, 0 -> 124, 1 -> 142, 2 -> 222
+/*     */     //   124: aload #7
+/*     */     //   126: checkcast com/hypixel/hytale/protocol/packets/window/CancelCraftingAction
+/*     */     //   129: astore #9
+/*     */     //   131: aload #6
+/*     */     //   133: aload_1
+/*     */     //   134: aload_2
+/*     */     //   135: invokevirtual cancelAllCrafting : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;)Z
+/*     */     //   138: pop
+/*     */     //   139: goto -> 446
+/*     */     //   142: aload #7
+/*     */     //   144: checkcast com/hypixel/hytale/protocol/packets/window/UpdateCategoryAction
+/*     */     //   147: astore #10
+/*     */     //   149: aload_0
+/*     */     //   150: aload #10
+/*     */     //   152: getfield category : Ljava/lang/String;
+/*     */     //   155: putfield category : Ljava/lang/String;
+/*     */     //   158: aload_0
+/*     */     //   159: aload #10
+/*     */     //   161: getfield itemCategory : Ljava/lang/String;
+/*     */     //   164: putfield itemCategory : Ljava/lang/String;
+/*     */     //   167: aload_0
+/*     */     //   168: aload_0
+/*     */     //   169: aload_0
+/*     */     //   170: getfield category : Ljava/lang/String;
+/*     */     //   173: aload_0
+/*     */     //   174: getfield itemCategory : Ljava/lang/String;
+/*     */     //   177: invokevirtual getBenchItemCategory : (Ljava/lang/String;Ljava/lang/String;)Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
+/*     */     //   180: putfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
+/*     */     //   183: aload_0
+/*     */     //   184: getfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
+/*     */     //   187: ifnull -> 203
+/*     */     //   190: aload_0
+/*     */     //   191: aload_1
+/*     */     //   192: aload_2
+/*     */     //   193: aload_0
+/*     */     //   194: getfield benchItemCategory : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;
+/*     */     //   197: invokevirtual updateInventory : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/CraftingBench$BenchItemCategory;)V
+/*     */     //   200: goto -> 446
 /*     */     //   203: aload #5
-/*     */     //   205: ldc 'server.ui.diagramcraftingwindow.noOutputItem'
+/*     */     //   205: ldc 'server.ui.diagramcraftingwindow.invalidCategory'
 /*     */     //   207: invokestatic translation : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/Message;
 /*     */     //   210: invokevirtual sendMessage : (Lcom/hypixel/hytale/server/core/Message;)V
-/*     */     //   213: return
-/*     */     //   214: new it/unimi/dsi/fastutil/objects/ObjectArrayList
-/*     */     //   217: dup
-/*     */     //   218: invokespecial <init> : ()V
-/*     */     //   221: astore #13
-/*     */     //   223: aload_0
-/*     */     //   224: aload #13
-/*     */     //   226: invokevirtual collectRecipes : (Ljava/util/List;)Z
-/*     */     //   229: istore #14
-/*     */     //   231: aload #13
-/*     */     //   233: invokeinterface size : ()I
-/*     */     //   238: iconst_1
-/*     */     //   239: if_icmpne -> 247
-/*     */     //   242: iload #14
-/*     */     //   244: ifne -> 258
-/*     */     //   247: aload #5
-/*     */     //   249: ldc 'server.ui.diagramcraftingwindow.failedVerifyRecipy'
-/*     */     //   251: invokestatic translation : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/Message;
-/*     */     //   254: invokevirtual sendMessage : (Lcom/hypixel/hytale/server/core/Message;)V
-/*     */     //   257: return
-/*     */     //   258: aload #13
-/*     */     //   260: invokeinterface getFirst : ()Ljava/lang/Object;
-/*     */     //   265: checkcast com/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe
-/*     */     //   268: astore #15
-/*     */     //   270: aload #6
-/*     */     //   272: aload_1
-/*     */     //   273: aload_2
-/*     */     //   274: aload_0
-/*     */     //   275: iconst_0
-/*     */     //   276: aload #15
-/*     */     //   278: iconst_1
-/*     */     //   279: aload_0
-/*     */     //   280: getfield combinedInputItemContainer : Lcom/hypixel/hytale/server/core/inventory/container/CombinedItemContainer;
-/*     */     //   283: getstatic com/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType.ORDERED : Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType;
-/*     */     //   286: invokevirtual queueCraft : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/builtin/crafting/window/CraftingWindow;ILcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;ILcom/hypixel/hytale/server/core/inventory/container/ItemContainer;Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType;)Z
-/*     */     //   289: pop
-/*     */     //   290: aload #15
-/*     */     //   292: invokevirtual getTimeSeconds : ()F
-/*     */     //   295: fconst_0
-/*     */     //   296: fcmpl
-/*     */     //   297: ifle -> 306
-/*     */     //   300: ldc_w 'CraftCompleted'
-/*     */     //   303: goto -> 309
-/*     */     //   306: ldc_w 'CraftCompletedInstant'
-/*     */     //   309: astore #16
-/*     */     //   311: aload_0
-/*     */     //   312: aload #16
-/*     */     //   314: aload #4
-/*     */     //   316: bipush #70
-/*     */     //   318: invokevirtual setBlockInteractionState : (Ljava/lang/String;Lcom/hypixel/hytale/server/core/universe/world/World;I)V
-/*     */     //   321: aload_0
-/*     */     //   322: getfield bench : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/Bench;
-/*     */     //   325: invokevirtual getCompletedSoundEventIndex : ()I
-/*     */     //   328: ifeq -> 372
-/*     */     //   331: aload_0
-/*     */     //   332: getfield bench : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/Bench;
-/*     */     //   335: invokevirtual getCompletedSoundEventIndex : ()I
-/*     */     //   338: getstatic com/hypixel/hytale/protocol/SoundCategory.SFX : Lcom/hypixel/hytale/protocol/SoundCategory;
-/*     */     //   341: aload_0
-/*     */     //   342: getfield x : I
-/*     */     //   345: i2d
-/*     */     //   346: ldc2_w 0.5
-/*     */     //   349: dadd
-/*     */     //   350: aload_0
-/*     */     //   351: getfield y : I
-/*     */     //   354: i2d
-/*     */     //   355: ldc2_w 0.5
-/*     */     //   358: dadd
-/*     */     //   359: aload_0
-/*     */     //   360: getfield z : I
-/*     */     //   363: i2d
-/*     */     //   364: ldc2_w 0.5
-/*     */     //   367: dadd
-/*     */     //   368: aload_2
-/*     */     //   369: invokestatic playSoundEvent3d : (ILcom/hypixel/hytale/protocol/SoundCategory;DDDLcom/hypixel/hytale/component/ComponentAccessor;)V
-/*     */     //   372: aload_1
-/*     */     //   373: aload #15
-/*     */     //   375: invokevirtual getId : ()Ljava/lang/String;
-/*     */     //   378: aload_2
-/*     */     //   379: invokestatic learnRecipe : (Lcom/hypixel/hytale/component/Ref;Ljava/lang/String;Lcom/hypixel/hytale/component/ComponentAccessor;)Z
-/*     */     //   382: ifeq -> 393
-/*     */     //   385: aload_0
-/*     */     //   386: aload_0
-/*     */     //   387: getfield outputContainer : Lcom/hypixel/hytale/server/core/inventory/container/SimpleItemContainer;
-/*     */     //   390: invokevirtual updateInput : (Lcom/hypixel/hytale/server/core/inventory/container/ItemContainer;)V
-/*     */     //   393: goto -> 396
-/*     */     //   396: return
+/*     */     //   213: aload_0
+/*     */     //   214: aload_1
+/*     */     //   215: aload_2
+/*     */     //   216: invokevirtual close : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;)V
+/*     */     //   219: goto -> 446
+/*     */     //   222: aload #7
+/*     */     //   224: checkcast com/hypixel/hytale/protocol/packets/window/CraftItemAction
+/*     */     //   227: astore #11
+/*     */     //   229: aload_0
+/*     */     //   230: getfield outputContainer : Lcom/hypixel/hytale/server/core/inventory/container/SimpleItemContainer;
+/*     */     //   233: iconst_0
+/*     */     //   234: invokevirtual getItemStack : (S)Lcom/hypixel/hytale/server/core/inventory/ItemStack;
+/*     */     //   237: astore #12
+/*     */     //   239: aload #12
+/*     */     //   241: ifnull -> 252
+/*     */     //   244: aload #12
+/*     */     //   246: invokevirtual isEmpty : ()Z
+/*     */     //   249: ifeq -> 263
+/*     */     //   252: aload #5
+/*     */     //   254: ldc 'server.ui.diagramcraftingwindow.noOutputItem'
+/*     */     //   256: invokestatic translation : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/Message;
+/*     */     //   259: invokevirtual sendMessage : (Lcom/hypixel/hytale/server/core/Message;)V
+/*     */     //   262: return
+/*     */     //   263: new it/unimi/dsi/fastutil/objects/ObjectArrayList
+/*     */     //   266: dup
+/*     */     //   267: invokespecial <init> : ()V
+/*     */     //   270: astore #13
+/*     */     //   272: aload_0
+/*     */     //   273: aload_1
+/*     */     //   274: aload #13
+/*     */     //   276: aload_2
+/*     */     //   277: invokevirtual collectRecipes : (Lcom/hypixel/hytale/component/Ref;Ljava/util/List;Lcom/hypixel/hytale/component/Store;)Z
+/*     */     //   280: istore #14
+/*     */     //   282: aload #13
+/*     */     //   284: invokeinterface size : ()I
+/*     */     //   289: iconst_1
+/*     */     //   290: if_icmpne -> 298
+/*     */     //   293: iload #14
+/*     */     //   295: ifne -> 309
+/*     */     //   298: aload #5
+/*     */     //   300: ldc 'server.ui.diagramcraftingwindow.failedVerifyRecipy'
+/*     */     //   302: invokestatic translation : (Ljava/lang/String;)Lcom/hypixel/hytale/server/core/Message;
+/*     */     //   305: invokevirtual sendMessage : (Lcom/hypixel/hytale/server/core/Message;)V
+/*     */     //   308: return
+/*     */     //   309: aload #13
+/*     */     //   311: invokeinterface getFirst : ()Ljava/lang/Object;
+/*     */     //   316: checkcast com/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe
+/*     */     //   319: astore #15
+/*     */     //   321: aload #6
+/*     */     //   323: aload_1
+/*     */     //   324: aload_2
+/*     */     //   325: aload_0
+/*     */     //   326: iconst_0
+/*     */     //   327: aload #15
+/*     */     //   329: iconst_1
+/*     */     //   330: aload_0
+/*     */     //   331: getfield combinedInputItemContainer : Lcom/hypixel/hytale/server/core/inventory/container/CombinedItemContainer;
+/*     */     //   334: getstatic com/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType.ORDERED : Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType;
+/*     */     //   337: invokevirtual queueCraft : (Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/ComponentAccessor;Lcom/hypixel/hytale/builtin/crafting/window/CraftingWindow;ILcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;ILcom/hypixel/hytale/server/core/inventory/container/ItemContainer;Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager$InputRemovalType;)Z
+/*     */     //   340: pop
+/*     */     //   341: aload #15
+/*     */     //   343: invokevirtual getTimeSeconds : ()F
+/*     */     //   346: fconst_0
+/*     */     //   347: fcmpl
+/*     */     //   348: ifle -> 356
+/*     */     //   351: ldc 'CraftCompleted'
+/*     */     //   353: goto -> 359
+/*     */     //   356: ldc_w 'CraftCompletedInstant'
+/*     */     //   359: astore #16
+/*     */     //   361: aload_0
+/*     */     //   362: aload #16
+/*     */     //   364: aload #4
+/*     */     //   366: invokevirtual setBlockInteractionState : (Ljava/lang/String;Lcom/hypixel/hytale/server/core/universe/world/World;)V
+/*     */     //   369: aload_0
+/*     */     //   370: getfield bench : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/Bench;
+/*     */     //   373: invokevirtual getCompletedSoundEventIndex : ()I
+/*     */     //   376: ifeq -> 420
+/*     */     //   379: aload_0
+/*     */     //   380: getfield bench : Lcom/hypixel/hytale/server/core/asset/type/blocktype/config/bench/Bench;
+/*     */     //   383: invokevirtual getCompletedSoundEventIndex : ()I
+/*     */     //   386: getstatic com/hypixel/hytale/protocol/SoundCategory.SFX : Lcom/hypixel/hytale/protocol/SoundCategory;
+/*     */     //   389: aload_0
+/*     */     //   390: getfield x : I
+/*     */     //   393: i2d
+/*     */     //   394: ldc2_w 0.5
+/*     */     //   397: dadd
+/*     */     //   398: aload_0
+/*     */     //   399: getfield y : I
+/*     */     //   402: i2d
+/*     */     //   403: ldc2_w 0.5
+/*     */     //   406: dadd
+/*     */     //   407: aload_0
+/*     */     //   408: getfield z : I
+/*     */     //   411: i2d
+/*     */     //   412: ldc2_w 0.5
+/*     */     //   415: dadd
+/*     */     //   416: aload_2
+/*     */     //   417: invokestatic playSoundEvent3d : (ILcom/hypixel/hytale/protocol/SoundCategory;DDDLcom/hypixel/hytale/component/ComponentAccessor;)V
+/*     */     //   420: aload_1
+/*     */     //   421: aload #15
+/*     */     //   423: invokevirtual getId : ()Ljava/lang/String;
+/*     */     //   426: aload_2
+/*     */     //   427: invokestatic learnRecipe : (Lcom/hypixel/hytale/component/Ref;Ljava/lang/String;Lcom/hypixel/hytale/component/ComponentAccessor;)Z
+/*     */     //   430: ifeq -> 443
+/*     */     //   433: aload_0
+/*     */     //   434: aload_0
+/*     */     //   435: getfield outputContainer : Lcom/hypixel/hytale/server/core/inventory/container/SimpleItemContainer;
+/*     */     //   438: aload_1
+/*     */     //   439: aload_2
+/*     */     //   440: invokevirtual updateInput : (Lcom/hypixel/hytale/server/core/inventory/container/ItemContainer;Lcom/hypixel/hytale/component/Ref;Lcom/hypixel/hytale/component/Store;)V
+/*     */     //   443: goto -> 446
+/*     */     //   446: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #134	-> 0
-/*     */     //   #135	-> 12
-/*     */     //   #136	-> 18
-/*     */     //   #138	-> 31
-/*     */     //   #139	-> 76
-/*     */     //   #140	-> 94
-/*     */     //   #141	-> 101
-/*     */     //   #142	-> 110
-/*     */     //   #143	-> 119
-/*     */     //   #144	-> 135
-/*     */     //   #145	-> 142
-/*     */     //   #147	-> 154
-/*     */     //   #148	-> 166
-/*     */     //   #150	-> 170
-/*     */     //   #151	-> 173
-/*     */     //   #152	-> 180
-/*     */     //   #153	-> 190
-/*     */     //   #154	-> 203
-/*     */     //   #155	-> 213
-/*     */     //   #158	-> 214
-/*     */     //   #159	-> 223
-/*     */     //   #161	-> 231
-/*     */     //   #162	-> 247
-/*     */     //   #163	-> 257
-/*     */     //   #166	-> 258
-/*     */     //   #167	-> 270
-/*     */     //   #169	-> 290
-/*     */     //   #170	-> 311
-/*     */     //   #172	-> 321
-/*     */     //   #173	-> 331
-/*     */     //   #177	-> 372
-/*     */     //   #178	-> 385
-/*     */     //   #180	-> 393
-/*     */     //   #184	-> 396
+/*     */     //   #129	-> 0
+/*     */     //   #131	-> 12
+/*     */     //   #132	-> 25
+/*     */     //   #134	-> 44
+/*     */     //   #135	-> 57
+/*     */     //   #137	-> 76
+/*     */     //   #138	-> 124
+/*     */     //   #139	-> 142
+/*     */     //   #140	-> 149
+/*     */     //   #141	-> 158
+/*     */     //   #142	-> 167
+/*     */     //   #143	-> 183
+/*     */     //   #144	-> 190
+/*     */     //   #146	-> 203
+/*     */     //   #147	-> 213
+/*     */     //   #149	-> 219
+/*     */     //   #150	-> 222
+/*     */     //   #151	-> 229
+/*     */     //   #152	-> 239
+/*     */     //   #153	-> 252
+/*     */     //   #154	-> 262
+/*     */     //   #157	-> 263
+/*     */     //   #158	-> 272
+/*     */     //   #160	-> 282
+/*     */     //   #161	-> 298
+/*     */     //   #162	-> 308
+/*     */     //   #165	-> 309
+/*     */     //   #166	-> 321
+/*     */     //   #168	-> 341
+/*     */     //   #169	-> 361
+/*     */     //   #171	-> 369
+/*     */     //   #172	-> 379
+/*     */     //   #176	-> 420
+/*     */     //   #177	-> 433
+/*     */     //   #179	-> 443
+/*     */     //   #183	-> 446
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
-/*     */     //   83	11	9	ignored	Lcom/hypixel/hytale/protocol/packets/window/CancelCraftingAction;
-/*     */     //   101	72	10	updateAction	Lcom/hypixel/hytale/protocol/packets/window/UpdateCategoryAction;
-/*     */     //   190	203	12	itemStack	Lcom/hypixel/hytale/server/core/inventory/ItemStack;
-/*     */     //   223	170	13	recipes	Lit/unimi/dsi/fastutil/objects/ObjectList;
-/*     */     //   231	162	14	allSlotsFull	Z
-/*     */     //   270	123	15	recipe	Lcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;
-/*     */     //   311	82	16	completedState	Ljava/lang/String;
-/*     */     //   180	216	11	ignored	Lcom/hypixel/hytale/protocol/packets/window/CraftItemAction;
-/*     */     //   0	397	0	this	Lcom/hypixel/hytale/builtin/crafting/window/DiagramCraftingWindow;
-/*     */     //   0	397	1	ref	Lcom/hypixel/hytale/component/Ref;
-/*     */     //   0	397	2	store	Lcom/hypixel/hytale/component/Store;
-/*     */     //   0	397	3	action	Lcom/hypixel/hytale/protocol/packets/window/WindowAction;
-/*     */     //   12	385	4	world	Lcom/hypixel/hytale/server/core/universe/world/World;
-/*     */     //   18	379	5	playerRef	Lcom/hypixel/hytale/server/core/universe/PlayerRef;
-/*     */     //   31	366	6	craftingManager	Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager;
+/*     */     //   131	11	9	ignored	Lcom/hypixel/hytale/protocol/packets/window/CancelCraftingAction;
+/*     */     //   149	73	10	updateAction	Lcom/hypixel/hytale/protocol/packets/window/UpdateCategoryAction;
+/*     */     //   239	204	12	itemStack	Lcom/hypixel/hytale/server/core/inventory/ItemStack;
+/*     */     //   272	171	13	recipes	Lit/unimi/dsi/fastutil/objects/ObjectList;
+/*     */     //   282	161	14	allSlotsFull	Z
+/*     */     //   321	122	15	recipe	Lcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;
+/*     */     //   361	82	16	completedState	Ljava/lang/String;
+/*     */     //   229	217	11	ignored	Lcom/hypixel/hytale/protocol/packets/window/CraftItemAction;
+/*     */     //   0	447	0	this	Lcom/hypixel/hytale/builtin/crafting/window/DiagramCraftingWindow;
+/*     */     //   0	447	1	ref	Lcom/hypixel/hytale/component/Ref;
+/*     */     //   0	447	2	store	Lcom/hypixel/hytale/component/Store;
+/*     */     //   0	447	3	action	Lcom/hypixel/hytale/protocol/packets/window/WindowAction;
+/*     */     //   12	435	4	world	Lcom/hypixel/hytale/server/core/universe/world/World;
+/*     */     //   25	422	5	playerRefComponent	Lcom/hypixel/hytale/server/core/universe/PlayerRef;
+/*     */     //   57	390	6	craftingManagerComponent	Lcom/hypixel/hytale/builtin/crafting/component/CraftingManager;
 /*     */     // Local variable type table:
 /*     */     //   start	length	slot	name	signature
-/*     */     //   223	170	13	recipes	Lit/unimi/dsi/fastutil/objects/ObjectList<Lcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;>;
-/*     */     //   0	397	1	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
-/*     */     //   0	397	2	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   272	171	13	recipes	Lit/unimi/dsi/fastutil/objects/ObjectList<Lcom/hypixel/hytale/server/core/asset/type/item/config/CraftingRecipe;>;
+/*     */     //   0	447	1	ref	Lcom/hypixel/hytale/component/Ref<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
+/*     */     //   0	447	2	store	Lcom/hypixel/hytale/component/Store<Lcom/hypixel/hytale/server/core/universe/world/storage/EntityStore;>;
 /*     */   }
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -418,203 +443,247 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ItemContainer getItemContainer() {
-/* 189 */     return (ItemContainer)this.combinedItemContainer;
+/* 188 */     return (ItemContainer)this.combinedItemContainer;
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
+/*     */   @Nullable
 /*     */   private CraftingBench.BenchItemCategory getBenchItemCategory(@Nullable String category, @Nullable String itemCategory) {
-/* 193 */     if (category == null || itemCategory == null) return null; 
-/* 194 */     DiagramCraftingBench craftingBench = (DiagramCraftingBench)this.bench;
-/* 195 */     for (CraftingBench.BenchCategory benchCategory : craftingBench.getCategories()) {
-/* 196 */       if (category.equals(benchCategory.getId())) {
-/* 197 */         for (CraftingBench.BenchItemCategory benchItemCategory : benchCategory.getItemCategories()) {
-/* 198 */           if (itemCategory.equals(benchItemCategory.getId())) {
-/* 199 */             return benchItemCategory;
+/* 200 */     if (category == null || itemCategory == null) return null;
+/*     */     
+/* 202 */     DiagramCraftingBench craftingBench = (DiagramCraftingBench)this.bench;
+/* 203 */     for (CraftingBench.BenchCategory benchCategory : craftingBench.getCategories()) {
+/*     */       
+/* 205 */       if (category.equals(benchCategory.getId())) {
+/* 206 */         for (CraftingBench.BenchItemCategory benchItemCategory : benchCategory.getItemCategories()) {
+/* 207 */           if (itemCategory.equals(benchItemCategory.getId())) {
+/* 208 */             return benchItemCategory;
 /*     */           }
 /*     */         } 
 /*     */       }
 /*     */     } 
-/* 204 */     return null;
+/* 213 */     return null;
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   private void updateInventory(@Nonnull ComponentAccessor<EntityStore> store, @Nonnull CraftingBench.BenchItemCategory benchItemCategory) {
-/* 208 */     if (this.combinedInputItemContainer != null) {
-/* 209 */       PlayerRef playerRef = getPlayerRef();
-/* 210 */       Ref<EntityStore> ref = playerRef.getReference();
-/* 211 */       Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 212 */       List<ItemStack> itemStacks = this.combinedInputItemContainer.dropAllItemStacks();
-/* 213 */       SimpleItemContainer.addOrDropItemStacks(store, ref, (ItemContainer)playerComponent.getInventory().getCombinedHotbarFirst(), itemStacks);
+/*     */   private void updateInventory(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull CraftingBench.BenchItemCategory benchItemCategory) {
+/* 226 */     if (this.combinedInputItemContainer != null) {
+/* 227 */       Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 228 */       assert playerComponent != null;
+/*     */       
+/* 230 */       List<ItemStack> itemStacks = this.combinedInputItemContainer.dropAllItemStacks();
+/* 231 */       SimpleItemContainer.addOrDropItemStacks(componentAccessor, ref, (ItemContainer)playerComponent.getInventory().getCombinedHotbarFirst(), itemStacks);
 /*     */     } 
 /*     */     
-/* 216 */     this.inputPrimaryContainer = new SimpleItemContainer((short)1);
-/* 217 */     this
+/* 234 */     this.inputPrimaryContainer = new SimpleItemContainer((short)1);
+/* 235 */     this
 /*     */       
-/* 219 */       .inputSecondaryContainer = new SimpleItemContainer((short)(benchItemCategory.getSlots() + (benchItemCategory.isSpecialSlot() ? 1 : 0)));
+/* 237 */       .inputSecondaryContainer = new SimpleItemContainer((short)(benchItemCategory.getSlots() + (benchItemCategory.isSpecialSlot() ? 1 : 0)));
 /*     */     
-/* 221 */     this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
-/* 222 */     this.combinedInputItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.inputPrimaryContainer, (ItemContainer)this.inputSecondaryContainer });
-/* 223 */     this.combinedInputItemContainer.registerChangeEvent(EventPriority.LAST, this::updateInput);
+/* 239 */     this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
+/* 240 */     this.combinedInputItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.inputPrimaryContainer, (ItemContainer)this.inputSecondaryContainer });
+/* 241 */     this.combinedInputItemContainer.registerChangeEvent(EventPriority.LAST, this::updateInput);
 /*     */     
-/* 225 */     this.outputContainer = new SimpleItemContainer((short)1);
-/* 226 */     this.outputContainer.setGlobalFilter(FilterType.DENY_ALL);
+/* 243 */     this.outputContainer = new SimpleItemContainer((short)1);
+/* 244 */     this.outputContainer.setGlobalFilter(FilterType.DENY_ALL);
 /*     */     
-/* 228 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.combinedInputItemContainer, (ItemContainer)this.outputContainer });
+/* 246 */     this.combinedItemContainer = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)this.combinedInputItemContainer, (ItemContainer)this.outputContainer });
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
 /*     */   private void updateInput(@Nonnull ItemContainer.ItemContainerChangeEvent event) {
-/* 232 */     updateInput(event.container());
+/* 255 */     PlayerRef playerRef = getPlayerRef();
+/* 256 */     if (playerRef == null)
+/*     */       return; 
+/* 258 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 259 */     if (ref == null || !ref.isValid())
+/*     */       return; 
+/* 261 */     Store<EntityStore> store = ref.getStore();
+/* 262 */     updateInput(event.container(), ref, store);
 /*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   private void updateInput(@Nullable ItemContainer container) {
-/* 236 */     PlayerRef playerRef = getPlayerRef();
-/* 237 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 238 */     Store<EntityStore> store = ref.getStore();
+/*     */   private void updateInput(@Nullable ItemContainer container, @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 273 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 274 */     assert playerComponent != null;
 /*     */     
-/* 240 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/*     */     
-/* 242 */     ItemStack primaryItemStack = this.inputPrimaryContainer.getItemStack((short)0);
-/* 243 */     CombinedItemContainer combinedStorage = player.getInventory().getCombinedHotbarFirst();
-/* 244 */     if (primaryItemStack != null && !primaryItemStack.isEmpty()) {
+/* 276 */     ItemStack primaryItemStack = this.inputPrimaryContainer.getItemStack((short)0);
+/* 277 */     CombinedItemContainer combinedStorage = playerComponent.getInventory().getCombinedHotbarFirst();
+/* 278 */     if (primaryItemStack != null && !primaryItemStack.isEmpty()) {
 /*     */       
-/* 246 */       this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_ALL);
+/* 280 */       this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_ALL);
 /*     */ 
 /*     */       
-/* 249 */       boolean needsDropSlot = true; short i;
-/* 250 */       for (i = 0; i < this.inputSecondaryContainer.getCapacity(); i = (short)(i + 1)) {
-/* 251 */         ItemStack itemStack = this.inputSecondaryContainer.getItemStack(i);
-/* 252 */         if (itemStack != null && !itemStack.isEmpty()) {
-/* 253 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, null);
-/* 254 */         } else if (needsDropSlot) {
-/* 255 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, null);
-/* 256 */           needsDropSlot = false;
+/* 283 */       boolean needsDropSlot = true; short i;
+/* 284 */       for (i = 0; i < this.inputSecondaryContainer.getCapacity(); i = (short)(i + 1)) {
+/* 285 */         ItemStack itemStack = this.inputSecondaryContainer.getItemStack(i);
+/* 286 */         if (itemStack != null && !itemStack.isEmpty()) {
+/* 287 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, null);
+/* 288 */         } else if (needsDropSlot) {
+/* 289 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, null);
+/* 290 */           needsDropSlot = false;
 /*     */         } else {
-/* 258 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, SlotFilter.DENY);
+/* 292 */           this.inputSecondaryContainer.setSlotFilter(FilterActionType.ADD, i, SlotFilter.DENY);
 /*     */         } 
 /*     */       } 
 /*     */     } else {
 /*     */       
-/* 263 */       this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
+/* 297 */       this.inputSecondaryContainer.setGlobalFilter(FilterType.ALLOW_OUTPUT_ONLY);
 /*     */ 
 /*     */       
-/* 266 */       if (container != this.inputSecondaryContainer && !this.inputSecondaryContainer.isEmpty()) {
+/* 300 */       if (container != this.inputSecondaryContainer && !this.inputSecondaryContainer.isEmpty()) {
 /*     */         
-/* 268 */         List<ItemStack> itemStacks = this.inputSecondaryContainer.dropAllItemStacks();
-/* 269 */         SimpleItemContainer.addOrDropItemStacks((ComponentAccessor)store, ref, (ItemContainer)combinedStorage, itemStacks);
+/* 302 */         List<ItemStack> itemStacks = this.inputSecondaryContainer.dropAllItemStacks();
+/* 303 */         SimpleItemContainer.addOrDropItemStacks((ComponentAccessor)store, ref, (ItemContainer)combinedStorage, itemStacks);
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 273 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
-/* 274 */     boolean allSlotsFull = collectRecipes((List<CraftingRecipe>)objectArrayList);
+/* 307 */     ObjectArrayList<CraftingRecipe> objectArrayList = new ObjectArrayList();
+/* 308 */     boolean allSlotsFull = collectRecipes(ref, (List<CraftingRecipe>)objectArrayList, store);
 /*     */     
-/* 276 */     this.windowData.add("slots", (JsonElement)generateSlots(combinedStorage, (List<CraftingRecipe>)objectArrayList));
+/* 310 */     this.windowData.add("slots", (JsonElement)generateSlots(combinedStorage, (List<CraftingRecipe>)objectArrayList));
 /*     */     
-/* 278 */     if (objectArrayList.size() == 1 && allSlotsFull) {
-/* 279 */       CraftingRecipe recipe = objectArrayList.getFirst();
-/* 280 */       ItemStack output = CraftingManager.getOutputItemStacks(recipe).getFirst();
+/* 312 */     if (objectArrayList.size() == 1 && allSlotsFull) {
+/* 313 */       CraftingRecipe recipe = objectArrayList.getFirst();
+/* 314 */       ItemStack output = CraftingManager.getOutputItemStacks(recipe).getFirst();
 /*     */       
-/* 282 */       if (player.getPlayerConfigData().getKnownRecipes().contains(recipe.getId())) {
-/* 283 */         this.outputContainer.setItemStackForSlot((short)0, output);
+/* 316 */       if (playerComponent.getPlayerConfigData().getKnownRecipes().contains(recipe.getId())) {
+/* 317 */         this.outputContainer.setItemStackForSlot((short)0, output);
 /*     */       } else {
 /*     */         
-/* 286 */         this.outputContainer.setItemStackForSlot((short)0, new ItemStack("Unknown", 1));
+/* 320 */         this.outputContainer.setItemStackForSlot((short)0, new ItemStack("Unknown", 1));
 /*     */       } 
 /*     */     } else {
-/* 289 */       if (!objectArrayList.isEmpty() && allSlotsFull) {
-/* 290 */         LOGGER.at(Level.WARNING).log("Multiple recipes defined for the same materials! %s", objectArrayList);
+/* 323 */       if (!objectArrayList.isEmpty() && allSlotsFull) {
+/* 324 */         LOGGER.at(Level.WARNING).log("Multiple recipes defined for the same materials! %s", objectArrayList);
 /*     */       }
-/* 292 */       this.outputContainer.setItemStackForSlot((short)0, ItemStack.EMPTY);
+/* 326 */       this.outputContainer.setItemStackForSlot((short)0, ItemStack.EMPTY);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 296 */     invalidate();
+/* 330 */     invalidate();
 /*     */   }
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
-/*     */   private boolean collectRecipes(@Nonnull List<CraftingRecipe> recipes) {
-/* 301 */     ItemStack primaryItemStack = this.inputPrimaryContainer.getItemStack((short)0);
-/* 302 */     if (primaryItemStack == null || primaryItemStack.isEmpty()) return false;
+/*     */   private boolean collectRecipes(@Nonnull Ref<EntityStore> ref, @Nonnull List<CraftingRecipe> recipes, @Nonnull Store<EntityStore> store) {
+/* 342 */     assert this.benchItemCategory != null;
+/*     */ 
 /*     */     
-/* 304 */     PlayerRef playerRef = getPlayerRef();
-/* 305 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 306 */     Store<EntityStore> store = ref.getStore();
-/* 307 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 345 */     ItemStack primaryItemStack = this.inputPrimaryContainer.getItemStack((short)0);
+/* 346 */     if (primaryItemStack == null || primaryItemStack.isEmpty()) return false;
 /*     */     
-/* 309 */     Set<String> knownRecipes = player.getPlayerConfigData().getKnownRecipes();
+/* 348 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 349 */     assert playerComponent != null;
 /*     */     
-/* 311 */     short inputCapacity = this.combinedInputItemContainer.getCapacity();
-/* 312 */     boolean allSlotsFull = true;
+/* 351 */     Set<String> knownRecipes = playerComponent.getPlayerConfigData().getKnownRecipes();
+/*     */     
+/* 353 */     short inputCapacity = this.combinedInputItemContainer.getCapacity();
+/* 354 */     boolean allSlotsFull = true;
 /*     */ 
 /*     */ 
 /*     */     
-/* 316 */     label34: for (CraftingRecipe recipe : getBenchRecipes()) {
+/* 358 */     label41: for (CraftingRecipe recipe : getBenchRecipes()) {
+/*     */ 
 /*     */       
-/* 318 */       if ((recipe.getInput()).length != inputCapacity && (!this.benchItemCategory.isSpecialSlot() || (recipe.getInput()).length != inputCapacity - 1)) {
-/* 319 */         LOGGER.at(Level.WARNING).log("Recipe for %s has different input length than the diagram! %s - %s, %s, %s", recipe.getId(), recipe, this.bench, this.category, this.itemCategory);
+/* 361 */       if ((recipe.getInput()).length != inputCapacity && (!this.benchItemCategory.isSpecialSlot() || (recipe.getInput()).length != inputCapacity - 1)) {
+/* 362 */         LOGGER.at(Level.WARNING).log("Recipe for %s has different input length than the diagram! %s - %s, %s, %s", recipe.getId(), recipe, this.bench, this.category, this.itemCategory);
 /*     */         
 /*     */         continue;
 /*     */       } 
 /*     */       
-/* 324 */       if (recipe.isKnowledgeRequired() && !knownRecipes.contains(recipe.getId())) {
+/* 367 */       if (recipe.isKnowledgeRequired() && !knownRecipes.contains(recipe.getId())) {
 /*     */         continue;
 /*     */       }
 /*     */       short i;
-/* 328 */       for (i = 0; i < inputCapacity; i = (short)(i + 1)) {
-/* 329 */         ItemStack itemStack = this.combinedInputItemContainer.getItemStack(i);
-/* 330 */         if (itemStack == null || itemStack.isEmpty()) {
-/* 331 */           if (!this.benchItemCategory.isSpecialSlot() && i == inputCapacity - 1) {
-/* 332 */             allSlotsFull = false;
+/* 371 */       for (i = 0; i < inputCapacity; i = (short)(i + 1)) {
+/* 372 */         ItemStack itemStack = this.combinedInputItemContainer.getItemStack(i);
+/* 373 */         if (itemStack == null || itemStack.isEmpty()) {
+/* 374 */           if (!this.benchItemCategory.isSpecialSlot() && i == inputCapacity - 1) {
+/* 375 */             allSlotsFull = false;
 /*     */ 
 /*     */           
 /*     */           }
 /*     */         
 /*     */         }
-/* 338 */         else if (!CraftingManager.matches(recipe.getInput()[i], itemStack)) {
-/*     */           continue label34;
+/* 381 */         else if (!CraftingManager.matches(recipe.getInput()[i], itemStack)) {
+/*     */           continue label41;
 /*     */         } 
 /*     */       } 
 /*     */       
-/* 343 */       recipes.add(recipe);
+/* 386 */       recipes.add(recipe);
 /*     */     } 
 /*     */     
-/* 346 */     return allSlotsFull;
+/* 389 */     return allSlotsFull;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   private JsonArray generateSlots(@Nonnull CombinedItemContainer combinedStorage, @Nonnull List<CraftingRecipe> recipes) {
-/* 351 */     JsonArray slots = new JsonArray();
-/* 352 */     if (recipes.isEmpty()) {
-/* 353 */       List<CraftingRecipe> benchRecipes = getBenchRecipes();
+/* 394 */     JsonArray slots = new JsonArray();
+/* 395 */     if (recipes.isEmpty()) {
+/* 396 */       List<CraftingRecipe> benchRecipes = getBenchRecipes();
 /*     */       
-/* 355 */       JsonObject slot = new JsonObject();
-/* 356 */       slot.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(benchRecipes, 0, (ItemContainer)combinedStorage));
-/* 357 */       slots.add((JsonElement)slot);
+/* 398 */       JsonObject slot = new JsonObject();
+/* 399 */       slot.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(benchRecipes, 0, (ItemContainer)combinedStorage));
+/* 400 */       slots.add((JsonElement)slot);
 /*     */     } else {
-/* 359 */       short i; for (i = 0; i < this.combinedInputItemContainer.getCapacity(); i = (short)(i + 1)) {
-/* 360 */         JsonObject slot = new JsonObject();
+/* 402 */       short i; for (i = 0; i < this.combinedInputItemContainer.getCapacity(); i = (short)(i + 1)) {
+/* 403 */         JsonObject slot = new JsonObject();
 /*     */         
-/* 362 */         ItemStack itemStack = this.combinedInputItemContainer.getItemStack(i);
+/* 405 */         ItemStack itemStack = this.combinedInputItemContainer.getItemStack(i);
 /*     */         
-/* 364 */         if (itemStack == null || itemStack.isEmpty()) {
-/* 365 */           slot.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(recipes, i, (ItemContainer)combinedStorage));
+/* 407 */         if (itemStack == null || itemStack.isEmpty()) {
+/* 408 */           slot.add("inventoryHints", (JsonElement)CraftingManager.generateInventoryHints(recipes, i, (ItemContainer)combinedStorage));
 /*     */         }
 /*     */         
-/* 368 */         int requiredAmount = -1;
-/* 369 */         if (recipes.size() == 1) {
-/* 370 */           CraftingRecipe recipe = recipes.getFirst();
-/* 371 */           if (i < (recipe.getInput()).length) {
-/* 372 */             requiredAmount = recipe.getInput()[i].getQuantity();
+/* 411 */         int requiredAmount = -1;
+/* 412 */         if (recipes.size() == 1) {
+/* 413 */           CraftingRecipe recipe = recipes.getFirst();
+/* 414 */           if (i < (recipe.getInput()).length) {
+/* 415 */             requiredAmount = recipe.getInput()[i].getQuantity();
 /*     */           }
 /*     */         } 
-/* 375 */         slot.addProperty("requiredAmount", Integer.valueOf(requiredAmount));
+/* 418 */         slot.addProperty("requiredAmount", Integer.valueOf(requiredAmount));
 /*     */         
-/* 377 */         slots.add((JsonElement)slot);
+/* 420 */         slots.add((JsonElement)slot);
 /*     */       } 
 /*     */     } 
-/* 380 */     return slots;
+/* 423 */     return slots;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public List<CraftingRecipe> getBenchRecipes() {
-/* 385 */     return CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId(), this.category + "." + this.category);
+/* 428 */     return CraftingPlugin.getBenchRecipes(this.bench.getType(), this.bench.getId(), this.category + "." + this.category);
 /*     */   }
 /*     */ }
 

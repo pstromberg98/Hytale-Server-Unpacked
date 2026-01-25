@@ -96,109 +96,123 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   protected CaveNodeType loadEntryNodeType() {
-/*  99 */     if (!has("Entry")) throw new IllegalArgumentException("\"Entry\" is not defined. Define an entry node type"); 
-/* 100 */     String entryNodeTypeString = get("Entry").getAsString();
-/* 101 */     CaveNodeTypeStorage caveNodeTypeStorage = new CaveNodeTypeStorage(this.seed, this.dataFolder, this.caveFolder, this.zoneContext);
-/* 102 */     return caveNodeTypeStorage.loadCaveNodeType(entryNodeTypeString);
+/*  99 */     JsonElement entry = get("Entry");
+/* 100 */     if (entry == null) {
+/* 101 */       throw new IllegalArgumentException("\"Entry\" is not defined. Define an entry node type");
+/*     */     }
+/*     */     
+/* 104 */     CaveNodeTypeStorage caveNodeTypeStorage = new CaveNodeTypeStorage(this.seed, this.dataFolder, this.caveFolder, this.zoneContext);
+/*     */     
+/* 106 */     if (entry.isJsonObject()) {
+/* 107 */       String entryNodeTypeString = ((SeedStringResource)this.seed.get()).getUniqueName("CaveType#");
+/* 108 */       return caveNodeTypeStorage.loadCaveNodeType(entryNodeTypeString, entry.getAsJsonObject());
+/*     */     } 
+/*     */     
+/* 111 */     if (entry.isJsonPrimitive() && entry.getAsJsonPrimitive().isString()) {
+/* 112 */       String entryNodeTypeString = entry.getAsString();
+/* 113 */       return caveNodeTypeStorage.loadCaveNodeType(entryNodeTypeString);
+/*     */     } 
+/*     */     
+/* 116 */     throw error("Invalid entry node type definition! Expected String or JsonObject: " + String.valueOf(entry), new Object[0]);
 /*     */   }
 /*     */   @Nonnull
 /*     */   protected ICoordinateCondition loadHeightCondition() {
 /*     */     HeightThresholdCoordinateCondition heightThresholdCoordinateCondition;
-/* 107 */     DefaultCoordinateCondition defaultCoordinateCondition = DefaultCoordinateCondition.DEFAULT_TRUE;
-/* 108 */     if (has("HeightThreshold")) {
+/* 121 */     DefaultCoordinateCondition defaultCoordinateCondition = DefaultCoordinateCondition.DEFAULT_TRUE;
+/* 122 */     if (has("HeightThreshold")) {
 /*     */       
-/* 110 */       IHeightThresholdInterpreter interpreter = (new HeightThresholdInterpreterJsonLoader(this.seed, this.dataFolder, get("HeightThreshold"), 320)).load();
-/* 111 */       heightThresholdCoordinateCondition = new HeightThresholdCoordinateCondition(interpreter);
+/* 124 */       IHeightThresholdInterpreter interpreter = (new HeightThresholdInterpreterJsonLoader(this.seed, this.dataFolder, get("HeightThreshold"), 320)).load();
+/* 125 */       heightThresholdCoordinateCondition = new HeightThresholdCoordinateCondition(interpreter);
 /*     */     } 
-/* 113 */     return (ICoordinateCondition)heightThresholdCoordinateCondition;
+/* 127 */     return (ICoordinateCondition)heightThresholdCoordinateCondition;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected IPointGenerator loadEntryPointGenerator() {
-/* 118 */     if (!has("EntryPoints")) throw new IllegalArgumentException("\"EntryPoints\" is not defined, no spawn information for caves available"); 
-/* 119 */     return (new PointGeneratorJsonLoader(this.seed, this.dataFolder, get("EntryPoints")))
-/* 120 */       .load();
+/* 132 */     if (!has("EntryPoints")) throw new IllegalArgumentException("\"EntryPoints\" is not defined, no spawn information for caves available"); 
+/* 133 */     return (new PointGeneratorJsonLoader(this.seed, this.dataFolder, get("EntryPoints")))
+/* 134 */       .load();
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   protected Int2FlagsCondition loadBiomeMask() {
-/* 125 */     Int2FlagsCondition mask = CaveBiomeMaskFlags.DEFAULT_ALLOW;
-/* 126 */     if (has("BiomeMask")) {
+/* 139 */     Int2FlagsCondition mask = CaveBiomeMaskFlags.DEFAULT_ALLOW;
+/* 140 */     if (has("BiomeMask")) {
 /*     */       
-/* 128 */       ZoneFileContext context = this.zoneContext.matchContext(this.json, "BiomeMask");
+/* 142 */       ZoneFileContext context = this.zoneContext.matchContext(this.json, "BiomeMask");
 /*     */ 
 /*     */       
-/* 131 */       mask = (new CaveBiomeMaskJsonLoader(this.seed, this.dataFolder, get("BiomeMask"), context)).load();
+/* 145 */       mask = (new CaveBiomeMaskJsonLoader(this.seed, this.dataFolder, get("BiomeMask"), context)).load();
 /*     */     } 
-/* 133 */     return mask;
+/* 147 */     return mask;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected BlockMaskCondition loadBlockMask() {
-/* 138 */     BlockMaskCondition placementConfiguration = BlockMaskCondition.DEFAULT_TRUE;
-/* 139 */     if (has("BlockMask"))
+/* 152 */     BlockMaskCondition placementConfiguration = BlockMaskCondition.DEFAULT_TRUE;
+/* 153 */     if (has("BlockMask"))
 /*     */     {
-/* 141 */       placementConfiguration = (new BlockPlacementMaskJsonLoader(this.seed, this.dataFolder, getRaw("BlockMask"))).load();
+/* 155 */       placementConfiguration = (new BlockPlacementMaskJsonLoader(this.seed, this.dataFolder, getRaw("BlockMask"))).load();
 /*     */     }
-/* 143 */     return placementConfiguration;
+/* 157 */     return placementConfiguration;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   protected ICoordinateCondition loadMapCondition() {
-/* 148 */     return (new NoiseMaskConditionJsonLoader(this.seed, this.dataFolder, get("NoiseMask")))
-/* 149 */       .load();
+/* 162 */     return (new NoiseMaskConditionJsonLoader(this.seed, this.dataFolder, get("NoiseMask")))
+/* 163 */       .load();
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected IDoubleRange loadFixedEntryHeight() {
-/* 154 */     IDoubleRange fixedEntryHeight = null;
-/* 155 */     if (has("FixedEntryHeight"))
+/* 168 */     IDoubleRange fixedEntryHeight = null;
+/* 169 */     if (has("FixedEntryHeight"))
 /*     */     {
-/* 157 */       fixedEntryHeight = (new DoubleRangeJsonLoader(this.seed, this.dataFolder, get("FixedEntryHeight"), 0.0D)).load();
+/* 171 */       fixedEntryHeight = (new DoubleRangeJsonLoader(this.seed, this.dataFolder, get("FixedEntryHeight"), 0.0D)).load();
 /*     */     }
-/* 159 */     return fixedEntryHeight;
+/* 173 */     return fixedEntryHeight;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   protected NoiseProperty loadFixedEntryHeightNoise() {
-/* 164 */     NoiseProperty maxNoise = ConstantNoiseProperty.DEFAULT_ZERO;
-/* 165 */     if (has("FixedEntryHeightNoise"))
+/* 178 */     NoiseProperty maxNoise = ConstantNoiseProperty.DEFAULT_ZERO;
+/* 179 */     if (has("FixedEntryHeightNoise"))
 /*     */     {
-/* 167 */       maxNoise = (new NoisePropertyJsonLoader(this.seed, this.dataFolder, get("FixedEntryHeightNoise"))).load();
+/* 181 */       maxNoise = (new NoisePropertyJsonLoader(this.seed, this.dataFolder, get("FixedEntryHeightNoise"))).load();
 /*     */     }
-/* 169 */     return maxNoise;
+/* 183 */     return maxNoise;
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   protected CaveType.FluidLevel loadFluidLevel() {
-/* 174 */     CaveType.FluidLevel fluidLevel = CaveType.FluidLevel.EMPTY;
-/* 175 */     if (has("FluidLevel"))
+/* 188 */     CaveType.FluidLevel fluidLevel = CaveType.FluidLevel.EMPTY;
+/* 189 */     if (has("FluidLevel"))
 /*     */     {
-/* 177 */       fluidLevel = (new FluidLevelJsonLoader(this.seed, this.dataFolder, get("FluidLevel"))).load();
+/* 191 */       fluidLevel = (new FluidLevelJsonLoader(this.seed, this.dataFolder, get("FluidLevel"))).load();
 /*     */     }
-/* 179 */     return fluidLevel;
+/* 193 */     return fluidLevel;
 /*     */   }
 /*     */   
 /*     */   protected int loadEnvironment() {
-/* 183 */     int environment = Integer.MIN_VALUE;
-/* 184 */     if (has("Environment")) {
-/* 185 */       String environmentId = get("Environment").getAsString();
-/* 186 */       environment = Environment.getAssetMap().getIndex(environmentId);
-/* 187 */       if (environment == Integer.MIN_VALUE) throw new Error(String.format("Error while looking up environment \"%s\"!", new Object[] { environmentId })); 
+/* 197 */     int environment = Integer.MIN_VALUE;
+/* 198 */     if (has("Environment")) {
+/* 199 */       String environmentId = get("Environment").getAsString();
+/* 200 */       environment = Environment.getAssetMap().getIndex(environmentId);
+/* 201 */       if (environment == Integer.MIN_VALUE) throw new Error(String.format("Error while looking up environment \"%s\"!", new Object[] { environmentId })); 
 /*     */     } 
-/* 189 */     return environment;
+/* 203 */     return environment;
 /*     */   }
 /*     */   
 /*     */   protected boolean loadSurfaceLimited() {
-/* 193 */     return (!has("SurfaceLimited") || get("SurfaceLimited").getAsBoolean());
+/* 207 */     return (!has("SurfaceLimited") || get("SurfaceLimited").getAsBoolean());
 /*     */   }
 /*     */   
 /*     */   protected boolean loadSubmerge() {
-/* 197 */     return mustGetBool("Submerge", Constants.DEFAULT_SUBMERGE).booleanValue();
+/* 211 */     return mustGetBool("Submerge", Constants.DEFAULT_SUBMERGE).booleanValue();
 /*     */   }
 /*     */   
 /*     */   protected double loadMaximumSize(@Nonnull IPointGenerator pointGenerator) {
-/* 201 */     return has("MaximumSize") ? get("MaximumSize").getAsLong() : MathUtil.fastFloor(pointGenerator.getInterval());
+/* 215 */     return has("MaximumSize") ? get("MaximumSize").getAsLong() : MathUtil.fastFloor(pointGenerator.getInterval());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -275,7 +289,7 @@
 /*     */ 
 /*     */ 
 /*     */     
-/* 278 */     public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
+/* 292 */     public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
 /*     */     public static final String ERROR_NO_ENTRY = "\"Entry\" is not defined. Define an entry node type";
 /*     */     public static final String ERROR_NO_ENTRY_POINTS = "\"EntryPoints\" is not defined, no spawn information for caves available";
 /*     */     public static final String ERROR_LOADING_ENVIRONMENT = "Error while looking up environment \"%s\"!";

@@ -310,10 +310,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public interface MarkerReference
 /*     */ {
-/* 316 */   public static final CodecMapCodec<MarkerReference> CODEC = new CodecMapCodec();
+/* 315 */   public static final CodecMapCodec<MarkerReference> CODEC = new CodecMapCodec();
 /*     */   
 /*     */   String getMarkerId();
 /*     */   

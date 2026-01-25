@@ -3,6 +3,7 @@
 /*     */ import com.hypixel.hytale.codec.Codec;
 /*     */ import com.hypixel.hytale.codec.ExtraInfo;
 /*     */ import com.hypixel.hytale.component.AddReason;
+/*     */ import com.hypixel.hytale.component.Archetype;
 /*     */ import com.hypixel.hytale.component.Component;
 /*     */ import com.hypixel.hytale.component.ComponentType;
 /*     */ import com.hypixel.hytale.component.Holder;
@@ -47,43 +48,79 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ @Deprecated(forRemoval = true)
 /*     */ public class LegacyEntityMigration
 /*     */   extends EntityModule.MigrationSystem
 /*     */ {
-/*  54 */   private final ComponentType<EntityStore, PersistentModel> persistentModelComponentType = PersistentModel.getComponentType();
-/*  55 */   private final ComponentType<EntityStore, Nameplate> nameplateComponentType = Nameplate.getComponentType();
-/*  56 */   private final ComponentType<EntityStore, UUIDComponent> uuidComponentType = UUIDComponent.getComponentType();
-/*  57 */   private final ComponentType<EntityStore, UnknownComponents<EntityStore>> unknownComponentsComponentType = EntityStore.REGISTRY.getUnknownComponentType();
-/*  58 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.unknownComponentsComponentType, (Query)Query.not((Query)AllLegacyEntityTypesQuery.INSTANCE) });
+/*     */   @Nonnull
+/*  65 */   private final ComponentType<EntityStore, PersistentModel> persistentModelComponentType = PersistentModel.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  71 */   private final ComponentType<EntityStore, Nameplate> nameplateComponentType = Nameplate.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  77 */   private final ComponentType<EntityStore, UUIDComponent> uuidComponentType = UUIDComponent.getComponentType();
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  82 */   private final ComponentType<EntityStore, UnknownComponents<EntityStore>> unknownComponentsComponentType = EntityStore.REGISTRY
+/*  83 */     .getUnknownComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  89 */   private final Query<EntityStore> query = (Query<EntityStore>)Query.and(new Query[] { (Query)this.unknownComponentsComponentType, (Query)Query.not((Query)AllLegacyEntityTypesQuery.INSTANCE) });
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/*  62 */     Map<String, BsonDocument> unknownComponents = ((UnknownComponents)holder.getComponent(this.unknownComponentsComponentType)).getUnknownComponents();
+/*  93 */     UnknownComponents<EntityStore> unknownComponentsComponent = (UnknownComponents<EntityStore>)holder.getComponent(this.unknownComponentsComponentType);
+/*  94 */     assert unknownComponentsComponent != null;
 /*     */     
-/*  64 */     BsonDocument spawnMarker = unknownComponents.remove("SpawnMarker");
-/*  65 */     if (spawnMarker == null)
+/*  96 */     Map<String, BsonDocument> unknownComponents = unknownComponentsComponent.getUnknownComponents();
+/*     */     
+/*  98 */     BsonDocument spawnMarker = unknownComponents.remove("SpawnMarker");
+/*  99 */     if (spawnMarker == null)
 /*     */       return; 
-/*  67 */     if (!holder.getArchetype().contains(this.persistentModelComponentType)) {
-/*  68 */       Model.ModelReference modelReference = Entity.MODEL.get(spawnMarker).get();
-/*  69 */       holder.addComponent(this.persistentModelComponentType, (Component)new PersistentModel(modelReference));
+/* 101 */     Archetype<EntityStore> archetype = holder.getArchetype();
+/* 102 */     assert archetype != null;
+/*     */     
+/* 104 */     if (!archetype.contains(this.persistentModelComponentType)) {
+/* 105 */       Model.ModelReference modelReference = Entity.MODEL.get(spawnMarker).get();
+/* 106 */       holder.addComponent(this.persistentModelComponentType, (Component)new PersistentModel(modelReference));
 /*     */     } 
 /*     */     
-/*  72 */     if (!holder.getArchetype().contains(this.nameplateComponentType)) {
-/*  73 */       holder.addComponent(this.nameplateComponentType, (Component)new Nameplate(Entity.DISPLAY_NAME.get(spawnMarker).get()));
+/* 109 */     if (!archetype.contains(this.nameplateComponentType)) {
+/* 110 */       holder.addComponent(this.nameplateComponentType, (Component)new Nameplate(Entity.DISPLAY_NAME.get(spawnMarker).get()));
 /*     */     }
 /*     */     
-/*  76 */     if (!holder.getArchetype().contains(this.uuidComponentType)) {
-/*  77 */       holder.addComponent(this.uuidComponentType, (Component)new UUIDComponent(Entity.UUID.get(spawnMarker).get()));
+/* 113 */     if (!archetype.contains(this.uuidComponentType)) {
+/* 114 */       holder.addComponent(this.uuidComponentType, (Component)new UUIDComponent(Entity.UUID.get(spawnMarker).get()));
 /*     */     }
 /*     */     
-/*  80 */     holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
+/* 117 */     holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
 /*     */     
-/*  82 */     int worldgenId = ((Integer)Codec.INTEGER.decode(spawnMarker.get("WorldgenId"))).intValue();
-/*  83 */     if (worldgenId != 0) holder.addComponent(WorldGenId.getComponentType(), (Component)new WorldGenId(worldgenId));
+/* 119 */     int worldGenId = ((Integer)Codec.INTEGER.decode(spawnMarker.get("WorldgenId"))).intValue();
+/* 120 */     if (worldGenId != 0) holder.addComponent(WorldGenId.getComponentType(), (Component)new WorldGenId(worldGenId));
 /*     */     
-/*  85 */     SpawnMarkerEntity marker = (SpawnMarkerEntity)SpawnMarkerEntity.CODEC.decode((BsonValue)spawnMarker, new ExtraInfo(5));
-/*  86 */     holder.addComponent(SpawnMarkerEntity.getComponentType(), marker);
+/* 122 */     SpawnMarkerEntity marker = (SpawnMarkerEntity)SpawnMarkerEntity.CODEC.decode((BsonValue)spawnMarker, new ExtraInfo(5));
+/* 123 */     holder.addComponent(SpawnMarkerEntity.getComponentType(), marker);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -93,13 +130,13 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  96 */     return this.query;
+/* 133 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 102 */     return RootDependency.firstSet();
+/* 139 */     return RootDependency.firstSet();
 /*     */   }
 /*     */ }
 

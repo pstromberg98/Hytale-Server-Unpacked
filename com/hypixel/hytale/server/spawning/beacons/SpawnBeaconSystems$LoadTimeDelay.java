@@ -696,41 +696,45 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class LoadTimeDelay
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   private final ComponentType<EntityStore, InitialBeaconDelay> componentType;
-/* 703 */   private final Set<Dependency<EntityStore>> dependencies = RootDependency.lastSet();
+/* 707 */   private final Set<Dependency<EntityStore>> dependencies = RootDependency.lastSet();
 /*     */   
 /*     */   public LoadTimeDelay(ComponentType<EntityStore, InitialBeaconDelay> componentType) {
-/* 706 */     this.componentType = componentType;
+/* 710 */     this.componentType = componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 712 */     return this.dependencies;
+/* 716 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/* 717 */     return (Query)this.componentType;
+/* 721 */     return (Query)this.componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 722 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 726 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 728 */     InitialBeaconDelay beaconDelayComponent = (InitialBeaconDelay)archetypeChunk.getComponent(index, this.componentType);
-/* 729 */     assert beaconDelayComponent != null;
+/* 732 */     InitialBeaconDelay beaconDelayComponent = (InitialBeaconDelay)archetypeChunk.getComponent(index, this.componentType);
+/* 733 */     assert beaconDelayComponent != null;
 /*     */     
-/* 731 */     if (!beaconDelayComponent.tickLoadTimeSpawnDelay(dt))
+/* 735 */     if (!beaconDelayComponent.tickLoadTimeSpawnDelay(dt))
 /*     */       return; 
-/* 733 */     commandBuffer.removeComponent(archetypeChunk.getReferenceTo(index), this.componentType);
+/* 737 */     commandBuffer.removeComponent(archetypeChunk.getReferenceTo(index), this.componentType);
 /*     */   }
 /*     */ }
 

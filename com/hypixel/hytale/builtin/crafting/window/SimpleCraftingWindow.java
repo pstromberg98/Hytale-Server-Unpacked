@@ -25,76 +25,74 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class SimpleCraftingWindow
 /*    */   extends CraftingWindow
 /*    */   implements MaterialContainerWindow
 /*    */ {
 /*    */   public SimpleCraftingWindow(BenchState benchState) {
-/* 35 */     super(WindowType.BasicCrafting, benchState);
+/* 33 */     super(WindowType.BasicCrafting, benchState);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void init(@Nonnull PlayerRef playerRef, @Nonnull WindowManager manager) {
-/* 40 */     super.init(playerRef, manager);
+/* 38 */     super.init(playerRef, manager);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void handleAction(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull WindowAction action) {
-/* 45 */     CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
-/* 46 */     if (craftingManager == null)
+/* 43 */     CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
+/* 44 */     if (craftingManager == null)
 /*    */       return; 
-/* 48 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 46 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*    */     
-/* 50 */     if (action instanceof CraftRecipeAction) { boolean accepted; CraftRecipeAction craftAction = (CraftRecipeAction)action;
-/* 51 */       String recipeId = craftAction.recipeId;
-/* 52 */       int quantity = craftAction.quantity;
+/* 48 */     if (action instanceof CraftRecipeAction) { boolean accepted; CraftRecipeAction craftAction = (CraftRecipeAction)action;
+/* 49 */       String recipeId = craftAction.recipeId;
+/* 50 */       int quantity = craftAction.quantity;
 /*    */       
-/* 54 */       CraftingRecipe craftRecipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
+/* 52 */       CraftingRecipe craftRecipe = (CraftingRecipe)CraftingRecipe.getAssetMap().getAsset(recipeId);
 /*    */       
-/* 56 */       if (craftRecipe == null) {
-/* 57 */         PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 54 */       if (craftRecipe == null) {
+/* 55 */         PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
 /*    */         
-/* 59 */         playerRef.getPacketHandler().disconnect("Attempted to craft unknown recipe!");
+/* 57 */         playerRef.getPacketHandler().disconnect("Attempted to craft unknown recipe!");
 /*    */         
 /*    */         return;
 /*    */       } 
-/* 63 */       Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/* 64 */       CombinedItemContainer combined = player.getInventory().getCombinedBackpackStorageHotbar();
-/* 65 */       CombinedItemContainer playerAndContainerInventory = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)combined, getExtraResourcesSection().getItemContainer() });
+/* 61 */       Player player = (Player)store.getComponent(ref, Player.getComponentType());
+/* 62 */       CombinedItemContainer combined = player.getInventory().getCombinedBackpackStorageHotbar();
+/* 63 */       CombinedItemContainer playerAndContainerInventory = new CombinedItemContainer(new ItemContainer[] { (ItemContainer)combined, getExtraResourcesSection().getItemContainer() });
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */       
-/* 70 */       if (craftRecipe.getTimeSeconds() > 0.0F) {
-/* 71 */         accepted = craftingManager.queueCraft(ref, (ComponentAccessor)store, this, 0, craftRecipe, quantity, (ItemContainer)playerAndContainerInventory, CraftingManager.InputRemovalType.NORMAL);
+/* 68 */       if (craftRecipe.getTimeSeconds() > 0.0F) {
+/* 69 */         accepted = craftingManager.queueCraft(ref, (ComponentAccessor)store, this, 0, craftRecipe, quantity, (ItemContainer)playerAndContainerInventory, CraftingManager.InputRemovalType.NORMAL);
 /*    */       } else {
-/* 73 */         accepted = craftingManager.craftItem(ref, (ComponentAccessor)store, craftRecipe, quantity, (ItemContainer)playerAndContainerInventory);
+/* 71 */         accepted = craftingManager.craftItem(ref, (ComponentAccessor)store, craftRecipe, quantity, (ItemContainer)playerAndContainerInventory);
 /*    */       } 
 /*    */ 
 /*    */       
-/* 77 */       invalidateExtraResources();
+/* 75 */       invalidateExtraResources();
 /*    */       
-/* 79 */       if (accepted) {
-/* 80 */         String completedState = (craftRecipe.getTimeSeconds() > 0.0F) ? "CraftCompleted" : "CraftCompletedInstant";
-/* 81 */         setBlockInteractionState(completedState, world, 70);
+/* 77 */       if (accepted) {
+/* 78 */         String completedState = (craftRecipe.getTimeSeconds() > 0.0F) ? "CraftCompleted" : "CraftCompletedInstant";
+/* 79 */         setBlockInteractionState(completedState, world);
 /*    */         
-/* 83 */         if (this.bench.getCompletedSoundEventIndex() != 0) {
-/* 84 */           Vector3d pos = new Vector3d();
-/* 85 */           this.blockType.getBlockCenter(this.rotationIndex, pos);
-/* 86 */           pos.add(this.x, this.y, this.z);
-/* 87 */           SoundUtil.playSoundEvent3d(this.bench.getCompletedSoundEventIndex(), SoundCategory.SFX, pos, (ComponentAccessor)store);
+/* 81 */         if (this.bench.getCompletedSoundEventIndex() != 0) {
+/* 82 */           Vector3d pos = new Vector3d();
+/* 83 */           this.blockType.getBlockCenter(this.rotationIndex, pos);
+/* 84 */           pos.add(this.x, this.y, this.z);
+/* 85 */           SoundUtil.playSoundEvent3d(this.bench.getCompletedSoundEventIndex(), SoundCategory.SFX, pos, (ComponentAccessor)store);
 /*    */         } 
 /*    */       }  }
-/* 90 */     else if (action instanceof com.hypixel.hytale.protocol.packets.window.TierUpgradeAction && 
-/* 91 */       craftingManager.startTierUpgrade(ref, (ComponentAccessor)store, this))
-/* 92 */     { setBlockInteractionState("BenchUpgrading", world, 70);
-/* 93 */       if (this.bench.getBenchUpgradeSoundEventIndex() != 0) {
-/* 94 */         Vector3d pos = new Vector3d();
-/* 95 */         this.blockType.getBlockCenter(this.rotationIndex, pos);
-/* 96 */         pos.add(this.x, this.y, this.z);
-/* 97 */         SoundUtil.playSoundEvent3d(this.bench.getBenchUpgradeSoundEventIndex(), SoundCategory.SFX, pos, (ComponentAccessor)store);
+/* 88 */     else if (action instanceof com.hypixel.hytale.protocol.packets.window.TierUpgradeAction && 
+/* 89 */       craftingManager.startTierUpgrade(ref, (ComponentAccessor)store, this))
+/* 90 */     { setBlockInteractionState("BenchUpgrading", world);
+/* 91 */       if (this.bench.getBenchUpgradeSoundEventIndex() != 0) {
+/* 92 */         Vector3d pos = new Vector3d();
+/* 93 */         this.blockType.getBlockCenter(this.rotationIndex, pos);
+/* 94 */         pos.add(this.x, this.y, this.z);
+/* 95 */         SoundUtil.playSoundEvent3d(this.bench.getBenchUpgradeSoundEventIndex(), SoundCategory.SFX, pos, (ComponentAccessor)store);
 /*    */       }  }
 /*    */   
 /*    */   }

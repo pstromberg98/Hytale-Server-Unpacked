@@ -426,6 +426,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ final class InstanceKeyNotFound
 /*     */   extends Record
 /*     */   implements PortalDeviceSummonPage.State
@@ -433,7 +435,7 @@
 /*     */   private final String instanceId;
 /*     */   
 /*     */   private InstanceKeyNotFound(String instanceId) {
-/* 436 */     this.instanceId = instanceId; } public String instanceId() { return this.instanceId; }
+/* 438 */     this.instanceId = instanceId; } public String instanceId() { return this.instanceId; }
 /*     */ 
 /*     */   
 /*     */   public final String toString() {
@@ -443,7 +445,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #436	-> 0
+/*     */     //   #438	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$InstanceKeyNotFound;
@@ -456,7 +458,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #436	-> 0
+/*     */     //   #438	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$InstanceKeyNotFound;
@@ -470,7 +472,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #436	-> 0
+/*     */     //   #438	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$InstanceKeyNotFound;

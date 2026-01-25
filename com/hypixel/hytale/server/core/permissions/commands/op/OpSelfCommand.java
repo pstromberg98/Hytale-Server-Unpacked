@@ -30,53 +30,51 @@
 /* 30 */   private static final Message MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS = Message.translation("server.commands.op.self.nonVanillaPermissions");
 /*    */   @Nonnull
 /* 32 */   private static final Message MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ = Message.translation("server.commands.op.self.singleplayerOwnerReq");
-/*    */   @Nonnull
-/* 34 */   private static final Message MESSAGE_COMMANDS_MULTIPLAYER_TIP = Message.translation("server.commands.op.self.multiplayerTip");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public OpSelfCommand() {
-/* 40 */     super("self", "server.commands.op.self.desc");
+/* 38 */     super("self", "server.commands.op.self.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected boolean canGeneratePermission() {
-/* 45 */     return false;
+/* 43 */     return false;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 50 */     if (PermissionsModule.get().areProvidersTampered()) {
-/* 51 */       playerRef.sendMessage(MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS);
+/* 48 */     if (PermissionsModule.get().areProvidersTampered()) {
+/* 49 */       playerRef.sendMessage(MESSAGE_COMMANDS_NON_VANILLA_PERMISSIONS);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 55 */     if (Constants.SINGLEPLAYER && !SingleplayerModule.isOwner(playerRef)) {
-/* 56 */       playerRef.sendMessage(MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ);
+/* 53 */     if (Constants.SINGLEPLAYER && !SingleplayerModule.isOwner(playerRef)) {
+/* 54 */       playerRef.sendMessage(MESSAGE_COMMANDS_SINGLEPLAYER_OWNER_REQ);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 60 */     if (!Constants.SINGLEPLAYER && !Constants.ALLOWS_SELF_OP_COMMAND) {
-/* 61 */       playerRef.sendMessage(MESSAGE_COMMANDS_MULTIPLAYER_TIP
-/* 62 */           .param("uuidCommand", "uuid")
-/* 63 */           .param("permissionFile", "permissions.json")
-/* 64 */           .param("launchArg", "--allow-op"));
+/* 58 */     if (!Constants.SINGLEPLAYER && !Constants.ALLOWS_SELF_OP_COMMAND) {
+/* 59 */       playerRef.sendMessage(Message.translation("server.commands.op.self.multiplayerTip")
+/* 60 */           .param("uuidCommand", "uuid")
+/* 61 */           .param("permissionFile", "permissions.json")
+/* 62 */           .param("launchArg", "--allow-op"));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 68 */     UUID uuid = playerRef.getUuid();
+/* 66 */     UUID uuid = playerRef.getUuid();
 /*    */     
-/* 70 */     PermissionsModule perms = PermissionsModule.get();
-/* 71 */     String opGroup = "OP";
-/* 72 */     Set<String> groups = perms.getGroupsForUser(uuid);
+/* 68 */     PermissionsModule perms = PermissionsModule.get();
+/* 69 */     String opGroup = "OP";
+/* 70 */     Set<String> groups = perms.getGroupsForUser(uuid);
 /*    */     
-/* 74 */     if (groups.contains("OP")) {
-/* 75 */       perms.removeUserFromGroup(uuid, "OP");
-/* 76 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED);
+/* 72 */     if (groups.contains("OP")) {
+/* 73 */       perms.removeUserFromGroup(uuid, "OP");
+/* 74 */       context.sendMessage(MESSAGE_COMMANDS_OP_REMOVED);
 /*    */     } else {
-/* 78 */       perms.addUserToGroup(uuid, "OP");
-/* 79 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED);
+/* 76 */       perms.addUserToGroup(uuid, "OP");
+/* 77 */       context.sendMessage(MESSAGE_COMMANDS_OP_ADDED);
 /*    */     } 
 /*    */   }
 /*    */ }

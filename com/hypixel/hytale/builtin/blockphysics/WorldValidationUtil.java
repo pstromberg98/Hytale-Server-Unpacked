@@ -9,11 +9,10 @@
 /*    */ import java.util.Set;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
-/*    */ public class WorldValidationUtil
-/*    */ {
+/*    */ public class WorldValidationUtil {
 /*    */   @Nonnull
 /*    */   public static IPrefabBuffer.RawBlockConsumer<Void> blockValidator(@Nonnull StringBuilder sb, @Nonnull Set<ValidationOption> options) {
-/* 16 */     return blockValidator(0, 0, 0, sb, options);
+/* 15 */     return blockValidator(0, 0, 0, sb, options);
 /*    */   }
 /*    */ 
 /*    */ 
@@ -31,7 +30,7 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public static IPrefabBuffer.RawBlockConsumer<Void> blockValidator(int offsetX, int offsetY, int offsetZ, @Nonnull StringBuilder sb, @Nonnull Set<ValidationOption> options) {
-/* 34 */     return (x, y, z, mask, blockId, chance, holder, support, rotation, filler, aVoid) -> {
+/* 33 */     return (x, y, z, mask, blockId, chance, holder, support, rotation, filler, aVoid) -> {
 /*    */         BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(blockId);
 /*    */         if (options.contains(ValidationOption.PHYSICS));
 /*    */         if (options.contains(ValidationOption.BLOCKS) && (blockType == null || blockType.isUnknown()))

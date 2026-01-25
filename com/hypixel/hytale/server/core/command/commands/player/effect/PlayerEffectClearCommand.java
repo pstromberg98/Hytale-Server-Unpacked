@@ -20,18 +20,19 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
+/*    */ 
 /*    */ public class PlayerEffectClearCommand
 /*    */   extends AbstractPlayerCommand
 /*    */ {
-/* 26 */   private static final Message MESSAGE_EFFECTS_CLEARED_SELF = Message.translation("server.commands.player.effect.clear.success.self");
+/* 27 */   private static final Message MESSAGE_EFFECTS_CLEARED_SELF = Message.translation("server.commands.player.effect.clear.success.self");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public PlayerEffectClearCommand() {
-/* 32 */     super("clear", "server.commands.player.effect.clear.desc");
-/* 33 */     requirePermission(HytalePermissions.fromCommand("player.effect.clear.self"));
-/* 34 */     addUsageVariant((AbstractCommand)new PlayerEffectClearOtherCommand());
+/* 33 */     super("clear", "server.commands.player.effect.clear.desc");
+/* 34 */     requirePermission(HytalePermissions.fromCommand("player.effect.clear.self"));
+/* 35 */     addUsageVariant((AbstractCommand)new PlayerEffectClearOtherCommand());
 /*    */   }
 /*    */ 
 /*    */ 
@@ -40,12 +41,12 @@
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 43 */     EffectControllerComponent effectControllerComponent = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
-/* 44 */     assert effectControllerComponent != null;
+/* 44 */     EffectControllerComponent effectControllerComponent = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
+/* 45 */     assert effectControllerComponent != null;
 /*    */     
-/* 46 */     effectControllerComponent.clearEffects(ref, (ComponentAccessor)store);
+/* 47 */     effectControllerComponent.clearEffects(ref, (ComponentAccessor)store);
 /*    */     
-/* 48 */     context.sendMessage(MESSAGE_EFFECTS_CLEARED_SELF);
+/* 49 */     context.sendMessage(MESSAGE_EFFECTS_CLEARED_SELF);
 /*    */   }
 /*    */ 
 /*    */ 
@@ -53,8 +54,7 @@
 /*    */   private static class PlayerEffectClearOtherCommand
 /*    */     extends CommandBase
 /*    */   {
-/* 56 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/* 57 */     private static final Message MESSAGE_EFFECTS_CLEARED_OTHER = Message.translation("server.commands.player.effect.clear.success.other");
+/* 57 */     private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*    */     
 /*    */     @Nonnull
 /* 60 */     private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
@@ -88,7 +88,7 @@
 /*    */             EffectControllerComponent effectControllerComponent = (EffectControllerComponent)store.getComponent(ref, EffectControllerComponent.getComponentType());
 /*    */             assert effectControllerComponent != null;
 /*    */             effectControllerComponent.clearEffects(ref, (ComponentAccessor)store);
-/*    */             context.sendMessage(MESSAGE_EFFECTS_CLEARED_OTHER.param("username", playerRefComponent.getUsername()));
+/*    */             context.sendMessage(Message.translation("server.commands.player.effect.clear.success.other").param("username", playerRefComponent.getUsername()));
 /*    */           });
 /*    */     }
 /*    */   }

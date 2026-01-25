@@ -37,10 +37,10 @@
 /*     */   public static MouseMotionEvent deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  38 */     MouseMotionEvent obj = new MouseMotionEvent();
 /*  39 */     byte nullBits = buf.getByte(offset);
-/*  40 */     if ((nullBits & 0x2) != 0) obj.relativeMotion = Vector2i.deserialize(buf, offset + 1);
+/*  40 */     if ((nullBits & 0x1) != 0) obj.relativeMotion = Vector2i.deserialize(buf, offset + 1);
 /*     */     
 /*  42 */     int pos = offset + 9;
-/*  43 */     if ((nullBits & 0x1) != 0) { int mouseButtonTypeCount = VarInt.peek(buf, pos);
+/*  43 */     if ((nullBits & 0x2) != 0) { int mouseButtonTypeCount = VarInt.peek(buf, pos);
 /*  44 */       if (mouseButtonTypeCount < 0) throw ProtocolException.negativeLength("MouseButtonType", mouseButtonTypeCount); 
 /*  45 */       if (mouseButtonTypeCount > 4096000) throw ProtocolException.arrayTooLong("MouseButtonType", mouseButtonTypeCount, 4096000); 
 /*  46 */       int mouseButtonTypeVarLen = VarInt.size(mouseButtonTypeCount);
@@ -58,15 +58,15 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  59 */     byte nullBits = buf.getByte(offset);
 /*  60 */     int pos = offset + 9;
-/*  61 */     if ((nullBits & 0x1) != 0) { int arrLen = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + arrLen * 1; }
+/*  61 */     if ((nullBits & 0x2) != 0) { int arrLen = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + arrLen * 1; }
 /*  62 */      return pos - offset;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /*  67 */     byte nullBits = 0;
-/*  68 */     if (this.mouseButtonType != null) nullBits = (byte)(nullBits | 0x1); 
-/*  69 */     if (this.relativeMotion != null) nullBits = (byte)(nullBits | 0x2); 
+/*  68 */     if (this.relativeMotion != null) nullBits = (byte)(nullBits | 0x1); 
+/*  69 */     if (this.mouseButtonType != null) nullBits = (byte)(nullBits | 0x2); 
 /*  70 */     buf.writeByte(nullBits);
 /*     */     
 /*  72 */     if (this.relativeMotion != null) { this.relativeMotion.serialize(buf); } else { buf.writeZero(8); }
@@ -91,7 +91,7 @@
 /*     */     
 /*  92 */     int pos = offset + 9;
 /*     */     
-/*  94 */     if ((nullBits & 0x1) != 0) {
+/*  94 */     if ((nullBits & 0x2) != 0) {
 /*  95 */       int mouseButtonTypeCount = VarInt.peek(buffer, pos);
 /*  96 */       if (mouseButtonTypeCount < 0) {
 /*  97 */         return ValidationResult.error("Invalid array count for MouseButtonType");

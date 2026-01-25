@@ -202,20 +202,21 @@
 /*     */   }
 /*     */   
 /*     */   default void setBlockInteractionState(int x, int y, int z, @Nonnull BlockType blockType, @Nonnull String state, boolean force) {
-/* 205 */     String currentState = getCurrentInteractionState(blockType);
-/* 206 */     if (!force && currentState != null && currentState.equals(state))
+/* 205 */     if (blockType.getData() == null)
+/* 206 */       return;  String currentState = getCurrentInteractionState(blockType);
+/* 207 */     if (!force && currentState != null && currentState.equals(state))
 /*     */       return; 
-/* 208 */     BlockType newState = blockType.getBlockForState(state);
-/* 209 */     if (newState == null)
-/* 210 */       return;  int settings = 198;
+/* 209 */     BlockType newState = blockType.getBlockForState(state);
+/* 210 */     if (newState == null)
+/* 211 */       return;  int settings = 198;
 /*     */     
-/* 212 */     int currentRotation = getRotationIndex(x, y, z);
-/* 213 */     setBlock(x, y, z, BlockType.getAssetMap().getIndex(newState.getId()), newState, currentRotation, 0, 198);
+/* 213 */     int currentRotation = getRotationIndex(x, y, z);
+/* 214 */     setBlock(x, y, z, BlockType.getAssetMap().getIndex(newState.getId()), newState, currentRotation, 0, 198);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   static String getCurrentInteractionState(@Nonnull BlockType blockType) {
-/* 218 */     return (blockType.getState() != null) ? blockType.getStateForBlock(blockType) : null;
+/* 219 */     return (blockType.getState() != null) ? blockType.getStateForBlock(blockType) : null;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -235,7 +236,7 @@
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   default RotationTuple getRotation(int x, int y, int z) {
-/* 238 */     return RotationTuple.get(getRotationIndex(x, y, z));
+/* 239 */     return RotationTuple.get(getRotationIndex(x, y, z));
 /*     */   }
 /*     */   
 /*     */   int getX();

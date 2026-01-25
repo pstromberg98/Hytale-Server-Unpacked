@@ -113,45 +113,45 @@
 /* 113 */     ParticleSpawner obj = new ParticleSpawner();
 /* 114 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 115 */     obj.shape = EmitShape.fromValue(buf.getByte(offset + 2));
-/* 116 */     if ((nullBits[0] & 0x4) != 0) obj.emitOffset = RangeVector3f.deserialize(buf, offset + 3); 
+/* 116 */     if ((nullBits[0] & 0x1) != 0) obj.emitOffset = RangeVector3f.deserialize(buf, offset + 3); 
 /* 117 */     obj.cameraOffset = buf.getFloatLE(offset + 28);
 /* 118 */     obj.useEmitDirection = (buf.getByte(offset + 32) != 0);
 /* 119 */     obj.lifeSpan = buf.getFloatLE(offset + 33);
-/* 120 */     if ((nullBits[0] & 0x8) != 0) obj.spawnRate = Rangef.deserialize(buf, offset + 37); 
+/* 120 */     if ((nullBits[0] & 0x2) != 0) obj.spawnRate = Rangef.deserialize(buf, offset + 37); 
 /* 121 */     obj.spawnBurst = (buf.getByte(offset + 45) != 0);
-/* 122 */     if ((nullBits[0] & 0x10) != 0) obj.waveDelay = Rangef.deserialize(buf, offset + 46); 
-/* 123 */     if ((nullBits[0] & 0x20) != 0) obj.totalParticles = Range.deserialize(buf, offset + 54); 
+/* 122 */     if ((nullBits[0] & 0x4) != 0) obj.waveDelay = Rangef.deserialize(buf, offset + 46); 
+/* 123 */     if ((nullBits[0] & 0x8) != 0) obj.totalParticles = Range.deserialize(buf, offset + 54); 
 /* 124 */     obj.maxConcurrentParticles = buf.getIntLE(offset + 62);
-/* 125 */     if ((nullBits[0] & 0x40) != 0) obj.initialVelocity = InitialVelocity.deserialize(buf, offset + 66); 
+/* 125 */     if ((nullBits[0] & 0x10) != 0) obj.initialVelocity = InitialVelocity.deserialize(buf, offset + 66); 
 /* 126 */     obj.velocityStretchMultiplier = buf.getFloatLE(offset + 91);
 /* 127 */     obj.particleRotationInfluence = ParticleRotationInfluence.fromValue(buf.getByte(offset + 95));
 /* 128 */     obj.particleRotateWithSpawner = (buf.getByte(offset + 96) != 0);
 /* 129 */     obj.isLowRes = (buf.getByte(offset + 97) != 0);
 /* 130 */     obj.trailSpawnerPositionMultiplier = buf.getFloatLE(offset + 98);
 /* 131 */     obj.trailSpawnerRotationMultiplier = buf.getFloatLE(offset + 102);
-/* 132 */     if ((nullBits[0] & 0x80) != 0) obj.particleCollision = ParticleCollision.deserialize(buf, offset + 106); 
+/* 132 */     if ((nullBits[0] & 0x20) != 0) obj.particleCollision = ParticleCollision.deserialize(buf, offset + 106); 
 /* 133 */     obj.renderMode = FXRenderMode.fromValue(buf.getByte(offset + 109));
 /* 134 */     obj.lightInfluence = buf.getFloatLE(offset + 110);
 /* 135 */     obj.linearFiltering = (buf.getByte(offset + 114) != 0);
-/* 136 */     if ((nullBits[1] & 0x1) != 0) obj.particleLifeSpan = Rangef.deserialize(buf, offset + 115); 
-/* 137 */     if ((nullBits[1] & 0x8) != 0) obj.intersectionHighlight = IntersectionHighlight.deserialize(buf, offset + 123);
+/* 136 */     if ((nullBits[0] & 0x40) != 0) obj.particleLifeSpan = Rangef.deserialize(buf, offset + 115); 
+/* 137 */     if ((nullBits[0] & 0x80) != 0) obj.intersectionHighlight = IntersectionHighlight.deserialize(buf, offset + 123);
 /*     */     
-/* 139 */     if ((nullBits[0] & 0x1) != 0) {
+/* 139 */     if ((nullBits[1] & 0x1) != 0) {
 /* 140 */       int varPos0 = offset + 147 + buf.getIntLE(offset + 131);
 /* 141 */       int idLen = VarInt.peek(buf, varPos0);
 /* 142 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /* 143 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /* 144 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/* 146 */     if ((nullBits[0] & 0x2) != 0) {
+/* 146 */     if ((nullBits[1] & 0x2) != 0) {
 /* 147 */       int varPos1 = offset + 147 + buf.getIntLE(offset + 135);
 /* 148 */       obj.particle = Particle.deserialize(buf, varPos1);
 /*     */     } 
-/* 150 */     if ((nullBits[1] & 0x2) != 0) {
+/* 150 */     if ((nullBits[1] & 0x4) != 0) {
 /* 151 */       int varPos2 = offset + 147 + buf.getIntLE(offset + 139);
 /* 152 */       obj.uvMotion = UVMotion.deserialize(buf, varPos2);
 /*     */     } 
-/* 154 */     if ((nullBits[1] & 0x4) != 0) {
+/* 154 */     if ((nullBits[1] & 0x8) != 0) {
 /* 155 */       int varPos3 = offset + 147 + buf.getIntLE(offset + 143);
 /* 156 */       int attractorsCount = VarInt.peek(buf, varPos3);
 /* 157 */       if (attractorsCount < 0) throw ProtocolException.negativeLength("Attractors", attractorsCount); 
@@ -173,25 +173,25 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 174 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 175 */     int maxEnd = 147;
-/* 176 */     if ((nullBits[0] & 0x1) != 0) {
+/* 176 */     if ((nullBits[1] & 0x1) != 0) {
 /* 177 */       int fieldOffset0 = buf.getIntLE(offset + 131);
 /* 178 */       int pos0 = offset + 147 + fieldOffset0;
 /* 179 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 180 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 182 */     if ((nullBits[0] & 0x2) != 0) {
+/* 182 */     if ((nullBits[1] & 0x2) != 0) {
 /* 183 */       int fieldOffset1 = buf.getIntLE(offset + 135);
 /* 184 */       int pos1 = offset + 147 + fieldOffset1;
 /* 185 */       pos1 += Particle.computeBytesConsumed(buf, pos1);
 /* 186 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 188 */     if ((nullBits[1] & 0x2) != 0) {
+/* 188 */     if ((nullBits[1] & 0x4) != 0) {
 /* 189 */       int fieldOffset2 = buf.getIntLE(offset + 139);
 /* 190 */       int pos2 = offset + 147 + fieldOffset2;
 /* 191 */       pos2 += UVMotion.computeBytesConsumed(buf, pos2);
 /* 192 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 194 */     if ((nullBits[1] & 0x4) != 0) {
+/* 194 */     if ((nullBits[1] & 0x8) != 0) {
 /* 195 */       int fieldOffset3 = buf.getIntLE(offset + 143);
 /* 196 */       int pos3 = offset + 147 + fieldOffset3;
 /* 197 */       int arrLen = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3);
@@ -205,18 +205,18 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 206 */     int startPos = buf.writerIndex();
 /* 207 */     byte[] nullBits = new byte[2];
-/* 208 */     if (this.id != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
-/* 209 */     if (this.particle != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/* 210 */     if (this.emitOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/* 211 */     if (this.spawnRate != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/* 212 */     if (this.waveDelay != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/* 213 */     if (this.totalParticles != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/* 214 */     if (this.initialVelocity != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/* 215 */     if (this.particleCollision != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/* 216 */     if (this.particleLifeSpan != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
-/* 217 */     if (this.uvMotion != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
-/* 218 */     if (this.attractors != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
-/* 219 */     if (this.intersectionHighlight != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
+/* 208 */     if (this.emitOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
+/* 209 */     if (this.spawnRate != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
+/* 210 */     if (this.waveDelay != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/* 211 */     if (this.totalParticles != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/* 212 */     if (this.initialVelocity != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/* 213 */     if (this.particleCollision != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/* 214 */     if (this.particleLifeSpan != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/* 215 */     if (this.intersectionHighlight != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/* 216 */     if (this.id != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/* 217 */     if (this.particle != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
+/* 218 */     if (this.uvMotion != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
+/* 219 */     if (this.attractors != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
 /* 220 */     buf.writeBytes(nullBits);
 /*     */     
 /* 222 */     buf.writeByte(this.shape.getValue());
@@ -297,7 +297,7 @@
 /*     */     
 /* 298 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 2);
 /*     */     
-/* 300 */     if ((nullBits[0] & 0x1) != 0) {
+/* 300 */     if ((nullBits[1] & 0x1) != 0) {
 /* 301 */       int idOffset = buffer.getIntLE(offset + 131);
 /* 302 */       if (idOffset < 0) {
 /* 303 */         return ValidationResult.error("Invalid offset for Id");
@@ -320,7 +320,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 323 */     if ((nullBits[0] & 0x2) != 0) {
+/* 323 */     if ((nullBits[1] & 0x2) != 0) {
 /* 324 */       int particleOffset = buffer.getIntLE(offset + 135);
 /* 325 */       if (particleOffset < 0) {
 /* 326 */         return ValidationResult.error("Invalid offset for Particle");
@@ -336,7 +336,7 @@
 /* 336 */       pos += Particle.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 339 */     if ((nullBits[1] & 0x2) != 0) {
+/* 339 */     if ((nullBits[1] & 0x4) != 0) {
 /* 340 */       int uvMotionOffset = buffer.getIntLE(offset + 139);
 /* 341 */       if (uvMotionOffset < 0) {
 /* 342 */         return ValidationResult.error("Invalid offset for UvMotion");
@@ -352,7 +352,7 @@
 /* 352 */       pos += UVMotion.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 355 */     if ((nullBits[1] & 0x4) != 0) {
+/* 355 */     if ((nullBits[1] & 0x8) != 0) {
 /* 356 */       int attractorsOffset = buffer.getIntLE(offset + 143);
 /* 357 */       if (attractorsOffset < 0) {
 /* 358 */         return ValidationResult.error("Invalid offset for Attractors");

@@ -49,12 +49,12 @@
 /*     */   public static BlockParticleSet deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  50 */     BlockParticleSet obj = new BlockParticleSet();
 /*  51 */     byte nullBits = buf.getByte(offset);
-/*  52 */     if ((nullBits & 0x2) != 0) obj.color = Color.deserialize(buf, offset + 1); 
+/*  52 */     if ((nullBits & 0x1) != 0) obj.color = Color.deserialize(buf, offset + 1); 
 /*  53 */     obj.scale = buf.getFloatLE(offset + 4);
-/*  54 */     if ((nullBits & 0x4) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 8); 
-/*  55 */     if ((nullBits & 0x8) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 20);
+/*  54 */     if ((nullBits & 0x2) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 8); 
+/*  55 */     if ((nullBits & 0x4) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 20);
 /*     */     
-/*  57 */     if ((nullBits & 0x1) != 0) {
+/*  57 */     if ((nullBits & 0x8) != 0) {
 /*  58 */       int varPos0 = offset + 40 + buf.getIntLE(offset + 32);
 /*  59 */       int idLen = VarInt.peek(buf, varPos0);
 /*  60 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
@@ -88,7 +88,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  89 */     byte nullBits = buf.getByte(offset);
 /*  90 */     int maxEnd = 40;
-/*  91 */     if ((nullBits & 0x1) != 0) {
+/*  91 */     if ((nullBits & 0x8) != 0) {
 /*  92 */       int fieldOffset0 = buf.getIntLE(offset + 32);
 /*  93 */       int pos0 = offset + 40 + fieldOffset0;
 /*  94 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
@@ -108,10 +108,10 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 109 */     int startPos = buf.writerIndex();
 /* 110 */     byte nullBits = 0;
-/* 111 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 112 */     if (this.color != null) nullBits = (byte)(nullBits | 0x2); 
-/* 113 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x4); 
-/* 114 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x8); 
+/* 111 */     if (this.color != null) nullBits = (byte)(nullBits | 0x1); 
+/* 112 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x2); 
+/* 113 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x4); 
+/* 114 */     if (this.id != null) nullBits = (byte)(nullBits | 0x8); 
 /* 115 */     if (this.particleSystemIds != null) nullBits = (byte)(nullBits | 0x10); 
 /* 116 */     buf.writeByte(nullBits);
 /*     */     
@@ -161,7 +161,7 @@
 /* 161 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 164 */     if ((nullBits & 0x1) != 0) {
+/* 164 */     if ((nullBits & 0x8) != 0) {
 /* 165 */       int idOffset = buffer.getIntLE(offset + 32);
 /* 166 */       if (idOffset < 0) {
 /* 167 */         return ValidationResult.error("Invalid offset for Id");

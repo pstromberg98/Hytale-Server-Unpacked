@@ -46,23 +46,23 @@
 /*     */   public static MapMarker deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  47 */     MapMarker obj = new MapMarker();
 /*  48 */     byte nullBits = buf.getByte(offset);
-/*  49 */     if ((nullBits & 0x8) != 0) obj.transform = Transform.deserialize(buf, offset + 1);
+/*  49 */     if ((nullBits & 0x1) != 0) obj.transform = Transform.deserialize(buf, offset + 1);
 /*     */     
-/*  51 */     if ((nullBits & 0x1) != 0) {
+/*  51 */     if ((nullBits & 0x2) != 0) {
 /*  52 */       int varPos0 = offset + 54 + buf.getIntLE(offset + 38);
 /*  53 */       int idLen = VarInt.peek(buf, varPos0);
 /*  54 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  55 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  56 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  58 */     if ((nullBits & 0x2) != 0) {
+/*  58 */     if ((nullBits & 0x4) != 0) {
 /*  59 */       int varPos1 = offset + 54 + buf.getIntLE(offset + 42);
 /*  60 */       int nameLen = VarInt.peek(buf, varPos1);
 /*  61 */       if (nameLen < 0) throw ProtocolException.negativeLength("Name", nameLen); 
 /*  62 */       if (nameLen > 4096000) throw ProtocolException.stringTooLong("Name", nameLen, 4096000); 
 /*  63 */       obj.name = PacketIO.readVarString(buf, varPos1, PacketIO.UTF8);
 /*     */     } 
-/*  65 */     if ((nullBits & 0x4) != 0) {
+/*  65 */     if ((nullBits & 0x8) != 0) {
 /*  66 */       int varPos2 = offset + 54 + buf.getIntLE(offset + 46);
 /*  67 */       int markerImageLen = VarInt.peek(buf, varPos2);
 /*  68 */       if (markerImageLen < 0) throw ProtocolException.negativeLength("MarkerImage", markerImageLen); 
@@ -91,19 +91,19 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  92 */     byte nullBits = buf.getByte(offset);
 /*  93 */     int maxEnd = 54;
-/*  94 */     if ((nullBits & 0x1) != 0) {
+/*  94 */     if ((nullBits & 0x2) != 0) {
 /*  95 */       int fieldOffset0 = buf.getIntLE(offset + 38);
 /*  96 */       int pos0 = offset + 54 + fieldOffset0;
 /*  97 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  98 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 100 */     if ((nullBits & 0x2) != 0) {
+/* 100 */     if ((nullBits & 0x4) != 0) {
 /* 101 */       int fieldOffset1 = buf.getIntLE(offset + 42);
 /* 102 */       int pos1 = offset + 54 + fieldOffset1;
 /* 103 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
 /* 104 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 106 */     if ((nullBits & 0x4) != 0) {
+/* 106 */     if ((nullBits & 0x8) != 0) {
 /* 107 */       int fieldOffset2 = buf.getIntLE(offset + 46);
 /* 108 */       int pos2 = offset + 54 + fieldOffset2;
 /* 109 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
@@ -123,10 +123,10 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 124 */     int startPos = buf.writerIndex();
 /* 125 */     byte nullBits = 0;
-/* 126 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 127 */     if (this.name != null) nullBits = (byte)(nullBits | 0x2); 
-/* 128 */     if (this.markerImage != null) nullBits = (byte)(nullBits | 0x4); 
-/* 129 */     if (this.transform != null) nullBits = (byte)(nullBits | 0x8); 
+/* 126 */     if (this.transform != null) nullBits = (byte)(nullBits | 0x1); 
+/* 127 */     if (this.id != null) nullBits = (byte)(nullBits | 0x2); 
+/* 128 */     if (this.name != null) nullBits = (byte)(nullBits | 0x4); 
+/* 129 */     if (this.markerImage != null) nullBits = (byte)(nullBits | 0x8); 
 /* 130 */     if (this.contextMenuItems != null) nullBits = (byte)(nullBits | 0x10); 
 /* 131 */     buf.writeByte(nullBits);
 /*     */     
@@ -191,7 +191,7 @@
 /* 191 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 194 */     if ((nullBits & 0x1) != 0) {
+/* 194 */     if ((nullBits & 0x2) != 0) {
 /* 195 */       int idOffset = buffer.getIntLE(offset + 38);
 /* 196 */       if (idOffset < 0) {
 /* 197 */         return ValidationResult.error("Invalid offset for Id");
@@ -214,7 +214,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 217 */     if ((nullBits & 0x2) != 0) {
+/* 217 */     if ((nullBits & 0x4) != 0) {
 /* 218 */       int nameOffset = buffer.getIntLE(offset + 42);
 /* 219 */       if (nameOffset < 0) {
 /* 220 */         return ValidationResult.error("Invalid offset for Name");
@@ -237,7 +237,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 240 */     if ((nullBits & 0x4) != 0) {
+/* 240 */     if ((nullBits & 0x8) != 0) {
 /* 241 */       int markerImageOffset = buffer.getIntLE(offset + 46);
 /* 242 */       if (markerImageOffset < 0) {
 /* 243 */         return ValidationResult.error("Invalid offset for MarkerImage");

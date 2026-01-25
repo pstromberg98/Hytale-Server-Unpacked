@@ -63,24 +63,21 @@
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 66 */     byte[] testData = "Test referral".getBytes();
-/*    */ 
-/*    */     
 /*    */     try {
-/* 70 */       playerRef.referToServer(host, port, testData);
+/* 67 */       playerRef.referToServer(host, port);
 /*    */       
-/* 72 */       if (isTargetingOther) {
-/* 73 */         context.sendMessage(Message.translation("server.commands.refer.success.other")
-/* 74 */             .param("username", playerRef.getUsername())
-/* 75 */             .param("host", host)
-/* 76 */             .param("port", port));
+/* 69 */       if (isTargetingOther) {
+/* 70 */         context.sendMessage(Message.translation("server.commands.refer.success.other")
+/* 71 */             .param("username", playerRef.getUsername())
+/* 72 */             .param("host", host)
+/* 73 */             .param("port", port));
 /*    */       } else {
-/* 78 */         context.sendMessage(Message.translation("server.commands.refer.success.self")
-/* 79 */             .param("host", host)
-/* 80 */             .param("port", port));
+/* 75 */         context.sendMessage(Message.translation("server.commands.refer.success.self")
+/* 76 */             .param("host", host)
+/* 77 */             .param("port", port));
 /*    */       } 
-/* 82 */     } catch (Exception e) {
-/* 83 */       context.sendMessage(Message.translation("server.commands.refer.failed").param("error", e.getMessage()));
+/* 79 */     } catch (Exception e) {
+/* 80 */       context.sendMessage(Message.translation("server.commands.refer.failed").param("error", e.getMessage()));
 /*    */     } 
 /*    */   }
 /*    */ }

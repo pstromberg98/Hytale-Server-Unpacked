@@ -118,38 +118,35 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ class ScriptedBrushListProvider
 /*     */   implements FileListProvider
 /*     */ {
 /*     */   @Nonnull
 /*     */   public List<FileListProvider.FileEntry> getFiles(@Nonnull Path currentDir, @Nonnull String searchQuery) {
-/* 129 */     DefaultAssetMap<String, ScriptedBrushAsset> assetMap = ScriptedBrushAsset.getAssetMap();
+/* 126 */     DefaultAssetMap<String, ScriptedBrushAsset> assetMap = ScriptedBrushAsset.getAssetMap();
 /*     */     
-/* 131 */     if (searchQuery.isEmpty()) {
-/* 132 */       return (List<FileListProvider.FileEntry>)assetMap.getAssetMap().keySet().stream()
-/* 133 */         .sorted()
-/* 134 */         .map(name -> new FileListProvider.FileEntry(name, false))
-/* 135 */         .collect(Collectors.toList());
+/* 128 */     if (searchQuery.isEmpty()) {
+/* 129 */       return (List<FileListProvider.FileEntry>)assetMap.getAssetMap().keySet().stream()
+/* 130 */         .sorted()
+/* 131 */         .map(name -> new FileListProvider.FileEntry(name, false))
+/* 132 */         .collect(Collectors.toList());
 /*     */     }
 /*     */ 
 /*     */     
-/* 139 */     ObjectArrayList<FileListProvider.FileEntry> objectArrayList = new ObjectArrayList();
-/* 140 */     for (String name : assetMap.getAssetMap().keySet()) {
-/* 141 */       int score = StringCompareUtil.getFuzzyDistance(name, searchQuery, Locale.ENGLISH);
-/* 142 */       if (score > 0) {
-/* 143 */         objectArrayList.add(new FileListProvider.FileEntry(name, name, false, score));
+/* 136 */     ObjectArrayList<FileListProvider.FileEntry> objectArrayList = new ObjectArrayList();
+/* 137 */     for (String name : assetMap.getAssetMap().keySet()) {
+/* 138 */       int score = StringCompareUtil.getFuzzyDistance(name, searchQuery, Locale.ENGLISH);
+/* 139 */       if (score > 0) {
+/* 140 */         objectArrayList.add(new FileListProvider.FileEntry(name, name, false, false, score));
 /*     */       }
 /*     */     } 
 /*     */     
-/* 147 */     objectArrayList.sort(Comparator.<FileListProvider.FileEntry>comparingInt(FileListProvider.FileEntry::matchScore).reversed());
+/* 144 */     objectArrayList.sort(Comparator.<FileListProvider.FileEntry>comparingInt(FileListProvider.FileEntry::matchScore).reversed());
 /*     */     
-/* 149 */     if (objectArrayList.size() > 50) {
-/* 150 */       return objectArrayList.subList(0, 50);
+/* 146 */     if (objectArrayList.size() > 50) {
+/* 147 */       return objectArrayList.subList(0, 50);
 /*     */     }
-/* 152 */     return (List<FileListProvider.FileEntry>)objectArrayList;
+/* 149 */     return (List<FileListProvider.FileEntry>)objectArrayList;
 /*     */   }
 /*     */ }
 

@@ -4,6 +4,11 @@
 /*    */ import com.hypixel.hytale.codec.lookup.CodecMapCodec;
 /*    */ import com.hypixel.hytale.protocol.Selector;
 /*    */ import com.hypixel.hytale.server.core.io.NetworkSerializable;
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -20,14 +25,17 @@
 /*    */ public abstract class SelectorType
 /*    */   implements NetworkSerializable<Selector>
 /*    */ {
-/* 23 */   public static final CodecMapCodec<SelectorType> CODEC = new CodecMapCodec();
+/*    */   @Nonnull
+/* 29 */   public static final CodecMapCodec<SelectorType> CODEC = new CodecMapCodec();
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
-/* 28 */   public static final BuilderCodec<SelectorType> BASE_CODEC = BuilderCodec.abstractBuilder(SelectorType.class)
-/* 29 */     .build();
+/*    */   @Nonnull
+/* 35 */   public static final BuilderCodec<SelectorType> BASE_CODEC = BuilderCodec.abstractBuilder(SelectorType.class)
+/* 36 */     .build();
 /*    */   
+/*    */   @Nonnull
 /*    */   public abstract Selector newSelector();
 /*    */ }
 

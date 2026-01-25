@@ -25,45 +25,48 @@
 /*    */ 
 /*    */     
 /*    */     public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 28 */       AmbienceTracker tracker = (AmbienceTracker)holder.getComponent(AmbienceTracker.getComponentType());
-/* 29 */       PlayerRef playerRef = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 28 */       AmbienceTracker ambienceTrackerComponent = (AmbienceTracker)holder.getComponent(AmbienceTracker.getComponentType());
+/* 29 */       assert ambienceTrackerComponent != null;
 /*    */       
-/* 31 */       UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
-/* 32 */       pooledPacket.environmentIndex = 0;
-/* 33 */       playerRef.getPacketHandler().write((Packet)pooledPacket);
+/* 31 */       PlayerRef playerRefComponent = (PlayerRef)holder.getComponent(PlayerRef.getComponentType());
+/* 32 */       assert playerRefComponent != null;
+/*    */       
+/* 34 */       UpdateEnvironmentMusic pooledPacket = ambienceTrackerComponent.getMusicPacket();
+/* 35 */       pooledPacket.environmentIndex = 0;
+/* 36 */       playerRefComponent.getPacketHandler().write((Packet)pooledPacket);
 /*    */     }
 /*    */ 
 /*    */     
 /*    */     @Nullable
 /*    */     public Query<EntityStore> getQuery() {
-/* 39 */       return (Query<EntityStore>)PlayerRef.getComponentType();
+/* 42 */       return (Query<EntityStore>)Query.and(new Query[] { (Query)PlayerRef.getComponentType(), (Query)AmbienceTracker.getComponentType() });
 /*    */     }
 /*    */   }
 /*    */   
 /*    */   public static class Tick
 /*    */     extends EntityTickingSystem<EntityStore> {
 /*    */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 46 */       AmbienceResource ambienceResource = (AmbienceResource)store.getResource(AmbienceResource.getResourceType());
-/* 47 */       AmbienceTracker tracker = (AmbienceTracker)archetypeChunk.getComponent(index, AmbienceTracker.getComponentType());
-/* 48 */       PlayerRef playerRef = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
+/* 49 */       AmbienceResource ambienceResource = (AmbienceResource)store.getResource(AmbienceResource.getResourceType());
+/* 50 */       AmbienceTracker tracker = (AmbienceTracker)archetypeChunk.getComponent(index, AmbienceTracker.getComponentType());
+/* 51 */       PlayerRef playerRef = (PlayerRef)archetypeChunk.getComponent(index, PlayerRef.getComponentType());
 /*    */       
-/* 50 */       int have = tracker.getForcedMusicIndex();
-/* 51 */       int desired = ambienceResource.getForcedMusicIndex();
-/* 52 */       if (have == desired) {
+/* 53 */       int have = tracker.getForcedMusicIndex();
+/* 54 */       int desired = ambienceResource.getForcedMusicIndex();
+/* 55 */       if (have == desired) {
 /*    */         return;
 /*    */       }
 /*    */       
-/* 56 */       tracker.setForcedMusicIndex(desired);
+/* 59 */       tracker.setForcedMusicIndex(desired);
 /*    */       
-/* 58 */       UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
-/* 59 */       pooledPacket.environmentIndex = desired;
-/* 60 */       playerRef.getPacketHandler().write((Packet)pooledPacket);
+/* 61 */       UpdateEnvironmentMusic pooledPacket = tracker.getMusicPacket();
+/* 62 */       pooledPacket.environmentIndex = desired;
+/* 63 */       playerRef.getPacketHandler().write((Packet)pooledPacket);
 /*    */     }
 /*    */ 
 /*    */     
 /*    */     @Nullable
 /*    */     public Query<EntityStore> getQuery() {
-/* 66 */       return ForcedMusicSystems.TICK_QUERY;
+/* 69 */       return ForcedMusicSystems.TICK_QUERY;
 /*    */     }
 /*    */   }
 /*    */ }

@@ -17,49 +17,44 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class ChunkUnloadCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_CHUNK_UNLOAD_ALREADY_UNLOADED = Message.translation("server.commands.chunk.unload.alreadyUnloaded");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_CHUNK_UNLOAD_SUCCESS = Message.translation("server.commands.chunk.unload.success");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 32 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.unload.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
+/* 27 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.unload.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkUnloadCommand() {
-/* 38 */     super("unload", "server.commands.chunk.unload.desc");
+/* 33 */     super("unload", "server.commands.chunk.unload.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 43 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
-/* 44 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
+/* 38 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
+/* 39 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
 /*    */     
-/* 46 */     ChunkStore chunkComponentStore = world.getChunkStore();
-/* 47 */     long indexChunk = ChunkUtil.indexChunk(position.x, position.y);
-/* 48 */     Ref<ChunkStore> chunkRef = chunkComponentStore.getChunkReference(indexChunk);
-/* 49 */     if (chunkRef == null) {
-/* 50 */       context.sendMessage(MESSAGE_COMMANDS_CHUNK_UNLOAD_ALREADY_UNLOADED
-/* 51 */           .param("chunkX", position.x)
-/* 52 */           .param("chunkZ", position.y)
-/* 53 */           .param("worldName", world.getName()));
+/* 41 */     ChunkStore chunkComponentStore = world.getChunkStore();
+/* 42 */     long indexChunk = ChunkUtil.indexChunk(position.x, position.y);
+/* 43 */     Ref<ChunkStore> chunkRef = chunkComponentStore.getChunkReference(indexChunk);
+/* 44 */     if (chunkRef == null) {
+/* 45 */       context.sendMessage(Message.translation("server.commands.chunk.unload.alreadyUnloaded")
+/* 46 */           .param("chunkX", position.x)
+/* 47 */           .param("chunkZ", position.y)
+/* 48 */           .param("worldName", world.getName()));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 57 */     chunkComponentStore.remove(chunkRef, RemoveReason.UNLOAD);
-/* 58 */     world.getNotificationHandler().updateChunk(indexChunk);
-/* 59 */     context.sendMessage(MESSAGE_COMMANDS_CHUNK_UNLOAD_SUCCESS
-/* 60 */         .param("chunkX", position.x)
-/* 61 */         .param("chunkZ", position.y)
-/* 62 */         .param("worldName", world.getName()));
+/* 52 */     chunkComponentStore.remove(chunkRef, RemoveReason.UNLOAD);
+/* 53 */     world.getNotificationHandler().updateChunk(indexChunk);
+/* 54 */     context.sendMessage(Message.translation("server.commands.chunk.unload.success")
+/* 55 */         .param("chunkX", position.x)
+/* 56 */         .param("chunkZ", position.y)
+/* 57 */         .param("worldName", world.getName()));
 /*    */   }
 /*    */ }
 

@@ -61,32 +61,38 @@
 /* 61 */     Vector3i absMax = VectorUtil.fromOperation(value -> Math.abs(value.from(this.maxInclusive)));
 /* 62 */     return Vector3i.max(absMin, absMax);
 /*    */   }
+/*    */   
+/*    */   @Nonnull
+/*    */   public Bounds3i toBounds3i() {
+/* 67 */     return new Bounds3i(this.minInclusive, this.maxExclusive);
+/*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public SpaceSize clone() {
-/* 68 */     return new SpaceSize(this.minInclusive, this.maxExclusive);
+/* 73 */     return new SpaceSize(this.minInclusive, this.maxExclusive);
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public static SpaceSize merge(@Nonnull SpaceSize a, @Nonnull SpaceSize b) {
-/* 73 */     return new SpaceSize(Vector3i.min(a.minInclusive, b.minInclusive), Vector3i.max(a.maxExclusive, b.maxExclusive));
+/* 78 */     return new SpaceSize(Vector3i.min(a.minInclusive, b.minInclusive), Vector3i.max(a.maxExclusive, b.maxExclusive));
 /*    */   }
+/*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public static SpaceSize stack(@Nonnull SpaceSize a, @Nonnull SpaceSize b) {
-/* 79 */     SpaceSize aMovedToMin = a.clone().moveBy(b.minInclusive);
-/* 80 */     SpaceSize aMovedToMax = a.clone().moveBy(b.maxInclusive);
+/* 85 */     SpaceSize aMovedToMin = a.clone().moveBy(b.minInclusive);
+/* 86 */     SpaceSize aMovedToMax = a.clone().moveBy(b.maxInclusive);
 /*    */     
-/* 82 */     Vector3i stackedMin = Vector3i.min(aMovedToMin.minInclusive, b.minInclusive);
-/* 83 */     Vector3i stackedMax = Vector3i.max(aMovedToMax.maxExclusive, b.maxExclusive);
-/* 84 */     return new SpaceSize(stackedMin, stackedMax);
+/* 88 */     Vector3i stackedMin = Vector3i.min(aMovedToMin.minInclusive, b.minInclusive);
+/* 89 */     Vector3i stackedMax = Vector3i.max(aMovedToMax.maxExclusive, b.maxExclusive);
+/* 90 */     return new SpaceSize(stackedMin, stackedMax);
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public static SpaceSize empty() {
-/* 89 */     return new SpaceSize(new Vector3i(), new Vector3i());
+/* 95 */     return new SpaceSize(new Vector3i(), new Vector3i());
 /*    */   }
 /*    */ }
 

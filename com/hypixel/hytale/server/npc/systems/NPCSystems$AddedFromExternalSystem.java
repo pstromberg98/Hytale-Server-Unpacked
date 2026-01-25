@@ -205,7 +205,7 @@
 /* 205 */     this.npcComponentType = npcComponentType;
 /* 206 */     this.transformComponentType = TransformComponent.getComponentType();
 /* 207 */     this.dependencies = Set.of(new SystemDependency(Order.AFTER, NPCSystems.AddedSystem.class));
-/* 208 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)Query.or(new Query[] { (Query)FromWorldGen.getComponentType(), (Query)FromPrefab.getComponentType() }) });
+/* 208 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)this.transformComponentType, (Query)Query.or(new Query[] { (Query)FromWorldGen.getComponentType(), (Query)FromPrefab.getComponentType() }) });
 /*     */   }
 /*     */ 
 /*     */   

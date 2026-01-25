@@ -682,40 +682,41 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class CorpseRemoval
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   @Nonnull
-/* 689 */   private static final ComponentType<EntityStore, DeferredCorpseRemoval> DEFERRED_CORPSE_REMOVAL_COMPONENT_TYPE = DeferredCorpseRemoval.getComponentType();
+/* 690 */   private static final ComponentType<EntityStore, DeferredCorpseRemoval> DEFERRED_CORPSE_REMOVAL_COMPONENT_TYPE = DeferredCorpseRemoval.getComponentType();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 695 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
-/* 696 */         (Query)DeathComponent.getComponentType(), 
-/* 697 */         (Query)Query.not((Query)Player.getComponentType())
+/* 696 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] {
+/* 697 */         (Query)DeathComponent.getComponentType(), 
+/* 698 */         (Query)Query.not((Query)Player.getComponentType())
 /*     */       });
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 703 */     return QUERY;
+/* 704 */     return QUERY;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 708 */     DeathComponent deathComponent = (DeathComponent)archetypeChunk.getComponent(index, DeathComponent.getComponentType());
-/* 709 */     assert deathComponent != null;
+/* 709 */     DeathComponent deathComponent = (DeathComponent)archetypeChunk.getComponent(index, DeathComponent.getComponentType());
+/* 710 */     assert deathComponent != null;
 /*     */     
-/* 711 */     InteractionChain deathInteractionChain = deathComponent.getInteractionChain();
+/* 712 */     InteractionChain deathInteractionChain = deathComponent.getInteractionChain();
 /*     */ 
 /*     */     
-/* 714 */     if (deathInteractionChain != null && deathInteractionChain.getServerState() == InteractionState.NotFinished)
+/* 715 */     if (deathInteractionChain != null && deathInteractionChain.getServerState() == InteractionState.NotFinished)
 /*     */       return; 
-/* 716 */     DeferredCorpseRemoval corpseRemoval = (DeferredCorpseRemoval)archetypeChunk.getComponent(index, DEFERRED_CORPSE_REMOVAL_COMPONENT_TYPE);
-/* 717 */     if (corpseRemoval == null || corpseRemoval.tick(dt))
-/* 718 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
+/* 717 */     DeferredCorpseRemoval corpseRemoval = (DeferredCorpseRemoval)archetypeChunk.getComponent(index, DEFERRED_CORPSE_REMOVAL_COMPONENT_TYPE);
+/* 718 */     if (corpseRemoval == null || corpseRemoval.tick(dt))
+/* 719 */       commandBuffer.removeEntity(archetypeChunk.getReferenceTo(index), RemoveReason.REMOVE); 
 /*     */   }
 /*     */ }
 

@@ -2330,10 +2330,13 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ class ProcessingCounter
 /*      */   implements Lock
 /*      */ {
-/* 2336 */   private int count = 0;
+/* 2339 */   private int count = 0;
 /*      */ 
 /*      */ 
 /*      */ 
@@ -2341,38 +2344,38 @@
 /*      */ 
 /*      */   
 /*      */   public boolean isHeld() {
-/* 2344 */     return (this.count > 0);
+/* 2347 */     return (this.count > 0);
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void lock() {
-/* 2349 */     this.count++;
+/* 2352 */     this.count++;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void lockInterruptibly() {
-/* 2354 */     throw new UnsupportedOperationException("lockInterruptibly() is not supported");
+/* 2357 */     throw new UnsupportedOperationException("lockInterruptibly() is not supported");
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean tryLock() {
-/* 2359 */     throw new UnsupportedOperationException("tryLock() is not supported");
+/* 2362 */     throw new UnsupportedOperationException("tryLock() is not supported");
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean tryLock(long time, @Nonnull TimeUnit unit) {
-/* 2364 */     throw new UnsupportedOperationException("tryLock() is not supported");
+/* 2367 */     throw new UnsupportedOperationException("tryLock() is not supported");
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void unlock() {
-/* 2369 */     this.count--;
+/* 2372 */     this.count--;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Condition newCondition() {
-/* 2375 */     throw new UnsupportedOperationException("Conditions are not supported");
+/* 2378 */     throw new UnsupportedOperationException("Conditions are not supported");
 /*      */   }
 /*      */ }
 

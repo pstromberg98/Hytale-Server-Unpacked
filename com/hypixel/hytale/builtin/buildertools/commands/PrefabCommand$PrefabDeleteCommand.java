@@ -216,55 +216,121 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class PrefabDeleteCommand
 /*     */   extends CommandBase
 /*     */ {
 /*     */   @Nonnull
-/* 223 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.prefab.delete.name.desc", (ArgumentType)ArgTypes.STRING);
+/* 289 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.prefab.delete.name.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public PrefabDeleteCommand() {
-/* 229 */     super("delete", "server.commands.prefab.delete.desc", true);
-/* 230 */     requirePermission("hytale.editor.prefab.manage");
+/* 295 */     super("delete", "server.commands.prefab.delete.desc", true);
+/* 296 */     requirePermission("hytale.editor.prefab.manage");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void executeSync(@Nonnull CommandContext context) {
-/* 235 */     String name = (String)this.nameArg.get(context);
-/* 236 */     if (!name.endsWith(".prefab.json")) {
-/* 237 */       name = name + ".prefab.json";
+/* 301 */     String name = (String)this.nameArg.get(context);
+/* 302 */     if (!name.endsWith(".prefab.json")) {
+/* 303 */       name = name + ".prefab.json";
 /*     */     }
-/* 239 */     PrefabStore module = PrefabStore.get();
-/* 240 */     Path serverPrefabsPath = module.getServerPrefabsPath();
-/* 241 */     Path resolve = serverPrefabsPath.resolve(name);
+/* 305 */     PrefabStore module = PrefabStore.get();
+/* 306 */     Path serverPrefabsPath = module.getServerPrefabsPath();
+/* 307 */     Path resolve = serverPrefabsPath.resolve(name);
 /*     */     try {
-/* 243 */       Ref<EntityStore> ref = context.senderAsPlayerRef();
-/* 244 */       boolean isOwner = false;
-/* 245 */       if (ref != null && ref.isValid()) {
-/* 246 */         Store<EntityStore> store = ref.getStore();
-/* 247 */         PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
-/* 248 */         if (playerRefComponent != null) {
-/* 249 */           isOwner = SingleplayerModule.isOwner(playerRefComponent);
+/* 309 */       Ref<EntityStore> ref = context.senderAsPlayerRef();
+/* 310 */       boolean isOwner = false;
+/* 311 */       if (ref != null && ref.isValid()) {
+/* 312 */         Store<EntityStore> store = ref.getStore();
+/* 313 */         PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 314 */         if (playerRefComponent != null) {
+/* 315 */           isOwner = SingleplayerModule.isOwner(playerRefComponent);
 /*     */         }
 /*     */       } 
-/* 252 */       if (!PathUtil.isChildOf(serverPrefabsPath, resolve) && !isOwner) {
-/* 253 */         context.sendMessage(Message.translation("server.builderTools.attemptedToSaveOutsidePrefabsDir"));
+/* 318 */       if (!PathUtil.isChildOf(serverPrefabsPath, resolve) && !isOwner) {
+/* 319 */         context.sendMessage(Message.translation("server.builderTools.attemptedToSaveOutsidePrefabsDir"));
 /*     */         return;
 /*     */       } 
-/* 256 */       Path relativize = PathUtil.relativize(serverPrefabsPath, resolve);
-/* 257 */       if (Files.isRegularFile(resolve, new java.nio.file.LinkOption[0])) {
-/* 258 */         Files.delete(resolve);
-/* 259 */         context.sendMessage(Message.translation("server.builderTools.prefab.deleted")
-/* 260 */             .param("name", relativize.toString()));
+/* 322 */       Path relativize = PathUtil.relativize(serverPrefabsPath, resolve);
+/* 323 */       if (Files.isRegularFile(resolve, new java.nio.file.LinkOption[0])) {
+/* 324 */         Files.delete(resolve);
+/* 325 */         context.sendMessage(Message.translation("server.builderTools.prefab.deleted")
+/* 326 */             .param("name", relativize.toString()));
 /*     */       } else {
-/* 262 */         context.sendMessage(Message.translation("server.builderTools.prefab.prefabNotFound")
-/* 263 */             .param("name", relativize.toString()));
+/* 328 */         context.sendMessage(Message.translation("server.builderTools.prefab.prefabNotFound")
+/* 329 */             .param("name", relativize.toString()));
 /*     */       } 
-/* 265 */     } catch (IOException e) {
-/* 266 */       context.sendMessage(Message.translation("server.builderTools.prefab.errorOccured")
-/* 267 */           .param("reason", e.getMessage()));
+/* 331 */     } catch (IOException e) {
+/* 332 */       context.sendMessage(Message.translation("server.builderTools.prefab.errorOccured")
+/* 333 */           .param("reason", e.getMessage()));
 /*     */     } 
 /*     */   }
 /*     */ }

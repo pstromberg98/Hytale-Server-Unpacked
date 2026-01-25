@@ -204,12 +204,18 @@
 /*     */             playerComponent.sendMessage(Message.translation("server.general.entityNotFound").param("id", entityId));
 /*     */             return;
 /*     */           } 
+/*     */           Player targetPlayerComponent = (Player)store.getComponent(entityReference, Player.getComponentType());
+/*     */           if (targetPlayerComponent != null) {
+/*     */             playerComponent.sendMessage(Message.translation("server.builderTools.entityTool.cannotTargetPlayer"));
+/*     */             return;
+/*     */           } 
 /*     */           LOGGER.at(Level.INFO).log("%s: %s", this.packetHandler.getIdentifier(), packet);
 /*     */           switch (packet.action) {
 /*     */             case HistoryUndo:
 /*     */               uuidComponent = (UUIDComponent)store.getComponent(entityReference, UUIDComponent.getComponentType());
-/*     */               if (uuidComponent != null)
-/*     */                 CommandManager.get().handleCommand((CommandSender)playerComponent, "npc freeze --toggle --entity " + String.valueOf(uuidComponent.getUuid())); 
+/*     */               if (uuidComponent != null) {
+/*     */                 CommandManager.get().handleCommand((CommandSender)playerComponent, "npc freeze --toggle --entity " + String.valueOf(uuidComponent.getUuid()));
+/*     */               }
 /*     */               break;
 /*     */             case HistoryRedo:
 /*     */               world.execute(());
@@ -222,16 +228,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolGeneralAction packet) {
-/* 225 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 226 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 227 */     if (ref == null || !ref.isValid()) {
-/* 228 */       throw new RuntimeException("Unable to process BuilderToolGeneralAction packet. Player ref is invalid!");
+/* 231 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 232 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 233 */     if (ref == null || !ref.isValid()) {
+/* 234 */       throw new RuntimeException("Unable to process BuilderToolGeneralAction packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 231 */     Store<EntityStore> store = ref.getStore();
-/* 232 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 237 */     Store<EntityStore> store = ref.getStore();
+/* 238 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 234 */     world.execute(() -> {
+/* 240 */     world.execute(() -> {
 /*     */           TransformComponent transformComponent;
 /*     */           BuilderToolsPlugin.BuilderState builderState;
 /*     */           Vector3d position;
@@ -278,16 +284,16 @@
 /*     */           } 
 /*     */         });
 /*     */   } public void handle(@Nonnull BuilderToolSelectionUpdate packet) {
-/* 281 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 282 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 283 */     if (ref == null || !ref.isValid()) {
-/* 284 */       throw new RuntimeException("Unable to process BuilderToolSelectionUpdate packet. Player ref is invalid!");
+/* 287 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 288 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 289 */     if (ref == null || !ref.isValid()) {
+/* 290 */       throw new RuntimeException("Unable to process BuilderToolSelectionUpdate packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 287 */     Store<EntityStore> store = ref.getStore();
-/* 288 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 293 */     Store<EntityStore> store = ref.getStore();
+/* 294 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 290 */     world.execute(() -> {
+/* 296 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.use")) {
 /*     */             return;
@@ -298,16 +304,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(BuilderToolSelectionToolAskForClipboard packet) {
-/* 301 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 302 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 303 */     if (ref == null || !ref.isValid()) {
-/* 304 */       throw new RuntimeException("Unable to process BuilderToolSelectionToolAskForClipboard packet. Player ref is invalid!");
+/* 307 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 308 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 309 */     if (ref == null || !ref.isValid()) {
+/* 310 */       throw new RuntimeException("Unable to process BuilderToolSelectionToolAskForClipboard packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 307 */     Store<EntityStore> store = ref.getStore();
-/* 308 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 313 */     Store<EntityStore> store = ref.getStore();
+/* 314 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 310 */     world.execute(() -> {
+/* 316 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.clipboard")) {
 /*     */             return;
@@ -346,25 +352,34 @@
 /*     */ 
 /*     */   
 /*     */   public int toInt(float value) {
-/* 349 */     return (int)Math.floor(value + 0.1D);
+/* 355 */     return (int)Math.floor(value + 0.1D);
 /*     */   }
 /*     */   
 /*     */   private void handle(@Nonnull BuilderToolSelectionTransform packet) {
-/* 353 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 354 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 355 */     if (ref == null || !ref.isValid()) {
-/* 356 */       throw new RuntimeException("Unable to process BuilderToolSelectionTransform packet. Player ref is invalid!");
+/* 359 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 360 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 361 */     if (ref == null || !ref.isValid()) {
+/* 362 */       throw new RuntimeException("Unable to process BuilderToolSelectionTransform packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 359 */     Store<EntityStore> store = ref.getStore();
-/* 360 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 365 */     Store<EntityStore> store = ref.getStore();
+/* 366 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 362 */     world.execute(() -> {
+/* 368 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.clipboard")) {
 /*     */             return;
 /*     */           }
 /*     */           LOGGER.at(Level.INFO).log("%s: %s", this.packetHandler.getIdentifier(), packet);
+/*     */           boolean keepEmptyBlocks = true;
+/*     */           BuilderTool builderTool = BuilderTool.getActiveBuilderTool(playerComponent);
+/*     */           if (builderTool != null && builderTool.getId().equals("Selection")) {
+/*     */             BuilderTool.ArgData args = builderTool.getItemArgData(playerComponent.getInventory().getItemInHand());
+/*     */             if (args != null && args.tool() != null) {
+/*     */               keepEmptyBlocks = ((Boolean)args.tool().getOrDefault("KeepEmptyBlocks", Boolean.valueOf(true))).booleanValue();
+/*     */             }
+/*     */           } 
+/*     */           boolean finalKeepEmptyBlocks = keepEmptyBlocks;
 /*     */           float[] tmx = new float[16];
 /*     */           for (int i = 0; i < packet.transformationMatrix.length; i++) {
 /*     */             tmx[i] = toInt(packet.transformationMatrix[i]);
@@ -457,18 +472,19 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolExtrudeAction packet) {
-/* 462 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 463 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 464 */     if (ref == null || !ref.isValid()) {
-/* 465 */       throw new RuntimeException("Unable to process BuilderToolExtrudeAction packet. Player ref is invalid!");
+/* 478 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 479 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 480 */     if (ref == null || !ref.isValid()) {
+/* 481 */       throw new RuntimeException("Unable to process BuilderToolExtrudeAction packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 468 */     Store<EntityStore> store = ref.getStore();
-/* 469 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 484 */     Store<EntityStore> store = ref.getStore();
+/* 485 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 471 */     world.execute(() -> {
+/* 487 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.modify")) {
 /*     */             return;
@@ -494,16 +510,16 @@
 /*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolStackArea packet) {
-/* 497 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 498 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 499 */     if (ref == null || !ref.isValid()) {
-/* 500 */       throw new RuntimeException("Unable to process BuilderToolStackArea packet. Player ref is invalid!");
+/* 513 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 514 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 515 */     if (ref == null || !ref.isValid()) {
+/* 516 */       throw new RuntimeException("Unable to process BuilderToolStackArea packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 503 */     Store<EntityStore> store = ref.getStore();
-/* 504 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 519 */     Store<EntityStore> store = ref.getStore();
+/* 520 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 506 */     world.execute(() -> {
+/* 522 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           assert playerComponent != null;
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.clipboard")) {
@@ -519,20 +535,20 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Vector3i fromBlockPosition(@Nonnull BlockPosition position) {
-/* 522 */     return new Vector3i(position.x, position.y, position.z);
+/* 538 */     return new Vector3i(position.x, position.y, position.z);
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolRotateClipboard packet) {
-/* 526 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 527 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 528 */     if (ref == null || !ref.isValid()) {
-/* 529 */       throw new RuntimeException("Unable to process BuilderToolPasteClipboard packet. Player ref is invalid!");
+/* 542 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 543 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 544 */     if (ref == null || !ref.isValid()) {
+/* 545 */       throw new RuntimeException("Unable to process BuilderToolPasteClipboard packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 532 */     Store<EntityStore> store = ref.getStore();
-/* 533 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 548 */     Store<EntityStore> store = ref.getStore();
+/* 549 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 535 */     world.execute(() -> {
+/* 551 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.clipboard")) {
 /*     */             return;
@@ -547,16 +563,16 @@
 /*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolPasteClipboard packet) {
-/* 550 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 551 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 552 */     if (ref == null || !ref.isValid()) {
-/* 553 */       throw new RuntimeException("Unable to process BuilderToolPasteClipboard packet. Player ref is invalid!");
+/* 566 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 567 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 568 */     if (ref == null || !ref.isValid()) {
+/* 569 */       throw new RuntimeException("Unable to process BuilderToolPasteClipboard packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 556 */     Store<EntityStore> store = ref.getStore();
-/* 557 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 572 */     Store<EntityStore> store = ref.getStore();
+/* 573 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 559 */     world.execute(() -> {
+/* 575 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.selection.clipboard")) {
 /*     */             return;
@@ -567,16 +583,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolLineAction packet) {
-/* 570 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 571 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 572 */     if (ref == null || !ref.isValid()) {
-/* 573 */       throw new RuntimeException("Unable to process BuilderToolLineAction packet. Player ref is invalid!");
+/* 586 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 587 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 588 */     if (ref == null || !ref.isValid()) {
+/* 589 */       throw new RuntimeException("Unable to process BuilderToolLineAction packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 576 */     Store<EntityStore> store = ref.getStore();
-/* 577 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 592 */     Store<EntityStore> store = ref.getStore();
+/* 593 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 579 */     world.execute(() -> {
+/* 595 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.brush.use")) {
 /*     */             return;
@@ -609,16 +625,16 @@
 /*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolOnUseInteraction packet) {
-/* 612 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 613 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 614 */     if (ref == null || !ref.isValid()) {
-/* 615 */       throw new RuntimeException("Unable to process BuilderToolOnUseInteraction packet. Player ref is invalid!");
+/* 628 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 629 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 630 */     if (ref == null || !ref.isValid()) {
+/* 631 */       throw new RuntimeException("Unable to process BuilderToolOnUseInteraction packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 618 */     Store<EntityStore> store = ref.getStore();
-/* 619 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 634 */     Store<EntityStore> store = ref.getStore();
+/* 635 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 621 */     world.execute(() -> {
+/* 637 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent, "hytale.editor.brush.use"))
 /*     */             return; 
@@ -628,16 +644,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolSetEntityTransform packet) {
-/* 631 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 632 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 633 */     if (ref == null || !ref.isValid()) {
-/* 634 */       throw new RuntimeException("Unable to process BuilderToolSetEntityTransform packet. Player ref is invalid!");
+/* 647 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 648 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 649 */     if (ref == null || !ref.isValid()) {
+/* 650 */       throw new RuntimeException("Unable to process BuilderToolSetEntityTransform packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 637 */     Store<EntityStore> store = ref.getStore();
-/* 638 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 653 */     Store<EntityStore> store = ref.getStore();
+/* 654 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 640 */     world.execute(() -> {
+/* 656 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           assert playerComponent != null;
 /*     */           if (!hasPermission(playerComponent)) {
@@ -676,16 +692,16 @@
 /*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull PrefabUnselectPrefab packet) {
-/* 679 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 680 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 681 */     if (ref == null || !ref.isValid()) {
-/* 682 */       throw new RuntimeException("Unable to process PrefabUnselectPrefab packet. Player ref is invalid!");
+/* 695 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 696 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 697 */     if (ref == null || !ref.isValid()) {
+/* 698 */       throw new RuntimeException("Unable to process PrefabUnselectPrefab packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 685 */     Store<EntityStore> store = ref.getStore();
-/* 686 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 701 */     Store<EntityStore> store = ref.getStore();
+/* 702 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 688 */     world.execute(() -> {
+/* 704 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent)) {
 /*     */             return;
@@ -708,16 +724,16 @@
 /*     */ 
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolSetEntityScale packet) {
-/* 711 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 712 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 713 */     if (ref == null || !ref.isValid()) {
-/* 714 */       throw new RuntimeException("Unable to process BuilderToolSetEntityScale packet. Player ref is invalid!");
+/* 727 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 728 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 729 */     if (ref == null || !ref.isValid()) {
+/* 730 */       throw new RuntimeException("Unable to process BuilderToolSetEntityScale packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 717 */     Store<EntityStore> store = ref.getStore();
-/* 718 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 733 */     Store<EntityStore> store = ref.getStore();
+/* 734 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 720 */     world.execute(() -> {
+/* 736 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent)) {
 /*     */             return;
@@ -740,16 +756,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolSetEntityPickupEnabled packet) {
-/* 743 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 744 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 745 */     if (ref == null || !ref.isValid()) {
-/* 746 */       throw new RuntimeException("Unable to process BuilderToolSetEntityPickupEnabled packet. Player ref is invalid!");
+/* 759 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 760 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 761 */     if (ref == null || !ref.isValid()) {
+/* 762 */       throw new RuntimeException("Unable to process BuilderToolSetEntityPickupEnabled packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 749 */     Store<EntityStore> store = ref.getStore();
-/* 750 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 765 */     Store<EntityStore> store = ref.getStore();
+/* 766 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 752 */     world.execute(() -> {
+/* 768 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent)) {
 /*     */             return;
@@ -785,16 +801,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolSetEntityLight packet) {
-/* 788 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 789 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 790 */     if (ref == null || !ref.isValid()) {
-/* 791 */       throw new RuntimeException("Unable to process BuilderToolSetEntityLight packet. Player ref is invalid!");
+/* 804 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 805 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 806 */     if (ref == null || !ref.isValid()) {
+/* 807 */       throw new RuntimeException("Unable to process BuilderToolSetEntityLight packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 794 */     Store<EntityStore> store = ref.getStore();
-/* 795 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 810 */     Store<EntityStore> store = ref.getStore();
+/* 811 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 797 */     world.execute(() -> {
+/* 813 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent))
 /*     */             return; 
@@ -813,16 +829,16 @@
 /*     */   }
 /*     */   
 /*     */   public void handle(@Nonnull BuilderToolSetNPCDebug packet) {
-/* 816 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
-/* 817 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 818 */     if (ref == null || !ref.isValid()) {
-/* 819 */       throw new RuntimeException("Unable to process BuilderToolSetNPCDebug packet. Player ref is invalid!");
+/* 832 */     PlayerRef playerRef = this.packetHandler.getPlayerRef();
+/* 833 */     Ref<EntityStore> ref = playerRef.getReference();
+/* 834 */     if (ref == null || !ref.isValid()) {
+/* 835 */       throw new RuntimeException("Unable to process BuilderToolSetNPCDebug packet. Player ref is invalid!");
 /*     */     }
 /*     */     
-/* 822 */     Store<EntityStore> store = ref.getStore();
-/* 823 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 838 */     Store<EntityStore> store = ref.getStore();
+/* 839 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 825 */     world.execute(() -> {
+/* 841 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (!hasPermission(playerComponent))
 /*     */             return; 

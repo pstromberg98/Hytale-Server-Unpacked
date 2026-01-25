@@ -1,10 +1,11 @@
 /*    */ package com.hypixel.hytale.server.core.asset.type.gameplay.respawn;
 /*    */ 
 /*    */ import com.hypixel.hytale.codec.lookup.CodecMapCodec;
-/*    */ import com.hypixel.hytale.component.CommandBuffer;
+/*    */ import com.hypixel.hytale.component.ComponentAccessor;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*    */ import java.util.concurrent.CompletableFuture;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
@@ -19,9 +20,9 @@
 /*    */ public interface RespawnController
 /*    */ {
 /*    */   @Nonnull
-/* 22 */   public static final CodecMapCodec<RespawnController> CODEC = new CodecMapCodec("Type");
+/* 23 */   public static final CodecMapCodec<RespawnController> CODEC = new CodecMapCodec("Type");
 /*    */   
-/*    */   void respawnPlayer(@Nonnull World paramWorld, @Nonnull Ref<EntityStore> paramRef, @Nonnull CommandBuffer<EntityStore> paramCommandBuffer);
+/*    */   CompletableFuture<Void> respawnPlayer(@Nonnull World paramWorld, @Nonnull Ref<EntityStore> paramRef, @Nonnull ComponentAccessor<EntityStore> paramComponentAccessor);
 /*    */ }
 
 

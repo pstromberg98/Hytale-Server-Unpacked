@@ -58,12 +58,12 @@
 /*     */   public static ItemAppearanceCondition deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  59 */     ItemAppearanceCondition obj = new ItemAppearanceCondition();
 /*  60 */     byte nullBits = buf.getByte(offset);
-/*  61 */     if ((nullBits & 0x20) != 0) obj.condition = FloatRange.deserialize(buf, offset + 1); 
+/*  61 */     if ((nullBits & 0x1) != 0) obj.condition = FloatRange.deserialize(buf, offset + 1); 
 /*  62 */     obj.conditionValueType = ValueType.fromValue(buf.getByte(offset + 9));
 /*  63 */     obj.localSoundEventId = buf.getIntLE(offset + 10);
 /*  64 */     obj.worldSoundEventId = buf.getIntLE(offset + 14);
 /*     */     
-/*  66 */     if ((nullBits & 0x1) != 0) {
+/*  66 */     if ((nullBits & 0x2) != 0) {
 /*  67 */       int varPos0 = offset + 38 + buf.getIntLE(offset + 18);
 /*  68 */       int particlesCount = VarInt.peek(buf, varPos0);
 /*  69 */       if (particlesCount < 0) throw ProtocolException.negativeLength("Particles", particlesCount); 
@@ -78,7 +78,7 @@
 /*  78 */         elemPos += ModelParticle.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/*  81 */     if ((nullBits & 0x2) != 0) {
+/*  81 */     if ((nullBits & 0x4) != 0) {
 /*  82 */       int varPos1 = offset + 38 + buf.getIntLE(offset + 22);
 /*  83 */       int firstPersonParticlesCount = VarInt.peek(buf, varPos1);
 /*  84 */       if (firstPersonParticlesCount < 0) throw ProtocolException.negativeLength("FirstPersonParticles", firstPersonParticlesCount); 
@@ -93,21 +93,21 @@
 /*  93 */         elemPos += ModelParticle.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/*  96 */     if ((nullBits & 0x4) != 0) {
+/*  96 */     if ((nullBits & 0x8) != 0) {
 /*  97 */       int varPos2 = offset + 38 + buf.getIntLE(offset + 26);
 /*  98 */       int modelLen = VarInt.peek(buf, varPos2);
 /*  99 */       if (modelLen < 0) throw ProtocolException.negativeLength("Model", modelLen); 
 /* 100 */       if (modelLen > 4096000) throw ProtocolException.stringTooLong("Model", modelLen, 4096000); 
 /* 101 */       obj.model = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*     */     } 
-/* 103 */     if ((nullBits & 0x8) != 0) {
+/* 103 */     if ((nullBits & 0x10) != 0) {
 /* 104 */       int varPos3 = offset + 38 + buf.getIntLE(offset + 30);
 /* 105 */       int textureLen = VarInt.peek(buf, varPos3);
 /* 106 */       if (textureLen < 0) throw ProtocolException.negativeLength("Texture", textureLen); 
 /* 107 */       if (textureLen > 4096000) throw ProtocolException.stringTooLong("Texture", textureLen, 4096000); 
 /* 108 */       obj.texture = PacketIO.readVarString(buf, varPos3, PacketIO.UTF8);
 /*     */     } 
-/* 110 */     if ((nullBits & 0x10) != 0) {
+/* 110 */     if ((nullBits & 0x20) != 0) {
 /* 111 */       int varPos4 = offset + 38 + buf.getIntLE(offset + 34);
 /* 112 */       int modelVFXIdLen = VarInt.peek(buf, varPos4);
 /* 113 */       if (modelVFXIdLen < 0) throw ProtocolException.negativeLength("ModelVFXId", modelVFXIdLen); 
@@ -121,33 +121,33 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 122 */     byte nullBits = buf.getByte(offset);
 /* 123 */     int maxEnd = 38;
-/* 124 */     if ((nullBits & 0x1) != 0) {
+/* 124 */     if ((nullBits & 0x2) != 0) {
 /* 125 */       int fieldOffset0 = buf.getIntLE(offset + 18);
 /* 126 */       int pos0 = offset + 38 + fieldOffset0;
 /* 127 */       int arrLen = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0);
 /* 128 */       for (int i = 0; i < arrLen; ) { pos0 += ModelParticle.computeBytesConsumed(buf, pos0); i++; }
 /* 129 */        if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 131 */     if ((nullBits & 0x2) != 0) {
+/* 131 */     if ((nullBits & 0x4) != 0) {
 /* 132 */       int fieldOffset1 = buf.getIntLE(offset + 22);
 /* 133 */       int pos1 = offset + 38 + fieldOffset1;
 /* 134 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
 /* 135 */       for (int i = 0; i < arrLen; ) { pos1 += ModelParticle.computeBytesConsumed(buf, pos1); i++; }
 /* 136 */        if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 138 */     if ((nullBits & 0x4) != 0) {
+/* 138 */     if ((nullBits & 0x8) != 0) {
 /* 139 */       int fieldOffset2 = buf.getIntLE(offset + 26);
 /* 140 */       int pos2 = offset + 38 + fieldOffset2;
 /* 141 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /* 142 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 144 */     if ((nullBits & 0x8) != 0) {
+/* 144 */     if ((nullBits & 0x10) != 0) {
 /* 145 */       int fieldOffset3 = buf.getIntLE(offset + 30);
 /* 146 */       int pos3 = offset + 38 + fieldOffset3;
 /* 147 */       int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl;
 /* 148 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 150 */     if ((nullBits & 0x10) != 0) {
+/* 150 */     if ((nullBits & 0x20) != 0) {
 /* 151 */       int fieldOffset4 = buf.getIntLE(offset + 34);
 /* 152 */       int pos4 = offset + 38 + fieldOffset4;
 /* 153 */       int sl = VarInt.peek(buf, pos4); pos4 += VarInt.length(buf, pos4) + sl;
@@ -160,12 +160,12 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 161 */     int startPos = buf.writerIndex();
 /* 162 */     byte nullBits = 0;
-/* 163 */     if (this.particles != null) nullBits = (byte)(nullBits | 0x1); 
-/* 164 */     if (this.firstPersonParticles != null) nullBits = (byte)(nullBits | 0x2); 
-/* 165 */     if (this.model != null) nullBits = (byte)(nullBits | 0x4); 
-/* 166 */     if (this.texture != null) nullBits = (byte)(nullBits | 0x8); 
-/* 167 */     if (this.modelVFXId != null) nullBits = (byte)(nullBits | 0x10); 
-/* 168 */     if (this.condition != null) nullBits = (byte)(nullBits | 0x20); 
+/* 163 */     if (this.condition != null) nullBits = (byte)(nullBits | 0x1); 
+/* 164 */     if (this.particles != null) nullBits = (byte)(nullBits | 0x2); 
+/* 165 */     if (this.firstPersonParticles != null) nullBits = (byte)(nullBits | 0x4); 
+/* 166 */     if (this.model != null) nullBits = (byte)(nullBits | 0x8); 
+/* 167 */     if (this.texture != null) nullBits = (byte)(nullBits | 0x10); 
+/* 168 */     if (this.modelVFXId != null) nullBits = (byte)(nullBits | 0x20); 
 /* 169 */     buf.writeByte(nullBits);
 /*     */     
 /* 171 */     if (this.condition != null) { this.condition.serialize(buf); } else { buf.writeZero(8); }
@@ -245,7 +245,7 @@
 /* 245 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 248 */     if ((nullBits & 0x1) != 0) {
+/* 248 */     if ((nullBits & 0x2) != 0) {
 /* 249 */       int particlesOffset = buffer.getIntLE(offset + 18);
 /* 250 */       if (particlesOffset < 0) {
 /* 251 */         return ValidationResult.error("Invalid offset for Particles");
@@ -271,7 +271,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 274 */     if ((nullBits & 0x2) != 0) {
+/* 274 */     if ((nullBits & 0x4) != 0) {
 /* 275 */       int firstPersonParticlesOffset = buffer.getIntLE(offset + 22);
 /* 276 */       if (firstPersonParticlesOffset < 0) {
 /* 277 */         return ValidationResult.error("Invalid offset for FirstPersonParticles");
@@ -297,7 +297,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 300 */     if ((nullBits & 0x4) != 0) {
+/* 300 */     if ((nullBits & 0x8) != 0) {
 /* 301 */       int modelOffset = buffer.getIntLE(offset + 26);
 /* 302 */       if (modelOffset < 0) {
 /* 303 */         return ValidationResult.error("Invalid offset for Model");
@@ -320,7 +320,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 323 */     if ((nullBits & 0x8) != 0) {
+/* 323 */     if ((nullBits & 0x10) != 0) {
 /* 324 */       int textureOffset = buffer.getIntLE(offset + 30);
 /* 325 */       if (textureOffset < 0) {
 /* 326 */         return ValidationResult.error("Invalid offset for Texture");
@@ -343,7 +343,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 346 */     if ((nullBits & 0x10) != 0) {
+/* 346 */     if ((nullBits & 0x20) != 0) {
 /* 347 */       int modelVFXIdOffset = buffer.getIntLE(offset + 34);
 /* 348 */       if (modelVFXIdOffset < 0) {
 /* 349 */         return ValidationResult.error("Invalid offset for ModelVFXId");

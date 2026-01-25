@@ -16,42 +16,41 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
 /*    */ public class TeleportHistoryCommand
 /*    */   extends AbstractPlayerCommand
 /*    */ {
 /*    */   @Nonnull
-/* 23 */   private static final Message MESSAGE_COMMANDS_TELEPORT_HISTORY_EMPTY = Message.translation("server.commands.teleport.history.empty");
-/*    */   @Nonnull
-/* 25 */   private static final Message MESSAGE_COMMANDS_TELEPORT_HISTORY_INFO = Message.translation("server.commands.teleport.history.info");
+/* 24 */   private static final Message MESSAGE_COMMANDS_TELEPORT_HISTORY_EMPTY = Message.translation("server.commands.teleport.history.empty");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public TeleportHistoryCommand() {
-/* 31 */     super("history", "server.commands.teleport.dump.desc");
-/* 32 */     requirePermission(HytalePermissions.fromCommand("teleport.history"));
+/* 30 */     super("history", "server.commands.teleport.dump.desc");
+/* 31 */     requirePermission(HytalePermissions.fromCommand("teleport.history"));
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 37 */     PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
-/* 38 */     assert playerRefComponent != null;
+/* 36 */     PlayerRef playerRefComponent = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 37 */     assert playerRefComponent != null;
 /*    */     
-/* 40 */     TeleportHistory history = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
+/* 39 */     TeleportHistory history = (TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType());
 /*    */     
-/* 42 */     TeleportPlugin.get().getLogger().at(Level.INFO).log("Got history for player %s: %s", playerRefComponent
-/* 43 */         .getUsername(), history);
+/* 41 */     TeleportPlugin.get().getLogger().at(Level.INFO).log("Got history for player %s: %s", playerRefComponent
+/* 42 */         .getUsername(), history);
 /*    */ 
 /*    */     
-/* 46 */     int backSize = history.getBackSize();
-/* 47 */     int forwardSize = history.getForwardSize();
+/* 45 */     int backSize = history.getBackSize();
+/* 46 */     int forwardSize = history.getForwardSize();
 /*    */     
-/* 49 */     if (backSize == 0 && forwardSize == 0) {
-/* 50 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_HISTORY_EMPTY);
+/* 48 */     if (backSize == 0 && forwardSize == 0) {
+/* 49 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_HISTORY_EMPTY);
 /*    */     } else {
-/* 52 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_HISTORY_INFO
-/* 53 */           .param("backCount", backSize)
-/* 54 */           .param("forwardCount", forwardSize));
+/* 51 */       context.sendMessage(Message.translation("server.commands.teleport.history.info")
+/* 52 */           .param("backCount", backSize)
+/* 53 */           .param("forwardCount", forwardSize));
 /*    */     } 
 /*    */   }
 /*    */ }

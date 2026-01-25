@@ -24,8 +24,8 @@
 /*    */   public ActionSpawnParticles(@Nonnull BuilderActionSpawnParticles builder, @Nonnull BuilderSupport support) {
 /* 25 */     super((BuilderActionBase)builder);
 /* 26 */     this.particleSystem = builder.getParticleSystem(support);
-/* 27 */     this.offset = builder.getOffset();
-/* 28 */     this.range = builder.getRange();
+/* 27 */     this.offset = builder.getOffset(support);
+/* 28 */     this.range = builder.getRange(support);
 /*    */   }
 /*    */   protected final double range; protected final Vector3d offset;
 /*    */   

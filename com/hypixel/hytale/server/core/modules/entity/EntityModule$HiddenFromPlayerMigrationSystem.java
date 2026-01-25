@@ -1223,6 +1223,13 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ @Deprecated(forRemoval = true)
 /*      */ public class HiddenFromPlayerMigrationSystem
 /*      */   extends EntityModule.MigrationSystem
@@ -1232,13 +1239,13 @@
 /*      */   private final Query<EntityStore> query;
 /*      */   
 /*      */   public HiddenFromPlayerMigrationSystem(Query<EntityStore> query) {
-/* 1235 */     this.hiddenFromAdventurePlayersComponentType = HiddenFromAdventurePlayers.getComponentType();
-/* 1236 */     this.query = (Query<EntityStore>)Query.and(new Query[] { query, (Query)Query.not((Query)this.hiddenFromAdventurePlayersComponentType) });
+/* 1242 */     this.hiddenFromAdventurePlayersComponentType = HiddenFromAdventurePlayers.getComponentType();
+/* 1243 */     this.query = (Query<EntityStore>)Query.and(new Query[] { query, (Query)Query.not((Query)this.hiddenFromAdventurePlayersComponentType) });
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 1241 */     holder.ensureComponent(this.hiddenFromAdventurePlayersComponentType);
+/* 1248 */     holder.ensureComponent(this.hiddenFromAdventurePlayersComponentType);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1248,7 +1255,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1251 */     return this.query;
+/* 1258 */     return this.query;
 /*      */   }
 /*      */ }
 

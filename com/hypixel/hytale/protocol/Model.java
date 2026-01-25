@@ -88,50 +88,50 @@
 /*  88 */     obj.scale = buf.getFloatLE(offset + 2);
 /*  89 */     obj.eyeHeight = buf.getFloatLE(offset + 6);
 /*  90 */     obj.crouchOffset = buf.getFloatLE(offset + 10);
-/*  91 */     if ((nullBits[1] & 0x1) != 0) obj.hitbox = Hitbox.deserialize(buf, offset + 14); 
-/*  92 */     if ((nullBits[1] & 0x8) != 0) obj.light = ColorLight.deserialize(buf, offset + 38); 
+/*  91 */     if ((nullBits[0] & 0x1) != 0) obj.hitbox = Hitbox.deserialize(buf, offset + 14); 
+/*  92 */     if ((nullBits[0] & 0x2) != 0) obj.light = ColorLight.deserialize(buf, offset + 38); 
 /*  93 */     obj.phobia = Phobia.fromValue(buf.getByte(offset + 42));
 /*     */     
-/*  95 */     if ((nullBits[0] & 0x1) != 0) {
+/*  95 */     if ((nullBits[0] & 0x4) != 0) {
 /*  96 */       int varPos0 = offset + 91 + buf.getIntLE(offset + 43);
 /*  97 */       int assetIdLen = VarInt.peek(buf, varPos0);
 /*  98 */       if (assetIdLen < 0) throw ProtocolException.negativeLength("AssetId", assetIdLen); 
 /*  99 */       if (assetIdLen > 4096000) throw ProtocolException.stringTooLong("AssetId", assetIdLen, 4096000); 
 /* 100 */       obj.assetId = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/* 102 */     if ((nullBits[0] & 0x2) != 0) {
+/* 102 */     if ((nullBits[0] & 0x8) != 0) {
 /* 103 */       int varPos1 = offset + 91 + buf.getIntLE(offset + 47);
 /* 104 */       int pathLen = VarInt.peek(buf, varPos1);
 /* 105 */       if (pathLen < 0) throw ProtocolException.negativeLength("Path", pathLen); 
 /* 106 */       if (pathLen > 4096000) throw ProtocolException.stringTooLong("Path", pathLen, 4096000); 
 /* 107 */       obj.path = PacketIO.readVarString(buf, varPos1, PacketIO.UTF8);
 /*     */     } 
-/* 109 */     if ((nullBits[0] & 0x4) != 0) {
+/* 109 */     if ((nullBits[0] & 0x10) != 0) {
 /* 110 */       int varPos2 = offset + 91 + buf.getIntLE(offset + 51);
 /* 111 */       int textureLen = VarInt.peek(buf, varPos2);
 /* 112 */       if (textureLen < 0) throw ProtocolException.negativeLength("Texture", textureLen); 
 /* 113 */       if (textureLen > 4096000) throw ProtocolException.stringTooLong("Texture", textureLen, 4096000); 
 /* 114 */       obj.texture = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*     */     } 
-/* 116 */     if ((nullBits[0] & 0x8) != 0) {
+/* 116 */     if ((nullBits[0] & 0x20) != 0) {
 /* 117 */       int varPos3 = offset + 91 + buf.getIntLE(offset + 55);
 /* 118 */       int gradientSetLen = VarInt.peek(buf, varPos3);
 /* 119 */       if (gradientSetLen < 0) throw ProtocolException.negativeLength("GradientSet", gradientSetLen); 
 /* 120 */       if (gradientSetLen > 4096000) throw ProtocolException.stringTooLong("GradientSet", gradientSetLen, 4096000); 
 /* 121 */       obj.gradientSet = PacketIO.readVarString(buf, varPos3, PacketIO.UTF8);
 /*     */     } 
-/* 123 */     if ((nullBits[0] & 0x10) != 0) {
+/* 123 */     if ((nullBits[0] & 0x40) != 0) {
 /* 124 */       int varPos4 = offset + 91 + buf.getIntLE(offset + 59);
 /* 125 */       int gradientIdLen = VarInt.peek(buf, varPos4);
 /* 126 */       if (gradientIdLen < 0) throw ProtocolException.negativeLength("GradientId", gradientIdLen); 
 /* 127 */       if (gradientIdLen > 4096000) throw ProtocolException.stringTooLong("GradientId", gradientIdLen, 4096000); 
 /* 128 */       obj.gradientId = PacketIO.readVarString(buf, varPos4, PacketIO.UTF8);
 /*     */     } 
-/* 130 */     if ((nullBits[0] & 0x20) != 0) {
+/* 130 */     if ((nullBits[0] & 0x80) != 0) {
 /* 131 */       int varPos5 = offset + 91 + buf.getIntLE(offset + 63);
 /* 132 */       obj.camera = CameraSettings.deserialize(buf, varPos5);
 /*     */     } 
-/* 134 */     if ((nullBits[0] & 0x40) != 0) {
+/* 134 */     if ((nullBits[1] & 0x1) != 0) {
 /* 135 */       int varPos6 = offset + 91 + buf.getIntLE(offset + 67);
 /* 136 */       int animationSetsCount = VarInt.peek(buf, varPos6);
 /* 137 */       if (animationSetsCount < 0) throw ProtocolException.negativeLength("AnimationSets", animationSetsCount); 
@@ -152,7 +152,7 @@
 /* 152 */           throw ProtocolException.duplicateKey("animationSets", key); 
 /*     */       } 
 /*     */     } 
-/* 155 */     if ((nullBits[0] & 0x80) != 0) {
+/* 155 */     if ((nullBits[1] & 0x2) != 0) {
 /* 156 */       int varPos7 = offset + 91 + buf.getIntLE(offset + 71);
 /* 157 */       int attachmentsCount = VarInt.peek(buf, varPos7);
 /* 158 */       if (attachmentsCount < 0) throw ProtocolException.negativeLength("Attachments", attachmentsCount); 
@@ -167,7 +167,7 @@
 /* 167 */         elemPos += ModelAttachment.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/* 170 */     if ((nullBits[1] & 0x2) != 0) {
+/* 170 */     if ((nullBits[1] & 0x4) != 0) {
 /* 171 */       int varPos8 = offset + 91 + buf.getIntLE(offset + 75);
 /* 172 */       int particlesCount = VarInt.peek(buf, varPos8);
 /* 173 */       if (particlesCount < 0) throw ProtocolException.negativeLength("Particles", particlesCount); 
@@ -182,7 +182,7 @@
 /* 182 */         elemPos += ModelParticle.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/* 185 */     if ((nullBits[1] & 0x4) != 0) {
+/* 185 */     if ((nullBits[1] & 0x8) != 0) {
 /* 186 */       int varPos9 = offset + 91 + buf.getIntLE(offset + 79);
 /* 187 */       int trailsCount = VarInt.peek(buf, varPos9);
 /* 188 */       if (trailsCount < 0) throw ProtocolException.negativeLength("Trails", trailsCount); 
@@ -239,64 +239,64 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 240 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 241 */     int maxEnd = 91;
-/* 242 */     if ((nullBits[0] & 0x1) != 0) {
+/* 242 */     if ((nullBits[0] & 0x4) != 0) {
 /* 243 */       int fieldOffset0 = buf.getIntLE(offset + 43);
 /* 244 */       int pos0 = offset + 91 + fieldOffset0;
 /* 245 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 246 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 248 */     if ((nullBits[0] & 0x2) != 0) {
+/* 248 */     if ((nullBits[0] & 0x8) != 0) {
 /* 249 */       int fieldOffset1 = buf.getIntLE(offset + 47);
 /* 250 */       int pos1 = offset + 91 + fieldOffset1;
 /* 251 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
 /* 252 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 254 */     if ((nullBits[0] & 0x4) != 0) {
+/* 254 */     if ((nullBits[0] & 0x10) != 0) {
 /* 255 */       int fieldOffset2 = buf.getIntLE(offset + 51);
 /* 256 */       int pos2 = offset + 91 + fieldOffset2;
 /* 257 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /* 258 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 260 */     if ((nullBits[0] & 0x8) != 0) {
+/* 260 */     if ((nullBits[0] & 0x20) != 0) {
 /* 261 */       int fieldOffset3 = buf.getIntLE(offset + 55);
 /* 262 */       int pos3 = offset + 91 + fieldOffset3;
 /* 263 */       int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl;
 /* 264 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 266 */     if ((nullBits[0] & 0x10) != 0) {
+/* 266 */     if ((nullBits[0] & 0x40) != 0) {
 /* 267 */       int fieldOffset4 = buf.getIntLE(offset + 59);
 /* 268 */       int pos4 = offset + 91 + fieldOffset4;
 /* 269 */       int sl = VarInt.peek(buf, pos4); pos4 += VarInt.length(buf, pos4) + sl;
 /* 270 */       if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*     */     } 
-/* 272 */     if ((nullBits[0] & 0x20) != 0) {
+/* 272 */     if ((nullBits[0] & 0x80) != 0) {
 /* 273 */       int fieldOffset5 = buf.getIntLE(offset + 63);
 /* 274 */       int pos5 = offset + 91 + fieldOffset5;
 /* 275 */       pos5 += CameraSettings.computeBytesConsumed(buf, pos5);
 /* 276 */       if (pos5 - offset > maxEnd) maxEnd = pos5 - offset; 
 /*     */     } 
-/* 278 */     if ((nullBits[0] & 0x40) != 0) {
+/* 278 */     if ((nullBits[1] & 0x1) != 0) {
 /* 279 */       int fieldOffset6 = buf.getIntLE(offset + 67);
 /* 280 */       int pos6 = offset + 91 + fieldOffset6;
 /* 281 */       int dictLen = VarInt.peek(buf, pos6); pos6 += VarInt.length(buf, pos6);
 /* 282 */       for (int i = 0; i < dictLen; ) { int sl = VarInt.peek(buf, pos6); pos6 += VarInt.length(buf, pos6) + sl; pos6 += AnimationSet.computeBytesConsumed(buf, pos6); i++; }
 /* 283 */        if (pos6 - offset > maxEnd) maxEnd = pos6 - offset; 
 /*     */     } 
-/* 285 */     if ((nullBits[0] & 0x80) != 0) {
+/* 285 */     if ((nullBits[1] & 0x2) != 0) {
 /* 286 */       int fieldOffset7 = buf.getIntLE(offset + 71);
 /* 287 */       int pos7 = offset + 91 + fieldOffset7;
 /* 288 */       int arrLen = VarInt.peek(buf, pos7); pos7 += VarInt.length(buf, pos7);
 /* 289 */       for (int i = 0; i < arrLen; ) { pos7 += ModelAttachment.computeBytesConsumed(buf, pos7); i++; }
 /* 290 */        if (pos7 - offset > maxEnd) maxEnd = pos7 - offset; 
 /*     */     } 
-/* 292 */     if ((nullBits[1] & 0x2) != 0) {
+/* 292 */     if ((nullBits[1] & 0x4) != 0) {
 /* 293 */       int fieldOffset8 = buf.getIntLE(offset + 75);
 /* 294 */       int pos8 = offset + 91 + fieldOffset8;
 /* 295 */       int arrLen = VarInt.peek(buf, pos8); pos8 += VarInt.length(buf, pos8);
 /* 296 */       for (int i = 0; i < arrLen; ) { pos8 += ModelParticle.computeBytesConsumed(buf, pos8); i++; }
 /* 297 */        if (pos8 - offset > maxEnd) maxEnd = pos8 - offset; 
 /*     */     } 
-/* 299 */     if ((nullBits[1] & 0x4) != 0) {
+/* 299 */     if ((nullBits[1] & 0x8) != 0) {
 /* 300 */       int fieldOffset9 = buf.getIntLE(offset + 79);
 /* 301 */       int pos9 = offset + 91 + fieldOffset9;
 /* 302 */       int arrLen = VarInt.peek(buf, pos9); pos9 += VarInt.length(buf, pos9);
@@ -323,18 +323,18 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 324 */     int startPos = buf.writerIndex();
 /* 325 */     byte[] nullBits = new byte[2];
-/* 326 */     if (this.assetId != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
-/* 327 */     if (this.path != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/* 328 */     if (this.texture != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/* 329 */     if (this.gradientSet != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/* 330 */     if (this.gradientId != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/* 331 */     if (this.camera != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/* 332 */     if (this.animationSets != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/* 333 */     if (this.attachments != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/* 334 */     if (this.hitbox != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
-/* 335 */     if (this.particles != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
-/* 336 */     if (this.trails != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
-/* 337 */     if (this.light != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
+/* 326 */     if (this.hitbox != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
+/* 327 */     if (this.light != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
+/* 328 */     if (this.assetId != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/* 329 */     if (this.path != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/* 330 */     if (this.texture != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/* 331 */     if (this.gradientSet != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/* 332 */     if (this.gradientId != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/* 333 */     if (this.camera != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/* 334 */     if (this.animationSets != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/* 335 */     if (this.attachments != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
+/* 336 */     if (this.particles != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
+/* 337 */     if (this.trails != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
 /* 338 */     if (this.detailBoxes != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
 /* 339 */     if (this.phobiaModel != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
 /* 340 */     buf.writeBytes(nullBits);
@@ -492,7 +492,7 @@
 /*     */     
 /* 493 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 2);
 /*     */     
-/* 495 */     if ((nullBits[0] & 0x1) != 0) {
+/* 495 */     if ((nullBits[0] & 0x4) != 0) {
 /* 496 */       int assetIdOffset = buffer.getIntLE(offset + 43);
 /* 497 */       if (assetIdOffset < 0) {
 /* 498 */         return ValidationResult.error("Invalid offset for AssetId");
@@ -515,7 +515,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 518 */     if ((nullBits[0] & 0x2) != 0) {
+/* 518 */     if ((nullBits[0] & 0x8) != 0) {
 /* 519 */       int pathOffset = buffer.getIntLE(offset + 47);
 /* 520 */       if (pathOffset < 0) {
 /* 521 */         return ValidationResult.error("Invalid offset for Path");
@@ -538,7 +538,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 541 */     if ((nullBits[0] & 0x4) != 0) {
+/* 541 */     if ((nullBits[0] & 0x10) != 0) {
 /* 542 */       int textureOffset = buffer.getIntLE(offset + 51);
 /* 543 */       if (textureOffset < 0) {
 /* 544 */         return ValidationResult.error("Invalid offset for Texture");
@@ -561,7 +561,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 564 */     if ((nullBits[0] & 0x8) != 0) {
+/* 564 */     if ((nullBits[0] & 0x20) != 0) {
 /* 565 */       int gradientSetOffset = buffer.getIntLE(offset + 55);
 /* 566 */       if (gradientSetOffset < 0) {
 /* 567 */         return ValidationResult.error("Invalid offset for GradientSet");
@@ -584,7 +584,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 587 */     if ((nullBits[0] & 0x10) != 0) {
+/* 587 */     if ((nullBits[0] & 0x40) != 0) {
 /* 588 */       int gradientIdOffset = buffer.getIntLE(offset + 59);
 /* 589 */       if (gradientIdOffset < 0) {
 /* 590 */         return ValidationResult.error("Invalid offset for GradientId");
@@ -607,7 +607,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 610 */     if ((nullBits[0] & 0x20) != 0) {
+/* 610 */     if ((nullBits[0] & 0x80) != 0) {
 /* 611 */       int cameraOffset = buffer.getIntLE(offset + 63);
 /* 612 */       if (cameraOffset < 0) {
 /* 613 */         return ValidationResult.error("Invalid offset for Camera");
@@ -623,7 +623,7 @@
 /* 623 */       pos += CameraSettings.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 626 */     if ((nullBits[0] & 0x40) != 0) {
+/* 626 */     if ((nullBits[1] & 0x1) != 0) {
 /* 627 */       int animationSetsOffset = buffer.getIntLE(offset + 67);
 /* 628 */       if (animationSetsOffset < 0) {
 /* 629 */         return ValidationResult.error("Invalid offset for AnimationSets");
@@ -658,7 +658,7 @@
 /*     */     } 
 /*     */ 
 /*     */     
-/* 661 */     if ((nullBits[0] & 0x80) != 0) {
+/* 661 */     if ((nullBits[1] & 0x2) != 0) {
 /* 662 */       int attachmentsOffset = buffer.getIntLE(offset + 71);
 /* 663 */       if (attachmentsOffset < 0) {
 /* 664 */         return ValidationResult.error("Invalid offset for Attachments");
@@ -684,7 +684,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 687 */     if ((nullBits[1] & 0x2) != 0) {
+/* 687 */     if ((nullBits[1] & 0x4) != 0) {
 /* 688 */       int particlesOffset = buffer.getIntLE(offset + 75);
 /* 689 */       if (particlesOffset < 0) {
 /* 690 */         return ValidationResult.error("Invalid offset for Particles");
@@ -710,7 +710,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 713 */     if ((nullBits[1] & 0x4) != 0) {
+/* 713 */     if ((nullBits[1] & 0x8) != 0) {
 /* 714 */       int trailsOffset = buffer.getIntLE(offset + 79);
 /* 715 */       if (trailsOffset < 0) {
 /* 716 */         return ValidationResult.error("Invalid offset for Trails");

@@ -16,13 +16,14 @@
 /*    */ import com.hypixel.hytale.protocol.packets.window.WindowType;
 /*    */ import com.hypixel.hytale.server.core.asset.type.item.config.FieldcraftCategory;
 /*    */ import com.hypixel.hytale.server.core.entity.entities.player.windows.Window;
-/*    */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*    */ import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import com.hypixel.hytale.server.core.util.TempAssetIdUtil;
 /*    */ import java.util.Set;
 /*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ public class FieldCraftingWindow
 /*    */   extends Window
@@ -31,64 +32,61 @@
 /*    */   private final JsonObject windowData;
 /*    */   
 /*    */   public FieldCraftingWindow() {
-/* 34 */     super(WindowType.PocketCrafting);
+/* 35 */     super(WindowType.PocketCrafting);
 /*    */     
-/* 36 */     this.windowData = new JsonObject();
-/* 37 */     this.windowData.addProperty("type", Integer.valueOf(BenchType.Crafting.ordinal()));
+/* 37 */     this.windowData = new JsonObject();
+/* 38 */     this.windowData.addProperty("type", Integer.valueOf(BenchType.Crafting.ordinal()));
 /*    */     
-/* 39 */     this.windowData.addProperty("id", "Fieldcraft");
-/* 40 */     this.windowData.addProperty("name", "server.ui.inventory.fieldcraft.title");
-/* 41 */     JsonArray categories = new JsonArray();
+/* 40 */     this.windowData.addProperty("id", "Fieldcraft");
+/* 41 */     this.windowData.addProperty("name", "server.ui.inventory.fieldcraft.title");
+/* 42 */     JsonArray categories = new JsonArray();
 /*    */ 
 /*    */     
-/* 44 */     for (FieldcraftCategory fieldcraftCategory : FieldcraftCategory.getAssetMap().getAssetMap().values()) {
-/* 45 */       JsonObject category = new JsonObject();
-/* 46 */       category.addProperty("id", fieldcraftCategory.getId());
-/* 47 */       category.addProperty("icon", fieldcraftCategory.getIcon());
-/* 48 */       category.addProperty("name", fieldcraftCategory.getName());
+/* 45 */     for (FieldcraftCategory fieldcraftCategory : FieldcraftCategory.getAssetMap().getAssetMap().values()) {
+/* 46 */       JsonObject category = new JsonObject();
+/* 47 */       category.addProperty("id", fieldcraftCategory.getId());
+/* 48 */       category.addProperty("icon", fieldcraftCategory.getIcon());
+/* 49 */       category.addProperty("name", fieldcraftCategory.getName());
 /*    */       
-/* 50 */       Set<String> recipes = CraftingPlugin.getAvailableRecipesForCategory("Fieldcraft", fieldcraftCategory.getId());
+/* 51 */       Set<String> recipes = CraftingPlugin.getAvailableRecipesForCategory("Fieldcraft", fieldcraftCategory.getId());
 /*    */       
-/* 52 */       if (recipes != null) {
-/* 53 */         JsonArray itemsArray = new JsonArray();
-/* 54 */         for (String recipeId : recipes) {
-/* 55 */           itemsArray.add(recipeId);
+/* 53 */       if (recipes != null) {
+/* 54 */         JsonArray itemsArray = new JsonArray();
+/* 55 */         for (String recipeId : recipes) {
+/* 56 */           itemsArray.add(recipeId);
 /*    */         }
-/* 57 */         category.add("craftableRecipes", (JsonElement)itemsArray);
+/* 58 */         category.add("craftableRecipes", (JsonElement)itemsArray);
 /*    */       } 
 /*    */     } 
 /*    */     
-/* 61 */     this.windowData.add("categories", (JsonElement)categories);
+/* 62 */     this.windowData.add("categories", (JsonElement)categories);
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public JsonObject getData() {
-/* 66 */     return this.windowData;
+/* 67 */     return this.windowData;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   public boolean onOpen0() {
-/* 71 */     PlayerRef playerRef = getPlayerRef();
-/* 72 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 73 */     Store<EntityStore> store = ref.getStore();
-/* 74 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/*    */   public boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 72 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*    */     
-/* 76 */     this.windowData.addProperty("worldMemoriesLevel", Integer.valueOf(MemoriesPlugin.get().getMemoriesLevel(world.getGameplayConfig())));
-/* 77 */     invalidate();
+/* 74 */     this.windowData.addProperty("worldMemoriesLevel", Integer.valueOf(MemoriesPlugin.get().getMemoriesLevel(world.getGameplayConfig())));
+/* 75 */     invalidate();
 /*    */     
-/* 79 */     return true;
+/* 77 */     return true;
 /*    */   }
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   public void onClose0() {}
+/*    */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {}
 /*    */ 
 /*    */   
 /*    */   public void handleAction(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull WindowAction action) {
-/* 88 */     if (action instanceof CraftRecipeAction) { CraftRecipeAction craftAction = (CraftRecipeAction)action;
-/* 89 */       CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
-/* 90 */       if (CraftingWindow.craftSimpleItem(store, ref, craftingManager, craftAction))
-/* 91 */         SoundUtil.playSoundEvent2d(ref, TempAssetIdUtil.getSoundEventIndex("SFX_Player_Craft_Item_Inventory"), SoundCategory.UI, (ComponentAccessor)store);  }
+/* 86 */     if (action instanceof CraftRecipeAction) { CraftRecipeAction craftAction = (CraftRecipeAction)action;
+/* 87 */       CraftingManager craftingManager = (CraftingManager)store.getComponent(ref, CraftingManager.getComponentType());
+/* 88 */       if (CraftingWindow.craftSimpleItem(store, ref, craftingManager, craftAction))
+/* 89 */         SoundUtil.playSoundEvent2d(ref, TempAssetIdUtil.getSoundEventIndex("SFX_Player_Craft_Item_Inventory"), SoundCategory.UI, (ComponentAccessor)store);  }
 /*    */   
 /*    */   }
 /*    */ }

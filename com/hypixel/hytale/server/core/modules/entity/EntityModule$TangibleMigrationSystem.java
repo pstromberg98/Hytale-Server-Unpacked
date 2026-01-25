@@ -1192,6 +1192,13 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ @Deprecated(forRemoval = true)
 /*      */ public class TangibleMigrationSystem
 /*      */   extends EntityModule.MigrationSystem
@@ -1201,13 +1208,13 @@
 /*      */   private final Query<EntityStore> query;
 /*      */   
 /*      */   public TangibleMigrationSystem(Query<EntityStore> query) {
-/* 1204 */     this.intangibleComponentType = Intangible.getComponentType();
-/* 1205 */     this.query = (Query<EntityStore>)Query.and(new Query[] { query, (Query)Query.not((Query)this.intangibleComponentType) });
+/* 1211 */     this.intangibleComponentType = Intangible.getComponentType();
+/* 1212 */     this.query = (Query<EntityStore>)Query.and(new Query[] { query, (Query)Query.not((Query)this.intangibleComponentType) });
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 1210 */     holder.ensureComponent(this.intangibleComponentType);
+/* 1217 */     holder.ensureComponent(this.intangibleComponentType);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1217,7 +1224,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1220 */     return this.query;
+/* 1227 */     return this.query;
 /*      */   }
 /*      */ }
 

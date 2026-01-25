@@ -10,9 +10,9 @@
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.physics.component.Velocity;
-/*     */ import com.hypixel.hytale.server.core.modules.physics.util.PhysicsMath;
 /*     */ import com.hypixel.hytale.server.core.modules.projectile.config.BallisticData;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*     */ import com.hypixel.hytale.server.npc.asset.builder.BuilderSupport;
 /*     */ import com.hypixel.hytale.server.npc.corecomponents.combat.builders.BuilderHeadMotionAim;
 /*     */ import com.hypixel.hytale.server.npc.movement.Steering;
 /*     */ import com.hypixel.hytale.server.npc.role.Role;
@@ -40,9 +40,9 @@
 /*     */   
 /*     */   public HeadMotionAim(@Nonnull BuilderHeadMotionAim builder, @Nonnull BuilderSupport support) {
 /*  42 */     super((BuilderHeadMotionBase)builder);
-/*  43 */     this.spread = builder.getSpread();
-/*  44 */     this.hitProbability = builder.getHitProbability();
-/*  45 */     this.deflection = builder.isDeflection();
+/*  43 */     this.spread = builder.getSpread(support);
+/*  44 */     this.hitProbability = builder.getHitProbability(support);
+/*  45 */     this.deflection = builder.isDeflection(support);
 /*  46 */     this.relativeTurnSpeed = builder.getRelativeTurnSpeed(support);
 /*     */   }
 /*     */ 

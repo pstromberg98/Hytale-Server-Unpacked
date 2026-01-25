@@ -55,36 +55,42 @@
 /*    */ 
 /*    */   
 /* 57 */   public static final ShutdownReason MISSING_ASSETS = new ShutdownReason(7);
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */   
+/* 63 */   public static final ShutdownReason UPDATE = new ShutdownReason(8);
 /*    */   
 /*    */   private final int exitCode;
 /*    */   private final String message;
 /*    */   
 /*    */   public ShutdownReason(int exitCode) {
-/* 63 */     this(exitCode, null);
+/* 69 */     this(exitCode, null);
 /*    */   }
 /*    */   
 /*    */   public ShutdownReason(int exitCode, String message) {
-/* 67 */     this.exitCode = exitCode;
-/* 68 */     this.message = message;
+/* 73 */     this.exitCode = exitCode;
+/* 74 */     this.message = message;
 /*    */   }
 /*    */   
 /*    */   public int getExitCode() {
-/* 72 */     return this.exitCode;
+/* 78 */     return this.exitCode;
 /*    */   }
 /*    */   
 /*    */   public String getMessage() {
-/* 76 */     return this.message;
+/* 82 */     return this.message;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public ShutdownReason withMessage(String message) {
-/* 81 */     return new ShutdownReason(this.exitCode, message);
+/* 87 */     return new ShutdownReason(this.exitCode, message);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public String toString() {
-/* 87 */     return "ShutdownReason{exitCode=" + this.exitCode + ", message='" + this.message + "'}";
+/* 93 */     return "ShutdownReason{exitCode=" + this.exitCode + ", message='" + this.message + "'}";
 /*    */   }
 /*    */ }
 

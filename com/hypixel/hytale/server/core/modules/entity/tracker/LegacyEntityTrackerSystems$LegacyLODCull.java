@@ -62,205 +62,74 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyLODCull
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
 /*     */   public static final double ENTITY_LOD_RATIO_DEFAULT = 3.5E-5D;
-/* 200 */   public static double ENTITY_LOD_RATIO = 3.5E-5D;
+/*  69 */   public static double ENTITY_LOD_RATIO = 3.5E-5D;
 /*     */   
-/*     */   private final ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> componentType;
+/*     */   private final ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> entityViewerComponentType;
 /*     */   private final ComponentType<EntityStore, BoundingBox> boundingBoxComponentType;
 /*     */   @Nonnull
 /*     */   private final Query<EntityStore> query;
 /*     */   @Nonnull
 /*     */   private final Set<Dependency<EntityStore>> dependencies;
 /*     */   
-/*     */   public LegacyLODCull(ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> componentType) {
-/* 210 */     this.componentType = componentType;
-/* 211 */     this.boundingBoxComponentType = BoundingBox.getComponentType();
-/* 212 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, (Query)TransformComponent.getComponentType() });
-/* 213 */     this.dependencies = Collections.singleton(new SystemDependency(Order.AFTER, EntityTrackerSystems.CollectVisible.class));
+/*     */   public LegacyLODCull(ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> entityViewerComponentType) {
+/*  79 */     this.entityViewerComponentType = entityViewerComponentType;
+/*  80 */     this.boundingBoxComponentType = BoundingBox.getComponentType();
+/*  81 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)entityViewerComponentType, (Query)TransformComponent.getComponentType() });
+/*  82 */     this.dependencies = Collections.singleton(new SystemDependency(Order.AFTER, EntityTrackerSystems.CollectVisible.class));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 219 */     return EntityTrackerSystems.FIND_VISIBLE_ENTITIES_GROUP;
+/*  88 */     return EntityTrackerSystems.FIND_VISIBLE_ENTITIES_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 225 */     return this.dependencies;
+/*  94 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 231 */     return this.query;
+/* 100 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 236 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 105 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 241 */     EntityTrackerSystems.EntityViewer entityViewerComponent = (EntityTrackerSystems.EntityViewer)archetypeChunk.getComponent(index, this.componentType);
-/* 242 */     assert entityViewerComponent != null;
+/* 110 */     EntityTrackerSystems.EntityViewer entityViewerComponent = (EntityTrackerSystems.EntityViewer)archetypeChunk.getComponent(index, this.entityViewerComponentType);
+/* 111 */     assert entityViewerComponent != null;
 /*     */     
-/* 244 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-/* 245 */     assert transformComponent != null;
-/* 246 */     Vector3d position = transformComponent.getPosition();
+/* 113 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+/* 114 */     assert transformComponent != null;
+/* 115 */     Vector3d position = transformComponent.getPosition();
 /*     */     
-/* 248 */     for (Iterator<Ref<EntityStore>> iterator = entityViewerComponent.visible.iterator(); iterator.hasNext(); ) {
-/* 249 */       Ref<EntityStore> ref = iterator.next();
+/* 117 */     for (Iterator<Ref<EntityStore>> iterator = entityViewerComponent.visible.iterator(); iterator.hasNext(); ) {
+/* 118 */       Ref<EntityStore> targetRef = iterator.next();
 /*     */ 
 /*     */       
-/* 252 */       BoundingBox boundingBoxComponent = (BoundingBox)commandBuffer.getComponent(ref, this.boundingBoxComponentType);
-/* 253 */       if (boundingBoxComponent == null)
+/* 121 */       BoundingBox targetBoundingBoxComponent = (BoundingBox)commandBuffer.getComponent(targetRef, this.boundingBoxComponentType);
+/* 122 */       if (targetBoundingBoxComponent == null)
 /*     */         continue; 
-/* 255 */       TransformComponent otherTransformComponent = (TransformComponent)commandBuffer.getComponent(ref, TransformComponent.getComponentType());
-/* 256 */       assert otherTransformComponent != null;
-/*     */ 
-/*     */       
-/* 259 */       double distanceSq = otherTransformComponent.getPosition().distanceSquaredTo(position);
-/* 260 */       double maximumThickness = boundingBoxComponent.getBoundingBox().getMaximumThickness();
-/* 261 */       if (maximumThickness < ENTITY_LOD_RATIO * distanceSq) {
-/* 262 */         entityViewerComponent.lodExcludedCount++;
-/* 263 */         iterator.remove();
+/* 124 */       TransformComponent targetTransformComponent = (TransformComponent)commandBuffer.getComponent(targetRef, TransformComponent.getComponentType());
+/* 125 */       if (targetTransformComponent == null) {
+/*     */         continue;
+/*     */       }
+/* 128 */       double distanceSq = targetTransformComponent.getPosition().distanceSquaredTo(position);
+/* 129 */       double maximumThickness = targetBoundingBoxComponent.getBoundingBox().getMaximumThickness();
+/* 130 */       if (maximumThickness < ENTITY_LOD_RATIO * distanceSq) {
+/* 131 */         entityViewerComponent.lodExcludedCount++;
+/* 132 */         iterator.remove();
 /*     */       } 
 /*     */     } 
 /*     */   }

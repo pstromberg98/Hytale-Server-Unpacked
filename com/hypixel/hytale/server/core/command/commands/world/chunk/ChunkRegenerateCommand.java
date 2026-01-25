@@ -16,33 +16,30 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class ChunkRegenerateCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 23 */   private static final Message MESSAGE_COMMANDS_CHUNK_REGENERATE_SUCCESS = Message.translation("server.commands.chunk.regenerate.success");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 29 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.regenerate.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
+/* 26 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.regenerate.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkRegenerateCommand() {
-/* 35 */     super("regenerate", "server.commands.chunk.regenerate.desc", true);
+/* 32 */     super("regenerate", "server.commands.chunk.regenerate.desc", true);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 40 */     Vector2i chunkPosition = ((RelativeChunkPosition)this.chunkPosArg.get(context)).getChunkPosition(context, (ComponentAccessor)store);
-/* 41 */     long chunkIndex = ChunkUtil.indexChunk(chunkPosition.x, chunkPosition.y);
+/* 37 */     Vector2i chunkPosition = ((RelativeChunkPosition)this.chunkPosArg.get(context)).getChunkPosition(context, (ComponentAccessor)store);
+/* 38 */     long chunkIndex = ChunkUtil.indexChunk(chunkPosition.x, chunkPosition.y);
 /*    */     
-/* 43 */     ChunkStore chunkStore = world.getChunkStore();
-/* 44 */     chunkStore.getChunkReferenceAsync(chunkIndex, 9)
-/* 45 */       .thenAccept(chunkRef -> world.execute(()));
+/* 40 */     ChunkStore chunkStore = world.getChunkStore();
+/* 41 */     chunkStore.getChunkReferenceAsync(chunkIndex, 9)
+/* 42 */       .thenAccept(chunkRef -> world.execute(()));
 /*    */   }
 /*    */ }
 

@@ -3,8 +3,8 @@
 /*     */ import com.hypixel.hytale.protocol.packets.worldmap.MapMarker;
 /*     */ import com.hypixel.hytale.server.core.asset.type.gameplay.GameplayConfig;
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
-/*     */ import com.hypixel.hytale.server.core.universe.world.WorldMapTracker;
 /*     */ import com.hypixel.hytale.server.core.universe.world.worldmap.WorldMapManager;
+/*     */ import com.hypixel.hytale.server.core.universe.world.worldmap.markers.MapMarkerTracker;
 /*     */ import com.hypixel.hytale.server.core.util.PositionUtil;
 /*     */ import java.util.Map;
 /*     */ import javax.annotation.Nonnull;
@@ -326,10 +326,11 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public class WarpMarkerProvider
 /*     */   implements WorldMapManager.MarkerProvider
 /*     */ {
-/* 332 */   public static final WarpMarkerProvider INSTANCE = new WarpMarkerProvider();
+/* 333 */   public static final WarpMarkerProvider INSTANCE = new WarpMarkerProvider();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -342,17 +343,18 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   public void update(@Nonnull World world, @Nonnull GameplayConfig gameplayConfig, @Nonnull WorldMapTracker tracker, int chunkViewRadius, int playerChunkX, int playerChunkZ) {
-/* 346 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
-/* 347 */     if (warps.isEmpty())
+/*     */   public void update(@Nonnull World world, @Nonnull MapMarkerTracker tracker, int chunkViewRadius, int playerChunkX, int playerChunkZ) {
+/* 347 */     Map<String, Warp> warps = TeleportPlugin.get().getWarps();
+/* 348 */     if (warps.isEmpty())
 /*     */       return; 
-/* 349 */     if (!gameplayConfig.getWorldMapConfig().isDisplayWarps())
+/* 350 */     GameplayConfig gameplayConfig = world.getGameplayConfig();
+/* 351 */     if (!gameplayConfig.getWorldMapConfig().isDisplayWarps())
 /*     */       return; 
-/* 351 */     for (Warp warp : warps.values()) {
-/* 352 */       if (!warp.getWorld().equals(world.getName()))
+/* 353 */     for (Warp warp : warps.values()) {
+/* 354 */       if (!warp.getWorld().equals(world.getName()))
 /*     */         continue; 
-/* 354 */       tracker.trySendMarker(chunkViewRadius, playerChunkX, playerChunkZ, warp
-/* 355 */           .getTransform().getPosition(), warp.getTransform().getRotation().getYaw(), "Warp-" + warp.getId(), "Warp: " + warp.getId(), warp, (id, name, w) -> new MapMarker(id, name, "Warp.png", PositionUtil.toTransformPacket(w.getTransform()), null));
+/* 356 */       tracker.trySendMarker(chunkViewRadius, playerChunkX, playerChunkZ, warp
+/* 357 */           .getTransform().getPosition(), warp.getTransform().getRotation().getYaw(), "Warp-" + warp.getId(), "Warp: " + warp.getId(), warp, (id, name, w) -> new MapMarker(id, name, "Warp.png", PositionUtil.toTransformPacket(w.getTransform()), null));
 /*     */     } 
 /*     */   }
 /*     */ }

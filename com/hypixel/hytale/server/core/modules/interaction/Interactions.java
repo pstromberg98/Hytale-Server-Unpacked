@@ -38,14 +38,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */   
 /*     */   static {
-/*  43 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(Interactions.class, Interactions::new).appendInherited(new KeyedCodec("Interactions", (Codec)new EnumMapCodec(InteractionType.class, (Codec)Codec.STRING, false)), (o, v) -> o.interactions = v, o -> o.interactions, (o, p) -> o.interactions = p.interactions).add()).build();
+/*  50 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(Interactions.class, Interactions::new).appendInherited(new KeyedCodec("Interactions", (Codec)new EnumMapCodec(InteractionType.class, (Codec)Codec.STRING, false)), (o, v) -> o.interactions = v, o -> o.interactions, (o, p) -> o.interactions = p.interactions).add()).appendInherited(new KeyedCodec("InteractionHint", (Codec)Codec.STRING), (o, v) -> o.interactionHint = v, o -> o.interactionHint, (o, p) -> o.interactionHint = p.interactionHint).add()).build();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  48 */   private Map<InteractionType, String> interactions = new EnumMap<>(InteractionType.class);
+/*  55 */   private Map<InteractionType, String> interactions = new EnumMap<>(InteractionType.class);
 /*     */ 
 /*     */ 
 /*     */ 
@@ -73,7 +80,7 @@
 /*     */ 
 /*     */   
 /*     */   public Interactions(@Nonnull Map<InteractionType, String> interactions) {
-/*  76 */     this.interactions = new EnumMap<>(interactions);
+/*  83 */     this.interactions = new EnumMap<>(interactions);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -84,7 +91,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public String getInteractionId(@Nonnull InteractionType type) {
-/*  87 */     return this.interactions.get(type);
+/*  94 */     return this.interactions.get(type);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -94,8 +101,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setInteractionId(@Nonnull InteractionType type, @Nonnull String interactionId) {
-/*  97 */     this.interactions.put(type, interactionId);
-/*  98 */     this.isNetworkOutdated = true;
+/* 104 */     this.interactions.put(type, interactionId);
+/* 105 */     this.isNetworkOutdated = true;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -103,26 +110,26 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Map<InteractionType, String> getInteractions() {
-/* 106 */     return Collections.unmodifiableMap(this.interactions);
+/* 113 */     return Collections.unmodifiableMap(this.interactions);
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public String getInteractionHint() {
-/* 111 */     return this.interactionHint;
+/* 118 */     return this.interactionHint;
 /*     */   }
 /*     */   
 /*     */   public void setInteractionHint(@Nullable String interactionHint) {
-/* 115 */     this.interactionHint = interactionHint;
-/* 116 */     this.isNetworkOutdated = true;
+/* 122 */     this.interactionHint = interactionHint;
+/* 123 */     this.isNetworkOutdated = true;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<EntityStore> clone() {
-/* 123 */     Interactions clone = new Interactions(this.interactions);
-/* 124 */     clone.interactionHint = this.interactionHint;
-/* 125 */     return clone;
+/* 130 */     Interactions clone = new Interactions(this.interactions);
+/* 131 */     clone.interactionHint = this.interactionHint;
+/* 132 */     return clone;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -131,9 +138,9 @@
 /*     */ 
 /*     */   
 /*     */   public boolean consumeNetworkOutdated() {
-/* 134 */     boolean tmp = this.isNetworkOutdated;
-/* 135 */     this.isNetworkOutdated = false;
-/* 136 */     return tmp;
+/* 141 */     boolean tmp = this.isNetworkOutdated;
+/* 142 */     this.isNetworkOutdated = false;
+/* 143 */     return tmp;
 /*     */   }
 /*     */   
 /*     */   public Interactions() {}

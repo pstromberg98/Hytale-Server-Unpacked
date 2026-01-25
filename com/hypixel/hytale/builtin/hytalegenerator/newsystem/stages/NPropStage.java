@@ -204,7 +204,7 @@
 /*     */           
 /*     */           Prop prop = propField.getPropDistribution().propAt(position, context.workerId, distanceToBiomeEdge);
 /*     */           
-/*     */           Bounds3i propWriteBounds = prop.getWriteBounds().clone();
+/*     */           Bounds3i propWriteBounds = prop.getWriteBounds_voxelGrid().clone();
 /*     */           
 /*     */           propWriteBounds.offset(positionInt_voxelGrid);
 /*     */           

@@ -1,6 +1,7 @@
 /*    */ package com.hypixel.hytale.server.core.entity.entities.player.windows;
 /*    */ 
 /*    */ import com.google.gson.JsonObject;
+/*    */ import com.hypixel.hytale.component.ComponentAccessor;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.component.Store;
 /*    */ import com.hypixel.hytale.protocol.packets.window.SortItemsAction;
@@ -46,45 +47,45 @@
 /*    */   private final ItemContainer itemContainer;
 /*    */   
 /*    */   public ContainerBlockWindow(int x, int y, int z, int rotationIndex, @Nonnull BlockType blockType, @Nonnull ItemContainer itemContainer) {
-/* 49 */     super(WindowType.Container, x, y, z, rotationIndex, blockType);
-/* 50 */     this.itemContainer = itemContainer;
+/* 50 */     super(WindowType.Container, x, y, z, rotationIndex, blockType);
+/* 51 */     this.itemContainer = itemContainer;
 /*    */     
-/* 52 */     this.windowData = new JsonObject();
-/* 53 */     Item item = blockType.getItem();
-/* 54 */     this.windowData.addProperty("blockItemId", item.getId());
+/* 53 */     this.windowData = new JsonObject();
+/* 54 */     Item item = blockType.getItem();
+/* 55 */     this.windowData.addProperty("blockItemId", item.getId());
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public JsonObject getData() {
-/* 59 */     return this.windowData;
+/* 60 */     return this.windowData;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   public boolean onOpen0() {
-/* 64 */     return true;
+/*    */   public boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 65 */     return true;
 /*    */   }
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   public void onClose0() {}
+/*    */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {}
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public ItemContainer getItemContainer() {
-/* 74 */     return this.itemContainer;
+/* 75 */     return this.itemContainer;
 /*    */   }
 /*    */   
 /*    */   public void handleAction(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull WindowAction action) {
 /*    */     SortItemsAction sortAction;
-/* 79 */     if (action instanceof SortItemsAction) { sortAction = (SortItemsAction)action; } else { return; }
-/* 80 */      SortType sortType = SortType.fromPacket(sortAction.sortType);
+/* 80 */     if (action instanceof SortItemsAction) { sortAction = (SortItemsAction)action; } else { return; }
+/* 81 */      SortType sortType = SortType.fromPacket(sortAction.sortType);
 /*    */     
-/* 82 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 83 */     assert playerComponent != null;
+/* 83 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 84 */     assert playerComponent != null;
 /*    */     
-/* 85 */     playerComponent.getInventory().setSortType(sortType);
-/* 86 */     this.itemContainer.sortItems(sortType);
-/* 87 */     invalidate();
+/* 86 */     playerComponent.getInventory().setSortType(sortType);
+/* 87 */     this.itemContainer.sortItems(sortType);
+/* 88 */     invalidate();
 /*    */   }
 /*    */ }
 

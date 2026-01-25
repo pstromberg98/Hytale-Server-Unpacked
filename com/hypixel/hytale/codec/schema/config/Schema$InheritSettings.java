@@ -1011,6 +1011,9 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class InheritSettings
 /*      */ {
 /*      */   public static final BuilderCodec<InheritSettings> CODEC;
@@ -1019,7 +1022,7 @@
 /*      */   private String mapKeyValue;
 /*      */   
 /*      */   static {
-/* 1022 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(InheritSettings.class, InheritSettings::new).addField(new KeyedCodec("type", (Codec)Codec.STRING, false, true), (o, i) -> o.type = i, o -> o.type)).addField(new KeyedCodec("mapKey", (Codec)Codec.STRING, false, true), (o, i) -> o.mapKey = i, o -> o.mapKey)).addField(new KeyedCodec("mapKeyValue", (Codec)Codec.STRING, false, true), (o, i) -> o.mapKeyValue = i, o -> o.mapKeyValue)).build();
+/* 1025 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(InheritSettings.class, InheritSettings::new).addField(new KeyedCodec("type", (Codec)Codec.STRING, false, true), (o, i) -> o.type = i, o -> o.type)).addField(new KeyedCodec("mapKey", (Codec)Codec.STRING, false, true), (o, i) -> o.mapKey = i, o -> o.mapKey)).addField(new KeyedCodec("mapKeyValue", (Codec)Codec.STRING, false, true), (o, i) -> o.mapKeyValue = i, o -> o.mapKeyValue)).build();
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1036,54 +1039,54 @@
 /*      */ 
 /*      */   
 /*      */   public InheritSettings(String type) {
-/* 1039 */     this.type = type;
+/* 1042 */     this.type = type;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   protected InheritSettings() {}
 /*      */   
 /*      */   public String getType() {
-/* 1046 */     return this.type;
+/* 1049 */     return this.type;
 /*      */   }
 /*      */   
 /*      */   public void setType(String type) {
-/* 1050 */     this.type = type;
+/* 1053 */     this.type = type;
 /*      */   }
 /*      */   
 /*      */   public String getMapKey() {
-/* 1054 */     return this.mapKey;
+/* 1057 */     return this.mapKey;
 /*      */   }
 /*      */   
 /*      */   public void setMapKey(String mapKey) {
-/* 1058 */     this.mapKey = mapKey;
+/* 1061 */     this.mapKey = mapKey;
 /*      */   }
 /*      */   
 /*      */   public String getMapKeyValue() {
-/* 1062 */     return this.mapKeyValue;
+/* 1065 */     return this.mapKeyValue;
 /*      */   }
 /*      */   
 /*      */   public void setMapKeyValue(String mapKeyValue) {
-/* 1066 */     this.mapKeyValue = mapKeyValue;
+/* 1069 */     this.mapKeyValue = mapKeyValue;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean equals(@Nullable Object o) {
-/* 1071 */     if (this == o) return true; 
-/* 1072 */     if (o == null || getClass() != o.getClass()) return false;
+/* 1074 */     if (this == o) return true; 
+/* 1075 */     if (o == null || getClass() != o.getClass()) return false;
 /*      */     
-/* 1074 */     InheritSettings that = (InheritSettings)o;
+/* 1077 */     InheritSettings that = (InheritSettings)o;
 /*      */     
-/* 1076 */     if ((this.type != null) ? !this.type.equals(that.type) : (that.type != null)) return false; 
-/* 1077 */     if ((this.mapKey != null) ? !this.mapKey.equals(that.mapKey) : (that.mapKey != null)) return false; 
-/* 1078 */     return (this.mapKeyValue != null) ? this.mapKeyValue.equals(that.mapKeyValue) : ((that.mapKeyValue == null));
+/* 1079 */     if ((this.type != null) ? !this.type.equals(that.type) : (that.type != null)) return false; 
+/* 1080 */     if ((this.mapKey != null) ? !this.mapKey.equals(that.mapKey) : (that.mapKey != null)) return false; 
+/* 1081 */     return (this.mapKeyValue != null) ? this.mapKeyValue.equals(that.mapKeyValue) : ((that.mapKeyValue == null));
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public int hashCode() {
-/* 1083 */     int result = (this.type != null) ? this.type.hashCode() : 0;
-/* 1084 */     result = 31 * result + ((this.mapKey != null) ? this.mapKey.hashCode() : 0);
-/* 1085 */     result = 31 * result + ((this.mapKeyValue != null) ? this.mapKeyValue.hashCode() : 0);
-/* 1086 */     return result;
+/* 1086 */     int result = (this.type != null) ? this.type.hashCode() : 0;
+/* 1087 */     result = 31 * result + ((this.mapKey != null) ? this.mapKey.hashCode() : 0);
+/* 1088 */     result = 31 * result + ((this.mapKeyValue != null) ? this.mapKeyValue.hashCode() : 0);
+/* 1089 */     return result;
 /*      */   }
 /*      */ }
 

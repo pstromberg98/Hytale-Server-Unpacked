@@ -21,6 +21,7 @@
 /*     */ import com.hypixel.hytale.protocol.InteractionType;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockFace;
 /*     */ import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
+/*     */ import com.hypixel.hytale.server.core.entity.Entity;
 /*     */ import com.hypixel.hytale.server.core.entity.EntityUtils;
 /*     */ import com.hypixel.hytale.server.core.entity.InteractionContext;
 /*     */ import com.hypixel.hytale.server.core.entity.LivingEntity;
@@ -52,7 +53,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class UseCaptureCrateInteraction
 /*     */   extends SimpleBlockInteraction
 /*     */ {
@@ -67,9 +67,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */   
 /*     */   protected void tick0(boolean firstRun, float time, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
+/*     */     LivingEntity livingEntity;
 /*  73 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
 /*     */     
 /*  75 */     if (commandBuffer == null) {
@@ -83,124 +83,132 @@
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  86 */     Ref<EntityStore> playerRef = context.getEntity();
-/*  87 */     LivingEntity playerEntity = (LivingEntity)EntityUtils.getEntity(playerRef, (ComponentAccessor)commandBuffer);
-/*  88 */     Inventory playerInventory = playerEntity.getInventory();
-/*  89 */     byte activeHotbarSlot = playerInventory.getActiveHotbarSlot();
-/*  90 */     ItemStack inHandItemStack = playerInventory.getActiveHotbarItem();
+/*  86 */     Ref<EntityStore> ref = context.getEntity();
+/*  87 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
+/*  88 */     else { (context.getState()).state = InteractionState.Failed;
+/*     */       
+/*     */       return; }
+/*     */     
+/*  92 */     Inventory inventory = livingEntity.getInventory();
+/*  93 */     byte activeHotbarSlot = inventory.getActiveHotbarSlot();
+/*  94 */     ItemStack inHandItemStack = inventory.getActiveHotbarItem();
 /*     */ 
 /*     */     
-/*  93 */     CapturedNPCMetadata existingMeta = (CapturedNPCMetadata)item.getFromMetadataOrNull("CapturedEntity", (Codec)CapturedNPCMetadata.CODEC);
+/*  97 */     CapturedNPCMetadata existingMeta = (CapturedNPCMetadata)item.getFromMetadataOrNull("CapturedEntity", (Codec)CapturedNPCMetadata.CODEC);
 /*     */     
-/*  95 */     if (existingMeta == null) {
-/*  96 */       Ref<EntityStore> targetEntity = context.getTargetEntity();
-/*  97 */       if (targetEntity == null) {
-/*  98 */         (context.getState()).state = InteractionState.Failed;
+/*  99 */     if (existingMeta == null) {
+/* 100 */       Ref<EntityStore> targetEntity = context.getTargetEntity();
+/* 101 */       if (targetEntity == null) {
+/* 102 */         (context.getState()).state = InteractionState.Failed;
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 102 */       NPCEntity npc = (NPCEntity)commandBuffer.getComponent(targetEntity, NPCEntity.getComponentType());
-/* 103 */       if (npc == null) {
-/* 104 */         (context.getState()).state = InteractionState.Failed;
+/* 106 */       NPCEntity npcComponent = (NPCEntity)commandBuffer.getComponent(targetEntity, NPCEntity.getComponentType());
+/* 107 */       if (npcComponent == null) {
+/* 108 */         (context.getState()).state = InteractionState.Failed;
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */       
-/* 109 */       TagSetPlugin.TagSetLookup tagSetPlugin = TagSetPlugin.get(NPCGroup.class);
-/* 110 */       boolean tagFound = false;
-/* 111 */       for (int group : this.acceptedNpcGroupIndexes) {
-/* 112 */         if (tagSetPlugin.tagInSet(group, npc.getRoleIndex())) {
-/* 113 */           tagFound = true;
+/* 113 */       TagSetPlugin.TagSetLookup tagSetPlugin = TagSetPlugin.get(NPCGroup.class);
+/* 114 */       boolean tagFound = false;
+/* 115 */       for (int group : this.acceptedNpcGroupIndexes) {
+/* 116 */         if (tagSetPlugin.tagInSet(group, npcComponent.getRoleIndex())) {
+/* 117 */           tagFound = true;
 /*     */           
 /*     */           break;
 /*     */         } 
 /*     */       } 
-/* 118 */       if (!tagFound) {
-/* 119 */         (context.getState()).state = InteractionState.Failed;
+/* 122 */       if (!tagFound) {
+/* 123 */         (context.getState()).state = InteractionState.Failed;
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 123 */       PersistentModel persistentModel = (PersistentModel)commandBuffer.getComponent(targetEntity, PersistentModel.getComponentType());
-/* 124 */       if (persistentModel == null) {
-/* 125 */         (context.getState()).state = InteractionState.Failed;
+/* 127 */       PersistentModel persistentModel = (PersistentModel)commandBuffer.getComponent(targetEntity, PersistentModel.getComponentType());
+/* 128 */       if (persistentModel == null) {
+/* 129 */         (context.getState()).state = InteractionState.Failed;
 /*     */         
 /*     */         return;
 /*     */       } 
-/* 129 */       ModelAsset modelAsset = (ModelAsset)ModelAsset.getAssetMap().getAsset(persistentModel.getModelReference().getModelAssetId());
-/* 130 */       CapturedNPCMetadata meta = (CapturedNPCMetadata)inHandItemStack.getFromMetadataOrDefault("CapturedEntity", CapturedNPCMetadata.CODEC);
+/* 133 */       ModelAsset modelAsset = (ModelAsset)ModelAsset.getAssetMap().getAsset(persistentModel.getModelReference().getModelAssetId());
+/* 134 */       CapturedNPCMetadata meta = (CapturedNPCMetadata)inHandItemStack.getFromMetadataOrDefault("CapturedEntity", CapturedNPCMetadata.CODEC);
 /*     */       
-/* 132 */       if (modelAsset != null) {
-/* 133 */         meta.setIconPath(modelAsset.getIcon());
+/* 136 */       if (modelAsset != null) {
+/* 137 */         meta.setIconPath(modelAsset.getIcon());
 /*     */       }
-/* 135 */       meta.setRoleIndex(npc.getRoleIndex());
+/* 139 */       meta.setRoleIndex(npcComponent.getRoleIndex());
 /*     */ 
 /*     */       
-/* 138 */       String npcName = NPCPlugin.get().getName(npc.getRoleIndex());
-/* 139 */       if (npcName != null) {
-/* 140 */         meta.setNpcNameKey(npcName);
+/* 142 */       String npcName = NPCPlugin.get().getName(npcComponent.getRoleIndex());
+/* 143 */       if (npcName != null) {
+/* 144 */         meta.setNpcNameKey(npcName);
 /*     */       }
 /*     */ 
 /*     */       
-/* 144 */       if (this.fullIcon != null) {
-/* 145 */         meta.setFullItemIcon(this.fullIcon);
+/* 148 */       if (this.fullIcon != null) {
+/* 149 */         meta.setFullItemIcon(this.fullIcon);
 /*     */       }
 /*     */       
-/* 148 */       ItemStack itemWithNPC = inHandItemStack.withMetadata(CapturedNPCMetadata.KEYED_CODEC, meta);
-/* 149 */       playerInventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, itemWithNPC);
+/* 152 */       ItemStack itemWithNPC = inHandItemStack.withMetadata(CapturedNPCMetadata.KEYED_CODEC, meta);
+/* 153 */       inventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, itemWithNPC);
 /*     */       
-/* 151 */       commandBuffer.removeEntity(targetEntity, RemoveReason.REMOVE);
+/* 155 */       commandBuffer.removeEntity(targetEntity, RemoveReason.REMOVE);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 155 */     super.tick0(firstRun, time, type, context, cooldownHandler);
+/* 159 */     super.tick0(firstRun, time, type, context, cooldownHandler);
 /*     */   }
-/*     */ 
 /*     */   
 /*     */   protected void interactWithBlock(@Nonnull World world, @Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull Vector3i targetBlock, @Nonnull CooldownHandler cooldownHandler) {
-/* 160 */     ItemStack item = context.getHeldItem();
-/* 161 */     if (item == null) {
-/* 162 */       (context.getState()).state = InteractionState.Failed;
+/*     */     LivingEntity livingEntity;
+/* 164 */     ItemStack item = context.getHeldItem();
+/* 165 */     if (item == null) {
+/* 166 */       (context.getState()).state = InteractionState.Failed;
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 166 */     Ref<EntityStore> playerRef = context.getEntity();
-/* 167 */     LivingEntity playerEntity = (LivingEntity)EntityUtils.getEntity(playerRef, (ComponentAccessor)commandBuffer);
-/* 168 */     Inventory playerInventory = playerEntity.getInventory();
-/* 169 */     byte activeHotbarSlot = playerInventory.getActiveHotbarSlot();
+/* 170 */     Ref<EntityStore> ref = context.getEntity();
+/* 171 */     Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { livingEntity = (LivingEntity)entity; }
+/* 172 */     else { (context.getState()).state = InteractionState.Failed;
+/*     */       
+/*     */       return; }
+/*     */     
+/* 176 */     Inventory inventory = livingEntity.getInventory();
+/* 177 */     byte activeHotbarSlot = inventory.getActiveHotbarSlot();
 /*     */ 
 /*     */     
-/* 172 */     CapturedNPCMetadata existingMeta = (CapturedNPCMetadata)item.getFromMetadataOrNull("CapturedEntity", (Codec)CapturedNPCMetadata.CODEC);
-/* 173 */     if (existingMeta == null) {
-/* 174 */       (context.getState()).state = InteractionState.Failed;
+/* 180 */     CapturedNPCMetadata existingMeta = (CapturedNPCMetadata)item.getFromMetadataOrNull("CapturedEntity", (Codec)CapturedNPCMetadata.CODEC);
+/* 181 */     if (existingMeta == null) {
+/* 182 */       (context.getState()).state = InteractionState.Failed;
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 178 */     BlockPosition pos = context.getTargetBlock();
-/* 179 */     if (pos == null) {
-/* 180 */       (context.getState()).state = InteractionState.Failed;
+/* 186 */     BlockPosition pos = context.getTargetBlock();
+/* 187 */     if (pos == null) {
+/* 188 */       (context.getState()).state = InteractionState.Failed;
 /*     */       
 /*     */       return;
 /*     */     } 
 /*     */     
-/* 185 */     WorldChunk worldChunk = world.getChunk(ChunkUtil.indexChunkFromBlock(pos.x, pos.z));
-/* 186 */     Ref<ChunkStore> blockRef = worldChunk.getBlockComponentEntity(pos.x, pos.y, pos.z);
-/* 187 */     if (blockRef == null) {
-/* 188 */       blockRef = BlockModule.ensureBlockEntity(worldChunk, pos.x, pos.y, pos.z);
+/* 193 */     WorldChunk worldChunk = world.getChunk(ChunkUtil.indexChunkFromBlock(pos.x, pos.z));
+/* 194 */     Ref<ChunkStore> blockRef = worldChunk.getBlockComponentEntity(pos.x, pos.y, pos.z);
+/* 195 */     if (blockRef == null) {
+/* 196 */       blockRef = BlockModule.ensureBlockEntity(worldChunk, pos.x, pos.y, pos.z);
 /*     */     }
 /*     */     
-/* 191 */     ItemStack noMetaItemStack = item.withMetadata(null);
+/* 199 */     ItemStack noMetaItemStack = item.withMetadata(null);
 /*     */     
-/* 193 */     if (blockRef != null) {
-/* 194 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
+/* 201 */     if (blockRef != null) {
+/* 202 */       Store<ChunkStore> chunkStore = world.getChunkStore().getStore();
 /*     */       
-/* 196 */       CoopBlock coopBlockState = (CoopBlock)chunkStore.getComponent(blockRef, CoopBlock.getComponentType());
-/* 197 */       if (coopBlockState != null) {
-/* 198 */         WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
-/* 199 */         if (coopBlockState.tryPutResident(existingMeta, worldTimeResource)) {
-/* 200 */           world.execute(() -> coopBlockState.ensureSpawnResidentsInWorld(world, world.getEntityStore().getStore(), new Vector3d(pos.x, pos.y, pos.z), (new Vector3d()).assign(Vector3d.FORWARD)));
-/* 201 */           playerInventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, noMetaItemStack);
+/* 204 */       CoopBlock coopBlockState = (CoopBlock)chunkStore.getComponent(blockRef, CoopBlock.getComponentType());
+/* 205 */       if (coopBlockState != null) {
+/* 206 */         WorldTimeResource worldTimeResource = (WorldTimeResource)commandBuffer.getResource(WorldTimeResource.getResourceType());
+/* 207 */         if (coopBlockState.tryPutResident(existingMeta, worldTimeResource)) {
+/* 208 */           world.execute(() -> coopBlockState.ensureSpawnResidentsInWorld(world, world.getEntityStore().getStore(), new Vector3d(pos.x, pos.y, pos.z), (new Vector3d()).assign(Vector3d.FORWARD)));
+/* 209 */           inventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, noMetaItemStack);
 /*     */         } else {
-/* 203 */           (context.getState()).state = InteractionState.Failed;
+/* 211 */           (context.getState()).state = InteractionState.Failed;
 /*     */         } 
 /*     */ 
 /*     */         
@@ -208,23 +216,24 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 211 */     Vector3d spawnPos = new Vector3d((pos.x + 0.5F), pos.y, (pos.z + 0.5F));
+/* 219 */     Vector3d spawnPos = new Vector3d((pos.x + 0.5F), pos.y, (pos.z + 0.5F));
 /*     */     
-/* 213 */     if (context.getClientState() != null) {
-/* 214 */       BlockFace blockFace = BlockFace.fromProtocolFace((context.getClientState()).blockFace);
-/* 215 */       if (blockFace != null) {
-/* 216 */         spawnPos.add(blockFace.getDirection());
+/* 221 */     if (context.getClientState() != null) {
+/* 222 */       BlockFace blockFace = BlockFace.fromProtocolFace((context.getClientState()).blockFace);
+/* 223 */       if (blockFace != null) {
+/* 224 */         spawnPos.add(blockFace.getDirection());
 /*     */       }
 /*     */     } 
-/* 219 */     NPCPlugin npcModule = NPCPlugin.get();
-/* 220 */     Store<EntityStore> store = context.getCommandBuffer().getStore();
-/* 221 */     int roleIndex = existingMeta.getRoleIndex();
 /*     */     
-/* 223 */     commandBuffer.run(_store -> npcModule.spawnEntity(store, roleIndex, spawnPos, Vector3f.ZERO, null, null));
+/* 228 */     NPCPlugin npcModule = NPCPlugin.get();
+/* 229 */     Store<EntityStore> store = context.getCommandBuffer().getStore();
+/* 230 */     int roleIndex = existingMeta.getRoleIndex();
+/*     */     
+/* 232 */     commandBuffer.run(_store -> npcModule.spawnEntity(store, roleIndex, spawnPos, Vector3f.ZERO, null, null));
 /*     */ 
 /*     */ 
 /*     */     
-/* 227 */     playerInventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, noMetaItemStack);
+/* 236 */     inventory.getHotbar().replaceItemStackInSlot((short)activeHotbarSlot, item, noMetaItemStack);
 /*     */   }
 /*     */   
 /*     */   protected void simulateInteractWithBlock(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nullable ItemStack itemInHand, @Nonnull World world, @Nonnull Vector3i targetBlock) {}

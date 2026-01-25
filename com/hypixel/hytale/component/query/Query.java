@@ -10,35 +10,64 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public interface Query<ECS_TYPE>
 /*    */ {
 /*    */   @Nonnull
 /*    */   static <ECS_TYPE> AnyQuery<ECS_TYPE> any() {
-/* 17 */     return (AnyQuery)AnyQuery.INSTANCE;
+/* 25 */     return (AnyQuery)AnyQuery.INSTANCE;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   @Nonnull
-/*    */   static <ECS_TYPE> NotQuery<ECS_TYPE> not(Query<ECS_TYPE> query) {
-/* 22 */     return new NotQuery<>(query);
+/*    */   static <ECS_TYPE> NotQuery<ECS_TYPE> not(@Nonnull Query<ECS_TYPE> query) {
+/* 37 */     return new NotQuery<>(query);
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   @SafeVarargs
-/*    */   static <ECS_TYPE> AndQuery<ECS_TYPE> and(Query<ECS_TYPE>... queries) {
-/* 28 */     return new AndQuery<>(queries);
+/*    */   static <ECS_TYPE> AndQuery<ECS_TYPE> and(@Nonnull Query<ECS_TYPE>... queries) {
+/* 50 */     return new AndQuery<>(queries);
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   @SafeVarargs
-/*    */   static <ECS_TYPE> OrQuery<ECS_TYPE> or(Query<ECS_TYPE>... queries) {
-/* 34 */     return new OrQuery<>(queries);
+/*    */   static <ECS_TYPE> OrQuery<ECS_TYPE> or(@Nonnull Query<ECS_TYPE>... queries) {
+/* 63 */     return new OrQuery<>(queries);
 /*    */   }
 /*    */   
 /*    */   boolean test(Archetype<ECS_TYPE> paramArchetype);
 /*    */   
 /*    */   boolean requiresComponentType(ComponentType<ECS_TYPE, ?> paramComponentType);
 /*    */   
-/*    */   void validateRegistry(ComponentRegistry<ECS_TYPE> paramComponentRegistry);
+/*    */   void validateRegistry(@Nonnull ComponentRegistry<ECS_TYPE> paramComponentRegistry);
 /*    */   
 /*    */   void validate();
 /*    */ }

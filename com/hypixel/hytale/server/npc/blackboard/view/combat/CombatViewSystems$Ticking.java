@@ -71,8 +71,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class Ticking
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -80,27 +78,27 @@
 /*     */   private final ResourceType<EntityStore, CombatViewSystems.CombatDataPool> dataPoolResourceType;
 /*     */   
 /*     */   public Ticking(ComponentType<EntityStore, CombatViewSystems.CombatData> combatDataComponentType, ResourceType<EntityStore, CombatViewSystems.CombatDataPool> dataPoolResourceType) {
-/*  83 */     this.combatDataComponentType = combatDataComponentType;
-/*  84 */     this.dataPoolResourceType = dataPoolResourceType;
+/*  81 */     this.combatDataComponentType = combatDataComponentType;
+/*  82 */     this.dataPoolResourceType = dataPoolResourceType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<EntityStore> getQuery() {
-/*  89 */     return (Query)this.combatDataComponentType;
+/*  87 */     return (Query)this.combatDataComponentType;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/*  95 */     return false;
+/*  93 */     return false;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 101 */     CombatViewSystems.CombatData combatData = (CombatViewSystems.CombatData)archetypeChunk.getComponent(index, this.combatDataComponentType);
-/* 102 */     CombatViewSystems.CombatDataPool dataPool = (CombatViewSystems.CombatDataPool)store.getResource(this.dataPoolResourceType);
-/* 103 */     CombatViewSystems.clearCombatData(combatData, dataPool);
+/*  99 */     CombatViewSystems.CombatData combatData = (CombatViewSystems.CombatData)archetypeChunk.getComponent(index, this.combatDataComponentType);
+/* 100 */     CombatViewSystems.CombatDataPool dataPool = (CombatViewSystems.CombatDataPool)store.getResource(this.dataPoolResourceType);
+/* 101 */     CombatViewSystems.clearCombatData(combatData, dataPool);
 /*     */   }
 /*     */ }
 

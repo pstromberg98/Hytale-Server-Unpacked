@@ -6,6 +6,8 @@
 /*     */ import com.hypixel.hytale.component.ComponentAccessor;
 /*     */ import com.hypixel.hytale.component.Ref;
 /*     */ import com.hypixel.hytale.component.Store;
+/*     */ import com.hypixel.hytale.math.util.MathUtil;
+/*     */ import com.hypixel.hytale.math.vector.Vector3d;
 /*     */ import com.hypixel.hytale.math.vector.Vector3i;
 /*     */ import com.hypixel.hytale.protocol.GameMode;
 /*     */ import com.hypixel.hytale.protocol.SoundCategory;
@@ -18,6 +20,7 @@
 /*     */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgumentType;
 /*     */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 /*     */ import com.hypixel.hytale.server.core.entity.entities.Player;
+/*     */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 /*     */ import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 /*     */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*     */ import com.hypixel.hytale.server.core.universe.world.SoundUtil;
@@ -25,46 +28,53 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import com.hypixel.hytale.server.core.util.TempAssetIdUtil;
 /*     */ import javax.annotation.Nonnull;
+/*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ 
 /*     */ public class CopyCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/*  34 */   private static final Message MESSAGE_BUILDER_TOOLS_COPY_CUT_NO_SELECTION = Message.translation("server.builderTools.copycut.noSelection");
+/*  38 */   private static final Message MESSAGE_BUILDER_TOOLS_COPY_CUT_NO_SELECTION = Message.translation("server.builderTools.copycut.noSelection");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  40 */   private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
+/*  44 */   private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  46 */   private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
+/*  50 */   private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  52 */   private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
+/*  56 */   private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  58 */   private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/*  62 */   private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/*  68 */   private final FlagArg playerAnchorFlag = withFlagArg("playerAnchor", "server.commands.copy.playerAnchor.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public CopyCommand() {
-/*  64 */     super("copy", "server.commands.copy.desc");
-/*  65 */     setPermissionGroup(GameMode.Creative);
-/*  66 */     requirePermission("hytale.editor.selection.clipboard");
-/*  67 */     addUsageVariant((AbstractCommand)new CopyRegionCommand());
+/*  74 */     super("copy", "server.commands.copy.desc");
+/*  75 */     setPermissionGroup(GameMode.Creative);
+/*  76 */     requirePermission("hytale.editor.selection.clipboard");
+/*  77 */     addUsageVariant((AbstractCommand)new CopyRegionCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -73,24 +83,25 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  76 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/*  77 */     assert playerComponent != null;
+/*  86 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/*  87 */     assert playerComponent != null;
 /*     */     
-/*  79 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
+/*  89 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
 /*     */       return; 
-/*  81 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
-/*  82 */     boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
-/*  83 */     boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
+/*  91 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
+/*  92 */     boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
+/*  93 */     boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
 /*     */     
-/*  85 */     int settings = 0;
-/*  86 */     if (!entitiesOnly) settings |= 0x8; 
-/*  87 */     if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
-/*  88 */     if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
+/*  95 */     int settings = 0;
+/*  96 */     if (!entitiesOnly) settings |= 0x8; 
+/*  97 */     if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
+/*  98 */     if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
 /*     */     
-/*  90 */     if (!noEntities || entitiesOnly) settings |= 0x10;
+/* 100 */     if (!noEntities || entitiesOnly) settings |= 0x10;
 /*     */     
-/*  92 */     int settingsFinal = settings;
-/*  93 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
+/* 102 */     int settingsFinal = settings;
+/* 103 */     Vector3i playerAnchor = getPlayerAnchor(ref, store, ((Boolean)this.playerAnchorFlag.get(context)).booleanValue());
+/* 104 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
 /*     */           try {
 /*     */             BlockSelection selection = builderState.getSelection();
 /*     */             
@@ -100,11 +111,28 @@
 /*     */             } 
 /*     */             Vector3i min = selection.getSelectionMin();
 /*     */             Vector3i max = selection.getSelectionMax();
-/*     */             builderState.copyOrCut(r, min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ(), settingsFinal, componentAccessor);
-/* 104 */           } catch (PrefabCopyException e) {
+/*     */             builderState.copyOrCut(r, min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ(), settingsFinal, playerAnchor, componentAccessor);
+/* 115 */           } catch (PrefabCopyException e) {
 /*     */             context.sendMessage(Message.translation("server.builderTools.copycut.copyFailedReason").param("reason", e.getMessage()));
 /*     */           } 
 /*     */         });
+/*     */   }
+/*     */ 
+/*     */   
+/*     */   @Nullable
+/*     */   private static Vector3i getPlayerAnchor(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, boolean usePlayerAnchor) {
+/* 124 */     if (!usePlayerAnchor) {
+/* 125 */       return null;
+/*     */     }
+/* 127 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 128 */     if (transformComponent == null) {
+/* 129 */       return null;
+/*     */     }
+/* 131 */     Vector3d position = transformComponent.getPosition();
+/* 132 */     return new Vector3i(
+/* 133 */         MathUtil.floor(position.getX()), 
+/* 134 */         MathUtil.floor(position.getY()), 
+/* 135 */         MathUtil.floor(position.getZ()));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -117,99 +145,106 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/* 120 */     private final RequiredArg<Integer> xMinArg = withRequiredArg("xMin", "server.commands.copy.xMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 148 */     private final RequiredArg<Integer> xMinArg = withRequiredArg("xMin", "server.commands.copy.xMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 126 */     private final RequiredArg<Integer> yMinArg = withRequiredArg("yMin", "server.commands.copy.yMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 154 */     private final RequiredArg<Integer> yMinArg = withRequiredArg("yMin", "server.commands.copy.yMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 132 */     private final RequiredArg<Integer> zMinArg = withRequiredArg("zMin", "server.commands.copy.zMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 160 */     private final RequiredArg<Integer> zMinArg = withRequiredArg("zMin", "server.commands.copy.zMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 138 */     private final RequiredArg<Integer> xMaxArg = withRequiredArg("xMax", "server.commands.copy.xMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 166 */     private final RequiredArg<Integer> xMaxArg = withRequiredArg("xMax", "server.commands.copy.xMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 144 */     private final RequiredArg<Integer> yMaxArg = withRequiredArg("yMax", "server.commands.copy.yMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 172 */     private final RequiredArg<Integer> yMaxArg = withRequiredArg("yMax", "server.commands.copy.yMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 150 */     private final RequiredArg<Integer> zMaxArg = withRequiredArg("zMax", "server.commands.copy.zMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 178 */     private final RequiredArg<Integer> zMaxArg = withRequiredArg("zMax", "server.commands.copy.zMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 156 */     private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
+/* 184 */     private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 162 */     private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
+/* 190 */     private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 168 */     private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
+/* 196 */     private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     @Nonnull
-/* 174 */     private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/* 202 */     private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/* 208 */     private final FlagArg playerAnchorFlag = withFlagArg("playerAnchor", "server.commands.copy.playerAnchor.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public CopyRegionCommand() {
-/* 180 */       super("server.commands.copy.desc");
+/* 214 */       super("server.commands.copy.desc");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 185 */       Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 186 */       assert playerComponent != null;
+/* 219 */       Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 220 */       assert playerComponent != null;
 /*     */       
-/* 188 */       if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
+/* 222 */       if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
 /*     */         return; 
-/* 190 */       BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
-/* 191 */       boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
-/* 192 */       boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
+/* 224 */       BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
+/* 225 */       boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
+/* 226 */       boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
 /*     */       
-/* 194 */       int settings = 0;
-/* 195 */       if (!entitiesOnly) settings |= 0x8; 
-/* 196 */       if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
-/* 197 */       if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
+/* 228 */       int settings = 0;
+/* 229 */       if (!entitiesOnly) settings |= 0x8; 
+/* 230 */       if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
+/* 231 */       if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
 /*     */       
-/* 199 */       if (!noEntities || entitiesOnly) settings |= 0x10;
+/* 233 */       if (!noEntities || entitiesOnly) settings |= 0x10;
 /*     */       
-/* 201 */       int xMin = ((Integer)this.xMinArg.get(context)).intValue();
-/* 202 */       int yMin = ((Integer)this.yMinArg.get(context)).intValue();
-/* 203 */       int zMin = ((Integer)this.zMinArg.get(context)).intValue();
-/* 204 */       int xMax = ((Integer)this.xMaxArg.get(context)).intValue();
-/* 205 */       int yMax = ((Integer)this.yMaxArg.get(context)).intValue();
-/* 206 */       int zMax = ((Integer)this.zMaxArg.get(context)).intValue();
+/* 235 */       int xMin = ((Integer)this.xMinArg.get(context)).intValue();
+/* 236 */       int yMin = ((Integer)this.yMinArg.get(context)).intValue();
+/* 237 */       int zMin = ((Integer)this.zMinArg.get(context)).intValue();
+/* 238 */       int xMax = ((Integer)this.xMaxArg.get(context)).intValue();
+/* 239 */       int yMax = ((Integer)this.yMaxArg.get(context)).intValue();
+/* 240 */       int zMax = ((Integer)this.zMaxArg.get(context)).intValue();
 /*     */       
-/* 208 */       int copySettings = settings;
-/* 209 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
+/* 242 */       int copySettings = settings;
+/* 243 */       Vector3i playerAnchor = CopyCommand.getPlayerAnchor(ref, store, ((Boolean)this.playerAnchorFlag.get(context)).booleanValue());
+/* 244 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
 /*     */             try {
-/*     */               builderState.copyOrCut(r, xMin, yMin, zMin, xMax, yMax, zMax, copySettings, componentAccessor);
-/* 212 */             } catch (PrefabCopyException e) {
+/*     */               builderState.copyOrCut(r, xMin, yMin, zMin, xMax, yMax, zMax, copySettings, playerAnchor, componentAccessor);
+/* 247 */             } catch (PrefabCopyException e) {
 /*     */               context.sendMessage(Message.translation("server.builderTools.copycut.copyFailedReason").param("reason", e.getMessage()));
 /*     */               SoundUtil.playSoundEvent2d(r, TempAssetIdUtil.getSoundEventIndex("CREATE_ERROR"), SoundCategory.UI, componentAccessor);
 /*     */             } 
@@ -225,13 +260,13 @@
 /*     */ 
 /*     */   
 /*     */   public static void copySelection(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 228 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/* 229 */     assert playerComponent != null;
+/* 263 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 264 */     assert playerComponent != null;
 /*     */     
-/* 231 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/* 232 */     assert playerRefComponent != null;
+/* 266 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/* 267 */     assert playerRefComponent != null;
 /*     */     
-/* 234 */     copySelection(ref, componentAccessor, BuilderToolsPlugin.getState(playerComponent, playerRefComponent), 24);
+/* 269 */     copySelection(ref, componentAccessor, BuilderToolsPlugin.getState(playerComponent, playerRefComponent), 24);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -243,13 +278,13 @@
 /*     */ 
 /*     */   
 /*     */   public static void copySelection(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull BuilderToolsPlugin.BuilderState builderState, int settings) {
-/* 246 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
-/* 247 */     assert playerComponent != null;
+/* 281 */     Player playerComponent = (Player)componentAccessor.getComponent(ref, Player.getComponentType());
+/* 282 */     assert playerComponent != null;
 /*     */     
-/* 249 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
-/* 250 */     assert playerRefComponent != null;
+/* 284 */     PlayerRef playerRefComponent = (PlayerRef)componentAccessor.getComponent(ref, PlayerRef.getComponentType());
+/* 285 */     assert playerRefComponent != null;
 /*     */     
-/* 252 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRefComponent, (r, s, c) -> {
+/* 287 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRefComponent, (r, s, c) -> {
 /*     */           try {
 /*     */             BlockSelection selection = builderState.getSelection();
 /*     */             
@@ -260,7 +295,7 @@
 /*     */             Vector3i min = selection.getSelectionMin();
 /*     */             Vector3i max = selection.getSelectionMax();
 /*     */             builderState.copyOrCut(r, min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ(), settings, c);
-/* 263 */           } catch (PrefabCopyException e) {
+/* 298 */           } catch (PrefabCopyException e) {
 /*     */             playerComponent.sendMessage(Message.translation("server.builderTools.copycut.copyFailedReason").param("reason", e.getMessage()));
 /*     */           } 
 /*     */         });

@@ -12,13 +12,17 @@
 /*     */ import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 /*     */ import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 /*     */ import com.hypixel.hytale.server.core.command.system.CommandContext;
+/*     */ import com.hypixel.hytale.server.core.command.system.CommandUtil;
 /*     */ import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+/*     */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 /*     */ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgumentType;
+/*     */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractCommandCollection;
 /*     */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 /*     */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractWorldCommand;
 /*     */ import com.hypixel.hytale.server.core.entity.UUIDComponent;
 /*     */ import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.HiddenFromAdventurePlayers;
+/*     */ import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.PersistentModel;
 /*     */ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
@@ -29,26 +33,12 @@
 /*     */ import javax.annotation.Nonnull;
 /*     */ 
 /*     */ public class ObjectiveLocationMarkerCommand extends AbstractCommandCollection {
-/*     */   @Nonnull
-/*  33 */   private static final Message MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_NOT_FOUND = Message.translation("server.commands.objective.locationMarker.notFound");
-/*     */   @Nonnull
-/*  35 */   private static final Message MESSAGE_GENERAL_FAILED_DID_YOU_MEAN = Message.translation("server.general.failed.didYouMean");
-/*     */   @Nonnull
-/*  37 */   private static final Message MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_ADDED = Message.translation("server.commands.objective.locationMarker.added");
-/*     */   @Nonnull
-/*  39 */   private static final Message MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_ENABLED = Message.translation("server.commands.objective.locationMarker.enabled");
-/*     */   @Nonnull
-/*  41 */   private static final Message MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_DISABLED = Message.translation("server.commands.objective.locationMarker.disabled");
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
 /*     */   public ObjectiveLocationMarkerCommand() {
-/*  47 */     super("locationmarker", "server.commands.objective.locationMarker");
-/*  48 */     addAliases(new String[] { "marker" });
-/*  49 */     addSubCommand((AbstractCommand)new AddLocationMarkerCommand());
-/*  50 */     addSubCommand((AbstractCommand)new EnableLocationMarkerCommand());
-/*  51 */     addSubCommand((AbstractCommand)new DisableLocationMarkerCommand());
+/*  37 */     super("locationmarker", "server.commands.objective.locationMarker");
+/*  38 */     addAliases(new String[] { "marker" });
+/*  39 */     addSubCommand((AbstractCommand)new AddLocationMarkerCommand());
+/*  40 */     addSubCommand((AbstractCommand)new EnableLocationMarkerCommand());
+/*  41 */     addSubCommand((AbstractCommand)new DisableLocationMarkerCommand());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -59,13 +49,13 @@
 /*     */     extends AbstractPlayerCommand
 /*     */   {
 /*     */     @Nonnull
-/*  62 */     private final RequiredArg<String> locationMarkerArg = withRequiredArg("locationMarkerId", "server.commands.objective.locationMarker.add.arg.locationMarkerId.desc", (ArgumentType)ArgTypes.STRING);
+/*  52 */     private final RequiredArg<String> locationMarkerArg = withRequiredArg("locationMarkerId", "server.commands.objective.locationMarker.add.arg.locationMarkerId.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public AddLocationMarkerCommand() {
-/*  68 */       super("add", "server.commands.objective.locationMarker.add");
+/*  58 */       super("add", "server.commands.objective.locationMarker.add");
 /*     */     }
 /*     */ 
 /*     */ 
@@ -76,34 +66,35 @@
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  79 */       Ref<EntityStore> playerReference = playerRef.getReference();
-/*  80 */       TransformComponent playerTransformComponent = (TransformComponent)store.getComponent(playerReference, TransformComponent.getComponentType());
-/*  81 */       assert playerTransformComponent != null;
+/*  69 */       Ref<EntityStore> playerReference = playerRef.getReference();
+/*  70 */       TransformComponent playerTransformComponent = (TransformComponent)store.getComponent(playerReference, TransformComponent.getComponentType());
+/*  71 */       assert playerTransformComponent != null;
 /*     */       
-/*  83 */       String objectiveLocationMarkerId = (String)this.locationMarkerArg.get(context);
-/*  84 */       if (ObjectiveLocationMarkerAsset.getAssetMap().getAsset(objectiveLocationMarkerId) == null) {
-/*  85 */         context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_NOT_FOUND.param("id", objectiveLocationMarkerId));
-/*  86 */         context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_GENERAL_FAILED_DID_YOU_MEAN
-/*  87 */             .param("choices", StringUtil.sortByFuzzyDistance(objectiveLocationMarkerId, ObjectiveLocationMarkerAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
+/*  73 */       String objectiveLocationMarkerId = (String)this.locationMarkerArg.get(context);
+/*  74 */       if (ObjectiveLocationMarkerAsset.getAssetMap().getAsset(objectiveLocationMarkerId) == null) {
+/*  75 */         context.sendMessage(Message.translation("server.commands.objective.locationMarker.notFound")
+/*  76 */             .param("id", objectiveLocationMarkerId));
+/*  77 */         context.sendMessage(Message.translation("server.general.failed.didYouMean")
+/*  78 */             .param("choices", StringUtil.sortByFuzzyDistance(objectiveLocationMarkerId, ObjectiveLocationMarkerAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
 /*     */         
 /*     */         return;
 /*     */       } 
-/*  91 */       Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-/*  92 */       holder.addComponent(ObjectiveLocationMarker.getComponentType(), (Component)new ObjectiveLocationMarker(objectiveLocationMarkerId));
+/*  82 */       Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+/*  83 */       holder.addComponent(ObjectiveLocationMarker.getComponentType(), (Component)new ObjectiveLocationMarker(objectiveLocationMarkerId));
 /*     */       
-/*  94 */       Model model = ObjectivePlugin.get().getObjectiveLocationMarkerModel();
-/*  95 */       holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
-/*  96 */       holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
-/*  97 */       holder.addComponent(Nameplate.getComponentType(), (Component)new Nameplate(objectiveLocationMarkerId));
+/*  85 */       Model model = ObjectivePlugin.get().getObjectiveLocationMarkerModel();
+/*  86 */       holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
+/*  87 */       holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
+/*  88 */       holder.addComponent(Nameplate.getComponentType(), (Component)new Nameplate(objectiveLocationMarkerId));
 /*     */       
-/*  99 */       TransformComponent transform = new TransformComponent(playerTransformComponent.getPosition(), playerTransformComponent.getRotation());
-/* 100 */       holder.addComponent(TransformComponent.getComponentType(), (Component)transform);
-/* 101 */       holder.ensureComponent(UUIDComponent.getComponentType());
-/* 102 */       holder.ensureComponent(Intangible.getComponentType());
-/* 103 */       holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
-/* 104 */       store.addEntity(holder, AddReason.SPAWN);
-/* 105 */       context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_ADDED
-/* 106 */           .param("id", objectiveLocationMarkerId));
+/*  90 */       TransformComponent transform = new TransformComponent(playerTransformComponent.getPosition(), playerTransformComponent.getRotation());
+/*  91 */       holder.addComponent(TransformComponent.getComponentType(), (Component)transform);
+/*  92 */       holder.ensureComponent(UUIDComponent.getComponentType());
+/*  93 */       holder.ensureComponent(Intangible.getComponentType());
+/*  94 */       holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
+/*  95 */       store.addEntity(holder, AddReason.SPAWN);
+/*  96 */       context.sendMessage(Message.translation("server.commands.objective.locationMarker.added")
+/*  97 */           .param("id", objectiveLocationMarkerId));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -115,16 +106,16 @@
 /*     */     extends AbstractWorldCommand
 /*     */   {
 /*     */     public EnableLocationMarkerCommand() {
-/* 118 */       super("enable", "server.commands.objective.locationMarker.enable");
+/* 109 */       super("enable", "server.commands.objective.locationMarker.enable");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 123 */       WorldConfig worldConfig = world.getWorldConfig();
-/* 124 */       worldConfig.setObjectiveMarkersEnabled(true);
-/* 125 */       worldConfig.markChanged();
-/* 126 */       context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_ENABLED
-/* 127 */           .param("worldName", world.getName()));
+/* 114 */       WorldConfig worldConfig = world.getWorldConfig();
+/* 115 */       worldConfig.setObjectiveMarkersEnabled(true);
+/* 116 */       worldConfig.markChanged();
+/* 117 */       context.sendMessage(Message.translation("server.commands.objective.locationMarker.enabled")
+/* 118 */           .param("worldName", world.getName()));
 /*     */     }
 /*     */   }
 /*     */ 
@@ -136,16 +127,16 @@
 /*     */     extends AbstractWorldCommand
 /*     */   {
 /*     */     public DisableLocationMarkerCommand() {
-/* 139 */       super("disable", "server.commands.objective.locationMarker.disable");
+/* 130 */       super("disable", "server.commands.objective.locationMarker.disable");
 /*     */     }
 /*     */ 
 /*     */     
 /*     */     protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 144 */       WorldConfig worldConfig = world.getWorldConfig();
-/* 145 */       worldConfig.setObjectiveMarkersEnabled(false);
-/* 146 */       worldConfig.markChanged();
-/* 147 */       context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_DISABLED
-/* 148 */           .param("worldName", world.getName()));
+/* 135 */       WorldConfig worldConfig = world.getWorldConfig();
+/* 136 */       worldConfig.setObjectiveMarkersEnabled(false);
+/* 137 */       worldConfig.markChanged();
+/* 138 */       context.sendMessage(Message.translation("server.commands.objective.locationMarker.disabled")
+/* 139 */           .param("worldName", world.getName()));
 /*     */     }
 /*     */   }
 /*     */ }

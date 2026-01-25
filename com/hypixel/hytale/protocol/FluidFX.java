@@ -72,24 +72,24 @@
 /*  72 */     byte nullBits = buf.getByte(offset);
 /*  73 */     obj.shader = ShaderType.fromValue(buf.getByte(offset + 1));
 /*  74 */     obj.fogMode = FluidFog.fromValue(buf.getByte(offset + 2));
-/*  75 */     if ((nullBits & 0x2) != 0) obj.fogColor = Color.deserialize(buf, offset + 3); 
-/*  76 */     if ((nullBits & 0x4) != 0) obj.fogDistance = NearFar.deserialize(buf, offset + 6); 
+/*  75 */     if ((nullBits & 0x1) != 0) obj.fogColor = Color.deserialize(buf, offset + 3); 
+/*  76 */     if ((nullBits & 0x2) != 0) obj.fogDistance = NearFar.deserialize(buf, offset + 6); 
 /*  77 */     obj.fogDepthStart = buf.getFloatLE(offset + 14);
 /*  78 */     obj.fogDepthFalloff = buf.getFloatLE(offset + 18);
-/*  79 */     if ((nullBits & 0x8) != 0) obj.colorFilter = Color.deserialize(buf, offset + 22); 
+/*  79 */     if ((nullBits & 0x4) != 0) obj.colorFilter = Color.deserialize(buf, offset + 22); 
 /*  80 */     obj.colorSaturation = buf.getFloatLE(offset + 25);
 /*  81 */     obj.distortionAmplitude = buf.getFloatLE(offset + 29);
 /*  82 */     obj.distortionFrequency = buf.getFloatLE(offset + 33);
-/*  83 */     if ((nullBits & 0x20) != 0) obj.movementSettings = FluidFXMovementSettings.deserialize(buf, offset + 37);
+/*  83 */     if ((nullBits & 0x8) != 0) obj.movementSettings = FluidFXMovementSettings.deserialize(buf, offset + 37);
 /*     */     
-/*  85 */     if ((nullBits & 0x1) != 0) {
+/*  85 */     if ((nullBits & 0x10) != 0) {
 /*  86 */       int varPos0 = offset + 69 + buf.getIntLE(offset + 61);
 /*  87 */       int idLen = VarInt.peek(buf, varPos0);
 /*  88 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  89 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  90 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  92 */     if ((nullBits & 0x10) != 0) {
+/*  92 */     if ((nullBits & 0x20) != 0) {
 /*  93 */       int varPos1 = offset + 69 + buf.getIntLE(offset + 65);
 /*  94 */       obj.particle = FluidParticle.deserialize(buf, varPos1);
 /*     */     } 
@@ -100,13 +100,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 101 */     byte nullBits = buf.getByte(offset);
 /* 102 */     int maxEnd = 69;
-/* 103 */     if ((nullBits & 0x1) != 0) {
+/* 103 */     if ((nullBits & 0x10) != 0) {
 /* 104 */       int fieldOffset0 = buf.getIntLE(offset + 61);
 /* 105 */       int pos0 = offset + 69 + fieldOffset0;
 /* 106 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 107 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 109 */     if ((nullBits & 0x10) != 0) {
+/* 109 */     if ((nullBits & 0x20) != 0) {
 /* 110 */       int fieldOffset1 = buf.getIntLE(offset + 65);
 /* 111 */       int pos1 = offset + 69 + fieldOffset1;
 /* 112 */       pos1 += FluidParticle.computeBytesConsumed(buf, pos1);
@@ -119,12 +119,12 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 120 */     int startPos = buf.writerIndex();
 /* 121 */     byte nullBits = 0;
-/* 122 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 123 */     if (this.fogColor != null) nullBits = (byte)(nullBits | 0x2); 
-/* 124 */     if (this.fogDistance != null) nullBits = (byte)(nullBits | 0x4); 
-/* 125 */     if (this.colorFilter != null) nullBits = (byte)(nullBits | 0x8); 
-/* 126 */     if (this.particle != null) nullBits = (byte)(nullBits | 0x10); 
-/* 127 */     if (this.movementSettings != null) nullBits = (byte)(nullBits | 0x20); 
+/* 122 */     if (this.fogColor != null) nullBits = (byte)(nullBits | 0x1); 
+/* 123 */     if (this.fogDistance != null) nullBits = (byte)(nullBits | 0x2); 
+/* 124 */     if (this.colorFilter != null) nullBits = (byte)(nullBits | 0x4); 
+/* 125 */     if (this.movementSettings != null) nullBits = (byte)(nullBits | 0x8); 
+/* 126 */     if (this.id != null) nullBits = (byte)(nullBits | 0x10); 
+/* 127 */     if (this.particle != null) nullBits = (byte)(nullBits | 0x20); 
 /* 128 */     buf.writeByte(nullBits);
 /*     */     
 /* 130 */     buf.writeByte(this.shader.getValue());
@@ -176,7 +176,7 @@
 /* 176 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 179 */     if ((nullBits & 0x1) != 0) {
+/* 179 */     if ((nullBits & 0x10) != 0) {
 /* 180 */       int idOffset = buffer.getIntLE(offset + 61);
 /* 181 */       if (idOffset < 0) {
 /* 182 */         return ValidationResult.error("Invalid offset for Id");
@@ -199,7 +199,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 202 */     if ((nullBits & 0x10) != 0) {
+/* 202 */     if ((nullBits & 0x20) != 0) {
 /* 203 */       int particleOffset = buffer.getIntLE(offset + 65);
 /* 204 */       if (particleOffset < 0) {
 /* 205 */         return ValidationResult.error("Invalid offset for Particle");

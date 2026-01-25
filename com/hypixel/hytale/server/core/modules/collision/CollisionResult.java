@@ -290,57 +290,56 @@
 /* 290 */             int x = triggerCollision.x;
 /* 291 */             int y = triggerCollision.y;
 /* 292 */             int z = triggerCollision.z;
-/* 293 */             String blockTypeId = blockType.getId();
-/* 294 */             if (filler != 0) {
-/* 295 */               x -= FillerBlockUtil.unpackX(filler);
-/* 296 */               y -= FillerBlockUtil.unpackY(filler);
-/* 297 */               z -= FillerBlockUtil.unpackZ(filler);
+/* 293 */             if (filler != 0) {
+/* 294 */               x -= FillerBlockUtil.unpackX(filler);
+/* 295 */               y -= FillerBlockUtil.unpackY(filler);
+/* 296 */               z -= FillerBlockUtil.unpackZ(filler);
 /*     */             } 
 /*     */ 
 /*     */ 
 /*     */             
-/* 302 */             long index = BlockUtil.pack(x, y, z);
-/* 303 */             if (this.newTriggers.add(index)) {
+/* 301 */             long index = BlockUtil.packUnchecked(x, y, z);
+/* 302 */             if (this.newTriggers.add(index)) {
 /*     */ 
 /*     */ 
 /*     */               
-/* 307 */               BlockPosition pos = new BlockPosition(x, y, z);
+/* 306 */               BlockPosition pos = new BlockPosition(x, y, z);
 /*     */               
-/* 309 */               if (!this.lastTriggers.remove(index) && 
-/* 310 */                 interactionsEnter != null) {
-/* 311 */                 doCollisionInteraction(manager, InteractionType.CollisionEnter, ref, interactionsEnter, pos, componentAccessor);
+/* 308 */               if (!this.lastTriggers.remove(index) && 
+/* 309 */                 interactionsEnter != null) {
+/* 310 */                 doCollisionInteraction(manager, InteractionType.CollisionEnter, ref, interactionsEnter, pos, componentAccessor);
 /*     */               }
 /*     */ 
 /*     */               
-/* 315 */               if (interactions != null) {
-/* 316 */                 doCollisionInteraction(manager, InteractionType.Collision, ref, interactions, pos, componentAccessor);
+/* 314 */               if (interactions != null) {
+/* 315 */                 doCollisionInteraction(manager, InteractionType.Collision, ref, interactions, pos, componentAccessor);
 /*     */               }
 /*     */             } 
 /*     */           } 
 /*     */         } 
 /*     */       } 
 /*     */     } 
-/* 323 */     if (executeTriggers && entity instanceof com.hypixel.hytale.server.core.entity.LivingEntity && !this.lastTriggers.isEmpty())
+/* 322 */     if (executeTriggers && entity instanceof com.hypixel.hytale.server.core.entity.LivingEntity && !this.lastTriggers.isEmpty())
 /*     */     {
-/* 325 */       for (LongIterator<Long> longIterator = this.lastTriggers.iterator(); longIterator.hasNext(); ) { Long old = longIterator.next();
-/* 326 */         int x = BlockUtil.unpackX(old.longValue());
-/* 327 */         int y = BlockUtil.unpackY(old.longValue());
-/* 328 */         int z = BlockUtil.unpackZ(old.longValue());
+/* 324 */       for (LongIterator<Long> longIterator = this.lastTriggers.iterator(); longIterator.hasNext(); ) { Long old = longIterator.next();
+/* 325 */         int x = BlockUtil.unpackX(old.longValue());
+/* 326 */         int y = BlockUtil.unpackY(old.longValue());
+/* 327 */         int z = BlockUtil.unpackZ(old.longValue());
 /*     */         
-/* 330 */         WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(x, z));
-/* 331 */         if (chunk != null) {
-/* 332 */           BlockType blockType = chunk.getBlockType(x, y, z);
-/* 333 */           Fluid fluidType = (Fluid)Fluid.getAssetMap().getAsset(chunk.getFluidId(x, y, z));
-/* 334 */           String interactions = (String)blockType.getInteractions().get(InteractionType.CollisionLeave);
-/* 335 */           if (interactions == null) interactions = (String)fluidType.getInteractions().get(InteractionType.CollisionLeave); 
-/* 336 */           if (interactions != null) {
-/* 337 */             doCollisionInteraction(manager, InteractionType.CollisionLeave, ref, interactions, new BlockPosition(x, y, z), componentAccessor);
+/* 329 */         WorldChunk chunk = world.getChunkIfInMemory(ChunkUtil.indexChunkFromBlock(x, z));
+/* 330 */         if (chunk != null) {
+/* 331 */           BlockType blockType = chunk.getBlockType(x, y, z);
+/* 332 */           Fluid fluidType = (Fluid)Fluid.getAssetMap().getAsset(chunk.getFluidId(x, y, z));
+/* 333 */           String interactions = (String)blockType.getInteractions().get(InteractionType.CollisionLeave);
+/* 334 */           if (interactions == null) interactions = (String)fluidType.getInteractions().get(InteractionType.CollisionLeave); 
+/* 335 */           if (interactions != null) {
+/* 336 */             doCollisionInteraction(manager, InteractionType.CollisionLeave, ref, interactions, new BlockPosition(x, y, z), componentAccessor);
 /*     */           }
 /*     */         }  }
 /*     */     
 /*     */     }
 /*     */     
-/* 343 */     return damageToEntity;
+/* 342 */     return damageToEntity;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -350,103 +349,103 @@
 /*     */ 
 /*     */   
 /*     */   private void doCollisionInteraction(@Nonnull InteractionManager manager, @Nonnull InteractionType type, @Nonnull Ref<EntityStore> ref, @Nonnull String interactions, @Nonnull BlockPosition pos, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/* 353 */     RootInteraction root = RootInteraction.getRootInteractionOrUnknown(interactions);
+/* 352 */     RootInteraction root = RootInteraction.getRootInteractionOrUnknown(interactions);
 /*     */     
-/* 355 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
-/* 356 */     InteractionContext context = InteractionContext.forInteraction(manager, ref, type, componentAccessor);
-/* 357 */     context.getMetaStore().putMetaObject(Interaction.TARGET_BLOCK_RAW, pos);
-/* 358 */     context.getMetaStore().putMetaObject(Interaction.TARGET_BLOCK, world.getBaseBlock(pos));
+/* 354 */     World world = ((EntityStore)componentAccessor.getExternalData()).getWorld();
+/* 355 */     InteractionContext context = InteractionContext.forInteraction(manager, ref, type, componentAccessor);
+/* 356 */     context.getMetaStore().putMetaObject(Interaction.TARGET_BLOCK_RAW, pos);
+/* 357 */     context.getMetaStore().putMetaObject(Interaction.TARGET_BLOCK, world.getBaseBlock(pos));
 /*     */     
-/* 360 */     InteractionChain chain = manager.initChain(type, context, root, -1, pos, false);
-/* 361 */     manager.queueExecuteChain(chain);
+/* 359 */     InteractionChain chain = manager.initChain(type, context, root, -1, pos, false);
+/* 360 */     manager.queueExecuteChain(chain);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean next() {
-/* 367 */     return (this.continueAfterCollision || this.haveNoCollision);
+/* 366 */     return (this.continueAfterCollision || this.haveNoCollision);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean accept(long x, long y, long z) {
-/* 373 */     if (this.collisionConfig.canCollide((int)x, (int)y, (int)z)) {
+/* 372 */     if (this.collisionConfig.canCollide((int)x, (int)y, (int)z)) {
 /*     */       
-/* 375 */       x += this.collisionConfig.getBoundingBoxOffsetX();
-/* 376 */       y += this.collisionConfig.getBoundingBoxOffsetY();
-/* 377 */       z += this.collisionConfig.getBoundingBoxOffsetZ();
+/* 374 */       x += this.collisionConfig.getBoundingBoxOffsetX();
+/* 375 */       y += this.collisionConfig.getBoundingBoxOffsetY();
+/* 376 */       z += this.collisionConfig.getBoundingBoxOffsetZ();
 /*     */       
-/* 379 */       int numDetails = this.collisionConfig.getDetailCount();
-/* 380 */       boolean haveCollision = this.movingBoxBoxCollision.isBoundingBoxColliding(this.collisionConfig.getBoundingBox(), x, y, z);
+/* 378 */       int numDetails = this.collisionConfig.getDetailCount();
+/* 379 */       boolean haveCollision = this.movingBoxBoxCollision.isBoundingBoxColliding(this.collisionConfig.getBoundingBox(), x, y, z);
 /*     */       
-/* 382 */       if (this.logger != null) {
-/* 383 */         Object arg7 = (this.collisionConfig.blockType != null) ? this.collisionConfig.blockType.getId() : "null";
-/* 384 */         this.logger.at(Level.INFO).log("?? Block Test at %s/%s/%s numDet=%d haveColl=%s overlap=%s blockType=%s", Long.valueOf(x), Long.valueOf(y), Long.valueOf(z), Integer.valueOf(numDetails), Boolean.valueOf(haveCollision), Boolean.valueOf(this.movingBoxBoxCollision.isOverlapping()), arg7);
+/* 381 */       if (this.logger != null) {
+/* 382 */         Object arg7 = (this.collisionConfig.blockType != null) ? this.collisionConfig.blockType.getId() : "null";
+/* 383 */         this.logger.at(Level.INFO).log("?? Block Test at %s/%s/%s numDet=%d haveColl=%s overlap=%s blockType=%s", Long.valueOf(x), Long.valueOf(y), Long.valueOf(z), Integer.valueOf(numDetails), Boolean.valueOf(haveCollision), Boolean.valueOf(this.movingBoxBoxCollision.isOverlapping()), arg7);
 /*     */       } 
-/* 386 */       if (numDetails <= 1) {
-/* 387 */         processCollisionResult(haveCollision, 0);
-/* 388 */       } else if (haveCollision || this.movingBoxBoxCollision.isOverlapping() || this.movingBoxBoxCollision.isTouching()) {
-/* 389 */         for (int i = 0; i < numDetails; i++) {
-/* 390 */           haveCollision = this.movingBoxBoxCollision.isBoundingBoxColliding(this.collisionConfig.getBoundingBox(i), x, y, z);
-/* 391 */           processCollisionResult(haveCollision, i);
+/* 385 */       if (numDetails <= 1) {
+/* 386 */         processCollisionResult(haveCollision, 0);
+/* 387 */       } else if (haveCollision || this.movingBoxBoxCollision.isOverlapping() || this.movingBoxBoxCollision.isTouching()) {
+/* 388 */         for (int i = 0; i < numDetails; i++) {
+/* 389 */           haveCollision = this.movingBoxBoxCollision.isBoundingBoxColliding(this.collisionConfig.getBoundingBox(i), x, y, z);
+/* 390 */           processCollisionResult(haveCollision, i);
 /*     */         } 
 /*     */       } 
-/* 394 */     } else if (this.logger != null) {
-/* 395 */       Object arg4 = (this.collisionConfig.blockType != null) ? this.collisionConfig.blockType.getId() : "null";
-/* 396 */       this.logger.at(Level.INFO).log("-- Ignoring block at %s/%s/%s blockType=%s", Long.valueOf(x), Long.valueOf(y), Long.valueOf(z), arg4);
+/* 393 */     } else if (this.logger != null) {
+/* 394 */       Object arg4 = (this.collisionConfig.blockType != null) ? this.collisionConfig.blockType.getId() : "null";
+/* 395 */       this.logger.at(Level.INFO).log("-- Ignoring block at %s/%s/%s blockType=%s", Long.valueOf(x), Long.valueOf(y), Long.valueOf(z), arg4);
 /*     */     } 
-/* 398 */     return true;
+/* 397 */     return true;
 /*     */   }
 /*     */   
 /*     */   private void processCollisionResult(boolean haveCollision, int hitboxIndex) {
-/* 402 */     if (this.logger != null) {
-/* 403 */       this.logger.at(Level.INFO).log("?? Further testing block haveCol=%s hitBoxIndex=%s onGround=%s touching=%s canCollide=%s canTrigger=%s", Boolean.valueOf(haveCollision), Integer.valueOf(hitboxIndex), Boolean.valueOf(this.movingBoxBoxCollision.isOnGround()), Boolean.valueOf(this.movingBoxBoxCollision.isTouching()), Boolean.valueOf(this.collisionConfig.blockCanCollide), Boolean.valueOf(this.collisionConfig.blockCanTrigger));
+/* 401 */     if (this.logger != null) {
+/* 402 */       this.logger.at(Level.INFO).log("?? Further testing block haveCol=%s hitBoxIndex=%s onGround=%s touching=%s canCollide=%s canTrigger=%s", Boolean.valueOf(haveCollision), Integer.valueOf(hitboxIndex), Boolean.valueOf(this.movingBoxBoxCollision.isOnGround()), Boolean.valueOf(this.movingBoxBoxCollision.isTouching()), Boolean.valueOf(this.collisionConfig.blockCanCollide), Boolean.valueOf(this.collisionConfig.blockCanTrigger));
 /*     */     }
-/* 405 */     if (this.collisionConfig.blockCanCollide) {
-/* 406 */       boolean isNoSlideCollision = true;
-/* 407 */       if (this.movingBoxBoxCollision.onGround) {
+/* 404 */     if (this.collisionConfig.blockCanCollide) {
+/* 405 */       boolean isNoSlideCollision = true;
+/* 406 */       if (this.movingBoxBoxCollision.onGround) {
 /*     */ 
 /*     */         
-/* 410 */         haveCollision = (this.collisionConfig.blockType == null || this.isNonWalkable.test(this.collisionConfig));
-/* 411 */         if (!haveCollision) {
-/* 412 */           addSlide(this.movingBoxBoxCollision, hitboxIndex);
-/* 413 */           if (this.collisionConfig.blockCanTrigger) {
-/* 414 */             addTrigger(this.movingBoxBoxCollision, hitboxIndex);
+/* 409 */         haveCollision = (this.collisionConfig.blockType == null || this.isNonWalkable.test(this.collisionConfig));
+/* 410 */         if (!haveCollision) {
+/* 411 */           addSlide(this.movingBoxBoxCollision, hitboxIndex);
+/* 412 */           if (this.collisionConfig.blockCanTrigger) {
+/* 413 */             addTrigger(this.movingBoxBoxCollision, hitboxIndex);
 /*     */           }
-/* 416 */           if (this.logger != null) {
-/* 417 */             this.logger.at(Level.INFO).log("++ Sliding block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
+/* 415 */           if (this.logger != null) {
+/* 416 */             this.logger.at(Level.INFO).log("++ Sliding block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
 /*     */           }
 /*     */           
 /*     */           return;
 /*     */         } 
-/* 422 */         isNoSlideCollision = false;
-/* 423 */         if (this.logger != null) {
-/* 424 */           this.logger.at(Level.INFO).log("?? Sliding block is unwalkable start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
+/* 421 */         isNoSlideCollision = false;
+/* 422 */         if (this.logger != null) {
+/* 423 */           this.logger.at(Level.INFO).log("?? Sliding block is unwalkable start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
 /*     */         }
 /*     */       } 
-/* 427 */       if (haveCollision) {
-/* 428 */         addCollision(this.movingBoxBoxCollision, hitboxIndex);
-/* 429 */         if (isNoSlideCollision) this.haveNoCollision = false; 
-/* 430 */         if (this.logger != null) {
-/* 431 */           this.logger.at(Level.INFO).log("++ Collision with block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.collisionStart), Double.valueOf(this.movingBoxBoxCollision.collisionEnd), Vector3d.formatShortString(this.movingBoxBoxCollision.collisionNormal));
+/* 426 */       if (haveCollision) {
+/* 427 */         addCollision(this.movingBoxBoxCollision, hitboxIndex);
+/* 428 */         if (isNoSlideCollision) this.haveNoCollision = false; 
+/* 429 */         if (this.logger != null) {
+/* 430 */           this.logger.at(Level.INFO).log("++ Collision with block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.collisionStart), Double.valueOf(this.movingBoxBoxCollision.collisionEnd), Vector3d.formatShortString(this.movingBoxBoxCollision.collisionNormal));
 /*     */         }
 /*     */       } 
 /*     */     } 
-/* 435 */     if (this.collisionConfig.blockCanTrigger && (haveCollision || this.movingBoxBoxCollision.isTouching())) {
-/* 436 */       if (this.logger != null) {
-/* 437 */         this.logger.at(Level.INFO).log("++ Trigger block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
+/* 434 */     if (this.collisionConfig.blockCanTrigger && (haveCollision || this.movingBoxBoxCollision.isTouching())) {
+/* 435 */       if (this.logger != null) {
+/* 436 */         this.logger.at(Level.INFO).log("++ Trigger block start=%s end=%s normal=%s", Double.valueOf(this.movingBoxBoxCollision.getCollisionStart()), Double.valueOf(this.movingBoxBoxCollision.getCollisionEnd()), Vector3d.formatShortString(this.movingBoxBoxCollision.getCollisionNormal()));
 /*     */       }
-/* 439 */       addTrigger(this.movingBoxBoxCollision, hitboxIndex);
+/* 438 */       addTrigger(this.movingBoxBoxCollision, hitboxIndex);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void iterateBlocks(@Nonnull Box collider, @Nonnull Vector3d pos, @Nonnull Vector3d direction, double length, boolean stopOnCollisionFound) {
-/* 444 */     this.continueAfterCollision = !stopOnCollisionFound;
-/* 445 */     BoxBlockIterator.iterate(collider, pos, direction, length, this);
+/* 443 */     this.continueAfterCollision = !stopOnCollisionFound;
+/* 444 */     BoxBlockIterator.iterate(collider, pos, direction, length, this);
 /*     */   }
 /*     */   
 /*     */   public void acquireCollisionModule() {
-/* 449 */     this.haveNoCollision = true;
+/* 448 */     this.haveNoCollision = true;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -454,138 +453,138 @@
 /*     */ 
 /*     */   
 /*     */   public void disableSlides() {
-/* 457 */     this.movingBoxBoxCollision.setCheckForOnGround(false);
+/* 456 */     this.movingBoxBoxCollision.setCheckForOnGround(false);
 /*     */   }
 /*     */   
 /*     */   public void enableSlides() {
-/* 461 */     this.movingBoxBoxCollision.setCheckForOnGround(true);
+/* 460 */     this.movingBoxBoxCollision.setCheckForOnGround(true);
 /*     */   }
 /*     */   
 /*     */   public void disableCharacterCollisions() {
-/* 465 */     this.checkForCharacterCollisions = false;
+/* 464 */     this.checkForCharacterCollisions = false;
 /*     */   }
 /*     */   
 /*     */   public void enableCharacterCollsions() {
-/* 469 */     this.checkForCharacterCollisions = true;
+/* 468 */     this.checkForCharacterCollisions = true;
 /*     */   }
 /*     */   
 /*     */   public boolean isCheckingForCharacterCollisions() {
-/* 473 */     return this.checkForCharacterCollisions;
+/* 472 */     return this.checkForCharacterCollisions;
 /*     */   }
 /*     */   
 /*     */   public void enableTriggerBlocks() {
-/* 477 */     this.collisionConfig.setCheckTriggerBlocks(true);
+/* 476 */     this.collisionConfig.setCheckTriggerBlocks(true);
 /*     */   }
 /*     */   
 /*     */   public void disableTriggerBlocks() {
-/* 481 */     this.collisionConfig.setCheckTriggerBlocks(false);
+/* 480 */     this.collisionConfig.setCheckTriggerBlocks(false);
 /*     */   }
 /*     */   
 /*     */   public boolean isCheckingTriggerBlocks() {
-/* 485 */     return this.collisionConfig.isCheckTriggerBlocks();
+/* 484 */     return this.collisionConfig.isCheckTriggerBlocks();
 /*     */   }
 /*     */   
 /*     */   public void enableDamageBlocks() {
-/* 489 */     this.collisionConfig.setCheckDamageBlocks(true);
+/* 488 */     this.collisionConfig.setCheckDamageBlocks(true);
 /*     */   }
 /*     */   
 /*     */   public void disableDamageBlocks() {
-/* 493 */     this.collisionConfig.setCheckDamageBlocks(false);
+/* 492 */     this.collisionConfig.setCheckDamageBlocks(false);
 /*     */   }
 /*     */   
 /*     */   public boolean isCheckingDamageBlocks() {
-/* 497 */     return this.collisionConfig.isCheckDamageBlocks();
+/* 496 */     return this.collisionConfig.isCheckDamageBlocks();
 /*     */   }
 /*     */   
 /*     */   public boolean setDamageBlocking(boolean blocking) {
-/* 501 */     boolean oldState = this.collisionConfig.setCollideWithDamageBlocks(blocking);
-/* 502 */     updateDamageWalkableFlag();
-/* 503 */     return oldState;
+/* 500 */     boolean oldState = this.collisionConfig.setCollideWithDamageBlocks(blocking);
+/* 501 */     updateDamageWalkableFlag();
+/* 502 */     return oldState;
 /*     */   }
 /*     */   
 /*     */   public boolean isDamageBlocking() {
-/* 507 */     return this.collisionConfig.isCollidingWithDamageBlocks();
+/* 506 */     return this.collisionConfig.isCollidingWithDamageBlocks();
 /*     */   }
 /*     */   
 /*     */   public void setCollisionByMaterial(int collidingMaterials) {
-/* 511 */     this.collisionConfig.setCollisionByMaterial(collidingMaterials);
+/* 510 */     this.collisionConfig.setCollisionByMaterial(collidingMaterials);
 /*     */   }
 /*     */   
 /*     */   public void setCollisionByMaterial(int collidingMaterials, int walkableMaterials) {
-/* 515 */     this.collisionConfig.setCollisionByMaterial(collidingMaterials);
-/* 516 */     setWalkableByMaterial(walkableMaterials);
+/* 514 */     this.collisionConfig.setCollisionByMaterial(collidingMaterials);
+/* 515 */     setWalkableByMaterial(walkableMaterials);
 /*     */   }
 /*     */   
 /*     */   public int getCollisionByMaterial() {
-/* 520 */     return this.collisionConfig.getCollisionByMaterial();
+/* 519 */     return this.collisionConfig.getCollisionByMaterial();
 /*     */   }
 /*     */   
 /*     */   public void setDefaultCollisionBehaviour() {
-/* 524 */     this.collisionConfig.setDefaultCollisionBehaviour();
+/* 523 */     this.collisionConfig.setDefaultCollisionBehaviour();
 /*     */   }
 /*     */   
 /*     */   public void setDefaultBlockCollisionPredicate() {
-/* 528 */     this.collisionConfig.setDefaultBlockCollisionPredicate();
+/* 527 */     this.collisionConfig.setDefaultBlockCollisionPredicate();
 /*     */   }
 /*     */   
 /*     */   public void setDefaultNonWalkablePredicate() {
-/* 532 */     this.isNonWalkable = (collisionConfig -> {
+/* 531 */     this.isNonWalkable = (collisionConfig -> {
 /*     */         int matches = collisionConfig.blockMaterialMask & this.walkableMaterialMask;
-/* 534 */         return (matches == 0 || (matches & 0x10) != 0);
+/* 533 */         return (matches == 0 || (matches & 0x10) != 0);
 /*     */       });
 /*     */   }
 /*     */   
 /*     */   public void setNonWalkablePredicate(Predicate<CollisionConfig> classifier) {
-/* 539 */     this.isNonWalkable = classifier;
+/* 538 */     this.isNonWalkable = classifier;
 /*     */   }
 /*     */   
 /*     */   public void setWalkableByMaterial(int walkableMaterial) {
-/* 543 */     this.walkableMaterialMask = 0xF & walkableMaterial;
-/* 544 */     updateDamageWalkableFlag();
+/* 542 */     this.walkableMaterialMask = 0xF & walkableMaterial;
+/* 543 */     updateDamageWalkableFlag();
 /*     */   }
 /*     */   
 /*     */   protected void updateDamageWalkableFlag() {
-/* 548 */     if (this.collisionConfig.isCollidingWithDamageBlocks()) {
-/* 549 */       this.walkableMaterialMask |= 0x10;
+/* 547 */     if (this.collisionConfig.isCollidingWithDamageBlocks()) {
+/* 548 */       this.walkableMaterialMask |= 0x10;
 /*     */     } else {
-/* 551 */       this.walkableMaterialMask &= 0xFFFFFFEF;
+/* 550 */       this.walkableMaterialMask &= 0xFFFFFFEF;
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void setDefaultWalkableBehaviour() {
-/* 556 */     setDefaultNonWalkablePredicate();
-/* 557 */     setWalkableByMaterial(5);
+/* 555 */     setDefaultNonWalkablePredicate();
+/* 556 */     setWalkableByMaterial(5);
 /*     */   }
 /*     */   
 /*     */   public void setDefaultPlayerSettings() {
-/* 561 */     enableSlides();
-/* 562 */     disableCharacterCollisions();
-/* 563 */     setDefaultNonWalkablePredicate();
-/* 564 */     setDefaultBlockCollisionPredicate();
-/* 565 */     setCollisionByMaterial(4);
-/* 566 */     setWalkableByMaterial(15);
+/* 560 */     enableSlides();
+/* 561 */     disableCharacterCollisions();
+/* 562 */     setDefaultNonWalkablePredicate();
+/* 563 */     setDefaultBlockCollisionPredicate();
+/* 564 */     setCollisionByMaterial(4);
+/* 565 */     setWalkableByMaterial(15);
 /*     */   }
 /*     */   
 /*     */   public boolean isComputeOverlaps() {
-/* 570 */     return this.movingBoxBoxCollision.isComputeOverlaps();
+/* 569 */     return this.movingBoxBoxCollision.isComputeOverlaps();
 /*     */   }
 /*     */   
 /*     */   public void setComputeOverlaps(boolean computeOverlaps) {
-/* 574 */     this.movingBoxBoxCollision.setComputeOverlaps(computeOverlaps);
+/* 573 */     this.movingBoxBoxCollision.setComputeOverlaps(computeOverlaps);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public HytaleLogger getLogger() {
-/* 580 */     return this.logger;
+/* 579 */     return this.logger;
 /*     */   }
 /*     */   
 /*     */   public boolean shouldLog() {
-/* 584 */     return (this.logger != null);
+/* 583 */     return (this.logger != null);
 /*     */   }
 /*     */   
 /*     */   public void setLogger(HytaleLogger logger) {
-/* 588 */     this.logger = logger;
+/* 587 */     this.logger = logger;
 /*     */   }
 /*     */ }
 

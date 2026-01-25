@@ -3,6 +3,8 @@ package com.hypixel.hytale.server.worldgen.loader.cave;
 public interface Constants {
   public static final String KEY_NODE = "Node";
   
+  public static final String KEY_SEED = "Seed";
+  
   public static final String KEY_WEIGHTS = "Weights";
   
   public static final String KEY_ANCHOR = "Anchor";

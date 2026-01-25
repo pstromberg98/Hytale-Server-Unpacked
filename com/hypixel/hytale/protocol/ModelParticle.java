@@ -56,20 +56,20 @@
 /*  56 */     ModelParticle obj = new ModelParticle();
 /*  57 */     byte nullBits = buf.getByte(offset);
 /*  58 */     obj.scale = buf.getFloatLE(offset + 1);
-/*  59 */     if ((nullBits & 0x2) != 0) obj.color = Color.deserialize(buf, offset + 5); 
+/*  59 */     if ((nullBits & 0x1) != 0) obj.color = Color.deserialize(buf, offset + 5); 
 /*  60 */     obj.targetEntityPart = EntityPart.fromValue(buf.getByte(offset + 8));
-/*  61 */     if ((nullBits & 0x8) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 9); 
-/*  62 */     if ((nullBits & 0x10) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 21); 
+/*  61 */     if ((nullBits & 0x2) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 9); 
+/*  62 */     if ((nullBits & 0x4) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 21); 
 /*  63 */     obj.detachedFromModel = (buf.getByte(offset + 33) != 0);
 /*     */     
-/*  65 */     if ((nullBits & 0x1) != 0) {
+/*  65 */     if ((nullBits & 0x8) != 0) {
 /*  66 */       int varPos0 = offset + 42 + buf.getIntLE(offset + 34);
 /*  67 */       int systemIdLen = VarInt.peek(buf, varPos0);
 /*  68 */       if (systemIdLen < 0) throw ProtocolException.negativeLength("SystemId", systemIdLen); 
 /*  69 */       if (systemIdLen > 4096000) throw ProtocolException.stringTooLong("SystemId", systemIdLen, 4096000); 
 /*  70 */       obj.systemId = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  72 */     if ((nullBits & 0x4) != 0) {
+/*  72 */     if ((nullBits & 0x10) != 0) {
 /*  73 */       int varPos1 = offset + 42 + buf.getIntLE(offset + 38);
 /*  74 */       int targetNodeNameLen = VarInt.peek(buf, varPos1);
 /*  75 */       if (targetNodeNameLen < 0) throw ProtocolException.negativeLength("TargetNodeName", targetNodeNameLen); 
@@ -83,13 +83,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  84 */     byte nullBits = buf.getByte(offset);
 /*  85 */     int maxEnd = 42;
-/*  86 */     if ((nullBits & 0x1) != 0) {
+/*  86 */     if ((nullBits & 0x8) != 0) {
 /*  87 */       int fieldOffset0 = buf.getIntLE(offset + 34);
 /*  88 */       int pos0 = offset + 42 + fieldOffset0;
 /*  89 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  90 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/*  92 */     if ((nullBits & 0x4) != 0) {
+/*  92 */     if ((nullBits & 0x10) != 0) {
 /*  93 */       int fieldOffset1 = buf.getIntLE(offset + 38);
 /*  94 */       int pos1 = offset + 42 + fieldOffset1;
 /*  95 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
@@ -102,11 +102,11 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 103 */     int startPos = buf.writerIndex();
 /* 104 */     byte nullBits = 0;
-/* 105 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x1); 
-/* 106 */     if (this.color != null) nullBits = (byte)(nullBits | 0x2); 
-/* 107 */     if (this.targetNodeName != null) nullBits = (byte)(nullBits | 0x4); 
-/* 108 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x8); 
-/* 109 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x10); 
+/* 105 */     if (this.color != null) nullBits = (byte)(nullBits | 0x1); 
+/* 106 */     if (this.positionOffset != null) nullBits = (byte)(nullBits | 0x2); 
+/* 107 */     if (this.rotationOffset != null) nullBits = (byte)(nullBits | 0x4); 
+/* 108 */     if (this.systemId != null) nullBits = (byte)(nullBits | 0x8); 
+/* 109 */     if (this.targetNodeName != null) nullBits = (byte)(nullBits | 0x10); 
 /* 110 */     buf.writeByte(nullBits);
 /*     */     
 /* 112 */     buf.writeFloatLE(this.scale);
@@ -153,7 +153,7 @@
 /* 153 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 156 */     if ((nullBits & 0x1) != 0) {
+/* 156 */     if ((nullBits & 0x8) != 0) {
 /* 157 */       int systemIdOffset = buffer.getIntLE(offset + 34);
 /* 158 */       if (systemIdOffset < 0) {
 /* 159 */         return ValidationResult.error("Invalid offset for SystemId");
@@ -176,7 +176,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 179 */     if ((nullBits & 0x4) != 0) {
+/* 179 */     if ((nullBits & 0x10) != 0) {
 /* 180 */       int targetNodeNameOffset = buffer.getIntLE(offset + 38);
 /* 181 */       if (targetNodeNameOffset < 0) {
 /* 182 */         return ValidationResult.error("Invalid offset for TargetNodeName");

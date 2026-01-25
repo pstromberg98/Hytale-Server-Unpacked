@@ -272,25 +272,18 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ class TintChunkPageCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   TintChunkPageCommand() {
-/* 286 */     super("server.commands.chunk.tint.get");
+/* 279 */     super("server.commands.chunk.tint.get");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 291 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 292 */     assert playerComponent != null;
-/* 293 */     playerComponent.getPageManager().openCustomPage(ref, store, (CustomUIPage)new ChunkTintCommand.TintChunkPage(playerRef));
+/* 284 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 285 */     assert playerComponent != null;
+/* 286 */     playerComponent.getPageManager().openCustomPage(ref, store, (CustomUIPage)new ChunkTintCommand.TintChunkPage(playerRef));
 /*     */   }
 /*     */ }
 

@@ -58,22 +58,22 @@
 /*     */   public static AmbienceFX deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  59 */     AmbienceFX obj = new AmbienceFX();
 /*  60 */     byte nullBits = buf.getByte(offset);
-/*  61 */     if ((nullBits & 0x20) != 0) obj.soundEffect = AmbienceFXSoundEffect.deserialize(buf, offset + 1); 
+/*  61 */     if ((nullBits & 0x1) != 0) obj.soundEffect = AmbienceFXSoundEffect.deserialize(buf, offset + 1); 
 /*  62 */     obj.priority = buf.getIntLE(offset + 10);
 /*  63 */     obj.audioCategoryIndex = buf.getIntLE(offset + 14);
 /*     */     
-/*  65 */     if ((nullBits & 0x1) != 0) {
+/*  65 */     if ((nullBits & 0x2) != 0) {
 /*  66 */       int varPos0 = offset + 42 + buf.getIntLE(offset + 18);
 /*  67 */       int idLen = VarInt.peek(buf, varPos0);
 /*  68 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  69 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  70 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  72 */     if ((nullBits & 0x2) != 0) {
+/*  72 */     if ((nullBits & 0x4) != 0) {
 /*  73 */       int varPos1 = offset + 42 + buf.getIntLE(offset + 22);
 /*  74 */       obj.conditions = AmbienceFXConditions.deserialize(buf, varPos1);
 /*     */     } 
-/*  76 */     if ((nullBits & 0x4) != 0) {
+/*  76 */     if ((nullBits & 0x8) != 0) {
 /*  77 */       int varPos2 = offset + 42 + buf.getIntLE(offset + 26);
 /*  78 */       int soundsCount = VarInt.peek(buf, varPos2);
 /*  79 */       if (soundsCount < 0) throw ProtocolException.negativeLength("Sounds", soundsCount); 
@@ -88,11 +88,11 @@
 /*  88 */         elemPos += AmbienceFXSound.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/*  91 */     if ((nullBits & 0x8) != 0) {
+/*  91 */     if ((nullBits & 0x10) != 0) {
 /*  92 */       int varPos3 = offset + 42 + buf.getIntLE(offset + 30);
 /*  93 */       obj.music = AmbienceFXMusic.deserialize(buf, varPos3);
 /*     */     } 
-/*  95 */     if ((nullBits & 0x10) != 0) {
+/*  95 */     if ((nullBits & 0x20) != 0) {
 /*  96 */       int varPos4 = offset + 42 + buf.getIntLE(offset + 34);
 /*  97 */       obj.ambientBed = AmbienceFXAmbientBed.deserialize(buf, varPos4);
 /*     */     } 
@@ -116,32 +116,32 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 117 */     byte nullBits = buf.getByte(offset);
 /* 118 */     int maxEnd = 42;
-/* 119 */     if ((nullBits & 0x1) != 0) {
+/* 119 */     if ((nullBits & 0x2) != 0) {
 /* 120 */       int fieldOffset0 = buf.getIntLE(offset + 18);
 /* 121 */       int pos0 = offset + 42 + fieldOffset0;
 /* 122 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 123 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 125 */     if ((nullBits & 0x2) != 0) {
+/* 125 */     if ((nullBits & 0x4) != 0) {
 /* 126 */       int fieldOffset1 = buf.getIntLE(offset + 22);
 /* 127 */       int pos1 = offset + 42 + fieldOffset1;
 /* 128 */       pos1 += AmbienceFXConditions.computeBytesConsumed(buf, pos1);
 /* 129 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 131 */     if ((nullBits & 0x4) != 0) {
+/* 131 */     if ((nullBits & 0x8) != 0) {
 /* 132 */       int fieldOffset2 = buf.getIntLE(offset + 26);
 /* 133 */       int pos2 = offset + 42 + fieldOffset2;
 /* 134 */       int arrLen = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2);
 /* 135 */       for (int i = 0; i < arrLen; ) { pos2 += AmbienceFXSound.computeBytesConsumed(buf, pos2); i++; }
 /* 136 */        if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 138 */     if ((nullBits & 0x8) != 0) {
+/* 138 */     if ((nullBits & 0x10) != 0) {
 /* 139 */       int fieldOffset3 = buf.getIntLE(offset + 30);
 /* 140 */       int pos3 = offset + 42 + fieldOffset3;
 /* 141 */       pos3 += AmbienceFXMusic.computeBytesConsumed(buf, pos3);
 /* 142 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 144 */     if ((nullBits & 0x10) != 0) {
+/* 144 */     if ((nullBits & 0x20) != 0) {
 /* 145 */       int fieldOffset4 = buf.getIntLE(offset + 34);
 /* 146 */       int pos4 = offset + 42 + fieldOffset4;
 /* 147 */       pos4 += AmbienceFXAmbientBed.computeBytesConsumed(buf, pos4);
@@ -160,12 +160,12 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 161 */     int startPos = buf.writerIndex();
 /* 162 */     byte nullBits = 0;
-/* 163 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 164 */     if (this.conditions != null) nullBits = (byte)(nullBits | 0x2); 
-/* 165 */     if (this.sounds != null) nullBits = (byte)(nullBits | 0x4); 
-/* 166 */     if (this.music != null) nullBits = (byte)(nullBits | 0x8); 
-/* 167 */     if (this.ambientBed != null) nullBits = (byte)(nullBits | 0x10); 
-/* 168 */     if (this.soundEffect != null) nullBits = (byte)(nullBits | 0x20); 
+/* 163 */     if (this.soundEffect != null) nullBits = (byte)(nullBits | 0x1); 
+/* 164 */     if (this.id != null) nullBits = (byte)(nullBits | 0x2); 
+/* 165 */     if (this.conditions != null) nullBits = (byte)(nullBits | 0x4); 
+/* 166 */     if (this.sounds != null) nullBits = (byte)(nullBits | 0x8); 
+/* 167 */     if (this.music != null) nullBits = (byte)(nullBits | 0x10); 
+/* 168 */     if (this.ambientBed != null) nullBits = (byte)(nullBits | 0x20); 
 /* 169 */     if (this.blockedAmbienceFxIndices != null) nullBits = (byte)(nullBits | 0x40); 
 /* 170 */     buf.writeByte(nullBits);
 /*     */     
@@ -246,7 +246,7 @@
 /* 246 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 249 */     if ((nullBits & 0x1) != 0) {
+/* 249 */     if ((nullBits & 0x2) != 0) {
 /* 250 */       int idOffset = buffer.getIntLE(offset + 18);
 /* 251 */       if (idOffset < 0) {
 /* 252 */         return ValidationResult.error("Invalid offset for Id");
@@ -269,7 +269,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 272 */     if ((nullBits & 0x2) != 0) {
+/* 272 */     if ((nullBits & 0x4) != 0) {
 /* 273 */       int conditionsOffset = buffer.getIntLE(offset + 22);
 /* 274 */       if (conditionsOffset < 0) {
 /* 275 */         return ValidationResult.error("Invalid offset for Conditions");
@@ -285,7 +285,7 @@
 /* 285 */       pos += AmbienceFXConditions.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 288 */     if ((nullBits & 0x4) != 0) {
+/* 288 */     if ((nullBits & 0x8) != 0) {
 /* 289 */       int soundsOffset = buffer.getIntLE(offset + 26);
 /* 290 */       if (soundsOffset < 0) {
 /* 291 */         return ValidationResult.error("Invalid offset for Sounds");
@@ -308,7 +308,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 311 */     if ((nullBits & 0x8) != 0) {
+/* 311 */     if ((nullBits & 0x10) != 0) {
 /* 312 */       int musicOffset = buffer.getIntLE(offset + 30);
 /* 313 */       if (musicOffset < 0) {
 /* 314 */         return ValidationResult.error("Invalid offset for Music");
@@ -324,7 +324,7 @@
 /* 324 */       pos += AmbienceFXMusic.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 327 */     if ((nullBits & 0x10) != 0) {
+/* 327 */     if ((nullBits & 0x20) != 0) {
 /* 328 */       int ambientBedOffset = buffer.getIntLE(offset + 34);
 /* 329 */       if (ambientBedOffset < 0) {
 /* 330 */         return ValidationResult.error("Invalid offset for AmbientBed");

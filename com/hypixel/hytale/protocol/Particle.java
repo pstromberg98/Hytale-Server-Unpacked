@@ -61,16 +61,16 @@
 /*     */   public static Particle deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  62 */     Particle obj = new Particle();
 /*  63 */     byte nullBits = buf.getByte(offset);
-/*  64 */     if ((nullBits & 0x2) != 0) obj.frameSize = Size.deserialize(buf, offset + 1); 
+/*  64 */     if ((nullBits & 0x1) != 0) obj.frameSize = Size.deserialize(buf, offset + 1); 
 /*  65 */     obj.uvOption = ParticleUVOption.fromValue(buf.getByte(offset + 9));
 /*  66 */     obj.scaleRatioConstraint = ParticleScaleRatioConstraint.fromValue(buf.getByte(offset + 10));
 /*  67 */     obj.softParticles = SoftParticle.fromValue(buf.getByte(offset + 11));
 /*  68 */     obj.softParticlesFadeFactor = buf.getFloatLE(offset + 12);
 /*  69 */     obj.useSpriteBlending = (buf.getByte(offset + 16) != 0);
-/*  70 */     if ((nullBits & 0x4) != 0) obj.initialAnimationFrame = ParticleAnimationFrame.deserialize(buf, offset + 17); 
-/*  71 */     if ((nullBits & 0x8) != 0) obj.collisionAnimationFrame = ParticleAnimationFrame.deserialize(buf, offset + 75);
+/*  70 */     if ((nullBits & 0x2) != 0) obj.initialAnimationFrame = ParticleAnimationFrame.deserialize(buf, offset + 17); 
+/*  71 */     if ((nullBits & 0x4) != 0) obj.collisionAnimationFrame = ParticleAnimationFrame.deserialize(buf, offset + 75);
 /*     */     
-/*  73 */     if ((nullBits & 0x1) != 0) {
+/*  73 */     if ((nullBits & 0x8) != 0) {
 /*  74 */       int varPos0 = offset + 141 + buf.getIntLE(offset + 133);
 /*  75 */       int texturePathLen = VarInt.peek(buf, varPos0);
 /*  76 */       if (texturePathLen < 0) throw ProtocolException.negativeLength("TexturePath", texturePathLen); 
@@ -100,7 +100,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 101 */     byte nullBits = buf.getByte(offset);
 /* 102 */     int maxEnd = 141;
-/* 103 */     if ((nullBits & 0x1) != 0) {
+/* 103 */     if ((nullBits & 0x8) != 0) {
 /* 104 */       int fieldOffset0 = buf.getIntLE(offset + 133);
 /* 105 */       int pos0 = offset + 141 + fieldOffset0;
 /* 106 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
@@ -120,10 +120,10 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 121 */     int startPos = buf.writerIndex();
 /* 122 */     byte nullBits = 0;
-/* 123 */     if (this.texturePath != null) nullBits = (byte)(nullBits | 0x1); 
-/* 124 */     if (this.frameSize != null) nullBits = (byte)(nullBits | 0x2); 
-/* 125 */     if (this.initialAnimationFrame != null) nullBits = (byte)(nullBits | 0x4); 
-/* 126 */     if (this.collisionAnimationFrame != null) nullBits = (byte)(nullBits | 0x8); 
+/* 123 */     if (this.frameSize != null) nullBits = (byte)(nullBits | 0x1); 
+/* 124 */     if (this.initialAnimationFrame != null) nullBits = (byte)(nullBits | 0x2); 
+/* 125 */     if (this.collisionAnimationFrame != null) nullBits = (byte)(nullBits | 0x4); 
+/* 126 */     if (this.texturePath != null) nullBits = (byte)(nullBits | 0x8); 
 /* 127 */     if (this.animationFrames != null) nullBits = (byte)(nullBits | 0x10); 
 /* 128 */     buf.writeByte(nullBits);
 /*     */     
@@ -173,7 +173,7 @@
 /* 173 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 176 */     if ((nullBits & 0x1) != 0) {
+/* 176 */     if ((nullBits & 0x8) != 0) {
 /* 177 */       int texturePathOffset = buffer.getIntLE(offset + 133);
 /* 178 */       if (texturePathOffset < 0) {
 /* 179 */         return ValidationResult.error("Invalid offset for TexturePath");

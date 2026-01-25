@@ -59,29 +59,42 @@
 /* 59 */     if (x < 0) l |= 0x4000000L; 
 /* 60 */     return l;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */   
+/*    */   public static long packUnchecked(int x, int y, int z) {
+/* 69 */     long l = (y & 0x1FFL) << 54L | (z & 0x3FFFFFFL) << 27L | x & 0x3FFFFFFL;
+/* 70 */     if (y < 0) l |= Long.MIN_VALUE; 
+/* 71 */     if (z < 0) l |= 0x20000000000000L; 
+/* 72 */     if (x < 0) l |= 0x4000000L; 
+/* 73 */     return l;
+/*    */   }
 /*    */   
 /*    */   public static int unpackX(long packed) {
-/* 64 */     int i = (int)(packed & 0x3FFFFFFL);
-/* 65 */     if ((packed & 0x4000000L) != 0L) i = (int)(i | 0xFFFFFFFFFC000000L); 
-/* 66 */     return i;
+/* 77 */     int i = (int)(packed & 0x3FFFFFFL);
+/* 78 */     if ((packed & 0x4000000L) != 0L) i = (int)(i | 0xFFFFFFFFFC000000L); 
+/* 79 */     return i;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public static int unpackY(long packed) {
-/* 71 */     int i = (int)(packed >> 54L & 0x1FFL);
-/* 72 */     if ((packed & Long.MIN_VALUE) != 0L) i = (int)(i | 0xFFFFFFFFFFFFFE00L); 
-/* 73 */     return i;
+/* 84 */     int i = (int)(packed >> 54L & 0x1FFL);
+/* 85 */     if ((packed & Long.MIN_VALUE) != 0L) i = (int)(i | 0xFFFFFFFFFFFFFE00L); 
+/* 86 */     return i;
 /*    */   }
 /*    */   
 /*    */   public static int unpackZ(long packed) {
-/* 77 */     int i = (int)(packed >> 27L & 0x3FFFFFFL);
-/* 78 */     if ((packed & 0x20000000000000L) != 0L) i = (int)(i | 0xFFFFFFFFFC000000L); 
-/* 79 */     return i;
+/* 90 */     int i = (int)(packed >> 27L & 0x3FFFFFFL);
+/* 91 */     if ((packed & 0x20000000000000L) != 0L) i = (int)(i | 0xFFFFFFFFFC000000L); 
+/* 92 */     return i;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public static Vector3i unpack(long packed) {
-/* 84 */     return new Vector3i(unpackX(packed), unpackY(packed), unpackZ(packed));
+/* 97 */     return new Vector3i(unpackX(packed), unpackY(packed), unpackZ(packed));
 /*    */   }
 /*    */ }
 

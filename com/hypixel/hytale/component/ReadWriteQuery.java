@@ -1,28 +1,52 @@
 /*    */ package com.hypixel.hytale.component;
 /*    */ 
 /*    */ import com.hypixel.hytale.component.query.ReadWriteArchetypeQuery;
+/*    */ import java.util.Objects;
+/*    */ import javax.annotation.Nonnull;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */ public class ReadWriteQuery<ECS_TYPE>
 /*    */   implements ReadWriteArchetypeQuery<ECS_TYPE>
 /*    */ {
+/*    */   @Nonnull
 /*    */   private final Archetype<ECS_TYPE> read;
+/*    */   @Nonnull
 /*    */   private final Archetype<ECS_TYPE> write;
 /*    */   
-/*    */   public ReadWriteQuery(Archetype<ECS_TYPE> read, Archetype<ECS_TYPE> write) {
-/* 14 */     this.read = read;
-/* 15 */     this.write = write;
+/*    */   public ReadWriteQuery(@Nonnull Archetype<ECS_TYPE> read, @Nonnull Archetype<ECS_TYPE> write) {
+/* 34 */     this.read = read;
+/* 35 */     this.write = write;
+/*    */ 
+/*    */     
+/* 38 */     Objects.requireNonNull(read, "Read archetype for ReadWriteQuery cannot be null");
+/* 39 */     Objects.requireNonNull(write, "Write archetype for ReadWriteQuery cannot be null");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public Archetype<ECS_TYPE> getReadArchetype() {
-/* 20 */     return this.read;
+/* 44 */     return this.read;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public Archetype<ECS_TYPE> getWriteArchetype() {
-/* 25 */     return this.write;
+/* 49 */     return this.write;
 /*    */   }
 /*    */ }
 

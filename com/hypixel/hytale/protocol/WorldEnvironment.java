@@ -43,9 +43,9 @@
 /*     */   public static WorldEnvironment deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  44 */     WorldEnvironment obj = new WorldEnvironment();
 /*  45 */     byte nullBits = buf.getByte(offset);
-/*  46 */     if ((nullBits & 0x2) != 0) obj.waterTint = Color.deserialize(buf, offset + 1);
+/*  46 */     if ((nullBits & 0x1) != 0) obj.waterTint = Color.deserialize(buf, offset + 1);
 /*     */     
-/*  48 */     if ((nullBits & 0x1) != 0) {
+/*  48 */     if ((nullBits & 0x2) != 0) {
 /*  49 */       int varPos0 = offset + 16 + buf.getIntLE(offset + 4);
 /*  50 */       int idLen = VarInt.peek(buf, varPos0);
 /*  51 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
@@ -88,7 +88,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  89 */     byte nullBits = buf.getByte(offset);
 /*  90 */     int maxEnd = 16;
-/*  91 */     if ((nullBits & 0x1) != 0) {
+/*  91 */     if ((nullBits & 0x2) != 0) {
 /*  92 */       int fieldOffset0 = buf.getIntLE(offset + 4);
 /*  93 */       int pos0 = offset + 16 + fieldOffset0;
 /*  94 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
@@ -114,8 +114,8 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 115 */     int startPos = buf.writerIndex();
 /* 116 */     byte nullBits = 0;
-/* 117 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 118 */     if (this.waterTint != null) nullBits = (byte)(nullBits | 0x2); 
+/* 117 */     if (this.waterTint != null) nullBits = (byte)(nullBits | 0x1); 
+/* 118 */     if (this.id != null) nullBits = (byte)(nullBits | 0x2); 
 /* 119 */     if (this.fluidParticles != null) nullBits = (byte)(nullBits | 0x4); 
 /* 120 */     if (this.tagIndexes != null) nullBits = (byte)(nullBits | 0x8); 
 /* 121 */     buf.writeByte(nullBits);
@@ -172,7 +172,7 @@
 /* 172 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 175 */     if ((nullBits & 0x1) != 0) {
+/* 175 */     if ((nullBits & 0x2) != 0) {
 /* 176 */       int idOffset = buffer.getIntLE(offset + 4);
 /* 177 */       if (idOffset < 0) {
 /* 178 */         return ValidationResult.error("Invalid offset for Id");

@@ -25,6 +25,9 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class RotateObjectSystem
 /*    */   extends EntityTickingSystem<EntityStore>
 /*    */ {
@@ -34,27 +37,27 @@
 /*    */   private final ComponentType<EntityStore, RotateObjectComponent> rotateObjectComponentType;
 /*    */   
 /*    */   public RotateObjectSystem(@Nonnull ComponentType<EntityStore, TransformComponent> transformComponentType, @Nonnull ComponentType<EntityStore, RotateObjectComponent> rotateObjectComponentType) {
-/* 37 */     this.transformComponentType = transformComponentType;
-/* 38 */     this.rotateObjectComponentType = rotateObjectComponentType;
+/* 40 */     this.transformComponentType = transformComponentType;
+/* 41 */     this.rotateObjectComponentType = rotateObjectComponentType;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public Query<EntityStore> getQuery() {
-/* 43 */     return (Query)this.rotateObjectComponentType;
+/* 46 */     return (Query<EntityStore>)Query.and(new Query[] { (Query)this.rotateObjectComponentType, (Query)this.transformComponentType });
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 48 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
-/* 49 */     assert transformComponent != null;
-/*    */     
 /* 51 */     RotateObjectComponent rotateObjectComponent = (RotateObjectComponent)archetypeChunk.getComponent(index, this.rotateObjectComponentType);
 /* 52 */     assert rotateObjectComponent != null;
 /*    */     
-/* 54 */     Vector3f rotation = transformComponent.getRotation();
-/* 55 */     rotation.y += rotateObjectComponent.getRotationSpeed() * dt;
-/* 56 */     if (rotation.y >= 360.0F) rotation.y %= 360.0F; 
-/* 57 */     transformComponent.setRotation(rotation);
+/* 54 */     TransformComponent transformComponent = (TransformComponent)archetypeChunk.getComponent(index, this.transformComponentType);
+/* 55 */     assert transformComponent != null;
+/*    */     
+/* 57 */     Vector3f rotation = transformComponent.getRotation();
+/* 58 */     rotation.y += rotateObjectComponent.getRotationSpeed() * dt;
+/* 59 */     if (rotation.y >= 360.0F) rotation.y %= 360.0F; 
+/* 60 */     transformComponent.setRotation(rotation);
 /*    */   }
 /*    */ }
 

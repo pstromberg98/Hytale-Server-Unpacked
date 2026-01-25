@@ -353,7 +353,7 @@
 /* 353 */         int blockId = chunkSection.get(x, y--, z);
 /* 354 */         int fluidId = (fluidSectionComponent != null) ? fluidSectionComponent.getFluidId(x, y, z) : 0;
 /*     */         
-/* 356 */         if (blockId == 0 && fluidId != 0) {
+/* 356 */         if (blockId == 0 && fluidId == 0) {
 /*     */           continue;
 /*     */         }
 /*     */         

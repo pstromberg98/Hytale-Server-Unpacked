@@ -1084,60 +1084,67 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class LegacyEntityHolderSystem<T extends Entity>
 /*      */   extends HolderSystem<EntityStore>
 /*      */ {
 /*      */   private final ComponentType<EntityStore, T> componentType;
 /*      */   
 /*      */   public LegacyEntityHolderSystem(ComponentType<EntityStore, T> componentType) {
-/* 1093 */     this.componentType = componentType;
+/* 1100 */     this.componentType = componentType;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 1099 */     return RootDependency.firstSet();
+/* 1106 */     return RootDependency.firstSet();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public Query<EntityStore> getQuery() {
-/* 1104 */     return (Query)this.componentType;
+/* 1111 */     return (Query)this.componentType;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 1109 */     Entity entity = (Entity)holder.getComponent(this.componentType);
-/* 1110 */     assert entity != null;
+/* 1116 */     Entity entity = (Entity)holder.getComponent(this.componentType);
+/* 1117 */     assert entity != null;
 /*      */ 
 /*      */     
-/* 1113 */     entity.loadIntoWorld(((EntityStore)store.getExternalData()).getWorld());
+/* 1120 */     entity.loadIntoWorld(((EntityStore)store.getExternalData()).getWorld());
 /*      */ 
 /*      */     
-/* 1116 */     holder.putComponent(NetworkId.getComponentType(), (Component)new NetworkId(entity.getNetworkId()));
+/* 1123 */     holder.putComponent(NetworkId.getComponentType(), (Component)new NetworkId(entity.getNetworkId()));
 /*      */ 
 /*      */     
-/* 1119 */     if (holder.getComponent(Player.getComponentType()) == null) {
+/* 1126 */     if (holder.getComponent(Player.getComponentType()) == null) {
 /*      */       return;
 /*      */     }
-/* 1122 */     String displayName = entity.getLegacyDisplayName();
-/* 1123 */     if (displayName != null && holder.getComponent(DisplayNameComponent.getComponentType()) == null) {
-/* 1124 */       holder.putComponent(DisplayNameComponent.getComponentType(), (Component)new DisplayNameComponent(Message.raw(displayName)));
+/* 1129 */     String displayName = entity.getLegacyDisplayName();
+/* 1130 */     if (displayName != null && holder.getComponent(DisplayNameComponent.getComponentType()) == null) {
+/* 1131 */       holder.putComponent(DisplayNameComponent.getComponentType(), (Component)new DisplayNameComponent(Message.raw(displayName)));
 /*      */     }
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 1130 */     Entity entity = (Entity)holder.getComponent(this.componentType);
-/* 1131 */     switch (EntityModule.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) {
+/* 1137 */     Entity entity = (Entity)holder.getComponent(this.componentType);
+/* 1138 */     switch (EntityModule.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) {
 /*      */       case 1:
-/* 1133 */         if (!entity.wasRemoved()) {
-/* 1134 */           entity.remove();
-/* 1135 */           entity.unloadFromWorld();
+/* 1140 */         if (!entity.wasRemoved()) {
+/* 1141 */           entity.remove();
+/* 1142 */           entity.unloadFromWorld();
 /*      */         } 
 /*      */         break;
 /*      */       case 2:
-/* 1139 */         entity.unloadFromWorld();
-/* 1140 */         entity.clearReference();
+/* 1146 */         entity.unloadFromWorld();
+/* 1147 */         entity.clearReference();
 /*      */         break;
 /*      */     } 
 /*      */   }
@@ -1145,7 +1152,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public String toString() {
-/* 1148 */     return "LegacyEntityHolderSystem{componentType=" + String.valueOf(this.componentType) + "}";
+/* 1155 */     return "LegacyEntityHolderSystem{componentType=" + String.valueOf(this.componentType) + "}";
 /*      */   }
 /*      */ }
 

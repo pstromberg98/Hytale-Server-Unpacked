@@ -43,7 +43,7 @@
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   default void validateRegistry(ComponentRegistry<ECS_TYPE> registry) {
+/*    */   default void validateRegistry(@Nonnull ComponentRegistry<ECS_TYPE> registry) {
 /* 47 */     getReadArchetype().validateRegistry(registry);
 /* 48 */     getWriteArchetype().validateRegistry(registry);
 /*    */   }

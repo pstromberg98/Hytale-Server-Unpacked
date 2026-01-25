@@ -28,27 +28,25 @@
 /* 28 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*    */   @Nonnull
 /* 30 */   private static final Message MESSAGE_COMMANDS_ERRORS_TARGET_NOT_IN_WORLD = Message.translation("server.commands.errors.targetNotInWorld");
-/*    */   @Nonnull
-/* 32 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_OTHER_TO_PLAYER = Message.translation("server.commands.teleport.teleportedOtherToPlayer");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 38 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 36 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 44 */   private final RequiredArg<PlayerRef> targetPlayerArg = withRequiredArg("targetPlayer", "server.commands.teleport.targetPlayer.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 42 */   private final RequiredArg<PlayerRef> targetPlayerArg = withRequiredArg("targetPlayer", "server.commands.teleport.targetPlayer.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public TeleportOtherToPlayerCommand() {
-/* 50 */     super("server.commands.teleport.otherToPlayer.desc");
-/* 51 */     requirePermission(HytalePermissions.fromCommand("teleport.other"));
+/* 48 */     super("server.commands.teleport.otherToPlayer.desc");
+/* 49 */     requirePermission(HytalePermissions.fromCommand("teleport.other"));
 /*    */   }
 /*    */ 
 /*    */ 
@@ -60,30 +58,30 @@
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 63 */     PlayerRef playerToTpRef = (PlayerRef)this.playerArg.get(context);
-/* 64 */     Ref<EntityStore> sourceRef = playerToTpRef.getReference();
+/* 61 */     PlayerRef playerToTpRef = (PlayerRef)this.playerArg.get(context);
+/* 62 */     Ref<EntityStore> sourceRef = playerToTpRef.getReference();
 /*    */ 
 /*    */     
-/* 67 */     if (sourceRef == null || !sourceRef.isValid()) {
-/* 68 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/* 65 */     if (sourceRef == null || !sourceRef.isValid()) {
+/* 66 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 73 */     PlayerRef targetPlayerRef = (PlayerRef)this.targetPlayerArg.get(context);
-/* 74 */     Ref<EntityStore> targetRef = targetPlayerRef.getReference();
-/* 75 */     if (targetRef == null || !targetRef.isValid()) {
-/* 76 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_TARGET_NOT_IN_WORLD);
+/* 71 */     PlayerRef targetPlayerRef = (PlayerRef)this.targetPlayerArg.get(context);
+/* 72 */     Ref<EntityStore> targetRef = targetPlayerRef.getReference();
+/* 73 */     if (targetRef == null || !targetRef.isValid()) {
+/* 74 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_TARGET_NOT_IN_WORLD);
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 81 */     Store<EntityStore> sourceStore = sourceRef.getStore();
-/* 82 */     World sourceWorld = ((EntityStore)sourceStore.getExternalData()).getWorld();
-/* 83 */     Store<EntityStore> targetStore = targetRef.getStore();
-/* 84 */     World targetWorld = ((EntityStore)targetStore.getExternalData()).getWorld();
+/* 79 */     Store<EntityStore> sourceStore = sourceRef.getStore();
+/* 80 */     World sourceWorld = ((EntityStore)sourceStore.getExternalData()).getWorld();
+/* 81 */     Store<EntityStore> targetStore = targetRef.getStore();
+/* 82 */     World targetWorld = ((EntityStore)targetStore.getExternalData()).getWorld();
 /*    */     
-/* 86 */     sourceWorld.execute(() -> {
+/* 84 */     sourceWorld.execute(() -> {
 /*    */           TransformComponent transformComponent = (TransformComponent)sourceStore.getComponent(sourceRef, TransformComponent.getComponentType());
 /*    */           assert transformComponent != null;
 /*    */           HeadRotation headRotationComponent = (HeadRotation)sourceStore.getComponent(sourceRef, HeadRotation.getComponentType());

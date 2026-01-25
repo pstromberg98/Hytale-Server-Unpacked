@@ -1,7 +1,6 @@
 /*    */ package com.hypixel.hytale.server.core.asset.type.gameplay.respawn;
 /*    */ 
 /*    */ import com.hypixel.hytale.codec.builder.BuilderCodec;
-/*    */ import com.hypixel.hytale.component.CommandBuffer;
 /*    */ import com.hypixel.hytale.component.Component;
 /*    */ import com.hypixel.hytale.component.ComponentAccessor;
 /*    */ import com.hypixel.hytale.component.Ref;
@@ -10,6 +9,8 @@
 /*    */ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*    */ import java.util.concurrent.CompletableFuture;
+/*    */ import java.util.concurrent.Executor;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
@@ -19,20 +20,18 @@
 /*    */   implements RespawnController
 /*    */ {
 /*    */   @Nonnull
-/* 22 */   public static final HomeOrSpawnPoint INSTANCE = new HomeOrSpawnPoint();
+/* 23 */   public static final HomeOrSpawnPoint INSTANCE = new HomeOrSpawnPoint();
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 28 */   public static final BuilderCodec<HomeOrSpawnPoint> CODEC = BuilderCodec.builder(HomeOrSpawnPoint.class, () -> INSTANCE)
-/* 29 */     .build();
+/* 29 */   public static final BuilderCodec<HomeOrSpawnPoint> CODEC = BuilderCodec.builder(HomeOrSpawnPoint.class, () -> INSTANCE)
+/* 30 */     .build();
 /*    */ 
 /*    */   
-/*    */   public void respawnPlayer(@Nonnull World world, @Nonnull Ref<EntityStore> playerReference, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 33 */     Transform homeTransform = Player.getRespawnPosition(playerReference, world.getName(), (ComponentAccessor)commandBuffer);
-/* 34 */     Teleport teleportComponent = Teleport.createForPlayer(homeTransform);
-/* 35 */     commandBuffer.addComponent(playerReference, Teleport.getComponentType(), (Component)teleportComponent);
+/*    */   public CompletableFuture<Void> respawnPlayer(@Nonnull World world, @Nonnull Ref<EntityStore> playerReference, @Nonnull ComponentAccessor<EntityStore> commandBuffer) {
+/* 34 */     return Player.getRespawnPosition(playerReference, world.getName(), commandBuffer).thenAcceptAsync(homeTransform -> { if (!playerReference.isValid()) return;  Teleport teleportComponent = Teleport.createForPlayer(homeTransform); playerReference.getStore().addComponent(playerReference, Teleport.getComponentType(), (Component)teleportComponent); }(Executor)world);
 /*    */   }
 /*    */ }
 

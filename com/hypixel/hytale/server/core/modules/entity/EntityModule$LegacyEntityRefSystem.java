@@ -1149,32 +1149,39 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class LegacyEntityRefSystem<T extends Entity>
 /*      */   extends RefSystem<EntityStore>
 /*      */ {
 /*      */   private final ComponentType<EntityStore, T> componentType;
 /*      */   
 /*      */   public LegacyEntityRefSystem(ComponentType<EntityStore, T> componentType) {
-/* 1158 */     this.componentType = componentType;
+/* 1165 */     this.componentType = componentType;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 1164 */     return RootDependency.firstSet();
+/* 1171 */     return RootDependency.firstSet();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public Query<EntityStore> getQuery() {
-/* 1169 */     return (Query)this.componentType;
+/* 1176 */     return (Query)this.componentType;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 1174 */     Entity entity = (Entity)store.getComponent(ref, this.componentType);
-/* 1175 */     assert entity != null;
+/* 1181 */     Entity entity = (Entity)store.getComponent(ref, this.componentType);
+/* 1182 */     assert entity != null;
 /*      */     
-/* 1177 */     entity.setReference(ref);
+/* 1184 */     entity.setReference(ref);
 /*      */   }
 /*      */ 
 /*      */ 
@@ -1184,7 +1191,7 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public String toString() {
-/* 1187 */     return "LegacyEntityRefSystem{componentType=" + String.valueOf(this.componentType) + "}";
+/* 1194 */     return "LegacyEntityRefSystem{componentType=" + String.valueOf(this.componentType) + "}";
 /*      */   }
 /*      */ }
 

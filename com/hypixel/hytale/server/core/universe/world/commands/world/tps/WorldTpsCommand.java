@@ -13,45 +13,40 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class WorldTpsCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 20 */   private static final Message MESSAGE_COMMANDS_WORLD_TPS_SET_SUCCESS = Message.translation("server.commands.world.tps.set.success");
-/*    */   @Nonnull
-/* 22 */   private static final Message MESSAGE_COMMANDS_WORLD_TPS_SET_INVALID = Message.translation("server.commands.world.tps.set.invalid");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 28 */   private final RequiredArg<Integer> tickRateArg = withRequiredArg("rate", "server.commands.world.tps.rate.desc", (ArgumentType)ArgTypes.TICK_RATE);
+/* 23 */   private final RequiredArg<Integer> tickRateArg = withRequiredArg("rate", "server.commands.world.tps.rate.desc", (ArgumentType)ArgTypes.TICK_RATE);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public WorldTpsCommand() {
-/* 34 */     super("tps", "server.commands.world.tps.desc");
-/* 35 */     addAliases(new String[] { "tickrate" });
-/* 36 */     addSubCommand((AbstractCommand)new WorldTpsResetCommand());
+/* 29 */     super("tps", "server.commands.world.tps.desc");
+/* 30 */     addAliases(new String[] { "tickrate" });
+/* 31 */     addSubCommand((AbstractCommand)new WorldTpsResetCommand());
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 41 */     int newTickRate = ((Integer)this.tickRateArg.get(context)).intValue();
+/* 36 */     int newTickRate = ((Integer)this.tickRateArg.get(context)).intValue();
 /*    */     
-/* 43 */     if (newTickRate <= 0 || newTickRate > 2048) {
-/* 44 */       context.sendMessage(MESSAGE_COMMANDS_WORLD_TPS_SET_INVALID
-/* 45 */           .param("value", newTickRate));
+/* 38 */     if (newTickRate <= 0 || newTickRate > 2048) {
+/* 39 */       context.sendMessage(Message.translation("server.commands.world.tps.set.invalid")
+/* 40 */           .param("value", newTickRate));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 49 */     world.setTps(newTickRate);
-/* 50 */     double newMs = 1000.0D / newTickRate;
-/* 51 */     context.sendMessage(MESSAGE_COMMANDS_WORLD_TPS_SET_SUCCESS
-/* 52 */         .param("worldName", world.getName())
-/* 53 */         .param("tps", newTickRate)
-/* 54 */         .param("ms", String.format("%.2f", new Object[] { Double.valueOf(newMs) })));
+/* 44 */     world.setTps(newTickRate);
+/* 45 */     double newMs = 1000.0D / newTickRate;
+/* 46 */     context.sendMessage(Message.translation("server.commands.world.tps.set.success")
+/* 47 */         .param("worldName", world.getName())
+/* 48 */         .param("tps", newTickRate)
+/* 49 */         .param("ms", String.format("%.2f", new Object[] { Double.valueOf(newMs) })));
 /*    */   }
 /*    */ }
 

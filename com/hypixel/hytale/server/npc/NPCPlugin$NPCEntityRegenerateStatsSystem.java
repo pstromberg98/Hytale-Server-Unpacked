@@ -1417,11 +1417,43 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class NPCEntityRegenerateStatsSystem
 /*      */   extends EntityStatsSystems.Regenerate<NPCEntity>
 /*      */ {
 /*      */   public NPCEntityRegenerateStatsSystem() {
-/* 1424 */     super(EntityStatMap.getComponentType(), NPCEntity.getComponentType());
+/* 1456 */     super(EntityStatMap.getComponentType(), NPCEntity.getComponentType());
 /*      */   }
 /*      */ }
 

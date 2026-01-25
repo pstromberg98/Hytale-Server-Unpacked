@@ -271,137 +271,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyEntitySkin
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -411,48 +280,51 @@
 /*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public LegacyEntitySkin(ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType, ComponentType<EntityStore, PlayerSkinComponent> playerSkinComponentComponentType) {
-/* 414 */     this.visibleComponentType = visibleComponentType;
-/* 415 */     this.playerSkinComponentComponentType = playerSkinComponentComponentType;
-/* 416 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)visibleComponentType, (Query)playerSkinComponentComponentType });
+/* 283 */     this.visibleComponentType = visibleComponentType;
+/* 284 */     this.playerSkinComponentComponentType = playerSkinComponentComponentType;
+/* 285 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)visibleComponentType, (Query)playerSkinComponentComponentType });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 422 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
+/* 291 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 428 */     return this.query;
+/* 297 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 433 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 302 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 438 */     EntityTrackerSystems.Visible visibleComponent = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
-/* 439 */     assert visibleComponent != null;
+/* 307 */     EntityTrackerSystems.Visible visibleComponent = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
+/* 308 */     assert visibleComponent != null;
+/*     */     
+/* 310 */     PlayerSkinComponent playerSkinComponent = (PlayerSkinComponent)archetypeChunk.getComponent(index, this.playerSkinComponentComponentType);
+/* 311 */     assert playerSkinComponent != null;
 /*     */ 
 /*     */     
-/* 442 */     if (((PlayerSkinComponent)archetypeChunk.getComponent(index, this.playerSkinComponentComponentType)).consumeNetworkOutdated()) {
-/* 443 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), (PlayerSkinComponent)archetypeChunk.getComponent(index, this.playerSkinComponentComponentType), visibleComponent.visibleTo);
-/* 444 */     } else if (!visibleComponent.newlyVisibleTo.isEmpty()) {
-/* 445 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), (PlayerSkinComponent)archetypeChunk.getComponent(index, this.playerSkinComponentComponentType), visibleComponent.newlyVisibleTo);
+/* 314 */     if (playerSkinComponent.consumeNetworkOutdated()) {
+/* 315 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), playerSkinComponent, visibleComponent.visibleTo);
+/* 316 */     } else if (!visibleComponent.newlyVisibleTo.isEmpty()) {
+/* 317 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), playerSkinComponent, visibleComponent.newlyVisibleTo);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void queueUpdatesFor(Ref<EntityStore> ref, @Nonnull PlayerSkinComponent component, @Nonnull Map<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> visibleTo) {
-/* 450 */     ComponentUpdate update = new ComponentUpdate();
-/* 451 */     update.type = ComponentUpdateType.PlayerSkin;
-/* 452 */     update.skin = component.getPlayerSkin();
+/* 322 */     ComponentUpdate update = new ComponentUpdate();
+/* 323 */     update.type = ComponentUpdateType.PlayerSkin;
+/* 324 */     update.skin = component.getPlayerSkin();
 /*     */     
-/* 454 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
-/* 455 */       viewer.queueUpdate(ref, update); 
+/* 326 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
+/* 327 */       viewer.queueUpdate(ref, update); 
 /*     */   }
 /*     */ }
 

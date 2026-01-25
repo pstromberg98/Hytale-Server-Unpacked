@@ -41,7 +41,7 @@
 /*     */ import com.hypixel.hytale.server.core.util.BsonUtil;
 /*     */ import com.hypixel.hytale.server.npc.AllNPCsLoadedEvent;
 /*     */ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-/*     */ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+/*     */ import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
 /*     */ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 /*     */ import java.io.IOException;
 /*     */ import java.nio.file.Path;
@@ -63,7 +63,7 @@
 /*     */   
 /*  64 */   private final List<MemoryProvider<?>> providers = (List<MemoryProvider<?>>)new ObjectArrayList();
 /*     */   
-/*  66 */   private final Map<String, Set<Memory>> allMemories = (Map<String, Set<Memory>>)new Object2ObjectOpenHashMap();
+/*  66 */   private final Map<String, Set<Memory>> allMemories = (Map<String, Set<Memory>>)new Object2ObjectRBTreeMap();
 /*     */   
 /*     */   private ComponentType<EntityStore, PlayerMemories> playerMemoriesComponentType;
 /*     */   @Nullable

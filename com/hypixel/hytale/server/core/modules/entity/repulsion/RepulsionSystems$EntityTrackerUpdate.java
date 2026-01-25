@@ -69,7 +69,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */ public class EntityTrackerUpdate
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -79,48 +78,48 @@
 /*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public EntityTrackerUpdate(ComponentType<EntityStore, EntityTrackerSystems.Visible> visibleComponentType, ComponentType<EntityStore, Repulsion> componentType) {
-/*  82 */     this.visibleComponentType = visibleComponentType;
-/*  83 */     this.componentType = componentType;
-/*  84 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)visibleComponentType, (Query)componentType });
+/*  81 */     this.visibleComponentType = visibleComponentType;
+/*  82 */     this.componentType = componentType;
+/*  83 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)visibleComponentType, (Query)componentType });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/*  90 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
+/*  89 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  96 */     return this.query;
+/*  95 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 101 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 100 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 106 */     EntityTrackerSystems.Visible visible = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
-/* 107 */     Repulsion repulsion = (Repulsion)archetypeChunk.getComponent(index, this.componentType);
+/* 105 */     EntityTrackerSystems.Visible visible = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.visibleComponentType);
+/* 106 */     Repulsion repulsion = (Repulsion)archetypeChunk.getComponent(index, this.componentType);
 /*     */ 
 /*     */     
-/* 110 */     if (repulsion.consumeNetworkOutdated()) {
-/* 111 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), repulsion, visible.visibleTo);
-/* 112 */     } else if (!visible.newlyVisibleTo.isEmpty()) {
-/* 113 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), repulsion, visible.newlyVisibleTo);
+/* 109 */     if (repulsion.consumeNetworkOutdated()) {
+/* 110 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), repulsion, visible.visibleTo);
+/* 111 */     } else if (!visible.newlyVisibleTo.isEmpty()) {
+/* 112 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), repulsion, visible.newlyVisibleTo);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void queueUpdatesFor(Ref<EntityStore> ref, @Nonnull Repulsion repulsion, @Nonnull Map<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> visibleTo) {
-/* 118 */     ComponentUpdate update = new ComponentUpdate();
-/* 119 */     update.type = ComponentUpdateType.Repulsion;
-/* 120 */     update.repulsionConfigIndex = repulsion.getRepulsionConfigIndex();
+/* 117 */     ComponentUpdate update = new ComponentUpdate();
+/* 118 */     update.type = ComponentUpdateType.Repulsion;
+/* 119 */     update.repulsionConfigIndex = repulsion.getRepulsionConfigIndex();
 /*     */     
-/* 122 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
-/* 123 */       viewer.queueUpdate(ref, update); 
+/* 121 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
+/* 122 */       viewer.queueUpdate(ref, update); 
 /*     */   }
 /*     */ }
 

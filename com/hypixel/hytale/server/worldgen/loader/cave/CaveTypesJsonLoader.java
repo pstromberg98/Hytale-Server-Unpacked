@@ -35,21 +35,27 @@
 /* 35 */     JsonArray typesArray = this.json.getAsJsonArray();
 /* 36 */     CaveType[] caveTypes = new CaveType[typesArray.size()];
 /* 37 */     for (int i = 0; i < typesArray.size(); i++) {
-/* 38 */       JsonObject caveTypeObject = typesArray.get(i).getAsJsonObject();
-/* 39 */       String name = loadName(caveTypeObject);
-/* 40 */       caveTypes[i] = loadCaveType(name, (JsonElement)caveTypeObject);
+/* 38 */       JsonElement entry = getOrLoad(typesArray.get(i));
+/*    */       
+/* 40 */       if (!entry.isJsonObject()) {
+/* 41 */         throw error("Expected CaveType entry to be a JsonObject at index: %d", new Object[] { Integer.valueOf(i) });
+/*    */       }
+/*    */       
+/* 44 */       JsonObject caveTypeJson = entry.getAsJsonObject();
+/* 45 */       String name = loadName(caveTypeJson);
+/* 46 */       caveTypes[i] = loadCaveType(name, (JsonElement)caveTypeJson);
 /*    */     } 
-/* 42 */     return caveTypes;
+/* 48 */     return caveTypes;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   protected CaveType loadCaveType(String name, JsonElement json) {
-/* 47 */     return (new CaveTypeJsonLoader(this.seed.append(String.format("-%s", new Object[] { name })), this.dataFolder, json, this.caveFolder, name, this.zoneContext))
-/* 48 */       .load();
+/* 53 */     return (new CaveTypeJsonLoader(this.seed.append(String.format("-%s", new Object[] { name })), this.dataFolder, json, this.caveFolder, name, this.zoneContext))
+/* 54 */       .load();
 /*    */   }
 /*    */   
 /*    */   protected String loadName(@Nonnull JsonObject jsonObject) {
-/* 52 */     return jsonObject.get("Name").getAsString();
+/* 58 */     return jsonObject.get("Name").getAsString();
 /*    */   }
 /*    */   
 /*    */   public static interface Constants {

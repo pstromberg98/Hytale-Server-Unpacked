@@ -21,50 +21,45 @@
 /*    */ import java.util.List;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
-/*    */ public class InventoryBackpackCommand extends AbstractPlayerCommand {
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_INVENTORY_BACKPACK_SIZE = Message.translation("server.commands.inventory.backpack.size");
-/*    */   @Nonnull
-/* 28 */   private static final Message MESSAGE_COMMANDS_INVENTORY_BACKPACK_RESIZED = Message.translation("server.commands.inventory.backpack.resized");
 /*    */ 
-/*    */ 
-/*    */ 
-/*    */   
+/*    */ public class InventoryBackpackCommand
+/*    */   extends AbstractPlayerCommand
+/*    */ {
 /*    */   @Nonnull
-/* 34 */   private final OptionalArg<Integer> sizeArg = withOptionalArg("size", "server.commands.inventorybackpack.size.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 29 */   private final OptionalArg<Integer> sizeArg = withOptionalArg("size", "server.commands.inventorybackpack.size.desc", (ArgumentType)ArgTypes.INTEGER);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public InventoryBackpackCommand() {
-/* 40 */     super("backpack", "server.commands.inventorybackpack.desc");
+/* 35 */     super("backpack", "server.commands.inventorybackpack.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 45 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 46 */     assert playerComponent != null;
+/* 40 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 41 */     assert playerComponent != null;
 /*    */     
-/* 48 */     Inventory inventory = playerComponent.getInventory();
+/* 43 */     Inventory inventory = playerComponent.getInventory();
 /*    */     
-/* 50 */     if (!this.sizeArg.provided(context)) {
+/* 45 */     if (!this.sizeArg.provided(context)) {
 /*    */       
-/* 52 */       context.sendMessage(MESSAGE_COMMANDS_INVENTORY_BACKPACK_SIZE
-/* 53 */           .param("capacity", inventory.getBackpack().getCapacity()));
+/* 47 */       context.sendMessage(Message.translation("server.commands.inventory.backpack.size")
+/* 48 */           .param("capacity", inventory.getBackpack().getCapacity()));
 /*    */     } else {
 /*    */       
-/* 56 */       short capacity = ((Integer)this.sizeArg.get(context)).shortValue();
+/* 51 */       short capacity = ((Integer)this.sizeArg.get(context)).shortValue();
 /*    */       
-/* 58 */       ObjectArrayList<ItemStack> remainder = new ObjectArrayList();
-/* 59 */       inventory.resizeBackpack(capacity, (List)remainder);
+/* 53 */       ObjectArrayList<ItemStack> remainder = new ObjectArrayList();
+/* 54 */       inventory.resizeBackpack(capacity, (List)remainder);
 /*    */       
-/* 61 */       for (ObjectListIterator<ItemStack> objectListIterator = remainder.iterator(); objectListIterator.hasNext(); ) { ItemStack item = objectListIterator.next();
-/* 62 */         ItemUtils.dropItem(ref, item, (ComponentAccessor)store); }
+/* 56 */       for (ObjectListIterator<ItemStack> objectListIterator = remainder.iterator(); objectListIterator.hasNext(); ) { ItemStack item = objectListIterator.next();
+/* 57 */         ItemUtils.dropItem(ref, item, (ComponentAccessor)store); }
 /*    */ 
 /*    */       
-/* 65 */       context.sendMessage(MESSAGE_COMMANDS_INVENTORY_BACKPACK_RESIZED
-/* 66 */           .param("capacity", inventory.getBackpack().getCapacity())
-/* 67 */           .param("dropped", remainder.size()));
+/* 60 */       context.sendMessage(Message.translation("server.commands.inventory.backpack.resized")
+/* 61 */           .param("capacity", inventory.getBackpack().getCapacity())
+/* 62 */           .param("dropped", remainder.size()));
 /*    */     } 
 /*    */   }
 /*    */ }

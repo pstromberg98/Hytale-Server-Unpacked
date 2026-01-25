@@ -23,63 +23,59 @@
 /*    */ 
 /*    */ public class ChunkLightingCommand extends AbstractWorldCommand {
 /*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED = Message.translation("server.commands.errors.chunkNotLoaded");
+/* 26 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED = Message.translation("server.commands.chunkinfo.serialized");
 /*    */   @Nonnull
-/* 28 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_LOAD_USAGE = Message.translation("server.commands.chunkinfo.load.usage");
-/*    */   @Nonnull
-/* 30 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED = Message.translation("server.commands.chunkinfo.serialized");
-/*    */   @Nonnull
-/* 32 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED_FAILED = Message.translation("server.commands.chunkinfo.serialized.failed");
+/* 28 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED_FAILED = Message.translation("server.commands.chunkinfo.serialized.failed");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 38 */   private final RequiredArg<RelativeIntPosition> positionArg = withRequiredArg("x y z", "server.commands.chunk.lighting.position.desc", ArgTypes.RELATIVE_BLOCK_POSITION);
+/* 34 */   private final RequiredArg<RelativeIntPosition> positionArg = withRequiredArg("x y z", "server.commands.chunk.lighting.position.desc", ArgTypes.RELATIVE_BLOCK_POSITION);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkLightingCommand() {
-/* 44 */     super("lighting", "server.commands.chunklighting.desc");
+/* 40 */     super("lighting", "server.commands.chunklighting.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 49 */     Vector3i position = ((RelativeIntPosition)this.positionArg.get(context)).getBlockPosition(context, (ComponentAccessor)store);
+/* 45 */     Vector3i position = ((RelativeIntPosition)this.positionArg.get(context)).getBlockPosition(context, (ComponentAccessor)store);
 /*    */     
-/* 51 */     ChunkStore chunkStore = world.getChunkStore();
-/* 52 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
-/* 53 */     Vector2i chunkPos = new Vector2i(ChunkUtil.chunkCoordinate(position.getX()), ChunkUtil.chunkCoordinate(position.getZ()));
-/* 54 */     long chunkIndex = ChunkUtil.indexChunk(chunkPos.x, chunkPos.y);
-/* 55 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/* 47 */     ChunkStore chunkStore = world.getChunkStore();
+/* 48 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
+/* 49 */     Vector2i chunkPos = new Vector2i(ChunkUtil.chunkCoordinate(position.getX()), ChunkUtil.chunkCoordinate(position.getZ()));
+/* 50 */     long chunkIndex = ChunkUtil.indexChunk(chunkPos.x, chunkPos.y);
+/* 51 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*    */ 
 /*    */     
-/* 58 */     if (chunkRef == null || !chunkRef.isValid()) {
-/* 59 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED
-/* 60 */           .param("chunkX", chunkPos.x)
-/* 61 */           .param("chunkZ", chunkPos.y)
-/* 62 */           .param("world", world.getName()));
+/* 54 */     if (chunkRef == null || !chunkRef.isValid()) {
+/* 55 */       context.sendMessage(Message.translation("server.commands.errors.chunkNotLoaded")
+/* 56 */           .param("chunkX", chunkPos.x)
+/* 57 */           .param("chunkZ", chunkPos.y)
+/* 58 */           .param("world", world.getName()));
 /*    */ 
 /*    */       
-/* 65 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_LOAD_USAGE
-/* 66 */           .param("chunkX", chunkPos.x)
-/* 67 */           .param("chunkZ", chunkPos.y));
+/* 61 */       context.sendMessage(Message.translation("server.commands.chunkinfo.load.usage")
+/* 62 */           .param("chunkX", chunkPos.x)
+/* 63 */           .param("chunkZ", chunkPos.y));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 71 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
-/* 72 */     assert blockChunkComponent != null;
+/* 67 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
+/* 68 */     assert blockChunkComponent != null;
 /*    */     
 /*    */     try {
-/* 75 */       BlockSection section = blockChunkComponent.getSectionAtBlockY(position.y);
-/* 76 */       String s = section.getLocalLight().octreeToString();
-/* 77 */       HytaleLogger.getLogger().at(Level.INFO).log("Chunk light output for (%d, %d, %d): %s", 
-/* 78 */           Integer.valueOf(position.x), Integer.valueOf(position.y), Integer.valueOf(position.z), s);
-/* 79 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED);
-/* 80 */     } catch (Throwable t) {
-/* 81 */       HytaleLogger.getLogger().at(Level.SEVERE).log("Failed to print chunk:", t);
-/* 82 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED_FAILED);
+/* 71 */       BlockSection section = blockChunkComponent.getSectionAtBlockY(position.y);
+/* 72 */       String s = section.getLocalLight().octreeToString();
+/* 73 */       HytaleLogger.getLogger().at(Level.INFO).log("Chunk light output for (%d, %d, %d): %s", 
+/* 74 */           Integer.valueOf(position.x), Integer.valueOf(position.y), Integer.valueOf(position.z), s);
+/* 75 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED);
+/* 76 */     } catch (Throwable t) {
+/* 77 */       HytaleLogger.getLogger().at(Level.SEVERE).log("Failed to print chunk:", t);
+/* 78 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_SERIALIZED_FAILED);
 /*    */     } 
 /*    */   }
 /*    */ }

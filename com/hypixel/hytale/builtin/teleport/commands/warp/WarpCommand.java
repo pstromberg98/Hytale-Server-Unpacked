@@ -20,31 +20,26 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
-/*    */ public class WarpCommand extends AbstractCommandCollection {
+/*    */ public class WarpCommand
+/*    */   extends AbstractCommandCollection {
 /*    */   @Nonnull
-/* 25 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED = Message.translation("server.commands.teleport.warp.notLoaded");
-/*    */   @Nonnull
-/* 27 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_UNKNOWN_WARP = Message.translation("server.commands.teleport.warp.unknownWarp");
-/*    */   @Nonnull
-/* 29 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_WORLD_NAME_FOR_WARP_NOT_FOUND = Message.translation("server.commands.teleport.warp.worldNameForWarpNotFound");
-/*    */   @Nonnull
-/* 31 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_WARPED_TO = Message.translation("server.commands.teleport.warp.warpedTo");
+/* 26 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED = Message.translation("server.commands.teleport.warp.notLoaded");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public WarpCommand() {
-/* 37 */     super("warp", "server.commands.warp.desc");
+/* 32 */     super("warp", "server.commands.warp.desc");
 /*    */ 
 /*    */     
-/* 40 */     addUsageVariant((AbstractCommand)new WarpGoVariantCommand());
+/* 35 */     addUsageVariant((AbstractCommand)new WarpGoVariantCommand());
 /*    */ 
 /*    */     
-/* 43 */     addSubCommand((AbstractCommand)new WarpGoCommand());
-/* 44 */     addSubCommand((AbstractCommand)new WarpSetCommand());
-/* 45 */     addSubCommand((AbstractCommand)new WarpListCommand());
-/* 46 */     addSubCommand((AbstractCommand)new WarpRemoveCommand());
-/* 47 */     addSubCommand((AbstractCommand)new WarpReloadCommand());
+/* 38 */     addSubCommand((AbstractCommand)new WarpGoCommand());
+/* 39 */     addSubCommand((AbstractCommand)new WarpSetCommand());
+/* 40 */     addSubCommand((AbstractCommand)new WarpListCommand());
+/* 41 */     addSubCommand((AbstractCommand)new WarpRemoveCommand());
+/* 42 */     addSubCommand((AbstractCommand)new WarpReloadCommand());
 /*    */   }
 /*    */ 
 /*    */ 
@@ -63,39 +58,43 @@
 /*    */ 
 /*    */   
 /*    */   static void tryGo(@Nonnull CommandContext context, @Nonnull String warp, @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-/* 66 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
-/* 67 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
+/* 61 */     if (!TeleportPlugin.get().isWarpsLoaded()) {
+/* 62 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_NOT_LOADED);
 /*    */       
 /*    */       return;
 /*    */     } 
 /*    */     
-/* 72 */     Warp targetWarp = (Warp)TeleportPlugin.get().getWarps().get(warp.toLowerCase());
-/* 73 */     if (targetWarp == null) {
-/* 74 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_UNKNOWN_WARP.param("name", warp));
+/* 67 */     Warp targetWarp = (Warp)TeleportPlugin.get().getWarps().get(warp.toLowerCase());
+/* 68 */     if (targetWarp == null) {
+/* 69 */       context.sendMessage(Message.translation("server.commands.teleport.warp.unknownWarp")
+/* 70 */           .param("name", warp));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 78 */     String worldName = targetWarp.getWorld();
-/* 79 */     World world = Universe.get().getWorld(worldName);
-/* 80 */     Teleport teleportComponent = targetWarp.toTeleport();
-/* 81 */     if (world == null || teleportComponent == null) {
-/* 82 */       context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_WORLD_NAME_FOR_WARP_NOT_FOUND.param("worldName", worldName).param("warp", warp));
+/* 74 */     String worldName = targetWarp.getWorld();
+/* 75 */     World world = Universe.get().getWorld(worldName);
+/* 76 */     Teleport teleportComponent = targetWarp.toTeleport();
+/* 77 */     if (world == null || teleportComponent == null) {
+/* 78 */       context.sendMessage(Message.translation("server.commands.teleport.warp.worldNameForWarpNotFound")
+/* 79 */           .param("worldName", worldName)
+/* 80 */           .param("warp", warp));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 86 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 87 */     assert transformComponent != null;
+/* 84 */     TransformComponent transformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 85 */     assert transformComponent != null;
 /*    */     
-/* 89 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
-/* 90 */     assert headRotationComponent != null;
+/* 87 */     HeadRotation headRotationComponent = (HeadRotation)store.getComponent(ref, HeadRotation.getComponentType());
+/* 88 */     assert headRotationComponent != null;
 /*    */     
-/* 92 */     Vector3d playerPosition = transformComponent.getPosition();
-/* 93 */     Vector3f playerHeadRotation = headRotationComponent.getRotation();
+/* 90 */     Vector3d playerPosition = transformComponent.getPosition();
+/* 91 */     Vector3f playerHeadRotation = headRotationComponent.getRotation();
 /*    */     
-/* 95 */     ((TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType())).append(world, playerPosition.clone(), playerHeadRotation.clone(), "Warp '" + warp + "'");
+/* 93 */     ((TeleportHistory)store.ensureAndGetComponent(ref, TeleportHistory.getComponentType())).append(world, playerPosition.clone(), playerHeadRotation.clone(), "Warp '" + warp + "'");
 /*    */     
-/* 97 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
-/* 98 */     context.sendMessage(MESSAGE_COMMANDS_TELEPORT_WARP_WARPED_TO.param("name", warp));
+/* 95 */     store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 96 */     context.sendMessage(Message.translation("server.commands.teleport.warp.warpedTo")
+/* 97 */         .param("name", warp));
 /*    */   }
 /*    */ }
 

@@ -9,6 +9,7 @@
 /*    */ import com.hypixel.hytale.component.Holder;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.component.Store;
+/*    */ import com.hypixel.hytale.server.core.Message;
 /*    */ import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 /*    */ import com.hypixel.hytale.server.core.command.system.CommandContext;
 /*    */ import com.hypixel.hytale.server.core.command.system.CommandUtil;
@@ -40,24 +41,17 @@
 /*    */ 
 /*    */ 
 /*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */ 
 /*    */ public class AddReachLocationMarkerCommand
 /*    */   extends AbstractPlayerCommand
 /*    */ {
 /*    */   @Nonnull
-/* 54 */   private final RequiredArg<String> reachLocationMarkerArg = withRequiredArg("reachLocationMarkerId", "server.commands.objective.reachLocationMarker.add.arg.reachLocationMarkerId.desc", (ArgumentType)ArgTypes.STRING);
+/* 48 */   private final RequiredArg<String> reachLocationMarkerArg = withRequiredArg("reachLocationMarkerId", "server.commands.objective.reachLocationMarker.add.arg.reachLocationMarkerId.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public AddReachLocationMarkerCommand() {
-/* 60 */     super("add", "server.commands.objective.reachLocationMarker.add");
+/* 54 */     super("add", "server.commands.objective.reachLocationMarker.add");
 /*    */   }
 /*    */ 
 /*    */ 
@@ -68,32 +62,34 @@
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 71 */     String reachLocationMarkerId = (String)this.reachLocationMarkerArg.get(context);
-/* 72 */     if (ReachLocationMarkerAsset.getAssetMap().getAsset(reachLocationMarkerId) == null) {
-/* 73 */       context.sendMessage(ObjectiveReachLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_REACH_LOCATION_MARKER_NOT_FOUND.param("id", reachLocationMarkerId));
-/* 74 */       context.sendMessage(ObjectiveReachLocationMarkerCommand.MESSAGE_GENERAL_FAILED_DID_YOU_MEAN
-/* 75 */           .param("choices", StringUtil.sortByFuzzyDistance(reachLocationMarkerId, ReachLocationMarkerAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
+/* 65 */     String reachLocationMarkerId = (String)this.reachLocationMarkerArg.get(context);
+/* 66 */     if (ReachLocationMarkerAsset.getAssetMap().getAsset(reachLocationMarkerId) == null) {
+/* 67 */       context.sendMessage(Message.translation("server.commands.objective.reachLocationMarker.notFound")
+/* 68 */           .param("id", reachLocationMarkerId));
+/* 69 */       context.sendMessage(Message.translation("server.general.failed.didYouMean")
+/* 70 */           .param("choices", StringUtil.sortByFuzzyDistance(reachLocationMarkerId, ReachLocationMarkerAsset.getAssetMap().getAssetMap().keySet(), CommandUtil.RECOMMEND_COUNT).toString()));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 79 */     Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-/* 80 */     holder.addComponent(ReachLocationMarker.getComponentType(), (Component)new ReachLocationMarker(reachLocationMarkerId));
+/* 74 */     Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+/* 75 */     holder.addComponent(ReachLocationMarker.getComponentType(), (Component)new ReachLocationMarker(reachLocationMarkerId));
 /*    */     
-/* 82 */     Model model = ObjectivePlugin.get().getObjectiveLocationMarkerModel();
-/* 83 */     holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
-/* 84 */     holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
-/* 85 */     holder.addComponent(Nameplate.getComponentType(), (Component)new Nameplate(reachLocationMarkerId));
+/* 77 */     Model model = ObjectivePlugin.get().getObjectiveLocationMarkerModel();
+/* 78 */     holder.addComponent(ModelComponent.getComponentType(), (Component)new ModelComponent(model));
+/* 79 */     holder.addComponent(PersistentModel.getComponentType(), (Component)new PersistentModel(model.toReference()));
+/* 80 */     holder.addComponent(Nameplate.getComponentType(), (Component)new Nameplate(reachLocationMarkerId));
 /*    */     
-/* 87 */     TransformComponent playerTransformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
-/* 88 */     assert playerTransformComponent != null;
+/* 82 */     TransformComponent playerTransformComponent = (TransformComponent)store.getComponent(ref, TransformComponent.getComponentType());
+/* 83 */     assert playerTransformComponent != null;
 /*    */     
-/* 90 */     TransformComponent transform = new TransformComponent(playerTransformComponent.getPosition(), playerTransformComponent.getRotation());
-/* 91 */     holder.addComponent(TransformComponent.getComponentType(), (Component)transform);
-/* 92 */     holder.ensureComponent(UUIDComponent.getComponentType());
-/* 93 */     holder.ensureComponent(Intangible.getComponentType());
-/* 94 */     holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
-/* 95 */     store.addEntity(holder, AddReason.SPAWN);
-/* 96 */     context.sendMessage(ObjectiveReachLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_REACH_LOCATION_MARKER_ADDED.param("id", reachLocationMarkerId));
+/* 85 */     TransformComponent transform = new TransformComponent(playerTransformComponent.getPosition(), playerTransformComponent.getRotation());
+/* 86 */     holder.addComponent(TransformComponent.getComponentType(), (Component)transform);
+/* 87 */     holder.ensureComponent(UUIDComponent.getComponentType());
+/* 88 */     holder.ensureComponent(Intangible.getComponentType());
+/* 89 */     holder.ensureComponent(HiddenFromAdventurePlayers.getComponentType());
+/* 90 */     store.addEntity(holder, AddReason.SPAWN);
+/* 91 */     context.sendMessage(Message.translation("server.commands.objective.reachLocationMarker.added")
+/* 92 */         .param("id", reachLocationMarkerId));
 /*    */   }
 /*    */ }
 

@@ -79,31 +79,45 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class IndexedStorageChunkLoader
 /*     */   extends BufferChunkLoader
 /*     */   implements MetricProvider
 /*     */ {
-/*     */   public IndexedStorageChunkLoader(@Nonnull Store<ChunkStore> store) {
-/*  87 */     super(store);
+/*     */   private final boolean flushOnWrite;
+/*     */   
+/*     */   public IndexedStorageChunkLoader(@Nonnull Store<ChunkStore> store, boolean flushOnWrite) {
+/* 100 */     super(store);
+/* 101 */     this.flushOnWrite = flushOnWrite;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void close() throws IOException {
-/*  92 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).close();
+/* 106 */     ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).close();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public CompletableFuture<ByteBuffer> loadBuffer(int x, int z) {
-/*  98 */     int regionX = x >> 5;
-/*  99 */     int regionZ = z >> 5;
-/* 100 */     int localX = x & 0x1F;
-/* 101 */     int localZ = z & 0x1F;
-/* 102 */     int index = ChunkUtil.indexColumn(localX, localZ);
+/* 112 */     int regionX = x >> 5;
+/* 113 */     int regionZ = z >> 5;
+/* 114 */     int localX = x & 0x1F;
+/* 115 */     int localZ = z & 0x1F;
+/* 116 */     int index = ChunkUtil.indexColumn(localX, localZ);
 /*     */     
-/* 104 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
-/* 105 */     return CompletableFuture.supplyAsync(SneakyThrow.sneakySupplier(() -> {
-/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrTryOpen(regionX, regionZ);
+/* 118 */     IndexedStorageChunkStorageProvider.IndexedStorageCache indexedStorageCache = (IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType());
+/* 119 */     return CompletableFuture.supplyAsync(SneakyThrow.sneakySupplier(() -> {
+/*     */             IndexedStorageFile chunks = indexedStorageCache.getOrTryOpen(regionX, regionZ, this.flushOnWrite);
 /*     */             return (chunks == null) ? null : chunks.readBlob(index);
 /*     */           }));
 /*     */   }
@@ -112,15 +126,15 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public LongSet getIndexes() throws IOException {
-/* 115 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).getIndexes();
+/* 129 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).getIndexes();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public MetricResults toMetricResults() {
-/* 122 */     if (((ChunkStore)getStore().getExternalData()).getSaver() instanceof IndexedStorageChunkStorageProvider.IndexedStorageChunkSaver) return null; 
-/* 123 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).toMetricResults();
+/* 136 */     if (((ChunkStore)getStore().getExternalData()).getSaver() instanceof IndexedStorageChunkStorageProvider.IndexedStorageChunkSaver) return null; 
+/* 137 */     return ((IndexedStorageChunkStorageProvider.IndexedStorageCache)getStore().getResource(IndexedStorageChunkStorageProvider.IndexedStorageCache.getResourceType())).toMetricResults();
 /*     */   }
 /*     */ }
 

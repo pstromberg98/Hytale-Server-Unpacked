@@ -1,11 +1,10 @@
 package com.hypixel.hytale.server.core.universe.world.worldmap;
 
-import com.hypixel.hytale.server.core.asset.type.gameplay.GameplayConfig;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.WorldMapTracker;
+import com.hypixel.hytale.server.core.universe.world.worldmap.markers.MapMarkerTracker;
 
 public interface MarkerProvider {
-  void update(World paramWorld, GameplayConfig paramGameplayConfig, WorldMapTracker paramWorldMapTracker, int paramInt1, int paramInt2, int paramInt3);
+  void update(World paramWorld, MapMarkerTracker paramMapMarkerTracker, int paramInt1, int paramInt2, int paramInt3);
 }
 
 

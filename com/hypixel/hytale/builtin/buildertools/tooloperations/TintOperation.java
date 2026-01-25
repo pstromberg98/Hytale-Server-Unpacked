@@ -31,12 +31,17 @@
 /*    */ 
 /*    */   
 /*    */   public void execute(ComponentAccessor<EntityStore> componentAccessor) {
-/* 34 */     this.builderState.tint(this.x, this.y, this.z, this.tintColor, this.shape, this.shapeRange, componentAccessor);
+/* 34 */     this.builderState.tint(this.x, this.y, this.z, this.tintColor, this.shape, this.shapeRange, this.shapeHeight, componentAccessor);
+/*    */   }
+/*    */ 
+/*    */   
+/*    */   public void executeAt(int posX, int posY, int posZ, ComponentAccessor<EntityStore> componentAccessor) {
+/* 39 */     this.builderState.tint(posX, posY, posZ, this.tintColor, this.shape, this.shapeRange, this.shapeHeight, componentAccessor);
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   boolean execute0(int x, int y, int z) {
-/* 39 */     return true;
+/* 44 */     return true;
 /*    */   }
 /*    */ }
 

@@ -560,11 +560,118 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class IdentityTokenClaims
 /*     */ {
 /*     */   public String issuer;
 /*     */   public String subject;
 /*     */   public String username;
+/*     */   public String[] entitlements;
+/*     */   public String skin;
 /*     */   public Long issuedAt;
 /*     */   public Long expiresAt;
 /*     */   public Long notBefore;
@@ -572,11 +679,11 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public UUID getSubjectAsUUID() {
-/* 575 */     if (this.subject == null) return null; 
+/* 682 */     if (this.subject == null) return null; 
 /*     */     try {
-/* 577 */       return UUID.fromString(this.subject);
-/* 578 */     } catch (IllegalArgumentException e) {
-/* 579 */       return null;
+/* 684 */       return UUID.fromString(this.subject);
+/* 685 */     } catch (IllegalArgumentException e) {
+/* 686 */       return null;
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -585,18 +692,18 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public String[] getScopes() {
-/* 588 */     if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
-/* 589 */     return this.scope.split(" ");
+/* 695 */     if (this.scope == null || this.scope.isEmpty()) return new String[0]; 
+/* 696 */     return this.scope.split(" ");
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public boolean hasScope(@Nonnull String targetScope) {
-/* 596 */     for (String s : getScopes()) {
-/* 597 */       if (s.equals(targetScope)) return true; 
+/* 703 */     for (String s : getScopes()) {
+/* 704 */       if (s.equals(targetScope)) return true; 
 /*     */     } 
-/* 599 */     return false;
+/* 706 */     return false;
 /*     */   }
 /*     */ }
 

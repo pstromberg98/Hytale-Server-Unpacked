@@ -17,30 +17,30 @@
 /* 17 */   private static final Message MESSAGE_SINGLEPLAYER = Message.translation("server.commands.auth.logout.singleplayer").color(Color.RED);
 /*    */   @Nonnull
 /* 19 */   private static final Message MESSAGE_NOT_AUTHENTICATED = Message.translation("server.commands.auth.logout.notAuthenticated").color(Color.YELLOW);
-/*    */   @Nonnull
-/* 21 */   private static final Message MESSAGE_SUCCESS = Message.translation("server.commands.auth.logout.success").color(Color.GREEN);
 /*    */   
 /*    */   public AuthLogoutCommand() {
-/* 24 */     super("logout", "server.commands.auth.logout.desc");
+/* 22 */     super("logout", "server.commands.auth.logout.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 29 */     ServerAuthManager authManager = ServerAuthManager.getInstance();
+/* 27 */     ServerAuthManager authManager = ServerAuthManager.getInstance();
 /*    */     
-/* 31 */     if (authManager.isSingleplayer()) {
-/* 32 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
+/* 29 */     if (authManager.isSingleplayer()) {
+/* 30 */       context.sendMessage(MESSAGE_SINGLEPLAYER);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 36 */     if (!authManager.hasIdentityToken() && !authManager.hasSessionToken()) {
-/* 37 */       context.sendMessage(MESSAGE_NOT_AUTHENTICATED);
+/* 34 */     if (!authManager.hasIdentityToken() && !authManager.hasSessionToken()) {
+/* 35 */       context.sendMessage(MESSAGE_NOT_AUTHENTICATED);
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 41 */     ServerAuthManager.AuthMode previousMode = authManager.getAuthMode();
-/* 42 */     authManager.logout();
-/* 43 */     context.sendMessage(MESSAGE_SUCCESS.param("previousMode", previousMode.name()));
+/* 39 */     ServerAuthManager.AuthMode previousMode = authManager.getAuthMode();
+/* 40 */     authManager.logout();
+/* 41 */     context.sendMessage(Message.translation("server.commands.auth.logout.success")
+/* 42 */         .color(Color.GREEN)
+/* 43 */         .param("previousMode", previousMode.name()));
 /*    */   }
 /*    */ }
 

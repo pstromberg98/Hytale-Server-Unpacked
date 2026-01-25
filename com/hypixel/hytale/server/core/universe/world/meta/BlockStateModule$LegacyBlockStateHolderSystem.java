@@ -164,8 +164,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyBlockStateHolderSystem<T extends BlockState>
 /*     */   extends HolderSystem<ChunkStore>
 /*     */   implements DisableProcessingAssert
@@ -173,12 +171,12 @@
 /*     */   private final ComponentType<ChunkStore, T> componentType;
 /*     */   
 /*     */   public LegacyBlockStateHolderSystem(ComponentType<ChunkStore, T> componentType) {
-/* 176 */     this.componentType = componentType;
+/* 174 */     this.componentType = componentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public Query<ChunkStore> getQuery() {
-/* 181 */     return (Query)this.componentType;
+/* 179 */     return (Query)this.componentType;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -187,19 +185,19 @@
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemoved(@Nonnull Holder<ChunkStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store) {
-/* 190 */     BlockState blockState = (BlockState)holder.getComponent(this.componentType);
-/* 191 */     switch (BlockStateModule.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) {
+/* 188 */     BlockState blockState = (BlockState)holder.getComponent(this.componentType);
+/* 189 */     switch (BlockStateModule.null.$SwitchMap$com$hypixel$hytale$component$RemoveReason[reason.ordinal()]) {
 /*     */ 
 /*     */       
 /*     */       case 1:
-/* 195 */         if (blockState instanceof DestroyableBlockState) {
-/* 196 */           ((DestroyableBlockState)blockState).onDestroy();
-/*     */         }
-/* 198 */         blockState.unloadFromWorld();
+/* 193 */         if (blockState instanceof DestroyableBlockState) { DestroyableBlockState destroyableBlockState = (DestroyableBlockState)blockState;
+/* 194 */           destroyableBlockState.onDestroy(); }
+/*     */         
+/* 196 */         blockState.unloadFromWorld();
 /*     */         break;
 /*     */       case 2:
-/* 201 */         blockState.onUnload();
-/* 202 */         blockState.unloadFromWorld();
+/* 199 */         blockState.onUnload();
+/* 200 */         blockState.unloadFromWorld();
 /*     */         break;
 /*     */     } 
 /*     */   }
@@ -207,7 +205,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 210 */     return "LegacyBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
+/* 208 */     return "LegacyBlockStateSystem{componentType=" + String.valueOf(this.componentType) + "}";
 /*     */   }
 /*     */ }
 

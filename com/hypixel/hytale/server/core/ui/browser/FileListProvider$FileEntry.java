@@ -2,12 +2,19 @@
 /*    */ 
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
-/*    */ public final class FileEntry extends Record {
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ public final class FileEntry
+/*    */   extends Record
+/*    */ {
 /*    */   @Nonnull
 /*    */   private final String name;
 /*    */   @Nonnull
 /*    */   private final String displayName;
 /*    */   private final boolean isDirectory;
+/*    */   private final boolean isTerminal;
 /*    */   private final int matchScore;
 /*    */   
 /*    */   public final String toString() {
@@ -17,7 +24,7 @@
 /*    */     //   6: areturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #27	-> 0
+/*    */     //   #33	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileListProvider$FileEntry;
@@ -30,7 +37,7 @@
 /*    */     //   6: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #27	-> 0
+/*    */     //   #33	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileListProvider$FileEntry;
@@ -44,27 +51,31 @@
 /*    */     //   7: ireturn
 /*    */     // Line number table:
 /*    */     //   Java source line number -> byte code offset
-/*    */     //   #27	-> 0
+/*    */     //   #33	-> 0
 /*    */     // Local variable table:
 /*    */     //   start	length	slot	name	descriptor
 /*    */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/ui/browser/FileListProvider$FileEntry;
 /*    */     //   0	8	1	o	Ljava/lang/Object;
 /*    */   }
 /*    */   
-/*    */   public FileEntry(@Nonnull String name, @Nonnull String displayName, boolean isDirectory, int matchScore)
-/*    */   {
-/* 27 */     this.name = name; this.displayName = displayName; this.isDirectory = isDirectory; this.matchScore = matchScore; } @Nonnull public String name() { return this.name; } @Nonnull public String displayName() { return this.displayName; } public boolean isDirectory() { return this.isDirectory; } public int matchScore() { return this.matchScore; }
+/*    */   public FileEntry(@Nonnull String name, @Nonnull String displayName, boolean isDirectory, boolean isTerminal, int matchScore) {
+/* 33 */     this.name = name; this.displayName = displayName; this.isDirectory = isDirectory; this.isTerminal = isTerminal; this.matchScore = matchScore; } @Nonnull public String name() { return this.name; } @Nonnull public String displayName() { return this.displayName; } public boolean isDirectory() { return this.isDirectory; } public boolean isTerminal() { return this.isTerminal; } public int matchScore() { return this.matchScore; }
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public FileEntry(@Nonnull String name, boolean isDirectory) {
-/* 34 */     this(name, name, isDirectory, 0);
+/* 41 */     this(name, name, isDirectory, false, 0);
 /*    */   }
 /*    */   
 /*    */   public FileEntry(@Nonnull String name, @Nonnull String displayName, boolean isDirectory) {
-/* 38 */     this(name, displayName, isDirectory, 0);
+/* 45 */     this(name, displayName, isDirectory, false, 0);
+/*    */   }
+/*    */   
+/*    */   public FileEntry(@Nonnull String name, @Nonnull String displayName, boolean isDirectory, boolean isTerminal) {
+/* 49 */     this(name, displayName, isDirectory, isTerminal, 0);
 /*    */   }
 /*    */ }
 

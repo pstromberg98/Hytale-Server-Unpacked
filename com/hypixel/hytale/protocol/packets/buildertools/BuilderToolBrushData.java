@@ -104,14 +104,14 @@
 /* 104 */     if ((nullBits[0] & 0x80) != 0) obj.rotationAxis = BuilderToolBrushAxisArg.deserialize(buf, offset + 43); 
 /* 105 */     if ((nullBits[1] & 0x1) != 0) obj.rotationAngle = BuilderToolRotationArg.deserialize(buf, offset + 44); 
 /* 106 */     if ((nullBits[1] & 0x2) != 0) obj.mirrorAxis = BuilderToolBrushAxisArg.deserialize(buf, offset + 45); 
-/* 107 */     if ((nullBits[2] & 0x8) != 0) obj.useMaskCommands = BuilderToolBoolArg.deserialize(buf, offset + 46); 
-/* 108 */     if ((nullBits[2] & 0x10) != 0) obj.invertMask = BuilderToolBoolArg.deserialize(buf, offset + 47);
+/* 107 */     if ((nullBits[1] & 0x4) != 0) obj.useMaskCommands = BuilderToolBoolArg.deserialize(buf, offset + 46); 
+/* 108 */     if ((nullBits[1] & 0x8) != 0) obj.invertMask = BuilderToolBoolArg.deserialize(buf, offset + 47);
 /*     */     
-/* 110 */     if ((nullBits[1] & 0x4) != 0) {
+/* 110 */     if ((nullBits[1] & 0x10) != 0) {
 /* 111 */       int varPos0 = offset + 84 + buf.getIntLE(offset + 48);
 /* 112 */       obj.material = BuilderToolBlockArg.deserialize(buf, varPos0);
 /*     */     } 
-/* 114 */     if ((nullBits[1] & 0x8) != 0) {
+/* 114 */     if ((nullBits[1] & 0x20) != 0) {
 /* 115 */       int varPos1 = offset + 84 + buf.getIntLE(offset + 52);
 /* 116 */       int favoriteMaterialsCount = VarInt.peek(buf, varPos1);
 /* 117 */       if (favoriteMaterialsCount < 0) throw ProtocolException.negativeLength("FavoriteMaterials", favoriteMaterialsCount); 
@@ -126,31 +126,31 @@
 /* 126 */         elemPos += BuilderToolBlockArg.computeBytesConsumed(buf, elemPos);
 /*     */       } 
 /*     */     } 
-/* 129 */     if ((nullBits[1] & 0x10) != 0) {
+/* 129 */     if ((nullBits[1] & 0x40) != 0) {
 /* 130 */       int varPos2 = offset + 84 + buf.getIntLE(offset + 56);
 /* 131 */       obj.mask = BuilderToolMaskArg.deserialize(buf, varPos2);
 /*     */     } 
-/* 133 */     if ((nullBits[1] & 0x20) != 0) {
+/* 133 */     if ((nullBits[1] & 0x80) != 0) {
 /* 134 */       int varPos3 = offset + 84 + buf.getIntLE(offset + 60);
 /* 135 */       obj.maskAbove = BuilderToolMaskArg.deserialize(buf, varPos3);
 /*     */     } 
-/* 137 */     if ((nullBits[1] & 0x40) != 0) {
+/* 137 */     if ((nullBits[2] & 0x1) != 0) {
 /* 138 */       int varPos4 = offset + 84 + buf.getIntLE(offset + 64);
 /* 139 */       obj.maskNot = BuilderToolMaskArg.deserialize(buf, varPos4);
 /*     */     } 
-/* 141 */     if ((nullBits[1] & 0x80) != 0) {
+/* 141 */     if ((nullBits[2] & 0x2) != 0) {
 /* 142 */       int varPos5 = offset + 84 + buf.getIntLE(offset + 68);
 /* 143 */       obj.maskBelow = BuilderToolMaskArg.deserialize(buf, varPos5);
 /*     */     } 
-/* 145 */     if ((nullBits[2] & 0x1) != 0) {
+/* 145 */     if ((nullBits[2] & 0x4) != 0) {
 /* 146 */       int varPos6 = offset + 84 + buf.getIntLE(offset + 72);
 /* 147 */       obj.maskAdjacent = BuilderToolMaskArg.deserialize(buf, varPos6);
 /*     */     } 
-/* 149 */     if ((nullBits[2] & 0x2) != 0) {
+/* 149 */     if ((nullBits[2] & 0x8) != 0) {
 /* 150 */       int varPos7 = offset + 84 + buf.getIntLE(offset + 76);
 /* 151 */       obj.maskNeighbor = BuilderToolMaskArg.deserialize(buf, varPos7);
 /*     */     } 
-/* 153 */     if ((nullBits[2] & 0x4) != 0) {
+/* 153 */     if ((nullBits[2] & 0x10) != 0) {
 /* 154 */       int varPos8 = offset + 84 + buf.getIntLE(offset + 80);
 /* 155 */       int maskCommandsCount = VarInt.peek(buf, varPos8);
 /* 156 */       if (maskCommandsCount < 0) throw ProtocolException.negativeLength("MaskCommands", maskCommandsCount); 
@@ -172,56 +172,56 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 173 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 3);
 /* 174 */     int maxEnd = 84;
-/* 175 */     if ((nullBits[1] & 0x4) != 0) {
+/* 175 */     if ((nullBits[1] & 0x10) != 0) {
 /* 176 */       int fieldOffset0 = buf.getIntLE(offset + 48);
 /* 177 */       int pos0 = offset + 84 + fieldOffset0;
 /* 178 */       pos0 += BuilderToolBlockArg.computeBytesConsumed(buf, pos0);
 /* 179 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 181 */     if ((nullBits[1] & 0x8) != 0) {
+/* 181 */     if ((nullBits[1] & 0x20) != 0) {
 /* 182 */       int fieldOffset1 = buf.getIntLE(offset + 52);
 /* 183 */       int pos1 = offset + 84 + fieldOffset1;
 /* 184 */       int arrLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
 /* 185 */       for (int i = 0; i < arrLen; ) { pos1 += BuilderToolBlockArg.computeBytesConsumed(buf, pos1); i++; }
 /* 186 */        if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 188 */     if ((nullBits[1] & 0x10) != 0) {
+/* 188 */     if ((nullBits[1] & 0x40) != 0) {
 /* 189 */       int fieldOffset2 = buf.getIntLE(offset + 56);
 /* 190 */       int pos2 = offset + 84 + fieldOffset2;
 /* 191 */       pos2 += BuilderToolMaskArg.computeBytesConsumed(buf, pos2);
 /* 192 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 194 */     if ((nullBits[1] & 0x20) != 0) {
+/* 194 */     if ((nullBits[1] & 0x80) != 0) {
 /* 195 */       int fieldOffset3 = buf.getIntLE(offset + 60);
 /* 196 */       int pos3 = offset + 84 + fieldOffset3;
 /* 197 */       pos3 += BuilderToolMaskArg.computeBytesConsumed(buf, pos3);
 /* 198 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 200 */     if ((nullBits[1] & 0x40) != 0) {
+/* 200 */     if ((nullBits[2] & 0x1) != 0) {
 /* 201 */       int fieldOffset4 = buf.getIntLE(offset + 64);
 /* 202 */       int pos4 = offset + 84 + fieldOffset4;
 /* 203 */       pos4 += BuilderToolMaskArg.computeBytesConsumed(buf, pos4);
 /* 204 */       if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*     */     } 
-/* 206 */     if ((nullBits[1] & 0x80) != 0) {
+/* 206 */     if ((nullBits[2] & 0x2) != 0) {
 /* 207 */       int fieldOffset5 = buf.getIntLE(offset + 68);
 /* 208 */       int pos5 = offset + 84 + fieldOffset5;
 /* 209 */       pos5 += BuilderToolMaskArg.computeBytesConsumed(buf, pos5);
 /* 210 */       if (pos5 - offset > maxEnd) maxEnd = pos5 - offset; 
 /*     */     } 
-/* 212 */     if ((nullBits[2] & 0x1) != 0) {
+/* 212 */     if ((nullBits[2] & 0x4) != 0) {
 /* 213 */       int fieldOffset6 = buf.getIntLE(offset + 72);
 /* 214 */       int pos6 = offset + 84 + fieldOffset6;
 /* 215 */       pos6 += BuilderToolMaskArg.computeBytesConsumed(buf, pos6);
 /* 216 */       if (pos6 - offset > maxEnd) maxEnd = pos6 - offset; 
 /*     */     } 
-/* 218 */     if ((nullBits[2] & 0x2) != 0) {
+/* 218 */     if ((nullBits[2] & 0x8) != 0) {
 /* 219 */       int fieldOffset7 = buf.getIntLE(offset + 76);
 /* 220 */       int pos7 = offset + 84 + fieldOffset7;
 /* 221 */       pos7 += BuilderToolMaskArg.computeBytesConsumed(buf, pos7);
 /* 222 */       if (pos7 - offset > maxEnd) maxEnd = pos7 - offset; 
 /*     */     } 
-/* 224 */     if ((nullBits[2] & 0x4) != 0) {
+/* 224 */     if ((nullBits[2] & 0x10) != 0) {
 /* 225 */       int fieldOffset8 = buf.getIntLE(offset + 80);
 /* 226 */       int pos8 = offset + 84 + fieldOffset8;
 /* 227 */       int arrLen = VarInt.peek(buf, pos8); pos8 += VarInt.length(buf, pos8);
@@ -245,17 +245,17 @@
 /* 245 */     if (this.rotationAxis != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
 /* 246 */     if (this.rotationAngle != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
 /* 247 */     if (this.mirrorAxis != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
-/* 248 */     if (this.material != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
-/* 249 */     if (this.favoriteMaterials != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
-/* 250 */     if (this.mask != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
-/* 251 */     if (this.maskAbove != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
-/* 252 */     if (this.maskNot != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
-/* 253 */     if (this.maskBelow != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
-/* 254 */     if (this.maskAdjacent != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
-/* 255 */     if (this.maskNeighbor != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
-/* 256 */     if (this.maskCommands != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
-/* 257 */     if (this.useMaskCommands != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
-/* 258 */     if (this.invertMask != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
+/* 248 */     if (this.useMaskCommands != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
+/* 249 */     if (this.invertMask != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
+/* 250 */     if (this.material != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
+/* 251 */     if (this.favoriteMaterials != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
+/* 252 */     if (this.mask != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
+/* 253 */     if (this.maskAbove != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
+/* 254 */     if (this.maskNot != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
+/* 255 */     if (this.maskBelow != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
+/* 256 */     if (this.maskAdjacent != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
+/* 257 */     if (this.maskNeighbor != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
+/* 258 */     if (this.maskCommands != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
 /* 259 */     buf.writeBytes(nullBits);
 /*     */     
 /* 261 */     if (this.width != null) { this.width.serialize(buf); } else { buf.writeZero(12); }
@@ -378,7 +378,7 @@
 /*     */     
 /* 379 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 3);
 /*     */     
-/* 381 */     if ((nullBits[1] & 0x4) != 0) {
+/* 381 */     if ((nullBits[1] & 0x10) != 0) {
 /* 382 */       int materialOffset = buffer.getIntLE(offset + 48);
 /* 383 */       if (materialOffset < 0) {
 /* 384 */         return ValidationResult.error("Invalid offset for Material");
@@ -394,7 +394,7 @@
 /* 394 */       pos += BuilderToolBlockArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 397 */     if ((nullBits[1] & 0x8) != 0) {
+/* 397 */     if ((nullBits[1] & 0x20) != 0) {
 /* 398 */       int favoriteMaterialsOffset = buffer.getIntLE(offset + 52);
 /* 399 */       if (favoriteMaterialsOffset < 0) {
 /* 400 */         return ValidationResult.error("Invalid offset for FavoriteMaterials");
@@ -420,7 +420,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 423 */     if ((nullBits[1] & 0x10) != 0) {
+/* 423 */     if ((nullBits[1] & 0x40) != 0) {
 /* 424 */       int maskOffset = buffer.getIntLE(offset + 56);
 /* 425 */       if (maskOffset < 0) {
 /* 426 */         return ValidationResult.error("Invalid offset for Mask");
@@ -436,7 +436,7 @@
 /* 436 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 439 */     if ((nullBits[1] & 0x20) != 0) {
+/* 439 */     if ((nullBits[1] & 0x80) != 0) {
 /* 440 */       int maskAboveOffset = buffer.getIntLE(offset + 60);
 /* 441 */       if (maskAboveOffset < 0) {
 /* 442 */         return ValidationResult.error("Invalid offset for MaskAbove");
@@ -452,7 +452,7 @@
 /* 452 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 455 */     if ((nullBits[1] & 0x40) != 0) {
+/* 455 */     if ((nullBits[2] & 0x1) != 0) {
 /* 456 */       int maskNotOffset = buffer.getIntLE(offset + 64);
 /* 457 */       if (maskNotOffset < 0) {
 /* 458 */         return ValidationResult.error("Invalid offset for MaskNot");
@@ -468,7 +468,7 @@
 /* 468 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 471 */     if ((nullBits[1] & 0x80) != 0) {
+/* 471 */     if ((nullBits[2] & 0x2) != 0) {
 /* 472 */       int maskBelowOffset = buffer.getIntLE(offset + 68);
 /* 473 */       if (maskBelowOffset < 0) {
 /* 474 */         return ValidationResult.error("Invalid offset for MaskBelow");
@@ -484,7 +484,7 @@
 /* 484 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 487 */     if ((nullBits[2] & 0x1) != 0) {
+/* 487 */     if ((nullBits[2] & 0x4) != 0) {
 /* 488 */       int maskAdjacentOffset = buffer.getIntLE(offset + 72);
 /* 489 */       if (maskAdjacentOffset < 0) {
 /* 490 */         return ValidationResult.error("Invalid offset for MaskAdjacent");
@@ -500,7 +500,7 @@
 /* 500 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 503 */     if ((nullBits[2] & 0x2) != 0) {
+/* 503 */     if ((nullBits[2] & 0x8) != 0) {
 /* 504 */       int maskNeighborOffset = buffer.getIntLE(offset + 76);
 /* 505 */       if (maskNeighborOffset < 0) {
 /* 506 */         return ValidationResult.error("Invalid offset for MaskNeighbor");
@@ -516,7 +516,7 @@
 /* 516 */       pos += BuilderToolMaskArg.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 519 */     if ((nullBits[2] & 0x4) != 0) {
+/* 519 */     if ((nullBits[2] & 0x10) != 0) {
 /* 520 */       int maskCommandsOffset = buffer.getIntLE(offset + 80);
 /* 521 */       if (maskCommandsOffset < 0) {
 /* 522 */         return ValidationResult.error("Invalid offset for MaskCommands");

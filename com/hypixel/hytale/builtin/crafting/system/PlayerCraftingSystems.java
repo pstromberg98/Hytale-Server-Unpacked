@@ -1,84 +1,156 @@
-/*    */ package com.hypixel.hytale.builtin.crafting.system;
-/*    */ import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
-/*    */ import com.hypixel.hytale.component.ArchetypeChunk;
-/*    */ import com.hypixel.hytale.component.ComponentType;
-/*    */ import com.hypixel.hytale.component.Holder;
-/*    */ import com.hypixel.hytale.component.Ref;
-/*    */ import com.hypixel.hytale.component.Store;
-/*    */ import com.hypixel.hytale.component.query.Query;
-/*    */ import com.hypixel.hytale.server.core.entity.entities.Player;
-/*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-/*    */ import javax.annotation.Nonnull;
-/*    */ 
-/*    */ public class PlayerCraftingSystems {
-/*    */   public static class CraftingManagerAddSystem extends HolderSystem<EntityStore> {
-/* 15 */     private final ComponentType<EntityStore, Player> playerComponentType = Player.getComponentType();
-/*    */     private final ComponentType<EntityStore, CraftingManager> craftingManagerComponentType;
-/*    */     
-/*    */     public CraftingManagerAddSystem(ComponentType<EntityStore, CraftingManager> craftingManagerComponentType) {
-/* 19 */       this.craftingManagerComponentType = craftingManagerComponentType;
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 24 */       Player player = (Player)holder.getComponent(Player.getComponentType());
-/* 25 */       if (player == null) {
-/* 26 */         throw new UnsupportedOperationException("Cannot have null player component during crafting system creation");
-/*    */       }
-/*    */       
-/* 29 */       holder.ensureComponent(this.craftingManagerComponentType);
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
-/* 34 */       CraftingManager craftingManager = (CraftingManager)holder.getComponent(this.craftingManagerComponentType);
-/* 35 */       if (craftingManager == null)
-/*    */         return; 
-/* 37 */       Player player = (Player)holder.getComponent(this.playerComponentType);
-/*    */       
-/*    */       try {
-/* 40 */         Ref<EntityStore> ref = player.getReference();
-/* 41 */         craftingManager.cancelAllCrafting(ref, (ComponentAccessor)store);
-/*    */       } finally {
-/* 43 */         World world = ((EntityStore)store.getExternalData()).getWorld();
-/* 44 */         if (world.getWorldConfig().isSavingPlayers() && 
-/* 45 */           player != null) player.saveConfig(world, holder);
-/*    */       
-/*    */       } 
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     @Nonnull
-/*    */     public Query<EntityStore> getQuery() {
-/* 53 */       return (Query)this.playerComponentType;
-/*    */     }
-/*    */   }
-/*    */   
-/*    */   public static class PlayerCraftingSystem extends EntityTickingSystem<EntityStore> {
-/*    */     private final ComponentType<EntityStore, CraftingManager> craftingManagerComponentType;
-/*    */     
-/*    */     public PlayerCraftingSystem(ComponentType<EntityStore, CraftingManager> craftingManagerComponentType) {
-/* 61 */       this.craftingManagerComponentType = craftingManagerComponentType;
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     public Query<EntityStore> getQuery() {
-/* 66 */       return (Query)this.craftingManagerComponentType;
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 71 */       return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
-/*    */     }
-/*    */ 
-/*    */     
-/*    */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 76 */       Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
-/* 77 */       CraftingManager craftingManagerComponent = (CraftingManager)archetypeChunk.getComponent(index, this.craftingManagerComponentType);
-/* 78 */       craftingManagerComponent.tick(ref, (ComponentAccessor)commandBuffer, dt);
-/*    */     }
-/*    */   }
-/*    */ }
+/*     */ package com.hypixel.hytale.builtin.crafting.system;
+/*     */ 
+/*     */ import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
+/*     */ import com.hypixel.hytale.component.AddReason;
+/*     */ import com.hypixel.hytale.component.ArchetypeChunk;
+/*     */ import com.hypixel.hytale.component.CommandBuffer;
+/*     */ import com.hypixel.hytale.component.ComponentAccessor;
+/*     */ import com.hypixel.hytale.component.ComponentType;
+/*     */ import com.hypixel.hytale.component.Holder;
+/*     */ import com.hypixel.hytale.component.Ref;
+/*     */ import com.hypixel.hytale.component.RemoveReason;
+/*     */ import com.hypixel.hytale.component.Store;
+/*     */ import com.hypixel.hytale.component.query.Query;
+/*     */ import com.hypixel.hytale.component.system.HolderSystem;
+/*     */ import com.hypixel.hytale.component.system.RefSystem;
+/*     */ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
+/*     */ import com.hypixel.hytale.server.core.entity.entities.Player;
+/*     */ import com.hypixel.hytale.server.core.universe.world.World;
+/*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*     */ import javax.annotation.Nonnull;
+/*     */ 
+/*     */ public class PlayerCraftingSystems
+/*     */ {
+/*     */   public static class CraftingHolderSystem
+/*     */     extends HolderSystem<EntityStore>
+/*     */   {
+/*     */     @Nonnull
+/*  28 */     private final ComponentType<EntityStore, Player> playerComponentType = Player.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/*     */     private final ComponentType<EntityStore, CraftingManager> craftingManagerComponentType;
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     public CraftingHolderSystem(@Nonnull ComponentType<EntityStore, CraftingManager> craftingManagerComponentType) {
+/*  42 */       this.craftingManagerComponentType = craftingManagerComponentType;
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
+/*  47 */       holder.ensureComponent(this.craftingManagerComponentType);
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {
+/*  52 */       World world = ((EntityStore)store.getExternalData()).getWorld();
+/*  53 */       if (world.getWorldConfig().isSavingPlayers()) {
+/*  54 */         Player playerComponent = (Player)holder.getComponent(this.playerComponentType);
+/*  55 */         assert playerComponent != null;
+/*     */         
+/*  57 */         playerComponent.saveConfig(world, holder);
+/*     */       } 
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/*     */     public Query<EntityStore> getQuery() {
+/*  64 */       return (Query)this.playerComponentType;
+/*     */     }
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public static class CraftingRefSystem
+/*     */     extends RefSystem<EntityStore>
+/*     */   {
+/*     */     @Nonnull
+/*  77 */     private final ComponentType<EntityStore, Player> playerComponentType = Player.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/*     */     private final ComponentType<EntityStore, CraftingManager> craftingManagerComponentType;
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     public CraftingRefSystem(@Nonnull ComponentType<EntityStore, CraftingManager> craftingManagerComponentType) {
+/*  91 */       this.craftingManagerComponentType = craftingManagerComponentType;
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     @Nonnull
+/*     */     public Query<EntityStore> getQuery() {
+/*  97 */       return (Query<EntityStore>)Query.and(new Query[] { (Query)this.playerComponentType, (Query)this.craftingManagerComponentType });
+/*     */     }
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {}
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     public void onEntityRemove(@Nonnull Ref<EntityStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 107 */       CraftingManager craftingManagerComponent = (CraftingManager)commandBuffer.getComponent(ref, CraftingManager.getComponentType());
+/* 108 */       assert craftingManagerComponent != null;
+/*     */       
+/* 110 */       craftingManagerComponent.cancelAllCrafting(ref, (ComponentAccessor)store);
+/*     */     }
+/*     */   }
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   public static class CraftingTickingSystem
+/*     */     extends EntityTickingSystem<EntityStore>
+/*     */   {
+/*     */     @Nonnull
+/*     */     private final ComponentType<EntityStore, CraftingManager> craftingManagerComponentType;
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */     
+/*     */     public CraftingTickingSystem(@Nonnull ComponentType<EntityStore, CraftingManager> craftingManagerComponentType) {
+/* 131 */       this.craftingManagerComponentType = craftingManagerComponentType;
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     public Query<EntityStore> getQuery() {
+/* 136 */       return (Query)this.craftingManagerComponentType;
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     public boolean isParallel(int archetypeChunkSize, int taskCount) {
+/* 141 */       return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/*     */     }
+/*     */ 
+/*     */     
+/*     */     public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/* 146 */       CraftingManager craftingManagerComponent = (CraftingManager)archetypeChunk.getComponent(index, this.craftingManagerComponentType);
+/* 147 */       assert craftingManagerComponent != null;
+/*     */       
+/* 149 */       Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/* 150 */       craftingManagerComponent.tick(ref, (ComponentAccessor)commandBuffer, dt);
+/*     */     }
+/*     */   }
+/*     */ }
 
 
 /* Location:              C:\Users\ranor\AppData\Roaming\Hytale\install\release\package\game\latest\Server\HytaleServer.jar!\com\hypixel\hytale\builtin\crafting\system\PlayerCraftingSystems.class

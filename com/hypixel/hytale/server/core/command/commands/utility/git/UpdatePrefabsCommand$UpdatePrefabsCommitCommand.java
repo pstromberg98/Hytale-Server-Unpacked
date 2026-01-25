@@ -144,17 +144,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class UpdatePrefabsCommitCommand
 /*     */   extends UpdatePrefabsCommand.UpdatePrefabsGitCommand
 /*     */ {
 /*     */   public UpdatePrefabsCommitCommand() {
-/* 151 */     super("commit", "server.commands.update.prefabs.commit.desc");
+/* 155 */     super("commit", "server.commands.git.prefabs.commit.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 157 */     return new String[][] { { "git", "add", "--all", "." }, { "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" }, { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" } };
+/* 161 */     return new String[][] { { "git", "add", "--all", "." }, { "git", "commit", "-am", "Update prefabs by " + senderDisplayName }, { "git", "submodule", "foreach", "git", "add", "--all", "." }, { "git", "submodule", "foreach", "git", "commit", "-am", "\"Update prefabs by " + senderDisplayName + "\"" } };
 /*     */   }
 /*     */ }
 

@@ -17,57 +17,50 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class ChunkMarkSaveCommand
 /*    */   extends AbstractWorldCommand
 /*    */ {
 /*    */   @Nonnull
-/* 24 */   private static final Message MESSAGE_COMMANDS_CHUNK_MARKSAVE_MARKING_ALREADY_LOADED = Message.translation("server.commands.chunk.marksave.markingAlreadyLoaded");
-/*    */   @Nonnull
-/* 26 */   private static final Message MESSAGE_COMMANDS_CHUNK_LOAD_LOADING = Message.translation("server.commands.chunk.load.loading");
-/*    */   @Nonnull
-/* 28 */   private static final Message MESSAGE_COMMANDS_CHUNK_MARKSAVE_LOADED = Message.translation("server.commands.chunk.marksave.loaded");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 34 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.marksave.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
+/* 27 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.marksave.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ChunkMarkSaveCommand() {
-/* 40 */     super("marksave", "server.commands.chunk.marksave.desc");
+/* 33 */     super("marksave", "server.commands.chunk.marksave.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 45 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
-/* 46 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
+/* 38 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
+/* 39 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
 /*    */     
-/* 48 */     ChunkStore chunkStore = world.getChunkStore();
-/* 49 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
-/* 50 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
-/* 51 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/* 41 */     ChunkStore chunkStore = world.getChunkStore();
+/* 42 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
+/* 43 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
+/* 44 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*    */ 
 /*    */     
-/* 54 */     if (chunkRef != null && chunkRef.isValid()) {
-/* 55 */       WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
-/* 56 */       assert worldChunkComponent != null;
-/* 57 */       worldChunkComponent.markNeedsSaving();
-/* 58 */       context.sendMessage(MESSAGE_COMMANDS_CHUNK_MARKSAVE_MARKING_ALREADY_LOADED
-/* 59 */           .param("x", position.x)
-/* 60 */           .param("z", position.y)
-/* 61 */           .param("worldName", world.getName()));
+/* 47 */     if (chunkRef != null && chunkRef.isValid()) {
+/* 48 */       WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
+/* 49 */       assert worldChunkComponent != null;
+/* 50 */       worldChunkComponent.markNeedsSaving();
+/* 51 */       context.sendMessage(Message.translation("server.commands.chunk.marksave.markingAlreadyLoaded")
+/* 52 */           .param("x", position.x)
+/* 53 */           .param("z", position.y)
+/* 54 */           .param("worldName", world.getName()));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 65 */     context.sendMessage(MESSAGE_COMMANDS_CHUNK_LOAD_LOADING
-/* 66 */         .param("chunkX", position.x)
-/* 67 */         .param("chunkZ", position.y)
-/* 68 */         .param("worldName", world.getName()));
+/* 58 */     context.sendMessage(Message.translation("server.commands.chunk.load.loading")
+/* 59 */         .param("chunkX", position.x)
+/* 60 */         .param("chunkZ", position.y)
+/* 61 */         .param("worldName", world.getName()));
 /*    */     
-/* 70 */     world.getChunkAsync(position.x, position.y).thenAccept(worldChunk -> world.execute(()));
+/* 63 */     world.getChunkAsync(position.x, position.y).thenAccept(worldChunk -> world.execute(()));
 /*    */   }
 /*    */ }
 

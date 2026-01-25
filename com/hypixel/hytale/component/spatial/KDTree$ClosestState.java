@@ -550,14 +550,15 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ class ClosestState<T>
 /*     */ {
 /*     */   private KDTree.Node<T> node;
 /*     */   private double distanceSq;
 /*     */   
 /*     */   public ClosestState(KDTree.Node<T> node, double distanceSq) {
-/* 559 */     this.node = node;
-/* 560 */     this.distanceSq = distanceSq;
+/* 560 */     this.node = node;
+/* 561 */     this.distanceSq = distanceSq;
 /*     */   }
 /*     */ }
 

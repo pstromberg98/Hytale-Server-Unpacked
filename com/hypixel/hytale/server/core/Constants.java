@@ -34,6 +34,7 @@
 /*     */ import com.hypixel.hytale.server.core.universe.Universe;
 /*     */ import com.hypixel.hytale.server.core.universe.world.connectedblocks.ConnectedBlocksModule;
 /*     */ import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
+/*     */ import com.hypixel.hytale.server.core.update.UpdateModule;
 /*     */ import java.nio.file.Files;
 /*     */ import java.nio.file.Path;
 /*     */ import javax.annotation.Nonnull;
@@ -44,23 +45,24 @@
 /*     */ 
 /*     */ public final class Constants
 /*     */ {
-/*  47 */   private static final OptionSet OPTION_SET = Options.getOptionSet();
+/*  48 */   private static final OptionSet OPTION_SET = Options.getOptionSet();
 /*     */   
 /*     */   public static final boolean DEBUG = true;
 /*     */   
-/*  51 */   public static final boolean SINGLEPLAYER = OPTION_SET.has(Options.SINGLEPLAYER);
-/*  52 */   public static final boolean ALLOWS_SELF_OP_COMMAND = OPTION_SET.has(Options.ALLOW_SELF_OP_COMMAND);
+/*  52 */   public static final boolean SINGLEPLAYER = OPTION_SET.has(Options.SINGLEPLAYER);
+/*  53 */   public static final boolean ALLOWS_SELF_OP_COMMAND = OPTION_SET.has(Options.ALLOW_SELF_OP_COMMAND);
 /*     */   
-/*  54 */   public static final boolean FRESH_UNIVERSE = checkFreshUniverse();
-/*  55 */   public static final boolean FORCE_NETWORK_FLUSH = ((Boolean)OPTION_SET.valueOf(Options.FORCE_NETWORK_FLUSH)).booleanValue();
+/*  55 */   public static final boolean FRESH_UNIVERSE = checkFreshUniverse();
+/*  56 */   public static final boolean FORCE_NETWORK_FLUSH = ((Boolean)OPTION_SET.valueOf(Options.FORCE_NETWORK_FLUSH)).booleanValue();
 /*     */   
-/*  57 */   public static final Path UNIVERSE_PATH = getUniversePath();
+/*  58 */   public static final Path UNIVERSE_PATH = getUniversePath();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  63 */   public static final PluginManifest[] CORE_PLUGINS = new PluginManifest[] { ConsoleModule.MANIFEST, PermissionsModule.MANIFEST, FlyCameraModule.MANIFEST, AssetModule.MANIFEST, CommonAssetModule.MANIFEST, CosmeticsModule.MANIFEST, ServerManager.MANIFEST, I18nModule.MANIFEST, ItemModule.MANIFEST, BlockTypeModule.MANIFEST, LegacyModule.MANIFEST, BlockModule.MANIFEST, BlockStateModule.MANIFEST, CollisionModule.MANIFEST, BlockSetModule.MANIFEST, MigrationModule.MANIFEST, BlockHealthModule.MANIFEST, PrefabSpawnerModule.MANIFEST, TimeModule.MANIFEST, InteractionModule.MANIFEST, EntityModule.MANIFEST, EntityStatsModule.MANIFEST, EntityUIModule.MANIFEST, DamageModule.MANIFEST, SplitVelocity.MANIFEST, StaminaModule.MANIFEST, DebugPlugin.MANIFEST, ProjectileModule.MANIFEST, ServerPlayerListModule.MANIFEST, AccessControlModule.MANIFEST, SingleplayerModule.MANIFEST, Universe.MANIFEST, ConnectedBlocksModule.MANIFEST };
+/*  64 */   public static final PluginManifest[] CORE_PLUGINS = new PluginManifest[] { ConsoleModule.MANIFEST, PermissionsModule.MANIFEST, UpdateModule.MANIFEST, FlyCameraModule.MANIFEST, AssetModule.MANIFEST, CommonAssetModule.MANIFEST, CosmeticsModule.MANIFEST, ServerManager.MANIFEST, I18nModule.MANIFEST, ItemModule.MANIFEST, BlockTypeModule.MANIFEST, LegacyModule.MANIFEST, BlockModule.MANIFEST, BlockStateModule.MANIFEST, CollisionModule.MANIFEST, BlockSetModule.MANIFEST, MigrationModule.MANIFEST, BlockHealthModule.MANIFEST, PrefabSpawnerModule.MANIFEST, TimeModule.MANIFEST, InteractionModule.MANIFEST, EntityModule.MANIFEST, EntityStatsModule.MANIFEST, EntityUIModule.MANIFEST, DamageModule.MANIFEST, SplitVelocity.MANIFEST, StaminaModule.MANIFEST, DebugPlugin.MANIFEST, ProjectileModule.MANIFEST, ServerPlayerListModule.MANIFEST, AccessControlModule.MANIFEST, SingleplayerModule.MANIFEST, Universe.MANIFEST, ConnectedBlocksModule.MANIFEST };
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -115,19 +117,19 @@
 /*     */ 
 /*     */   
 /*     */   private static boolean checkFreshUniverse() {
-/* 118 */     Path universePath = getUniversePath();
-/* 119 */     if (!Files.exists(universePath, new java.nio.file.LinkOption[0])) return true; 
-/* 120 */     if (!Files.exists(universePath.resolve("players"), new java.nio.file.LinkOption[0])) return true; 
-/* 121 */     Path worlds = universePath.resolve("worlds");
-/* 122 */     return !Files.exists(worlds, new java.nio.file.LinkOption[0]);
+/* 120 */     Path universePath = getUniversePath();
+/* 121 */     if (!Files.exists(universePath, new java.nio.file.LinkOption[0])) return true; 
+/* 122 */     if (!Files.exists(universePath.resolve("players"), new java.nio.file.LinkOption[0])) return true; 
+/* 123 */     Path worlds = universePath.resolve("worlds");
+/* 124 */     return !Files.exists(worlds, new java.nio.file.LinkOption[0]);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private static Path getUniversePath() {
-/* 129 */     if (OPTION_SET.has(Options.UNIVERSE)) return (Path)OPTION_SET.valueOf(Options.UNIVERSE); 
-/* 130 */     return Path.of("universe", new String[0]);
+/* 131 */     if (OPTION_SET.has(Options.UNIVERSE)) return (Path)OPTION_SET.valueOf(Options.UNIVERSE); 
+/* 132 */     return Path.of("universe", new String[0]);
 /*     */   }
 /*     */ }
 

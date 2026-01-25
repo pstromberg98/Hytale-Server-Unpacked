@@ -16,39 +16,35 @@
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 19 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_MEMORY_FULL_USAGE_INFO = Message.translation("server.commands.server.stats.memory.fullUsageInfo");
-/*    */   @Nonnull
-/* 21 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE = Message.translation("server.commands.server.stats.fullInfoUnavailable");
-/*    */   @Nonnull
-/* 23 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_MEMORY_USAGE_INFO = Message.translation("server.commands.server.stats.memory.usageInfo");
+/* 19 */   private static final Message MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE = Message.translation("server.commands.server.stats.fullInfoUnavailable");
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public ServerStatsMemoryCommand() {
-/* 29 */     super("memory", "server.commands.server.stats.memory.desc");
-/* 30 */     addAliases(new String[] { "mem" });
+/* 25 */     super("memory", "server.commands.server.stats.memory.desc");
+/* 26 */     addAliases(new String[] { "mem" });
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 35 */     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+/* 31 */     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
 /*    */     
-/* 37 */     if (operatingSystemMXBean instanceof OperatingSystemMXBean) { OperatingSystemMXBean sunOSBean = (OperatingSystemMXBean)operatingSystemMXBean;
-/* 38 */       context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_MEMORY_FULL_USAGE_INFO
-/* 39 */           .param("totalPhysicalMemory", FormatUtil.bytesToString(sunOSBean.getTotalPhysicalMemorySize()))
-/* 40 */           .param("freePhysicalMemory", FormatUtil.bytesToString(sunOSBean.getFreePhysicalMemorySize()))
-/* 41 */           .param("totalSwapMemory", FormatUtil.bytesToString(sunOSBean.getTotalSwapSpaceSize()))
-/* 42 */           .param("freeSwapMemory", FormatUtil.bytesToString(sunOSBean.getFreeSwapSpaceSize()))); }
+/* 33 */     if (operatingSystemMXBean instanceof OperatingSystemMXBean) { OperatingSystemMXBean sunOSBean = (OperatingSystemMXBean)operatingSystemMXBean;
+/* 34 */       context.sendMessage(Message.translation("server.commands.server.stats.memory.fullUsageInfo")
+/* 35 */           .param("totalPhysicalMemory", FormatUtil.bytesToString(sunOSBean.getTotalPhysicalMemorySize()))
+/* 36 */           .param("freePhysicalMemory", FormatUtil.bytesToString(sunOSBean.getFreePhysicalMemorySize()))
+/* 37 */           .param("totalSwapMemory", FormatUtil.bytesToString(sunOSBean.getTotalSwapSpaceSize()))
+/* 38 */           .param("freeSwapMemory", FormatUtil.bytesToString(sunOSBean.getFreeSwapSpaceSize()))); }
 /*    */     else
-/* 44 */     { context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE); }
+/* 40 */     { context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_FULL_INFO_UNAVAILABLE); }
 /*    */ 
 /*    */     
-/* 47 */     MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-/* 48 */     context.sendMessage(MESSAGE_COMMANDS_SERVER_STATS_MEMORY_USAGE_INFO
-/* 49 */         .param("heapMemoryUsage", formatMemoryUsage(memoryMXBean.getHeapMemoryUsage()))
-/* 50 */         .param("nonHeapMemoryUsage", formatMemoryUsage(memoryMXBean.getNonHeapMemoryUsage()))
-/* 51 */         .param("objectsPendingFinalizationCount", memoryMXBean.getObjectPendingFinalizationCount()));
+/* 43 */     MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+/* 44 */     context.sendMessage(Message.translation("server.commands.server.stats.memory.usageInfo")
+/* 45 */         .param("heapMemoryUsage", formatMemoryUsage(memoryMXBean.getHeapMemoryUsage()))
+/* 46 */         .param("nonHeapMemoryUsage", formatMemoryUsage(memoryMXBean.getNonHeapMemoryUsage()))
+/* 47 */         .param("objectsPendingFinalizationCount", memoryMXBean.getObjectPendingFinalizationCount()));
 /*    */   }
 /*    */ 
 /*    */ 
@@ -59,12 +55,12 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   private static Message formatMemoryUsage(@Nonnull MemoryUsage memoryUsage) {
-/* 62 */     return Message.translation("server.commands.server.stats.memory.usage")
-/* 63 */       .param("init", FormatUtil.bytesToString(memoryUsage.getInit()))
-/* 64 */       .param("used", FormatUtil.bytesToString(memoryUsage.getUsed()))
-/* 65 */       .param("committed", FormatUtil.bytesToString(memoryUsage.getCommitted()))
-/* 66 */       .param("max", FormatUtil.bytesToString(memoryUsage.getMax()))
-/* 67 */       .param("free", FormatUtil.bytesToString(memoryUsage.getMax() - memoryUsage.getCommitted()));
+/* 58 */     return Message.translation("server.commands.server.stats.memory.usage")
+/* 59 */       .param("init", FormatUtil.bytesToString(memoryUsage.getInit()))
+/* 60 */       .param("used", FormatUtil.bytesToString(memoryUsage.getUsed()))
+/* 61 */       .param("committed", FormatUtil.bytesToString(memoryUsage.getCommitted()))
+/* 62 */       .param("max", FormatUtil.bytesToString(memoryUsage.getMax()))
+/* 63 */       .param("free", FormatUtil.bytesToString(memoryUsage.getMax() - memoryUsage.getCommitted()));
 /*    */   }
 /*    */ }
 

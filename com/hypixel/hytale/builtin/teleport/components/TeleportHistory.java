@@ -33,17 +33,13 @@
 /*     */   private static final int MAX_TELEPORT_HISTORY = 100;
 /*  34 */   private static final Message MESSAGE_COMMANDS_TELEPORT_NOT_FURTHER = Message.translation("server.commands.teleport.notFurther");
 /*  35 */   private static final Message MESSAGE_COMMANDS_TELEPORT_WORLD_NOT_LOADED = Message.translation("server.commands.teleport.worldNotLoaded");
-/*  36 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_WAYPOINT = Message.translation("server.commands.teleport.teleportedForwardToWaypoint");
-/*  37 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_WAYPOINT = Message.translation("server.commands.teleport.teleportedBackToWaypoint");
-/*  38 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_COORDINATES = Message.translation("server.commands.teleport.teleportedForwardToCoordinates");
-/*  39 */   private static final Message MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_COORDINATES = Message.translation("server.commands.teleport.teleportedBackToCoordinates");
 /*     */   
 /*     */   @Nonnull
 /*     */   private final Deque<Waypoint> back;
 /*     */   
 /*     */   @Nonnull
 /*     */   public static ComponentType<EntityStore, TeleportHistory> getComponentType() {
-/*  46 */     return TeleportPlugin.get().getTeleportHistoryComponentType();
+/*  42 */     return TeleportPlugin.get().getTeleportHistoryComponentType();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -62,8 +58,8 @@
 /*     */ 
 /*     */   
 /*     */   public TeleportHistory() {
-/*  65 */     this.back = new ArrayDeque<>();
-/*  66 */     this.forward = new ArrayDeque<>();
+/*  61 */     this.back = new ArrayDeque<>();
+/*  62 */     this.forward = new ArrayDeque<>();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -73,8 +69,8 @@
 /*     */ 
 /*     */   
 /*     */   public void forward(@Nonnull Ref<EntityStore> ref, int count) {
-/*  76 */     Store<EntityStore> store = ref.getStore();
-/*  77 */     go(store, ref, this.forward, this.back, count, true);
+/*  72 */     Store<EntityStore> store = ref.getStore();
+/*  73 */     go(store, ref, this.forward, this.back, count, true);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -84,22 +80,22 @@
 /*     */ 
 /*     */   
 /*     */   public void back(@Nonnull Ref<EntityStore> ref, int count) {
-/*  87 */     Store<EntityStore> store = ref.getStore();
-/*  88 */     go(store, ref, this.back, this.forward, count, false);
+/*  83 */     Store<EntityStore> store = ref.getStore();
+/*  84 */     go(store, ref, this.back, this.forward, count, false);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public int getForwardSize() {
-/*  95 */     return this.forward.size();
+/*  91 */     return this.forward.size();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public int getBackSize() {
-/* 102 */     return this.back.size();
+/*  98 */     return this.back.size();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -118,57 +114,61 @@
 /*     */ 
 /*     */   
 /*     */   private static void go(@Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull Deque<Waypoint> from, @Nonnull Deque<Waypoint> to, int count, boolean isForward) {
-/* 121 */     if (count <= 0) throw new IllegalArgumentException(String.valueOf(count));
+/* 117 */     if (count <= 0) throw new IllegalArgumentException(String.valueOf(count));
 /*     */     
-/* 123 */     PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
-/* 124 */     assert playerRef != null;
+/* 119 */     PlayerRef playerRef = (PlayerRef)store.getComponent(ref, PlayerRef.getComponentType());
+/* 120 */     assert playerRef != null;
 /*     */     
-/* 126 */     Waypoint point = null;
-/* 127 */     int i = 0;
-/* 128 */     for (; i < count; i++) {
-/* 129 */       if (from.isEmpty()) {
-/* 130 */         if (point == null) {
-/* 131 */           playerRef.sendMessage(MESSAGE_COMMANDS_TELEPORT_NOT_FURTHER);
+/* 122 */     Waypoint point = null;
+/* 123 */     int i = 0;
+/* 124 */     for (; i < count; i++) {
+/* 125 */       if (from.isEmpty()) {
+/* 126 */         if (point == null) {
+/* 127 */           playerRef.sendMessage(MESSAGE_COMMANDS_TELEPORT_NOT_FURTHER);
 /*     */           
 /*     */           return;
 /*     */         } 
 /*     */         break;
 /*     */       } 
-/* 137 */       point = from.pop();
-/* 138 */       to.push(point);
+/* 133 */       point = from.pop();
+/* 134 */       to.push(point);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 142 */     if (point == null) throw new NullPointerException(to.toString());
+/* 138 */     if (point == null) throw new NullPointerException(to.toString());
 /*     */     
-/* 144 */     World targetWorld = Universe.get().getWorld(point.world);
-/* 145 */     if (targetWorld == null) {
-/* 146 */       playerRef.sendMessage(MESSAGE_COMMANDS_TELEPORT_WORLD_NOT_LOADED);
+/* 140 */     World targetWorld = Universe.get().getWorld(point.world);
+/* 141 */     if (targetWorld == null) {
+/* 142 */       playerRef.sendMessage(MESSAGE_COMMANDS_TELEPORT_WORLD_NOT_LOADED);
 /*     */     } else {
-/* 148 */       to.push(point);
-/* 149 */       Teleport teleportComponent = Teleport.createForPlayer(targetWorld, point.position, point.rotation);
-/* 150 */       store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
+/* 144 */       to.push(point);
+/* 145 */       Teleport teleportComponent = Teleport.createForPlayer(targetWorld, point.position, point.rotation);
+/* 146 */       store.addComponent(ref, Teleport.getComponentType(), (Component)teleportComponent);
 /*     */ 
 /*     */       
-/* 153 */       Vector3d pos = point.position;
-/* 154 */       int remainingInDirection = from.size();
-/* 155 */       int totalInOtherDirection = to.size() - 1;
+/* 149 */       Vector3d pos = point.position;
+/* 150 */       int remainingInDirection = from.size();
+/* 151 */       int totalInOtherDirection = to.size() - 1;
 /*     */       
-/* 157 */       if (point.message != null && !point.message.isEmpty()) {
-/* 158 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_WAYPOINT : 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */             
-/* 164 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_WAYPOINT.param("name", point.message).param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
+/* 153 */       if (point.message != null && !point.message.isEmpty()) {
+/* 154 */         playerRef.sendMessage((isForward ? 
+/* 155 */             Message.translation("server.commands.teleport.teleportedForwardToWaypoint") : 
+/* 156 */             Message.translation("server.commands.teleport.teleportedBackToWaypoint"))
+/* 157 */             .param("name", point.message)
+/* 158 */             .param("x", pos.getX())
+/* 159 */             .param("y", pos.getY())
+/* 160 */             .param("z", pos.getZ())
+/* 161 */             .param("remaining", remainingInDirection)
+/* 162 */             .param("otherDirection", totalInOtherDirection));
 /*     */       } else {
-/* 166 */         playerRef.sendMessage(isForward ? MESSAGE_COMMANDS_TELEPORT_TELEPORTED_FORWARD_TO_COORDINATES : 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */             
-/* 171 */             MESSAGE_COMMANDS_TELEPORT_TELEPORTED_BACK_TO_COORDINATES.param("x", pos.getX()).param("y", pos.getY()).param("z", pos.getZ()).param("remaining", remainingInDirection).param("otherDirection", totalInOtherDirection));
+/* 164 */         playerRef.sendMessage((isForward ? 
+/* 165 */             Message.translation("server.commands.teleport.teleportedForwardToCoordinates") : 
+/* 166 */             Message.translation("server.commands.teleport.teleportedBackToCoordinates"))
+/* 167 */             .param("x", pos.getX())
+/* 168 */             .param("y", pos.getY())
+/* 169 */             .param("z", pos.getZ())
+/* 170 */             .param("remaining", remainingInDirection)
+/* 171 */             .param("otherDirection", totalInOtherDirection));
 /*     */       } 
 /*     */     } 
 /*     */   }

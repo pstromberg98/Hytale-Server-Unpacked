@@ -4451,15 +4451,108 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class BuilderToolsConfig
 /*      */ {
 /*      */   public static final BuilderCodec<BuilderToolsConfig> CODEC;
 /*      */   
 /*      */   static {
-/* 4459 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(BuilderToolsConfig.class, BuilderToolsConfig::new).append(new KeyedCodec("HistoryCount", (Codec)Codec.INTEGER), (o, i) -> o.historyCount = i.intValue(), o -> Integer.valueOf(o.historyCount)).documentation("The number of builder tool edit operations to keep in the undo/redo history").add()).append(new KeyedCodec("ToolExpireTime", (Codec)Codec.LONG), (o, l) -> o.toolExpireTime = l.longValue(), o -> Long.valueOf(o.toolExpireTime)).documentation("The minimum time (in seconds) that a user's builder tool data will be persisted for after they disconnect from the server. If set to zero the player's data is removed immediately on disconnect").addValidator(Validators.greaterThanOrEqual(Long.valueOf(0L))).add()).build();
+/* 4552 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(BuilderToolsConfig.class, BuilderToolsConfig::new).append(new KeyedCodec("HistoryCount", (Codec)Codec.INTEGER), (o, i) -> o.historyCount = i.intValue(), o -> Integer.valueOf(o.historyCount)).documentation("The number of builder tool edit operations to keep in the undo/redo history").add()).append(new KeyedCodec("ToolExpireTime", (Codec)Codec.LONG), (o, l) -> o.toolExpireTime = l.longValue(), o -> Long.valueOf(o.toolExpireTime)).documentation("The minimum time (in seconds) that a user's builder tool data will be persisted for after they disconnect from the server. If set to zero the player's data is removed immediately on disconnect").addValidator(Validators.greaterThanOrEqual(Long.valueOf(0L))).add()).build();
 /*      */   }
-/* 4461 */   private int historyCount = 50;
-/* 4462 */   private long toolExpireTime = 3600L;
+/* 4554 */   private int historyCount = 50;
+/* 4555 */   private long toolExpireTime = 3600L;
 /*      */ }
 
 

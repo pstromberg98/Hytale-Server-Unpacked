@@ -1,5 +1,6 @@
 /*    */ package com.hypixel.hytale.server.core.command.commands.player;
 /*    */ 
+/*    */ import com.hypixel.hytale.component.ComponentAccessor;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.component.Store;
 /*    */ import com.hypixel.hytale.server.core.Message;
@@ -14,7 +15,6 @@
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
-/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -77,7 +77,7 @@
 /*    */             context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*    */             return;
 /*    */           } 
-/*    */           store.tryRemoveComponent(ref, DeathComponent.getComponentType());
+/*    */           DeathComponent.respawn((ComponentAccessor)store, ref);
 /*    */           context.sendMessage(Message.translation("server.commands.player.respawn.success.other").param("username", playerRef.getUsername()));
 /*    */         });
 /*    */   }

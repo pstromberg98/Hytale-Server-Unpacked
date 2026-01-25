@@ -1,10 +1,14 @@
 /*    */ package com.hypixel.hytale.server.core.entity.entities.player.windows;
 /*    */ 
 /*    */ import com.google.gson.JsonObject;
+/*    */ import com.hypixel.hytale.component.ComponentAccessor;
+/*    */ import com.hypixel.hytale.component.Ref;
+/*    */ import com.hypixel.hytale.component.Store;
 /*    */ import com.hypixel.hytale.event.EventRegistration;
 /*    */ import com.hypixel.hytale.protocol.packets.window.WindowType;
 /*    */ import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 /*    */ import com.hypixel.hytale.server.core.inventory.container.ItemStackItemContainer;
+/*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*    */ import javax.annotation.Nonnull;
 /*    */ import javax.annotation.Nullable;
 /*    */ 
@@ -17,7 +21,7 @@
 /*    */   implements ItemContainerWindow
 /*    */ {
 /*    */   @Nonnull
-/* 20 */   private final JsonObject windowData = new JsonObject();
+/* 24 */   private final JsonObject windowData = new JsonObject();
 /*    */ 
 /*    */   
 /*    */   @Nonnull
@@ -30,35 +34,35 @@
 /*    */ 
 /*    */   
 /*    */   public ItemStackContainerWindow(@Nonnull ItemStackItemContainer itemStackItemContainer) {
-/* 33 */     super(WindowType.Container);
-/* 34 */     this.itemStackItemContainer = itemStackItemContainer;
+/* 37 */     super(WindowType.Container);
+/* 38 */     this.itemStackItemContainer = itemStackItemContainer;
 /*    */   }
 /*    */   
 /*    */   @Nonnull
 /*    */   public JsonObject getData() {
-/* 39 */     return this.windowData;
+/* 43 */     return this.windowData;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   public boolean onOpen0() {
-/* 44 */     this.eventRegistration = this.itemStackItemContainer.getParentContainer().registerChangeEvent(event -> {
+/*    */   public boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 48 */     this.eventRegistration = this.itemStackItemContainer.getParentContainer().registerChangeEvent(event -> {
 /*    */           if (!this.itemStackItemContainer.isItemStackValid()) {
-/*    */             close();
+/*    */             close(ref, (ComponentAccessor<EntityStore>)store);
 /*    */           }
 /*    */         });
-/* 49 */     return true;
+/* 53 */     return true;
 /*    */   }
 /*    */ 
 /*    */   
-/*    */   public void onClose0() {
-/* 54 */     this.eventRegistration.unregister();
-/* 55 */     this.eventRegistration = null;
+/*    */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
+/* 58 */     this.eventRegistration.unregister();
+/* 59 */     this.eventRegistration = null;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public ItemContainer getItemContainer() {
-/* 61 */     return (ItemContainer)this.itemStackItemContainer;
+/* 65 */     return (ItemContainer)this.itemStackItemContainer;
 /*    */   }
 /*    */ }
 

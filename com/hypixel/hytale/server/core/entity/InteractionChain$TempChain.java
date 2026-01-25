@@ -698,45 +698,48 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class TempChain
 /*     */   implements ChainSyncStorage
 /*     */ {
-/* 704 */   final Long2ObjectMap<TempChain> tempForkedChainData = (Long2ObjectMap<TempChain>)new Long2ObjectOpenHashMap();
-/* 705 */   final List<InteractionSyncData> tempSyncData = (List<InteractionSyncData>)new ObjectArrayList();
+/* 707 */   final Long2ObjectMap<TempChain> tempForkedChainData = (Long2ObjectMap<TempChain>)new Long2ObjectOpenHashMap();
+/* 708 */   final List<InteractionSyncData> tempSyncData = (List<InteractionSyncData>)new ObjectArrayList();
 /*     */   ForkedChainId forkedChainId;
-/* 707 */   InteractionState clientState = InteractionState.NotFinished;
+/* 710 */   InteractionState clientState = InteractionState.NotFinished;
 /*     */   ForkedChainId baseForkedChainId;
 /*     */   InteractionChainData chainData;
 /*     */   
 /*     */   @Nonnull
 /*     */   public TempChain getOrCreateTempForkedChain(@Nonnull ForkedChainId chainId) {
-/* 713 */     return (TempChain)this.tempForkedChainData.computeIfAbsent(InteractionChain.forkedIdToIndex(chainId), i -> new TempChain());
+/* 716 */     return (TempChain)this.tempForkedChainData.computeIfAbsent(InteractionChain.forkedIdToIndex(chainId), i -> new TempChain());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public InteractionState getClientState() {
-/* 718 */     return this.clientState;
+/* 721 */     return this.clientState;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void setClientState(InteractionState state) {
-/* 723 */     this.clientState = state;
+/* 726 */     this.clientState = state;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public InteractionEntry getInteraction(int index) {
-/* 729 */     return null;
+/* 732 */     return null;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void putInteractionSyncData(int index, InteractionSyncData data) {
-/* 734 */     if (index < this.tempSyncData.size()) {
-/* 735 */       this.tempSyncData.set(index, data);
-/* 736 */     } else if (index == this.tempSyncData.size()) {
-/* 737 */       this.tempSyncData.add(data);
+/* 737 */     if (index < this.tempSyncData.size()) {
+/* 738 */       this.tempSyncData.set(index, data);
+/* 739 */     } else if (index == this.tempSyncData.size()) {
+/* 740 */       this.tempSyncData.add(data);
 /*     */     } else {
-/* 739 */       throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
+/* 742 */       throw new IllegalArgumentException("Temp sync data sent out of order: " + index + " " + this.tempSyncData.size());
 /*     */     } 
 /*     */   }
 /*     */ 
@@ -747,53 +750,53 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isSyncDataOutOfOrder(int index) {
-/* 750 */     return (index > this.tempSyncData.size());
+/* 753 */     return (index > this.tempSyncData.size());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void syncFork(@Nonnull Ref<EntityStore> ref, @Nonnull InteractionManager manager, @Nonnull SyncInteractionChain packet) {
-/* 755 */     ForkedChainId baseId = packet.forkedId;
-/* 756 */     for (; baseId.forkedId != null; baseId = baseId.forkedId);
-/* 757 */     TempChain temp = getOrCreateTempForkedChain(baseId);
-/* 758 */     temp.setForkedChainId(packet.forkedId);
-/* 759 */     temp.setBaseForkedChainId(baseId);
-/* 760 */     temp.setChainData(packet.data);
-/* 761 */     manager.sync(ref, temp, packet);
+/* 758 */     ForkedChainId baseId = packet.forkedId;
+/* 759 */     for (; baseId.forkedId != null; baseId = baseId.forkedId);
+/* 760 */     TempChain temp = getOrCreateTempForkedChain(baseId);
+/* 761 */     temp.setForkedChainId(packet.forkedId);
+/* 762 */     temp.setBaseForkedChainId(baseId);
+/* 763 */     temp.setChainData(packet.data);
+/* 764 */     manager.sync(ref, temp, packet);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void clearInteractionSyncData(int index) {
-/* 766 */     int end = this.tempSyncData.size() - 1;
-/* 767 */     while (end >= index) {
-/* 768 */       this.tempSyncData.remove(end);
-/* 769 */       end--;
+/* 769 */     int end = this.tempSyncData.size() - 1;
+/* 770 */     while (end >= index) {
+/* 771 */       this.tempSyncData.remove(end);
+/* 772 */       end--;
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public InteractionChainData getChainData() {
-/* 774 */     return this.chainData;
+/* 777 */     return this.chainData;
 /*     */   }
 /*     */   
 /*     */   public void setChainData(InteractionChainData chainData) {
-/* 778 */     this.chainData = chainData;
+/* 781 */     this.chainData = chainData;
 /*     */   }
 /*     */   
 /*     */   public ForkedChainId getBaseForkedChainId() {
-/* 782 */     return this.baseForkedChainId;
+/* 785 */     return this.baseForkedChainId;
 /*     */   }
 /*     */   
 /*     */   public void setBaseForkedChainId(ForkedChainId baseForkedChainId) {
-/* 786 */     this.baseForkedChainId = baseForkedChainId;
+/* 789 */     this.baseForkedChainId = baseForkedChainId;
 /*     */   }
 /*     */   
 /*     */   public void setForkedChainId(ForkedChainId forkedChainId) {
-/* 790 */     this.forkedChainId = forkedChainId;
+/* 793 */     this.forkedChainId = forkedChainId;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 796 */     return "TempChain{tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", clientState=" + String.valueOf(this.clientState) + "}";
+/* 799 */     return "TempChain{tempForkedChainData=" + String.valueOf(this.tempForkedChainData) + ", tempSyncData=" + String.valueOf(this.tempSyncData) + ", clientState=" + String.valueOf(this.clientState) + "}";
 /*     */   }
 /*     */ }
 

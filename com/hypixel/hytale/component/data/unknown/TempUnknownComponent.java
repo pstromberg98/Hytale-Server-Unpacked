@@ -7,28 +7,51 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ import org.bson.BsonDocument;
 /*    */ 
-/*    */ public class TempUnknownComponent<ECS_TYPE> implements Component<ECS_TYPE> {
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ public class TempUnknownComponent<ECS_TYPE>
+/*    */   implements Component<ECS_TYPE>
+/*    */ {
+/*    */   @Nonnull
+/*    */   public static final Codec<Component> COMPONENT_CODEC;
+/*    */   @Nonnull
+/*    */   private final BsonDocument document;
+/*    */   
 /*    */   static {
-/* 12 */     COMPONENT_CODEC = (Codec<Component>)new FunctionCodec((Codec)Codec.BSON_DOCUMENT, TempUnknownComponent::new, component -> ((TempUnknownComponent)component).document);
+/* 22 */     COMPONENT_CODEC = (Codec<Component>)new FunctionCodec((Codec)Codec.BSON_DOCUMENT, TempUnknownComponent::new, component -> ((TempUnknownComponent)component).document);
 /*    */   }
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
-/*    */   public static final Codec<Component> COMPONENT_CODEC;
-/*    */   
-/*    */   private BsonDocument document;
-/*    */   
-/*    */   public TempUnknownComponent(BsonDocument document) {
-/* 21 */     this.document = document;
+/*    */   public TempUnknownComponent(@Nonnull BsonDocument document) {
+/* 40 */     this.document = document;
 /*    */   }
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */   
+/*    */   @Nonnull
 /*    */   public BsonDocument getDocument() {
-/* 25 */     return this.document;
+/* 48 */     return this.document;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
 /*    */   public Component<ECS_TYPE> clone() {
-/* 31 */     return new TempUnknownComponent(this.document.clone());
+/* 54 */     return new TempUnknownComponent(this.document.clone());
 /*    */   }
 /*    */ }
 

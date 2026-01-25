@@ -300,6 +300,7 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */ public final class WarpComponent
 /*     */   extends Record
 /*     */   implements Component<EntityStore>
@@ -307,23 +308,23 @@
 /*     */   private final Warp warp;
 /*     */   
 /*     */   public WarpComponent(Warp warp) {
-/* 310 */     this.warp = warp; } public final String toString() { // Byte code:
+/* 311 */     this.warp = warp; } public final String toString() { // Byte code:
 /*     */     //   0: aload_0
 /*     */     //   1: <illegal opcode> toString : (Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent;)Ljava/lang/String;
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #310	-> 0
+/*     */     //   #311	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
-/* 310 */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent; } public Warp warp() { return this.warp; }
+/* 311 */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent; } public Warp warp() { return this.warp; }
 /*     */   public final int hashCode() { // Byte code:
 /*     */     //   0: aload_0
 /*     */     //   1: <illegal opcode> hashCode : (Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent;)I
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #310	-> 0
+/*     */     //   #311	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent; }
@@ -334,18 +335,18 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #310	-> 0
+/*     */     //   #311	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/teleport/TeleportPlugin$WarpComponent;
 /*     */     //   0	8	1	o	Ljava/lang/Object; } public static ComponentType<EntityStore, WarpComponent> getComponentType() {
-/* 313 */     return (TeleportPlugin.get()).warpComponentType;
+/* 314 */     return (TeleportPlugin.get()).warpComponentType;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<EntityStore> clone() {
-/* 319 */     return new WarpComponent(this.warp);
+/* 320 */     return new WarpComponent(this.warp);
 /*     */   }
 /*     */ }
 

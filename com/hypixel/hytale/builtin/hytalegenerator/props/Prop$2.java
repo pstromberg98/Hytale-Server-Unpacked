@@ -7,6 +7,13 @@
 /*    */ import com.hypixel.hytale.builtin.hytalegenerator.threadindexer.WorkerIndexer;
 /*    */ import com.hypixel.hytale.math.vector.Vector3i;
 /*    */ import javax.annotation.Nonnull;
+/*    */ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -39,7 +46,7 @@
 /*    */ {
 /*    */   @Nonnull
 /*    */   public ScanResult scan(@Nonnull Vector3i position, @Nonnull VoxelSpace<Material> materialSpace, @Nonnull WorkerIndexer.Id id) {
-/* 42 */     return scanResult;
+/* 49 */     return scanResult;
 /*    */   }
 /*    */ 
 /*    */   
@@ -48,13 +55,19 @@
 /*    */   
 /*    */   @Nonnull
 /*    */   public ContextDependency getContextDependency() {
-/* 51 */     return contextDependency;
+/* 58 */     return contextDependency;
+/*    */   }
+/*    */ 
+/*    */   
+/*    */   @NonNullDecl
+/*    */   public Bounds3i getReadBounds_voxelGrid() {
+/* 64 */     return zeroBounds_voxelGrid;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/*    */   public Bounds3i getWriteBounds() {
-/* 57 */     return writeBounds_voxelGrid;
+/*    */   public Bounds3i getWriteBounds_voxelGrid() {
+/* 70 */     return zeroBounds_voxelGrid;
 /*    */   }
 /*    */ }
 

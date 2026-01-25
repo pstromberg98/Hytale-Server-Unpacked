@@ -24,11 +24,18 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ class null
 /*    */   implements ScanResult
 /*    */ {
 /*    */   public boolean isNegative() {
-/* 31 */     return true;
+/* 38 */     return true;
 /*    */   }
 /*    */ }
 

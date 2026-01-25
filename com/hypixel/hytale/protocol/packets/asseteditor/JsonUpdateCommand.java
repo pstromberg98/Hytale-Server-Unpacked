@@ -50,9 +50,9 @@
 /*  50 */     JsonUpdateCommand obj = new JsonUpdateCommand();
 /*  51 */     byte nullBits = buf.getByte(offset);
 /*  52 */     obj.type = JsonUpdateType.fromValue(buf.getByte(offset + 1));
-/*  53 */     if ((nullBits & 0x10) != 0) obj.rebuildCaches = AssetEditorRebuildCaches.deserialize(buf, offset + 2);
+/*  53 */     if ((nullBits & 0x1) != 0) obj.rebuildCaches = AssetEditorRebuildCaches.deserialize(buf, offset + 2);
 /*     */     
-/*  55 */     if ((nullBits & 0x1) != 0) {
+/*  55 */     if ((nullBits & 0x2) != 0) {
 /*  56 */       int varPos0 = offset + 23 + buf.getIntLE(offset + 7);
 /*  57 */       int pathCount = VarInt.peek(buf, varPos0);
 /*  58 */       if (pathCount < 0) throw ProtocolException.negativeLength("Path", pathCount); 
@@ -71,21 +71,21 @@
 /*  71 */         elemPos += strVarLen + strLen;
 /*     */       } 
 /*     */     } 
-/*  74 */     if ((nullBits & 0x2) != 0) {
+/*  74 */     if ((nullBits & 0x4) != 0) {
 /*  75 */       int varPos1 = offset + 23 + buf.getIntLE(offset + 11);
 /*  76 */       int valueLen = VarInt.peek(buf, varPos1);
 /*  77 */       if (valueLen < 0) throw ProtocolException.negativeLength("Value", valueLen); 
 /*  78 */       if (valueLen > 4096000) throw ProtocolException.stringTooLong("Value", valueLen, 4096000); 
 /*  79 */       obj.value = PacketIO.readVarString(buf, varPos1, PacketIO.UTF8);
 /*     */     } 
-/*  81 */     if ((nullBits & 0x4) != 0) {
+/*  81 */     if ((nullBits & 0x8) != 0) {
 /*  82 */       int varPos2 = offset + 23 + buf.getIntLE(offset + 15);
 /*  83 */       int previousValueLen = VarInt.peek(buf, varPos2);
 /*  84 */       if (previousValueLen < 0) throw ProtocolException.negativeLength("PreviousValue", previousValueLen); 
 /*  85 */       if (previousValueLen > 4096000) throw ProtocolException.stringTooLong("PreviousValue", previousValueLen, 4096000); 
 /*  86 */       obj.previousValue = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*     */     } 
-/*  88 */     if ((nullBits & 0x8) != 0) {
+/*  88 */     if ((nullBits & 0x10) != 0) {
 /*  89 */       int varPos3 = offset + 23 + buf.getIntLE(offset + 19);
 /*  90 */       int firstCreatedPropertyCount = VarInt.peek(buf, varPos3);
 /*  91 */       if (firstCreatedPropertyCount < 0) throw ProtocolException.negativeLength("FirstCreatedProperty", firstCreatedPropertyCount); 
@@ -111,26 +111,26 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 112 */     byte nullBits = buf.getByte(offset);
 /* 113 */     int maxEnd = 23;
-/* 114 */     if ((nullBits & 0x1) != 0) {
+/* 114 */     if ((nullBits & 0x2) != 0) {
 /* 115 */       int fieldOffset0 = buf.getIntLE(offset + 7);
 /* 116 */       int pos0 = offset + 23 + fieldOffset0;
 /* 117 */       int arrLen = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0);
 /* 118 */       for (int i = 0; i < arrLen; ) { int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl; i++; }
 /* 119 */        if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 121 */     if ((nullBits & 0x2) != 0) {
+/* 121 */     if ((nullBits & 0x4) != 0) {
 /* 122 */       int fieldOffset1 = buf.getIntLE(offset + 11);
 /* 123 */       int pos1 = offset + 23 + fieldOffset1;
 /* 124 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
 /* 125 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 127 */     if ((nullBits & 0x4) != 0) {
+/* 127 */     if ((nullBits & 0x8) != 0) {
 /* 128 */       int fieldOffset2 = buf.getIntLE(offset + 15);
 /* 129 */       int pos2 = offset + 23 + fieldOffset2;
 /* 130 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /* 131 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 133 */     if ((nullBits & 0x8) != 0) {
+/* 133 */     if ((nullBits & 0x10) != 0) {
 /* 134 */       int fieldOffset3 = buf.getIntLE(offset + 19);
 /* 135 */       int pos3 = offset + 23 + fieldOffset3;
 /* 136 */       int arrLen = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3);
@@ -144,11 +144,11 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 145 */     int startPos = buf.writerIndex();
 /* 146 */     byte nullBits = 0;
-/* 147 */     if (this.path != null) nullBits = (byte)(nullBits | 0x1); 
-/* 148 */     if (this.value != null) nullBits = (byte)(nullBits | 0x2); 
-/* 149 */     if (this.previousValue != null) nullBits = (byte)(nullBits | 0x4); 
-/* 150 */     if (this.firstCreatedProperty != null) nullBits = (byte)(nullBits | 0x8); 
-/* 151 */     if (this.rebuildCaches != null) nullBits = (byte)(nullBits | 0x10); 
+/* 147 */     if (this.rebuildCaches != null) nullBits = (byte)(nullBits | 0x1); 
+/* 148 */     if (this.path != null) nullBits = (byte)(nullBits | 0x2); 
+/* 149 */     if (this.value != null) nullBits = (byte)(nullBits | 0x4); 
+/* 150 */     if (this.previousValue != null) nullBits = (byte)(nullBits | 0x8); 
+/* 151 */     if (this.firstCreatedProperty != null) nullBits = (byte)(nullBits | 0x10); 
 /* 152 */     buf.writeByte(nullBits);
 /*     */     
 /* 154 */     buf.writeByte(this.type.getValue());
@@ -217,7 +217,7 @@
 /* 217 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 220 */     if ((nullBits & 0x1) != 0) {
+/* 220 */     if ((nullBits & 0x2) != 0) {
 /* 221 */       int pathOffset = buffer.getIntLE(offset + 7);
 /* 222 */       if (pathOffset < 0) {
 /* 223 */         return ValidationResult.error("Invalid offset for Path");
@@ -247,7 +247,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 250 */     if ((nullBits & 0x2) != 0) {
+/* 250 */     if ((nullBits & 0x4) != 0) {
 /* 251 */       int valueOffset = buffer.getIntLE(offset + 11);
 /* 252 */       if (valueOffset < 0) {
 /* 253 */         return ValidationResult.error("Invalid offset for Value");
@@ -270,7 +270,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 273 */     if ((nullBits & 0x4) != 0) {
+/* 273 */     if ((nullBits & 0x8) != 0) {
 /* 274 */       int previousValueOffset = buffer.getIntLE(offset + 15);
 /* 275 */       if (previousValueOffset < 0) {
 /* 276 */         return ValidationResult.error("Invalid offset for PreviousValue");
@@ -293,7 +293,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 296 */     if ((nullBits & 0x8) != 0) {
+/* 296 */     if ((nullBits & 0x10) != 0) {
 /* 297 */       int firstCreatedPropertyOffset = buffer.getIntLE(offset + 19);
 /* 298 */       if (firstCreatedPropertyOffset < 0) {
 /* 299 */         return ValidationResult.error("Invalid offset for FirstCreatedProperty");

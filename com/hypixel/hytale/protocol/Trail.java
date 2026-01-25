@@ -72,24 +72,24 @@
 /*  72 */     byte nullBits = buf.getByte(offset);
 /*  73 */     obj.lifeSpan = buf.getIntLE(offset + 1);
 /*  74 */     obj.roll = buf.getFloatLE(offset + 5);
-/*  75 */     if ((nullBits & 0x4) != 0) obj.start = Edge.deserialize(buf, offset + 9); 
-/*  76 */     if ((nullBits & 0x8) != 0) obj.end = Edge.deserialize(buf, offset + 18); 
+/*  75 */     if ((nullBits & 0x1) != 0) obj.start = Edge.deserialize(buf, offset + 9); 
+/*  76 */     if ((nullBits & 0x2) != 0) obj.end = Edge.deserialize(buf, offset + 18); 
 /*  77 */     obj.lightInfluence = buf.getFloatLE(offset + 27);
 /*  78 */     obj.renderMode = FXRenderMode.fromValue(buf.getByte(offset + 31));
-/*  79 */     if ((nullBits & 0x10) != 0) obj.intersectionHighlight = IntersectionHighlight.deserialize(buf, offset + 32); 
+/*  79 */     if ((nullBits & 0x4) != 0) obj.intersectionHighlight = IntersectionHighlight.deserialize(buf, offset + 32); 
 /*  80 */     obj.smooth = (buf.getByte(offset + 40) != 0);
-/*  81 */     if ((nullBits & 0x20) != 0) obj.frameSize = Vector2i.deserialize(buf, offset + 41); 
-/*  82 */     if ((nullBits & 0x40) != 0) obj.frameRange = Range.deserialize(buf, offset + 49); 
+/*  81 */     if ((nullBits & 0x8) != 0) obj.frameSize = Vector2i.deserialize(buf, offset + 41); 
+/*  82 */     if ((nullBits & 0x10) != 0) obj.frameRange = Range.deserialize(buf, offset + 49); 
 /*  83 */     obj.frameLifeSpan = buf.getIntLE(offset + 57);
 /*     */     
-/*  85 */     if ((nullBits & 0x1) != 0) {
+/*  85 */     if ((nullBits & 0x20) != 0) {
 /*  86 */       int varPos0 = offset + 69 + buf.getIntLE(offset + 61);
 /*  87 */       int idLen = VarInt.peek(buf, varPos0);
 /*  88 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  89 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  90 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*     */     } 
-/*  92 */     if ((nullBits & 0x2) != 0) {
+/*  92 */     if ((nullBits & 0x40) != 0) {
 /*  93 */       int varPos1 = offset + 69 + buf.getIntLE(offset + 65);
 /*  94 */       int textureLen = VarInt.peek(buf, varPos1);
 /*  95 */       if (textureLen < 0) throw ProtocolException.negativeLength("Texture", textureLen); 
@@ -103,13 +103,13 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 104 */     byte nullBits = buf.getByte(offset);
 /* 105 */     int maxEnd = 69;
-/* 106 */     if ((nullBits & 0x1) != 0) {
+/* 106 */     if ((nullBits & 0x20) != 0) {
 /* 107 */       int fieldOffset0 = buf.getIntLE(offset + 61);
 /* 108 */       int pos0 = offset + 69 + fieldOffset0;
 /* 109 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /* 110 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 112 */     if ((nullBits & 0x2) != 0) {
+/* 112 */     if ((nullBits & 0x40) != 0) {
 /* 113 */       int fieldOffset1 = buf.getIntLE(offset + 65);
 /* 114 */       int pos1 = offset + 69 + fieldOffset1;
 /* 115 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
@@ -122,13 +122,13 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 123 */     int startPos = buf.writerIndex();
 /* 124 */     byte nullBits = 0;
-/* 125 */     if (this.id != null) nullBits = (byte)(nullBits | 0x1); 
-/* 126 */     if (this.texture != null) nullBits = (byte)(nullBits | 0x2); 
-/* 127 */     if (this.start != null) nullBits = (byte)(nullBits | 0x4); 
-/* 128 */     if (this.end != null) nullBits = (byte)(nullBits | 0x8); 
-/* 129 */     if (this.intersectionHighlight != null) nullBits = (byte)(nullBits | 0x10); 
-/* 130 */     if (this.frameSize != null) nullBits = (byte)(nullBits | 0x20); 
-/* 131 */     if (this.frameRange != null) nullBits = (byte)(nullBits | 0x40); 
+/* 125 */     if (this.start != null) nullBits = (byte)(nullBits | 0x1); 
+/* 126 */     if (this.end != null) nullBits = (byte)(nullBits | 0x2); 
+/* 127 */     if (this.intersectionHighlight != null) nullBits = (byte)(nullBits | 0x4); 
+/* 128 */     if (this.frameSize != null) nullBits = (byte)(nullBits | 0x8); 
+/* 129 */     if (this.frameRange != null) nullBits = (byte)(nullBits | 0x10); 
+/* 130 */     if (this.id != null) nullBits = (byte)(nullBits | 0x20); 
+/* 131 */     if (this.texture != null) nullBits = (byte)(nullBits | 0x40); 
 /* 132 */     buf.writeByte(nullBits);
 /*     */     
 /* 134 */     buf.writeIntLE(this.lifeSpan);
@@ -180,7 +180,7 @@
 /* 180 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 183 */     if ((nullBits & 0x1) != 0) {
+/* 183 */     if ((nullBits & 0x20) != 0) {
 /* 184 */       int idOffset = buffer.getIntLE(offset + 61);
 /* 185 */       if (idOffset < 0) {
 /* 186 */         return ValidationResult.error("Invalid offset for Id");
@@ -203,7 +203,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 206 */     if ((nullBits & 0x2) != 0) {
+/* 206 */     if ((nullBits & 0x40) != 0) {
 /* 207 */       int textureOffset = buffer.getIntLE(offset + 65);
 /* 208 */       if (textureOffset < 0) {
 /* 209 */         return ValidationResult.error("Invalid offset for Texture");

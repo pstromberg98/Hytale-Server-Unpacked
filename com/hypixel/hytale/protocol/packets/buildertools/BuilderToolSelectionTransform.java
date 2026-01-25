@@ -64,16 +64,16 @@
 /*     */   public static BuilderToolSelectionTransform deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  65 */     BuilderToolSelectionTransform obj = new BuilderToolSelectionTransform();
 /*  66 */     byte nullBits = buf.getByte(offset);
-/*  67 */     if ((nullBits & 0x2) != 0) obj.initialSelectionMin = BlockPosition.deserialize(buf, offset + 1); 
-/*  68 */     if ((nullBits & 0x4) != 0) obj.initialSelectionMax = BlockPosition.deserialize(buf, offset + 13); 
-/*  69 */     if ((nullBits & 0x8) != 0) obj.initialRotationOrigin = Vector3f.deserialize(buf, offset + 25); 
+/*  67 */     if ((nullBits & 0x1) != 0) obj.initialSelectionMin = BlockPosition.deserialize(buf, offset + 1); 
+/*  68 */     if ((nullBits & 0x2) != 0) obj.initialSelectionMax = BlockPosition.deserialize(buf, offset + 13); 
+/*  69 */     if ((nullBits & 0x4) != 0) obj.initialRotationOrigin = Vector3f.deserialize(buf, offset + 25); 
 /*  70 */     obj.cutOriginal = (buf.getByte(offset + 37) != 0);
 /*  71 */     obj.applyTransformationToSelectionMinMax = (buf.getByte(offset + 38) != 0);
 /*  72 */     obj.isExitingTransformMode = (buf.getByte(offset + 39) != 0);
-/*  73 */     if ((nullBits & 0x10) != 0) obj.initialPastePointForClipboardPaste = BlockPosition.deserialize(buf, offset + 40);
+/*  73 */     if ((nullBits & 0x8) != 0) obj.initialPastePointForClipboardPaste = BlockPosition.deserialize(buf, offset + 40);
 /*     */     
 /*  75 */     int pos = offset + 52;
-/*  76 */     if ((nullBits & 0x1) != 0) { int transformationMatrixCount = VarInt.peek(buf, pos);
+/*  76 */     if ((nullBits & 0x10) != 0) { int transformationMatrixCount = VarInt.peek(buf, pos);
 /*  77 */       if (transformationMatrixCount < 0) throw ProtocolException.negativeLength("TransformationMatrix", transformationMatrixCount); 
 /*  78 */       if (transformationMatrixCount > 4096000) throw ProtocolException.arrayTooLong("TransformationMatrix", transformationMatrixCount, 4096000); 
 /*  79 */       int transformationMatrixVarLen = VarInt.size(transformationMatrixCount);
@@ -92,7 +92,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  93 */     byte nullBits = buf.getByte(offset);
 /*  94 */     int pos = offset + 52;
-/*  95 */     if ((nullBits & 0x1) != 0) { int arrLen = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + arrLen * 4; }
+/*  95 */     if ((nullBits & 0x10) != 0) { int arrLen = VarInt.peek(buf, pos); pos += VarInt.length(buf, pos) + arrLen * 4; }
 /*  96 */      return pos - offset;
 /*     */   }
 /*     */ 
@@ -100,11 +100,11 @@
 /*     */   
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 102 */     byte nullBits = 0;
-/* 103 */     if (this.transformationMatrix != null) nullBits = (byte)(nullBits | 0x1); 
-/* 104 */     if (this.initialSelectionMin != null) nullBits = (byte)(nullBits | 0x2); 
-/* 105 */     if (this.initialSelectionMax != null) nullBits = (byte)(nullBits | 0x4); 
-/* 106 */     if (this.initialRotationOrigin != null) nullBits = (byte)(nullBits | 0x8); 
-/* 107 */     if (this.initialPastePointForClipboardPaste != null) nullBits = (byte)(nullBits | 0x10); 
+/* 103 */     if (this.initialSelectionMin != null) nullBits = (byte)(nullBits | 0x1); 
+/* 104 */     if (this.initialSelectionMax != null) nullBits = (byte)(nullBits | 0x2); 
+/* 105 */     if (this.initialRotationOrigin != null) nullBits = (byte)(nullBits | 0x4); 
+/* 106 */     if (this.initialPastePointForClipboardPaste != null) nullBits = (byte)(nullBits | 0x8); 
+/* 107 */     if (this.transformationMatrix != null) nullBits = (byte)(nullBits | 0x10); 
 /* 108 */     buf.writeByte(nullBits);
 /*     */     
 /* 110 */     if (this.initialSelectionMin != null) { this.initialSelectionMin.serialize(buf); } else { buf.writeZero(12); }
@@ -135,7 +135,7 @@
 /*     */     
 /* 136 */     int pos = offset + 52;
 /*     */     
-/* 138 */     if ((nullBits & 0x1) != 0) {
+/* 138 */     if ((nullBits & 0x10) != 0) {
 /* 139 */       int transformationMatrixCount = VarInt.peek(buffer, pos);
 /* 140 */       if (transformationMatrixCount < 0) {
 /* 141 */         return ValidationResult.error("Invalid array count for TransformationMatrix");

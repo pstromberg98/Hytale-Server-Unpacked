@@ -85,70 +85,70 @@
 /*     */ 
 /*     */   
 /*     */   public void validateSkin(@Nonnull PlayerSkin skin) throws InvalidSkinException {
-/*  88 */     if (skin == null) throw new InvalidSkinException("Skin can't be null!");
+/*  88 */     if (skin == null) throw new InvalidSkinException("skin", null);
 /*     */     
 /*  90 */     if (skin.face == null || !this.registry.getFaces().containsKey(skin.face)) {
-/*  91 */       throw new InvalidSkinException("Invalid face attachment!");
+/*  91 */       throw new InvalidSkinException("face", skin.face);
 /*     */     }
 /*     */     
 /*  94 */     if (skin.ears == null || !this.registry.getEars().containsKey(skin.ears)) {
-/*  95 */       throw new InvalidSkinException("Invalid ears attachment!");
+/*  95 */       throw new InvalidSkinException("ears", skin.ears);
 /*     */     }
 /*     */     
 /*  98 */     if (skin.mouth == null || !this.registry.getMouths().containsKey(skin.mouth)) {
-/*  99 */       throw new InvalidSkinException("Invalid mouth attachment!");
+/*  99 */       throw new InvalidSkinException("mouth", skin.mouth);
 /*     */     }
 /*     */     
 /* 102 */     if (!isValidAttachment(this.registry.getBodyCharacteristics(), skin.bodyCharacteristic, true)) {
-/* 103 */       throw new InvalidSkinException("Invalid body characteristic!");
+/* 103 */       throw new InvalidSkinException("body", skin.bodyCharacteristic);
 /*     */     }
 /* 105 */     if (!isValidAttachment(this.registry.getUnderwear(), skin.underwear, true)) {
-/* 106 */       throw new InvalidSkinException("Invalid underwear attachment!");
+/* 106 */       throw new InvalidSkinException("underwear", skin.underwear);
 /*     */     }
 /* 108 */     if (!isValidAttachment(this.registry.getEyes(), skin.eyes, true)) {
-/* 109 */       throw new InvalidSkinException("Invalid eye attachment!");
+/* 109 */       throw new InvalidSkinException("eyes", skin.eyes);
 /*     */     }
 /* 111 */     if (!isValidAttachment(this.registry.getSkinFeatures(), skin.skinFeature)) {
-/* 112 */       throw new InvalidSkinException("Invalid skin feature attachment!");
+/* 112 */       throw new InvalidSkinException("skin feature", skin.skinFeature);
 /*     */     }
 /* 114 */     if (!isValidAttachment(this.registry.getEyebrows(), skin.eyebrows)) {
-/* 115 */       throw new InvalidSkinException("Invalid eye brows attachment!");
+/* 115 */       throw new InvalidSkinException("eyebrows", skin.eyebrows);
 /*     */     }
 /* 117 */     if (!isValidAttachment(this.registry.getPants(), skin.pants)) {
-/* 118 */       throw new InvalidSkinException("Invalid pants attachment!");
+/* 118 */       throw new InvalidSkinException("pants", skin.pants);
 /*     */     }
 /* 120 */     if (!isValidAttachment(this.registry.getOverpants(), skin.overpants)) {
-/* 121 */       throw new InvalidSkinException("Invalid overpants attachment!");
+/* 121 */       throw new InvalidSkinException("overpants", skin.overpants);
 /*     */     }
 /* 123 */     if (!isValidAttachment(this.registry.getShoes(), skin.shoes)) {
-/* 124 */       throw new InvalidSkinException("Invalid shoes attachment!");
+/* 124 */       throw new InvalidSkinException("shoes", skin.shoes);
 /*     */     }
 /* 126 */     if (!isValidAttachment(this.registry.getUndertops(), skin.undertop)) {
-/* 127 */       throw new InvalidSkinException("Invalid under top attachment!");
+/* 127 */       throw new InvalidSkinException("undertop", skin.undertop);
 /*     */     }
 /* 129 */     if (!isValidAttachment(this.registry.getOvertops(), skin.overtop)) {
-/* 130 */       throw new InvalidSkinException("Invalid over top attachment!");
+/* 130 */       throw new InvalidSkinException("overtop", skin.overtop);
 /*     */     }
 /* 132 */     if (!isValidAttachment(this.registry.getGloves(), skin.gloves)) {
-/* 133 */       throw new InvalidSkinException("Invalid gloves attachment!");
+/* 133 */       throw new InvalidSkinException("gloves", skin.gloves);
 /*     */     }
 /* 135 */     if (!isValidAttachment(this.registry.getHeadAccessories(), skin.headAccessory)) {
-/* 136 */       throw new InvalidSkinException("Invalid head accessory attachment!");
+/* 136 */       throw new InvalidSkinException("head accessory", skin.headAccessory);
 /*     */     }
 /* 138 */     if (!isValidAttachment(this.registry.getFaceAccessories(), skin.faceAccessory)) {
-/* 139 */       throw new InvalidSkinException("Invalid face accessory attachment!");
+/* 139 */       throw new InvalidSkinException("face accessory", skin.faceAccessory);
 /*     */     }
 /* 141 */     if (!isValidAttachment(this.registry.getEarAccessories(), skin.earAccessory)) {
-/* 142 */       throw new InvalidSkinException("Invalid ear accessory attachment!");
+/* 142 */       throw new InvalidSkinException("ear accessory", skin.earAccessory);
 /*     */     }
 /* 144 */     if (!isValidHaircutAttachment(skin.haircut, skin.headAccessory)) {
-/* 145 */       throw new InvalidSkinException("Invalid haircut attachment!");
+/* 145 */       throw new InvalidSkinException("haircut", skin.haircut);
 /*     */     }
 /* 147 */     if (!isValidAttachment(this.registry.getFacialHairs(), skin.facialHair)) {
-/* 148 */       throw new InvalidSkinException("Invalid facial accessory attachment!");
+/* 148 */       throw new InvalidSkinException("facial hair", skin.facialHair);
 /*     */     }
 /* 150 */     if (!isValidAttachment(this.registry.getCapes(), skin.cape)) {
-/* 151 */       throw new InvalidSkinException("Invalid capes attachment!");
+/* 151 */       throw new InvalidSkinException("cape", skin.cape);
 /*     */     }
 /*     */   }
 /*     */   
@@ -318,9 +318,23 @@
 /*     */   }
 /*     */   
 /*     */   public static class InvalidSkinException extends Exception {
-/*     */     public InvalidSkinException(String message) {
-/* 322 */       super(message);
+/*     */     private final String partType;
+/*     */     private final String partId;
+/*     */     
+/*     */     public InvalidSkinException(String partType, @Nullable String partId) {
+/* 325 */       super(formatMessage(partType, partId));
+/* 326 */       this.partType = partType;
+/* 327 */       this.partId = partId;
 /*     */     }
+/*     */     
+/*     */     private static String formatMessage(String partType, @Nullable String partId) {
+/* 331 */       return (partId == null) ? ("Missing required " + partType) : ("Unknown " + 
+/* 332 */         partType + ": " + partId);
+/*     */     }
+/*     */     
+/* 335 */     public String getPartType() { return this.partType; } @Nullable
+/* 336 */     public String getPartId() { return this.partId; }
+/*     */   
 /*     */   }
 /*     */ }
 

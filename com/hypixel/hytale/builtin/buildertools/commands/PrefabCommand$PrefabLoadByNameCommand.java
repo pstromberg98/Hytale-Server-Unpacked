@@ -116,23 +116,89 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class PrefabLoadByNameCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/* 123 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.prefab.load.name.desc", (ArgumentType)ArgTypes.STRING);
+/* 189 */   private final RequiredArg<String> nameArg = withRequiredArg("name", "server.commands.prefab.load.name.desc", (ArgumentType)ArgTypes.STRING);
 /*     */   
 /*     */   @Nonnull
-/* 126 */   private final DefaultArg<String> storeTypeArg = withDefaultArg("storeType", "server.commands.prefab.load.storeType.desc", (ArgumentType)ArgTypes.STRING, "asset", "server.commands.prefab.load.storeType.desc");
+/* 192 */   private final DefaultArg<String> storeTypeArg = withDefaultArg("storeType", "server.commands.prefab.load.storeType.desc", (ArgumentType)ArgTypes.STRING, "asset", "server.commands.prefab.load.storeType.desc");
 /*     */   
 /*     */   @Nonnull
-/* 129 */   private final DefaultArg<String> storeNameArg = withDefaultArg("storeName", "server.commands.prefab.load.storeName.desc", (ArgumentType)ArgTypes.STRING, null, "");
+/* 195 */   private final DefaultArg<String> storeNameArg = withDefaultArg("storeName", "server.commands.prefab.load.storeName.desc", (ArgumentType)ArgTypes.STRING, null, "");
 /*     */   
 /*     */   @Nonnull
-/* 132 */   private final FlagArg childrenFlag = withFlagArg("children", "server.commands.prefab.load.children.desc");
+/* 198 */   private final FlagArg childrenFlag = withFlagArg("children", "server.commands.prefab.load.children.desc");
 /*     */   
 /*     */   public PrefabLoadByNameCommand() {
-/* 135 */     super("server.commands.prefab.load.desc");
+/* 201 */     super("server.commands.prefab.load.desc");
 /*     */   }
 /*     */ 
 /*     */ 
@@ -141,72 +207,72 @@
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
 /*     */     BiFunction<String, Random, BlockSelection> loader;
 /*     */     Path foundPath, storePath;
-/* 144 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 145 */     assert playerComponent != null;
+/* 210 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 211 */     assert playerComponent != null;
 /*     */     
-/* 147 */     String storeType = (String)this.storeTypeArg.get(context);
-/* 148 */     String storeName = (String)this.storeNameArg.get(context);
-/* 149 */     String name = (String)this.nameArg.get(context);
+/* 213 */     String storeType = (String)this.storeTypeArg.get(context);
+/* 214 */     String storeName = (String)this.storeNameArg.get(context);
+/* 215 */     String name = (String)this.nameArg.get(context);
 /*     */     
-/* 151 */     if (!name.endsWith(".prefab.json")) {
-/* 152 */       name = name + ".prefab.json";
+/* 217 */     if (!name.endsWith(".prefab.json")) {
+/* 218 */       name = name + ".prefab.json";
 /*     */     }
 /*     */     
-/* 155 */     Path prefabStorePath = null;
-/* 156 */     Path resolvedPrefabPath = null;
-/* 157 */     String finalName = name;
+/* 221 */     Path prefabStorePath = null;
+/* 222 */     Path resolvedPrefabPath = null;
+/* 223 */     String finalName = name;
 /*     */     
-/* 159 */     switch (storeType) {
+/* 225 */     switch (storeType) {
 /*     */       case "server":
-/* 161 */         prefabStorePath = PrefabStore.get().getServerPrefabsPath();
-/* 162 */         Objects.requireNonNull(PrefabStore.get());
+/* 227 */         prefabStorePath = PrefabStore.get().getServerPrefabsPath();
+/* 228 */         Objects.requireNonNull(PrefabStore.get());
 /*     */ 
 /*     */       
 /*     */       case "asset":
-/* 166 */         foundPath = PrefabStore.get().findAssetPrefabPath(finalName);
-/* 167 */         if (foundPath != null) {
-/* 168 */           resolvedPrefabPath = foundPath;
-/* 169 */           prefabStorePath = foundPath.getParent();
+/* 232 */         foundPath = PrefabStore.get().findAssetPrefabPath(finalName);
+/* 233 */         if (foundPath != null) {
+/* 234 */           resolvedPrefabPath = foundPath;
+/* 235 */           prefabStorePath = foundPath.getParent();
 /*     */         } 
 /*     */ 
 /*     */         
-/* 173 */         prefabStorePath = PrefabStore.get().getAssetPrefabsPath();
-/* 174 */         Objects.requireNonNull(PrefabStore.get());
+/* 239 */         prefabStorePath = PrefabStore.get().getAssetPrefabsPath();
+/* 240 */         Objects.requireNonNull(PrefabStore.get());
 /*     */       
 /*     */       case "worldgen":
-/* 177 */         storePath = PrefabStore.get().getWorldGenPrefabsPath(storeName);
-/* 178 */         prefabStorePath = PrefabStore.get().getWorldGenPrefabsPath(storeName);
+/* 243 */         storePath = PrefabStore.get().getWorldGenPrefabsPath(storeName);
+/* 244 */         prefabStorePath = PrefabStore.get().getWorldGenPrefabsPath(storeName);
 /*     */ 
 /*     */       
 /*     */       default:
-/* 182 */         context.sendMessage(Message.translation("server.commands.prefab.invalidStoreType")
-/* 183 */             .param("storeType", storeType)); break;
-/* 184 */     }  Function<String, BlockSelection> prefabGetter = null;
+/* 248 */         context.sendMessage(Message.translation("server.commands.prefab.invalidStoreType")
+/* 249 */             .param("storeType", storeType)); break;
+/* 250 */     }  Function<String, BlockSelection> prefabGetter = null;
 /*     */ 
 /*     */ 
 /*     */     
-/* 188 */     if (prefabGetter == null) {
+/* 254 */     if (prefabGetter == null) {
 /*     */       return;
 /*     */     }
 /*     */ 
 /*     */     
-/* 193 */     Path finalPrefabStorePath = prefabStorePath;
-/* 194 */     if (((Boolean)this.childrenFlag.get(context)).booleanValue()) {
-/* 195 */       RecursivePrefabLoader.BlockSelectionLoader blockSelectionLoader = new RecursivePrefabLoader.BlockSelectionLoader(finalPrefabStorePath, prefabGetter);
+/* 259 */     Path finalPrefabStorePath = prefabStorePath;
+/* 260 */     if (((Boolean)this.childrenFlag.get(context)).booleanValue()) {
+/* 261 */       RecursivePrefabLoader.BlockSelectionLoader blockSelectionLoader = new RecursivePrefabLoader.BlockSelectionLoader(finalPrefabStorePath, prefabGetter);
 /*     */     } else {
-/* 197 */       loader = ((prefabFile, rand) -> (BlockSelection)prefabGetter.apply(prefabFile));
+/* 263 */       loader = ((prefabFile, rand) -> (BlockSelection)prefabGetter.apply(prefabFile));
 /*     */     } 
 /*     */ 
 /*     */ 
 /*     */     
-/* 202 */     boolean prefabExists = ((resolvedPrefabPath != null && Files.isRegularFile(resolvedPrefabPath, new java.nio.file.LinkOption[0])) || Files.isRegularFile(prefabStorePath.resolve(name), new java.nio.file.LinkOption[0]));
+/* 268 */     boolean prefabExists = ((resolvedPrefabPath != null && Files.isRegularFile(resolvedPrefabPath, new java.nio.file.LinkOption[0])) || Files.isRegularFile(prefabStorePath.resolve(name), new java.nio.file.LinkOption[0]));
 /*     */     
-/* 204 */     if (prefabExists) {
-/* 205 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> s.load(finalName, loader.apply(finalName, s.getRandom()), componentAccessor));
+/* 270 */     if (prefabExists) {
+/* 271 */       BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> s.load(finalName, loader.apply(finalName, s.getRandom()), componentAccessor));
 /*     */     } else {
 /*     */       
-/* 208 */       context.sendMessage(Message.translation("server.builderTools.prefab.prefabNotFound")
-/* 209 */           .param("name", name));
+/* 274 */       context.sendMessage(Message.translation("server.builderTools.prefab.prefabNotFound")
+/* 275 */           .param("name", name));
 /*     */     } 
 /*     */   }
 /*     */ }

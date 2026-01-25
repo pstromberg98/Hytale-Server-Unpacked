@@ -6,6 +6,7 @@
 /*     */ import com.hypixel.hytale.component.ComponentAccessor;
 /*     */ import com.hypixel.hytale.component.Ref;
 /*     */ import com.hypixel.hytale.component.Store;
+/*     */ import com.hypixel.hytale.math.vector.Vector3i;
 /*     */ import com.hypixel.hytale.protocol.SoundCategory;
 /*     */ import com.hypixel.hytale.server.core.Message;
 /*     */ import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -113,103 +114,137 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class CopyRegionCommand
 /*     */   extends AbstractPlayerCommand
 /*     */ {
 /*     */   @Nonnull
-/* 120 */   private final RequiredArg<Integer> xMinArg = withRequiredArg("xMin", "server.commands.copy.xMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 148 */   private final RequiredArg<Integer> xMinArg = withRequiredArg("xMin", "server.commands.copy.xMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 126 */   private final RequiredArg<Integer> yMinArg = withRequiredArg("yMin", "server.commands.copy.yMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 154 */   private final RequiredArg<Integer> yMinArg = withRequiredArg("yMin", "server.commands.copy.yMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 132 */   private final RequiredArg<Integer> zMinArg = withRequiredArg("zMin", "server.commands.copy.zMin.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 160 */   private final RequiredArg<Integer> zMinArg = withRequiredArg("zMin", "server.commands.copy.zMin.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 138 */   private final RequiredArg<Integer> xMaxArg = withRequiredArg("xMax", "server.commands.copy.xMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 166 */   private final RequiredArg<Integer> xMaxArg = withRequiredArg("xMax", "server.commands.copy.xMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 144 */   private final RequiredArg<Integer> yMaxArg = withRequiredArg("yMax", "server.commands.copy.yMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 172 */   private final RequiredArg<Integer> yMaxArg = withRequiredArg("yMax", "server.commands.copy.yMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 150 */   private final RequiredArg<Integer> zMaxArg = withRequiredArg("zMax", "server.commands.copy.zMax.desc", (ArgumentType)ArgTypes.INTEGER);
+/* 178 */   private final RequiredArg<Integer> zMaxArg = withRequiredArg("zMax", "server.commands.copy.zMax.desc", (ArgumentType)ArgTypes.INTEGER);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 156 */   private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
+/* 184 */   private final FlagArg noEntitiesFlag = withFlagArg("noEntities", "server.commands.copy.noEntities.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 162 */   private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
+/* 190 */   private final FlagArg entitiesOnlyFlag = withFlagArg("onlyEntities", "server.commands.copy.entitiesonly.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 168 */   private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
+/* 196 */   private final FlagArg emptyFlag = withFlagArg("empty", "server.commands.copy.empty.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 174 */   private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/* 202 */   private final FlagArg keepAnchorsFlag = withFlagArg("keepanchors", "server.commands.copy.keepanchors.desc");
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
+/* 208 */   private final FlagArg playerAnchorFlag = withFlagArg("playerAnchor", "server.commands.copy.playerAnchor.desc");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public CopyRegionCommand() {
-/* 180 */     super("server.commands.copy.desc");
+/* 214 */     super("server.commands.copy.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/* 185 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
-/* 186 */     assert playerComponent != null;
+/* 219 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 220 */     assert playerComponent != null;
 /*     */     
-/* 188 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
+/* 222 */     if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, (ComponentAccessor)store))
 /*     */       return; 
-/* 190 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
-/* 191 */     boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
-/* 192 */     boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
+/* 224 */     BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
+/* 225 */     boolean entitiesOnly = ((Boolean)this.entitiesOnlyFlag.get(context)).booleanValue();
+/* 226 */     boolean noEntities = ((Boolean)this.noEntitiesFlag.get(context)).booleanValue();
 /*     */     
-/* 194 */     int settings = 0;
-/* 195 */     if (!entitiesOnly) settings |= 0x8; 
-/* 196 */     if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
-/* 197 */     if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
+/* 228 */     int settings = 0;
+/* 229 */     if (!entitiesOnly) settings |= 0x8; 
+/* 230 */     if (((Boolean)this.emptyFlag.get(context)).booleanValue()) settings |= 0x4; 
+/* 231 */     if (((Boolean)this.keepAnchorsFlag.get(context)).booleanValue()) settings |= 0x40;
 /*     */     
-/* 199 */     if (!noEntities || entitiesOnly) settings |= 0x10;
+/* 233 */     if (!noEntities || entitiesOnly) settings |= 0x10;
 /*     */     
-/* 201 */     int xMin = ((Integer)this.xMinArg.get(context)).intValue();
-/* 202 */     int yMin = ((Integer)this.yMinArg.get(context)).intValue();
-/* 203 */     int zMin = ((Integer)this.zMinArg.get(context)).intValue();
-/* 204 */     int xMax = ((Integer)this.xMaxArg.get(context)).intValue();
-/* 205 */     int yMax = ((Integer)this.yMaxArg.get(context)).intValue();
-/* 206 */     int zMax = ((Integer)this.zMaxArg.get(context)).intValue();
+/* 235 */     int xMin = ((Integer)this.xMinArg.get(context)).intValue();
+/* 236 */     int yMin = ((Integer)this.yMinArg.get(context)).intValue();
+/* 237 */     int zMin = ((Integer)this.zMinArg.get(context)).intValue();
+/* 238 */     int xMax = ((Integer)this.xMaxArg.get(context)).intValue();
+/* 239 */     int yMax = ((Integer)this.yMaxArg.get(context)).intValue();
+/* 240 */     int zMax = ((Integer)this.zMaxArg.get(context)).intValue();
 /*     */     
-/* 208 */     int copySettings = settings;
-/* 209 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
+/* 242 */     int copySettings = settings;
+/* 243 */     Vector3i playerAnchor = CopyCommand.getPlayerAnchor(ref, store, ((Boolean)this.playerAnchorFlag.get(context)).booleanValue());
+/* 244 */     BuilderToolsPlugin.addToQueue(playerComponent, playerRef, (r, s, componentAccessor) -> {
 /*     */           try {
-/*     */             builderState.copyOrCut(r, xMin, yMin, zMin, xMax, yMax, zMax, copySettings, componentAccessor);
-/* 212 */           } catch (PrefabCopyException e) {
+/*     */             builderState.copyOrCut(r, xMin, yMin, zMin, xMax, yMax, zMax, copySettings, playerAnchor, componentAccessor);
+/* 247 */           } catch (PrefabCopyException e) {
 /*     */             context.sendMessage(Message.translation("server.builderTools.copycut.copyFailedReason").param("reason", e.getMessage()));
 /*     */             SoundUtil.playSoundEvent2d(r, TempAssetIdUtil.getSoundEventIndex("CREATE_ERROR"), SoundCategory.UI, componentAccessor);
 /*     */           } 

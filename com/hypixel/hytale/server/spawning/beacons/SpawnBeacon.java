@@ -114,30 +114,33 @@
 /* 114 */     int spawnedCount = 0;
 /* 115 */     for (int i = 0; i < concurrentSpawns; i++) {
 /* 116 */       RoleSpawnParameters roleSpawnParameters = this.spawnWrapper.pickRole(ThreadLocalRandom.current());
-/* 117 */       int roleIndex = NPCPlugin.get().getIndex(roleSpawnParameters.getId());
-/* 118 */       if (!this.unspawnableRoles.contains(roleIndex)) {
+/* 117 */       if (roleSpawnParameters != null) {
 /*     */         
-/* 120 */         ISpawnableWithModel spawnable = (ISpawnableWithModel)NPCPlugin.get().tryGetCachedValidRole(roleIndex);
-/* 121 */         this.spawningContext.setSpawnable(spawnable);
-/*     */         
-/* 123 */         if (!positionSelector.hasPositionsForRole(roleIndex)) {
-/* 124 */           markUnspawnable(ref, roleIndex, (ComponentAccessor<EntityStore>)store);
-/* 125 */           this.spawningContext.releaseFull();
-/*     */         
-/*     */         }
-/*     */         else {
+/* 119 */         int roleIndex = NPCPlugin.get().getIndex(roleSpawnParameters.getId());
+/* 120 */         if (!this.unspawnableRoles.contains(roleIndex)) {
 /*     */           
-/* 130 */           Vector3d targetPos = ((TransformComponent)targetRef.getStore().getComponent(targetRef, TransformComponent.getComponentType())).getPosition();
-/* 131 */           if (!positionSelector.prepareSpawnContext(targetPos, concurrentSpawns, roleIndex, this.spawningContext, this.spawnWrapper)) {
-/* 132 */             this.spawningContext.releaseFull();
+/* 122 */           ISpawnableWithModel spawnable = (ISpawnableWithModel)NPCPlugin.get().tryGetCachedValidRole(roleIndex);
+/* 123 */           this.spawningContext.setSpawnable(spawnable);
+/*     */           
+/* 125 */           if (!positionSelector.hasPositionsForRole(roleIndex)) {
+/* 126 */             markUnspawnable(ref, roleIndex, (ComponentAccessor<EntityStore>)store);
+/* 127 */             this.spawningContext.releaseFull();
 /*     */           
 /*     */           }
 /*     */           else {
 /*     */             
-/* 137 */             Vector3d position = this.spawningContext.newPosition();
-/* 138 */             Vector3f rotation = this.spawningContext.newRotation();
-/* 139 */             FlockAsset flockDefinition = roleSpawnParameters.getFlockDefinition();
-/* 140 */             int flockSize = (flockDefinition != null) ? flockDefinition.pickFlockSize() : 1;
+/* 132 */             Vector3d targetPos = ((TransformComponent)targetRef.getStore().getComponent(targetRef, TransformComponent.getComponentType())).getPosition();
+/* 133 */             if (!positionSelector.prepareSpawnContext(targetPos, concurrentSpawns, roleIndex, this.spawningContext, this.spawnWrapper)) {
+/* 134 */               this.spawningContext.releaseFull();
+/*     */             
+/*     */             }
+/*     */             else {
+/*     */               
+/* 139 */               Vector3d position = this.spawningContext.newPosition();
+/* 140 */               Vector3f rotation = this.spawningContext.newRotation();
+/* 141 */               FlockAsset flockDefinition = roleSpawnParameters.getFlockDefinition();
+/* 142 */               int flockSize = (flockDefinition != null) ? flockDefinition.pickFlockSize() : 1;
+/*     */             } 
 /*     */           } 
 /*     */         } 
 /*     */       } 
@@ -154,39 +157,38 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */     
-/* 159 */     return (spawnedCount != 0);
+/* 161 */     return (spawnedCount != 0);
 /*     */   }
 /*     */   
 /*     */   protected void markUnspawnable(Ref<EntityStore> ref, int index, ComponentAccessor<EntityStore> componentAccessor) {
-/* 163 */     this.unspawnableRoles.add(index);
-/* 164 */     if (this.unspawnableRoles.size() >= this.spawnWrapper.getRoles().size()) {
-/* 165 */       UUIDComponent uuidComponent = (UUIDComponent)componentAccessor.getComponent(ref, UUIDComponent.getComponentType());
-/* 166 */       assert uuidComponent != null;
+/* 165 */     this.unspawnableRoles.add(index);
+/* 166 */     if (this.unspawnableRoles.size() >= this.spawnWrapper.getRoles().size()) {
+/* 167 */       UUIDComponent uuidComponent = (UUIDComponent)componentAccessor.getComponent(ref, UUIDComponent.getComponentType());
+/* 168 */       assert uuidComponent != null;
 /*     */       
-/* 168 */       LOGGER.at(Level.WARNING).log("Removed spawn beacon %s due to being unable to spawn any NPC types", uuidComponent.getUuid());
-/* 169 */       remove();
+/* 170 */       LOGGER.at(Level.WARNING).log("Removed spawn beacon %s due to being unable to spawn any NPC types", uuidComponent.getUuid());
+/* 171 */       remove();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   protected static void postSpawn(@Nonnull NPCEntity npc, @Nonnull Ref<EntityStore> selfRef, @Nonnull BeaconNPCSpawn spawn, Ref<EntityStore> targetRef, ComponentAccessor<EntityStore> componentAccessor) {
-/* 174 */     Role role = npc.getRole();
-/* 175 */     role.getMarkedEntitySupport().setMarkedEntity(spawn.getTargetSlot(), targetRef);
+/* 176 */     Role role = npc.getRole();
+/* 177 */     role.getMarkedEntitySupport().setMarkedEntity(spawn.getTargetSlot(), targetRef);
 /*     */     
-/* 177 */     String spawnState = spawn.getNpcSpawnState();
-/* 178 */     if (spawnState != null) {
-/* 179 */       role.getStateSupport().setState(selfRef, spawnState, spawn.getNpcSpawnSubState(), componentAccessor);
+/* 179 */     String spawnState = spawn.getNpcSpawnState();
+/* 180 */     if (spawnState != null) {
+/* 181 */       role.getStateSupport().setState(selfRef, spawnState, spawn.getNpcSpawnSubState(), componentAccessor);
 /*     */     }
-/* 181 */     NewSpawnStartTickingSystem.queueNewSpawn(selfRef, selfRef.getStore());
+/* 183 */     NewSpawnStartTickingSystem.queueNewSpawn(selfRef, selfRef.getStore());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 187 */     return "SpawnBeacon{spawnConfigId='" + this.spawnConfigId + "'} " + super
+/* 189 */     return "SpawnBeacon{spawnConfigId='" + this.spawnConfigId + "'} " + super
 /*     */       
-/* 189 */       .toString();
+/* 191 */       .toString();
 /*     */   }
 /*     */   
 /*     */   public SpawnBeacon() {}

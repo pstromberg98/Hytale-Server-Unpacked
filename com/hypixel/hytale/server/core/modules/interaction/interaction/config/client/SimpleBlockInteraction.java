@@ -242,45 +242,48 @@
 /* 242 */     BlockPosition targetBlockPos = context.getTargetBlock();
 /* 243 */     if (targetBlockPos == null)
 /*     */       return; 
-/* 245 */     World world = ((EntityStore)context.getCommandBuffer().getStore().getExternalData()).getWorld();
-/* 246 */     ChunkStore chunkStore = world.getChunkStore();
+/* 245 */     CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+/* 246 */     assert commandBuffer != null;
 /*     */     
-/* 248 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlockPos.x, targetBlockPos.z);
-/* 249 */     Ref<ChunkStore> chunkReference = chunkStore.getChunkReference(chunkIndex);
-/* 250 */     if (chunkReference == null || !chunkReference.isValid())
+/* 248 */     World world = ((EntityStore)commandBuffer.getStore().getExternalData()).getWorld();
+/* 249 */     ChunkStore chunkStore = world.getChunkStore();
+/*     */     
+/* 251 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(targetBlockPos.x, targetBlockPos.z);
+/* 252 */     Ref<ChunkStore> chunkReference = chunkStore.getChunkReference(chunkIndex);
+/* 253 */     if (chunkReference == null || !chunkReference.isValid())
 /*     */       return; 
-/* 252 */     BlockChunk blockChunk = (BlockChunk)chunkStore.getStore().getComponent(chunkReference, BlockChunk.getComponentType());
-/* 253 */     if (targetBlockPos.y < 0 || targetBlockPos.y >= 320)
-/* 254 */       return;  BlockSection section = blockChunk.getSectionAtBlockY(targetBlockPos.y);
+/* 255 */     BlockChunk blockChunk = (BlockChunk)chunkStore.getStore().getComponent(chunkReference, BlockChunk.getComponentType());
+/* 256 */     if (targetBlockPos.y < 0 || targetBlockPos.y >= 320)
+/* 257 */       return;  BlockSection section = blockChunk.getSectionAtBlockY(targetBlockPos.y);
 /*     */     
-/* 256 */     (context.getState()).blockPosition = new BlockPosition(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
-/* 257 */     (context.getState()).placedBlockId = section.get(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
-/* 258 */     RotationTuple resultRotation = section.getRotation(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
-/* 259 */     (context.getState()).blockRotation = new BlockRotation(resultRotation.yaw().toPacket(), resultRotation.pitch().toPacket(), resultRotation.roll().toPacket());
+/* 259 */     (context.getState()).blockPosition = new BlockPosition(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
+/* 260 */     (context.getState()).placedBlockId = section.get(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
+/* 261 */     RotationTuple resultRotation = section.getRotation(targetBlockPos.x, targetBlockPos.y, targetBlockPos.z);
+/* 262 */     (context.getState()).blockRotation = new BlockRotation(resultRotation.yaw().toPacket(), resultRotation.pitch().toPacket(), resultRotation.roll().toPacket());
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected Interaction generatePacket() {
-/* 265 */     return (Interaction)new com.hypixel.hytale.protocol.SimpleBlockInteraction();
+/* 268 */     return (Interaction)new com.hypixel.hytale.protocol.SimpleBlockInteraction();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void configurePacket(Interaction packet) {
-/* 270 */     super.configurePacket(packet);
-/* 271 */     com.hypixel.hytale.protocol.SimpleBlockInteraction p = (com.hypixel.hytale.protocol.SimpleBlockInteraction)packet;
-/* 272 */     p.useLatestTarget = this.useLatestTarget;
+/* 273 */     super.configurePacket(packet);
+/* 274 */     com.hypixel.hytale.protocol.SimpleBlockInteraction p = (com.hypixel.hytale.protocol.SimpleBlockInteraction)packet;
+/* 275 */     p.useLatestTarget = this.useLatestTarget;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean needsRemoteSync() {
-/* 277 */     return true;
+/* 280 */     return true;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 283 */     return "SimpleBlockInteraction{} " + super.toString();
+/* 286 */     return "SimpleBlockInteraction{} " + super.toString();
 /*     */   }
 /*     */   
 /*     */   protected abstract void interactWithBlock(@Nonnull World paramWorld, @Nonnull CommandBuffer<EntityStore> paramCommandBuffer, @Nonnull InteractionType paramInteractionType, @Nonnull InteractionContext paramInteractionContext, @Nullable ItemStack paramItemStack, @Nonnull Vector3i paramVector3i, @Nonnull CooldownHandler paramCooldownHandler);

@@ -1,7 +1,9 @@
 /*     */ package com.hypixel.hytale.server.core.ui.browser;
 /*     */ 
+/*     */ import java.nio.file.Path;
 /*     */ import java.util.List;
 /*     */ import java.util.Set;
+/*     */ import java.util.function.Predicate;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
 /*     */ 
@@ -38,88 +40,107 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class Builder
 /*     */ {
-/*  43 */   private String listElementId = "#FileList";
-/*  44 */   private String rootSelectorId = "#RootSelector";
-/*  45 */   private String searchInputId = "#SearchInput";
-/*  46 */   private String currentPathId = null;
-/*  47 */   private List<FileBrowserConfig.RootEntry> roots = List.of();
-/*  48 */   private Set<String> allowedExtensions = Set.of();
+/*  47 */   private String listElementId = "#FileList";
+/*  48 */   private String rootSelectorId = "#RootSelector";
+/*  49 */   private String searchInputId = "#SearchInput";
+/*  50 */   private String currentPathId = null;
+/*  51 */   private List<FileBrowserConfig.RootEntry> roots = List.of();
+/*  52 */   private Set<String> allowedExtensions = Set.of();
 /*     */   private boolean enableRootSelector = true;
 /*     */   private boolean enableSearch = true;
 /*     */   private boolean enableDirectoryNav = true;
 /*     */   private boolean enableMultiSelect = false;
-/*  53 */   private int maxResults = 50;
-/*  54 */   private FileListProvider customProvider = null;
+/*  57 */   private int maxResults = 50;
+/*  58 */   private FileListProvider customProvider = null;
+/*     */   private boolean assetPackMode = false;
+/*  60 */   private String assetPackSubPath = null;
+/*  61 */   private Predicate<Path> terminalDirectoryPredicate = null;
 /*     */   
 /*     */   public Builder listElementId(@Nonnull String listElementId) {
-/*  57 */     this.listElementId = listElementId;
-/*  58 */     return this;
+/*  64 */     this.listElementId = listElementId;
+/*  65 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder rootSelectorId(@Nullable String rootSelectorId) {
-/*  62 */     this.rootSelectorId = rootSelectorId;
-/*  63 */     return this;
+/*  69 */     this.rootSelectorId = rootSelectorId;
+/*  70 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder searchInputId(@Nullable String searchInputId) {
-/*  67 */     this.searchInputId = searchInputId;
-/*  68 */     return this;
+/*  74 */     this.searchInputId = searchInputId;
+/*  75 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder currentPathId(@Nullable String currentPathId) {
-/*  72 */     this.currentPathId = currentPathId;
-/*  73 */     return this;
+/*  79 */     this.currentPathId = currentPathId;
+/*  80 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder roots(@Nonnull List<FileBrowserConfig.RootEntry> roots) {
-/*  77 */     this.roots = roots;
-/*  78 */     return this;
+/*  84 */     this.roots = roots;
+/*  85 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder allowedExtensions(@Nonnull String... extensions) {
-/*  82 */     this.allowedExtensions = Set.of(extensions);
-/*  83 */     return this;
+/*  89 */     this.allowedExtensions = Set.of(extensions);
+/*  90 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder allowedExtensions(@Nonnull Set<String> extensions) {
-/*  87 */     this.allowedExtensions = extensions;
-/*  88 */     return this;
+/*  94 */     this.allowedExtensions = extensions;
+/*  95 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder enableRootSelector(boolean enable) {
-/*  92 */     this.enableRootSelector = enable;
-/*  93 */     return this;
+/*  99 */     this.enableRootSelector = enable;
+/* 100 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder enableSearch(boolean enable) {
-/*  97 */     this.enableSearch = enable;
-/*  98 */     return this;
+/* 104 */     this.enableSearch = enable;
+/* 105 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder enableDirectoryNav(boolean enable) {
-/* 102 */     this.enableDirectoryNav = enable;
-/* 103 */     return this;
+/* 109 */     this.enableDirectoryNav = enable;
+/* 110 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder enableMultiSelect(boolean enable) {
-/* 107 */     this.enableMultiSelect = enable;
-/* 108 */     return this;
+/* 114 */     this.enableMultiSelect = enable;
+/* 115 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder maxResults(int maxResults) {
-/* 112 */     this.maxResults = maxResults;
-/* 113 */     return this;
+/* 119 */     this.maxResults = maxResults;
+/* 120 */     return this;
 /*     */   }
 /*     */   
 /*     */   public Builder customProvider(@Nullable FileListProvider provider) {
-/* 117 */     this.customProvider = provider;
-/* 118 */     return this;
+/* 124 */     this.customProvider = provider;
+/* 125 */     return this;
+/*     */   }
+/*     */   
+/*     */   public Builder assetPackMode(boolean enable, @Nullable String subPath) {
+/* 129 */     if (enable && subPath == null) {
+/* 130 */       throw new IllegalArgumentException("assetPackSubPath cannot be null when assetPackMode is enabled");
+/*     */     }
+/* 132 */     this.assetPackMode = enable;
+/* 133 */     this.assetPackSubPath = subPath;
+/* 134 */     return this;
+/*     */   }
+/*     */   
+/*     */   public Builder terminalDirectoryPredicate(@Nullable Predicate<Path> predicate) {
+/* 138 */     this.terminalDirectoryPredicate = predicate;
+/* 139 */     return this;
 /*     */   }
 /*     */   
 /*     */   public FileBrowserConfig build() {
-/* 122 */     return new FileBrowserConfig(this.listElementId, this.rootSelectorId, this.searchInputId, this.currentPathId, this.roots, this.allowedExtensions, this.enableRootSelector, this.enableSearch, this.enableDirectoryNav, this.enableMultiSelect, this.maxResults, this.customProvider);
+/* 143 */     return new FileBrowserConfig(this.listElementId, this.rootSelectorId, this.searchInputId, this.currentPathId, this.roots, this.allowedExtensions, this.enableRootSelector, this.enableSearch, this.enableDirectoryNav, this.enableMultiSelect, this.maxResults, this.customProvider, this.assetPackMode, this.assetPackSubPath, this.terminalDirectoryPredicate);
 /*     */   }
 /*     */ }
 

@@ -449,45 +449,30 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class ItemContainerStateRefSystem
 /*     */   extends RefSystem<ChunkStore>
 /*     */ {
-/* 470 */   private static final Query<ChunkStore> query = (Query)BlockStateModule.get().getComponentType(ItemContainerState.class);
+/* 455 */   private static final Query<ChunkStore> query = (Query)BlockStateModule.get().getComponentType(ItemContainerState.class);
 /*     */ 
 /*     */   
 /*     */   public Query<ChunkStore> getQuery() {
-/* 474 */     return query;
+/* 459 */     return query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 479 */     ((BlockModule.BlockStateInfoNeedRebuild)((ChunkStore)commandBuffer.getExternalData()).getWorld().getChunkStore().getStore().getResource(BlockModule.BlockStateInfoNeedRebuild.getResourceType())).markAsNeedRebuild();
+/* 464 */     ((BlockModule.BlockStateInfoNeedRebuild)((ChunkStore)commandBuffer.getExternalData()).getWorld().getChunkStore().getStore().getResource(BlockModule.BlockStateInfoNeedRebuild.getResourceType())).markAsNeedRebuild();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void onEntityRemove(@Nonnull Ref<ChunkStore> ref, @Nonnull RemoveReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
-/* 484 */     ((BlockModule.BlockStateInfoNeedRebuild)((ChunkStore)commandBuffer.getExternalData()).getWorld().getChunkStore().getStore().getResource(BlockModule.BlockStateInfoNeedRebuild.getResourceType())).markAsNeedRebuild();
+/* 469 */     ((BlockModule.BlockStateInfoNeedRebuild)((ChunkStore)commandBuffer.getExternalData()).getWorld().getChunkStore().getStore().getResource(BlockModule.BlockStateInfoNeedRebuild.getResourceType())).markAsNeedRebuild();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 490 */     return "ItemContainerStateRefSystem{}";
+/* 475 */     return "ItemContainerStateRefSystem{}";
 /*     */   }
 /*     */ }
 

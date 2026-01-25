@@ -1,10 +1,10 @@
 /*     */ package com.hypixel.hytale.builtin.blockspawner;
-/*     */ 
 /*     */ import com.hypixel.hytale.assetstore.AssetMap;
 /*     */ import com.hypixel.hytale.assetstore.AssetRegistry;
 /*     */ import com.hypixel.hytale.assetstore.AssetStore;
 /*     */ import com.hypixel.hytale.assetstore.codec.AssetCodec;
 /*     */ import com.hypixel.hytale.assetstore.map.DefaultAssetMap;
+/*     */ import com.hypixel.hytale.builtin.blockphysics.PrefabBufferValidator;
 /*     */ import com.hypixel.hytale.builtin.blockspawner.command.BlockSpawnerCommand;
 /*     */ import com.hypixel.hytale.builtin.blockspawner.state.BlockSpawner;
 /*     */ import com.hypixel.hytale.codec.Codec;
@@ -65,24 +65,58 @@
 /*     */     
 /*  66 */     getChunkStoreRegistry().registerSystem((ISystem)new BlockSpawnerSystem());
 /*  67 */     getChunkStoreRegistry().registerSystem((ISystem)new MigrateBlockSpawner());
+/*     */     
+/*  69 */     getEventRegistry().registerGlobal(PrefabBufferValidator.ValidateBlockEvent.class, BlockSpawnerPlugin::validatePrefabBlock);
+/*     */   }
+/*     */   
+/*     */   private static void validatePrefabBlock(PrefabBufferValidator.ValidateBlockEvent validateBlockEvent) {
+/*  73 */     Holder<ChunkStore> holder = validateBlockEvent.holder();
+/*  74 */     if (holder == null)
+/*  75 */       return;  BlockSpawner spawner = (BlockSpawner)holder.getComponent(BlockSpawner.getComponentType());
+/*  76 */     if (spawner == null)
+/*     */       return; 
+/*  78 */     BlockType blockType = (BlockType)BlockType.getAssetMap().getAsset(validateBlockEvent.blockId());
+/*  79 */     if (blockType == null)
+/*     */       return; 
+/*  81 */     if (spawner.getBlockSpawnerId() == null) {
+/*  82 */       validateBlockEvent.reason().append("\t Block ")
+/*  83 */         .append(blockType.getId())
+/*  84 */         .append(" at ")
+/*  85 */         .append(validateBlockEvent.x()).append(", ").append(validateBlockEvent.y()).append(", ").append(validateBlockEvent.z())
+/*  86 */         .append(" has no defined block spawner id")
+/*  87 */         .append('\n');
+/*     */       
+/*     */       return;
+/*     */     } 
+/*  91 */     BlockSpawnerTable blockSpawner = (BlockSpawnerTable)BlockSpawnerTable.getAssetMap().getAsset(spawner.getBlockSpawnerId());
+/*  92 */     if (blockSpawner == null) {
+/*  93 */       validateBlockEvent.reason().append("\t Block ")
+/*  94 */         .append(blockType.getId())
+/*  95 */         .append(" at ")
+/*  96 */         .append(validateBlockEvent.x()).append(", ").append(validateBlockEvent.y()).append(", ").append(validateBlockEvent.z())
+/*  97 */         .append(" has an invalid spawner id ")
+/*  98 */         .append(spawner.getBlockSpawnerId())
+/*  99 */         .append('\n');
+/*     */     }
 /*     */   }
 /*     */   
 /*     */   public ComponentType<ChunkStore, BlockSpawner> getBlockSpawnerComponentType() {
-/*  71 */     return this.blockSpawnerComponentType;
+/* 104 */     return this.blockSpawnerComponentType;
 /*     */   }
 /*     */   
 /*     */   private static class BlockSpawnerSystem extends RefSystem<ChunkStore> {
-/*  75 */     private static final ComponentType<ChunkStore, BlockSpawner> COMPONENT_TYPE = BlockSpawner.getComponentType();
-/*  76 */     private static final ComponentType<ChunkStore, BlockModule.BlockStateInfo> BLOCK_INFO_COMPONENT_TYPE = BlockModule.BlockStateInfo.getComponentType();
-/*  77 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] { (Query)COMPONENT_TYPE, (Query)BLOCK_INFO_COMPONENT_TYPE });
+/* 108 */     private static final ComponentType<ChunkStore, BlockSpawner> COMPONENT_TYPE = BlockSpawner.getComponentType();
+/* 109 */     private static final ComponentType<ChunkStore, BlockModule.BlockStateInfo> BLOCK_INFO_COMPONENT_TYPE = BlockModule.BlockStateInfo.getComponentType();
+/* 110 */     private static final Query<ChunkStore> QUERY = (Query<ChunkStore>)Query.and(new Query[] { (Query)COMPONENT_TYPE, (Query)BLOCK_INFO_COMPONENT_TYPE });
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
 /*     */     public Query<ChunkStore> getQuery() {
-/*  84 */       return QUERY;
+/* 117 */       return QUERY;
 /*     */     }
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -332,50 +366,50 @@
 /*     */       //   536: return
 /*     */       // Line number table:
 /*     */       //   Java source line number -> byte code offset
-/*     */       //   #89	-> 0
-/*     */       //   #90	-> 15
-/*     */       //   #92	-> 27
-/*     */       //   #93	-> 41
-/*     */       //   #95	-> 60
-/*     */       //   #96	-> 74
-/*     */       //   #98	-> 93
-/*     */       //   #99	-> 100
-/*     */       //   #101	-> 106
-/*     */       //   #102	-> 119
-/*     */       //   #103	-> 124
-/*     */       //   #104	-> 142
-/*     */       //   #107	-> 143
-/*     */       //   #108	-> 150
-/*     */       //   #109	-> 156
-/*     */       //   #111	-> 171
-/*     */       //   #112	-> 189
-/*     */       //   #113	-> 199
-/*     */       //   #116	-> 217
-/*     */       //   #117	-> 224
-/*     */       //   #119	-> 244
-/*     */       //   #120	-> 261
-/*     */       //   #122	-> 267
-/*     */       //   #123	-> 274
-/*     */       //   #124	-> 322
-/*     */       //   #126	-> 328
-/*     */       //   #127	-> 335
-/*     */       //   #128	-> 351
-/*     */       //   #129	-> 359
-/*     */       //   #132	-> 365
-/*     */       //   #133	-> 386
-/*     */       //   #134	-> 402
-/*     */       //   #137	-> 418
-/*     */       //   #138	-> 425
-/*     */       //   #139	-> 441
-/*     */       //   #140	-> 449
-/*     */       //   #143	-> 455
-/*     */       //   #144	-> 471
-/*     */       //   #145	-> 478
-/*     */       //   #123	-> 494
-/*     */       //   #149	-> 496
-/*     */       //   #153	-> 503
-/*     */       //   #154	-> 512
-/*     */       //   #164	-> 536
+/*     */       //   #122	-> 0
+/*     */       //   #123	-> 15
+/*     */       //   #125	-> 27
+/*     */       //   #126	-> 41
+/*     */       //   #128	-> 60
+/*     */       //   #129	-> 74
+/*     */       //   #131	-> 93
+/*     */       //   #132	-> 100
+/*     */       //   #134	-> 106
+/*     */       //   #135	-> 119
+/*     */       //   #136	-> 124
+/*     */       //   #137	-> 142
+/*     */       //   #140	-> 143
+/*     */       //   #141	-> 150
+/*     */       //   #142	-> 156
+/*     */       //   #144	-> 171
+/*     */       //   #145	-> 189
+/*     */       //   #146	-> 199
+/*     */       //   #149	-> 217
+/*     */       //   #150	-> 224
+/*     */       //   #152	-> 244
+/*     */       //   #153	-> 261
+/*     */       //   #155	-> 267
+/*     */       //   #156	-> 274
+/*     */       //   #157	-> 322
+/*     */       //   #159	-> 328
+/*     */       //   #160	-> 335
+/*     */       //   #161	-> 351
+/*     */       //   #162	-> 359
+/*     */       //   #165	-> 365
+/*     */       //   #166	-> 386
+/*     */       //   #167	-> 402
+/*     */       //   #170	-> 418
+/*     */       //   #171	-> 425
+/*     */       //   #172	-> 441
+/*     */       //   #173	-> 449
+/*     */       //   #176	-> 455
+/*     */       //   #177	-> 471
+/*     */       //   #178	-> 478
+/*     */       //   #156	-> 494
+/*     */       //   #182	-> 496
+/*     */       //   #186	-> 503
+/*     */       //   #187	-> 512
+/*     */       //   #197	-> 536
 /*     */       // Local variable table:
 /*     */       //   start	length	slot	name	descriptor
 /*     */       //   335	83	22	key	Ljava/lang/String;
@@ -474,11 +508,11 @@
 /*     */     extends BlockModule.MigrationSystem
 /*     */   {
 /*     */     public void onEntityAdd(@Nonnull Holder<ChunkStore> holder, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store) {
-/* 174 */       UnknownComponents<ChunkStore> unknown = (UnknownComponents<ChunkStore>)holder.getComponent(ChunkStore.REGISTRY.getUnknownComponentType());
-/* 175 */       assert unknown != null;
-/* 176 */       BlockSpawner blockSpawner = (BlockSpawner)unknown.removeComponent("blockspawner", (Codec)BlockSpawner.CODEC);
-/* 177 */       if (blockSpawner != null) {
-/* 178 */         holder.putComponent(BlockSpawner.getComponentType(), (Component)blockSpawner);
+/* 208 */       UnknownComponents<ChunkStore> unknown = (UnknownComponents<ChunkStore>)holder.getComponent(ChunkStore.REGISTRY.getUnknownComponentType());
+/* 209 */       assert unknown != null;
+/* 210 */       BlockSpawner blockSpawner = (BlockSpawner)unknown.removeComponent("blockspawner", (Codec)BlockSpawner.CODEC);
+/* 211 */       if (blockSpawner != null) {
+/* 212 */         holder.putComponent(BlockSpawner.getComponentType(), (Component)blockSpawner);
 /*     */       }
 /*     */     }
 /*     */ 
@@ -490,7 +524,7 @@
 /*     */     
 /*     */     @Nullable
 /*     */     public Query<ChunkStore> getQuery() {
-/* 190 */       return (Query<ChunkStore>)ChunkStore.REGISTRY.getUnknownComponentType();
+/* 224 */       return (Query<ChunkStore>)ChunkStore.REGISTRY.getUnknownComponentType();
 /*     */     }
 /*     */   }
 /*     */ }

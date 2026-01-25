@@ -423,6 +423,8 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
 /*     */ final class PortalTypeNotFound
 /*     */   extends Record
 /*     */   implements PortalDeviceSummonPage.State
@@ -430,7 +432,7 @@
 /*     */   private final String portalTypeId;
 /*     */   
 /*     */   private PortalTypeNotFound(String portalTypeId) {
-/* 433 */     this.portalTypeId = portalTypeId; } public String portalTypeId() { return this.portalTypeId; }
+/* 435 */     this.portalTypeId = portalTypeId; } public String portalTypeId() { return this.portalTypeId; }
 /*     */ 
 /*     */   
 /*     */   public final String toString() {
@@ -440,7 +442,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #433	-> 0
+/*     */     //   #435	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$PortalTypeNotFound;
@@ -453,7 +455,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #433	-> 0
+/*     */     //   #435	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$PortalTypeNotFound;
@@ -467,7 +469,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #433	-> 0
+/*     */     //   #435	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/builtin/portals/ui/PortalDeviceSummonPage$PortalTypeNotFound;

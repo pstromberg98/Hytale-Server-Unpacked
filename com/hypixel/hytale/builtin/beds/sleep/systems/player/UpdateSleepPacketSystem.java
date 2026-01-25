@@ -268,30 +268,31 @@
 /*     */   private SleepMultiplayer createSleepMultiplayer(@Nonnull Store<EntityStore> store) {
 /*  97 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*  98 */     List<PlayerRef> playerRefs = new ArrayList<>(world.getPlayerRefs());
-/*  99 */     if (playerRefs.size() <= 1) {
-/* 100 */       return null;
+/*  99 */     playerRefs.removeIf(playerRef -> (playerRef.getReference() == null));
+/* 100 */     if (playerRefs.size() <= 1) {
+/* 101 */       return null;
 /*     */     }
 /*     */     
-/* 103 */     playerRefs.sort(Comparator.comparingLong(ref -> (ref.getUuid().hashCode() + world.hashCode())));
+/* 104 */     playerRefs.sort(Comparator.comparingLong(ref -> (ref.getUuid().hashCode() + world.hashCode())));
 /*     */     
-/* 105 */     int sleepersCount = 0;
-/* 106 */     int awakeCount = 0;
+/* 106 */     int sleepersCount = 0;
+/* 107 */     int awakeCount = 0;
 /*     */     
-/* 108 */     List<UUID> awakeSampleList = new ArrayList<>(playerRefs.size());
-/* 109 */     for (PlayerRef playerRef : playerRefs) {
-/* 110 */       Ref<EntityStore> ref = playerRef.getReference();
-/* 111 */       boolean readyToSleep = StartSlumberSystem.isReadyToSleep((ComponentAccessor)store, ref);
-/* 112 */       if (readyToSleep) {
-/* 113 */         sleepersCount++; continue;
+/* 109 */     List<UUID> awakeSampleList = new ArrayList<>(playerRefs.size());
+/* 110 */     for (PlayerRef playerRef : playerRefs) {
+/* 111 */       Ref<EntityStore> ref = playerRef.getReference();
+/* 112 */       boolean readyToSleep = StartSlumberSystem.isReadyToSleep((ComponentAccessor)store, ref);
+/* 113 */       if (readyToSleep) {
+/* 114 */         sleepersCount++; continue;
 /*     */       } 
-/* 115 */       awakeCount++;
-/* 116 */       awakeSampleList.add(playerRef.getUuid());
+/* 116 */       awakeCount++;
+/* 117 */       awakeSampleList.add(playerRef.getUuid());
 /*     */     } 
 /*     */ 
 /*     */     
-/* 120 */     UUID[] awakeSample = (awakeSampleList.size() > 5) ? EMPTY_UUIDS : (UUID[])awakeSampleList.toArray(x$0 -> new UUID[x$0]);
+/* 121 */     UUID[] awakeSample = (awakeSampleList.size() > 5) ? EMPTY_UUIDS : (UUID[])awakeSampleList.toArray(x$0 -> new UUID[x$0]);
 /*     */     
-/* 122 */     return new SleepMultiplayer(sleepersCount, awakeCount, awakeSample);
+/* 123 */     return new SleepMultiplayer(sleepersCount, awakeCount, awakeSample);
 /*     */   }
 /*     */ }
 

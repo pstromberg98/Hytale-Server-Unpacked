@@ -2,7 +2,6 @@
 /*     */ import com.hypixel.hytale.assetstore.map.BlockTypeAssetMap;
 /*     */ import com.hypixel.hytale.assetstore.map.IndexedLookupTableAssetMap;
 /*     */ import com.hypixel.hytale.codec.builder.BuilderCodec;
-/*     */ import com.hypixel.hytale.common.collection.Flag;
 /*     */ import com.hypixel.hytale.common.collection.Flags;
 /*     */ import com.hypixel.hytale.common.util.CompletableFutureUtil;
 /*     */ import com.hypixel.hytale.component.AddReason;
@@ -18,6 +17,7 @@
 /*     */ import com.hypixel.hytale.math.util.ChunkUtil;
 /*     */ import com.hypixel.hytale.math.vector.Vector3i;
 /*     */ import com.hypixel.hytale.protocol.BlockParticleEvent;
+/*     */ import com.hypixel.hytale.protocol.Opacity;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blockhitbox.BlockBoundingBoxes;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktick.BlockTickManager;
 /*     */ import com.hypixel.hytale.server.core.asset.type.blocktick.config.TickProcedure;
@@ -28,17 +28,18 @@
 /*     */ import com.hypixel.hytale.server.core.modules.block.BlockModule;
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
 /*     */ import com.hypixel.hytale.server.core.universe.world.WorldNotificationHandler;
-/*     */ import com.hypixel.hytale.server.core.universe.world.accessor.BlockAccessor;
 /*     */ import com.hypixel.hytale.server.core.universe.world.accessor.ChunkAccessor;
 /*     */ import com.hypixel.hytale.server.core.universe.world.chunk.environment.EnvironmentChunk;
 /*     */ import com.hypixel.hytale.server.core.universe.world.chunk.section.BlockSection;
 /*     */ import com.hypixel.hytale.server.core.universe.world.chunk.section.FluidSection;
 /*     */ import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
+/*     */ import com.hypixel.hytale.server.core.universe.world.meta.BlockStateModule;
 /*     */ import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 /*     */ import com.hypixel.hytale.server.core.util.FillerBlockUtil;
 /*     */ import java.util.concurrent.CompletableFuture;
 /*     */ import java.util.concurrent.Executor;
+/*     */ import java.util.concurrent.atomic.AtomicInteger;
 /*     */ import java.util.concurrent.atomic.AtomicLong;
 /*     */ import java.util.concurrent.locks.StampedLock;
 /*     */ import java.util.logging.Level;
@@ -46,18 +47,18 @@
 /*     */ import javax.annotation.Nullable;
 /*     */ 
 /*     */ public class WorldChunk implements BlockAccessor, Component<ChunkStore> {
-/*  49 */   public static final BuilderCodec<WorldChunk> CODEC = BuilderCodec.builder(WorldChunk.class, WorldChunk::new)
-/*  50 */     .build(); public static final int KEEP_ALIVE_DEFAULT = 15;
+/*  50 */   public static final BuilderCodec<WorldChunk> CODEC = BuilderCodec.builder(WorldChunk.class, WorldChunk::new)
+/*  51 */     .build(); public static final int KEEP_ALIVE_DEFAULT = 15;
 /*     */   
 /*     */   public static ComponentType<ChunkStore, WorldChunk> getComponentType() {
-/*  53 */     return LegacyModule.get().getWorldChunkComponentType();
+/*  54 */     return LegacyModule.get().getWorldChunkComponentType();
 /*     */   }
 /*     */   
-/*  56 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+/*  57 */   private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 /*     */   
 /*     */   private World world;
 /*     */   
-/*  60 */   private final StampedLock flagsLock = new StampedLock();
+/*  61 */   private final StampedLock flagsLock = new StampedLock();
 /*     */   
 /*     */   private final Flags<ChunkFlag> flags;
 /*     */   
@@ -68,200 +69,200 @@
 /*     */   private BlockComponentChunk blockComponentChunk;
 /*     */   @Nullable
 /*     */   private EntityChunk entityChunk;
-/*  71 */   private int keepAlive = 15;
-/*  72 */   private int activeTimer = 15;
+/*  72 */   private int keepAlive = 15;
+/*  73 */   private int activeTimer = 15;
 /*     */   private boolean needsSaving;
 /*     */   private boolean isSaving;
-/*     */   private boolean keepLoaded;
+/*  76 */   private final AtomicInteger keepLoaded = new AtomicInteger();
 /*     */   private boolean lightingUpdatesEnabled = true;
 /*     */   @Deprecated
-/*  78 */   public final AtomicLong chunkLightTiming = new AtomicLong();
+/*  79 */   public final AtomicLong chunkLightTiming = new AtomicLong();
 /*     */ 
 /*     */   
 /*     */   private WorldChunk() {
-/*  82 */     this.flags = new Flags((Flag[])new ChunkFlag[0]);
+/*  83 */     this.flags = new Flags((Flag[])new ChunkFlag[0]);
 /*     */   }
 /*     */   
 /*     */   private WorldChunk(World world, Flags<ChunkFlag> flags) {
-/*  86 */     this.world = world;
-/*  87 */     this.flags = flags;
+/*  87 */     this.world = world;
+/*  88 */     this.flags = flags;
 /*     */   }
 /*     */   
 /*     */   public WorldChunk(World world, Flags<ChunkFlag> state, BlockChunk blockChunk, BlockComponentChunk blockComponentChunk, EntityChunk entityChunk) {
-/*  91 */     this(world, state);
-/*  92 */     this.blockChunk = blockChunk;
-/*  93 */     this.blockComponentChunk = blockComponentChunk;
-/*  94 */     this.entityChunk = entityChunk;
+/*  92 */     this(world, state);
+/*  93 */     this.blockChunk = blockChunk;
+/*  94 */     this.blockComponentChunk = blockComponentChunk;
+/*  95 */     this.entityChunk = entityChunk;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Holder<ChunkStore> toHolder() {
-/* 100 */     if (this.reference != null && this.reference.isValid() && this.world != null) {
-/* 101 */       Holder<ChunkStore> holder1 = ChunkStore.REGISTRY.newHolder();
-/* 102 */       Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
-/* 103 */       Archetype<ChunkStore> archetype = componentStore.getArchetype(this.reference);
-/* 104 */       for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
-/* 105 */         ComponentType componentType = archetype.get(i);
-/* 106 */         if (componentType != null)
-/* 107 */           holder1.addComponent(componentType, componentStore.getComponent(this.reference, componentType)); 
+/* 101 */     if (this.reference != null && this.reference.isValid() && this.world != null) {
+/* 102 */       Holder<ChunkStore> holder1 = ChunkStore.REGISTRY.newHolder();
+/* 103 */       Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
+/* 104 */       Archetype<ChunkStore> archetype = componentStore.getArchetype(this.reference);
+/* 105 */       for (int i = archetype.getMinIndex(); i < archetype.length(); i++) {
+/* 106 */         ComponentType componentType = archetype.get(i);
+/* 107 */         if (componentType != null)
+/* 108 */           holder1.addComponent(componentType, componentStore.getComponent(this.reference, componentType)); 
 /*     */       } 
-/* 109 */       return holder1;
+/* 110 */       return holder1;
 /*     */     } 
 /*     */     
-/* 112 */     Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
-/* 113 */     holder.addComponent(getComponentType(), this);
-/* 114 */     holder.addComponent(BlockChunk.getComponentType(), this.blockChunk);
-/* 115 */     holder.addComponent(EnvironmentChunk.getComponentType(), (Component)this.blockChunk.getEnvironmentChunk());
-/* 116 */     holder.addComponent(EntityChunk.getComponentType(), this.entityChunk);
-/* 117 */     holder.addComponent(BlockComponentChunk.getComponentType(), this.blockComponentChunk);
-/* 118 */     return holder;
+/* 113 */     Holder<ChunkStore> holder = ChunkStore.REGISTRY.newHolder();
+/* 114 */     holder.addComponent(getComponentType(), this);
+/* 115 */     holder.addComponent(BlockChunk.getComponentType(), this.blockChunk);
+/* 116 */     holder.addComponent(EnvironmentChunk.getComponentType(), (Component)this.blockChunk.getEnvironmentChunk());
+/* 117 */     holder.addComponent(EntityChunk.getComponentType(), this.entityChunk);
+/* 118 */     holder.addComponent(BlockComponentChunk.getComponentType(), this.blockComponentChunk);
+/* 119 */     return holder;
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public void setReference(Ref<ChunkStore> reference) {
-/* 123 */     if (this.reference != null && this.reference.isValid()) {
-/* 124 */       throw new IllegalArgumentException("Chunk already has a valid EntityReference: " + String.valueOf(this.reference) + " new reference " + String.valueOf(reference));
+/* 124 */     if (this.reference != null && this.reference.isValid()) {
+/* 125 */       throw new IllegalArgumentException("Chunk already has a valid EntityReference: " + String.valueOf(this.reference) + " new reference " + String.valueOf(reference));
 /*     */     }
-/* 126 */     this.reference = reference;
+/* 127 */     this.reference = reference;
 /*     */   }
 /*     */   
 /*     */   public Ref<ChunkStore> getReference() {
-/* 130 */     return this.reference;
+/* 131 */     return this.reference;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Component<ChunkStore> clone() {
-/* 136 */     return new WorldChunk();
+/* 137 */     return new WorldChunk();
 /*     */   }
 /*     */   
 /*     */   public boolean is(@Nonnull ChunkFlag flag) {
-/* 140 */     long stamp = this.flagsLock.tryOptimisticRead();
-/* 141 */     boolean value = this.flags.is(flag);
-/* 142 */     if (this.flagsLock.validate(stamp)) {
-/* 143 */       return value;
+/* 141 */     long stamp = this.flagsLock.tryOptimisticRead();
+/* 142 */     boolean value = this.flags.is(flag);
+/* 143 */     if (this.flagsLock.validate(stamp)) {
+/* 144 */       return value;
 /*     */     }
-/* 145 */     stamp = this.flagsLock.readLock();
+/* 146 */     stamp = this.flagsLock.readLock();
 /*     */     try {
-/* 147 */       return this.flags.is(flag);
+/* 148 */       return this.flags.is(flag);
 /*     */     } finally {
-/* 149 */       this.flagsLock.unlockRead(stamp);
+/* 150 */       this.flagsLock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public boolean not(@Nonnull ChunkFlag flag) {
-/* 154 */     long stamp = this.flagsLock.tryOptimisticRead();
-/* 155 */     boolean value = this.flags.not(flag);
-/* 156 */     if (this.flagsLock.validate(stamp)) {
-/* 157 */       return value;
+/* 155 */     long stamp = this.flagsLock.tryOptimisticRead();
+/* 156 */     boolean value = this.flags.not(flag);
+/* 157 */     if (this.flagsLock.validate(stamp)) {
+/* 158 */       return value;
 /*     */     }
-/* 159 */     stamp = this.flagsLock.readLock();
+/* 160 */     stamp = this.flagsLock.readLock();
 /*     */     try {
-/* 161 */       return this.flags.not(flag);
+/* 162 */       return this.flags.not(flag);
 /*     */     } finally {
-/* 163 */       this.flagsLock.unlockRead(stamp);
+/* 164 */       this.flagsLock.unlockRead(stamp);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void setFlag(@Nonnull ChunkFlag flag, boolean value) {
 /*     */     boolean isInit;
-/* 169 */     long lock = this.flagsLock.writeLock();
+/* 170 */     long lock = this.flagsLock.writeLock();
 /*     */     
 /*     */     try {
-/* 172 */       if (!this.flags.set(flag, value))
-/* 173 */         return;  isInit = this.flags.is(ChunkFlag.INIT);
+/* 173 */       if (!this.flags.set(flag, value))
+/* 174 */         return;  isInit = this.flags.is(ChunkFlag.INIT);
 /*     */     } finally {
-/* 175 */       this.flagsLock.unlockWrite(lock);
+/* 176 */       this.flagsLock.unlockWrite(lock);
 /*     */     } 
-/* 177 */     if (isInit)
+/* 178 */     if (isInit)
 /*     */     {
-/* 179 */       updateFlag(flag, value);
+/* 180 */       updateFlag(flag, value);
 /*     */     }
-/* 181 */     LOGGER.at(Level.FINER).log("[%d, %d] updated chunk flag (init: %s): %s, %s ", Integer.valueOf(getX()), Integer.valueOf(getZ()), Boolean.valueOf(isInit), flag, Boolean.valueOf(value));
+/* 182 */     LOGGER.at(Level.FINER).log("[%d, %d] updated chunk flag (init: %s): %s, %s ", Integer.valueOf(getX()), Integer.valueOf(getZ()), Boolean.valueOf(isInit), flag, Boolean.valueOf(value));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean toggleFlag(@Nonnull ChunkFlag flag) {
 /*     */     boolean value, isInit;
-/* 187 */     long lock = this.flagsLock.writeLock();
+/* 188 */     long lock = this.flagsLock.writeLock();
 /*     */     try {
-/* 189 */       value = this.flags.toggle(flag);
-/* 190 */       isInit = this.flags.is(ChunkFlag.INIT);
+/* 190 */       value = this.flags.toggle(flag);
+/* 191 */       isInit = this.flags.is(ChunkFlag.INIT);
 /*     */     } finally {
-/* 192 */       this.flagsLock.unlockWrite(lock);
+/* 193 */       this.flagsLock.unlockWrite(lock);
 /*     */     } 
-/* 194 */     if (isInit)
+/* 195 */     if (isInit)
 /*     */     {
-/* 196 */       updateFlag(flag, value);
+/* 197 */       updateFlag(flag, value);
 /*     */     }
-/* 198 */     LOGGER.at(Level.FINER).log("[%d, %d] updated chunk flag (init: %s): %s, %s ", Integer.valueOf(getX()), Integer.valueOf(getZ()), Boolean.valueOf(isInit), flag, Boolean.valueOf(value));
-/* 199 */     return value;
+/* 199 */     LOGGER.at(Level.FINER).log("[%d, %d] updated chunk flag (init: %s): %s, %s ", Integer.valueOf(getX()), Integer.valueOf(getZ()), Boolean.valueOf(isInit), flag, Boolean.valueOf(value));
+/* 200 */     return value;
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public void loadFromHolder(World world, int x, int z, @Nonnull Holder<ChunkStore> holder) {
-/* 204 */     this.world = world;
-/* 205 */     this.blockChunk = (BlockChunk)holder.getComponent(BlockChunk.getComponentType());
-/* 206 */     this.blockChunk.setEnvironmentChunk((EnvironmentChunk)holder.getComponent(EnvironmentChunk.getComponentType()));
-/* 207 */     this.blockComponentChunk = (BlockComponentChunk)holder.getComponent(BlockComponentChunk.getComponentType());
-/* 208 */     this.entityChunk = (EntityChunk)holder.getComponent(EntityChunk.getComponentType());
-/* 209 */     this.blockChunk.load(x, z);
+/* 205 */     this.world = world;
+/* 206 */     this.blockChunk = (BlockChunk)holder.getComponent(BlockChunk.getComponentType());
+/* 207 */     this.blockChunk.setEnvironmentChunk((EnvironmentChunk)holder.getComponent(EnvironmentChunk.getComponentType()));
+/* 208 */     this.blockComponentChunk = (BlockComponentChunk)holder.getComponent(BlockComponentChunk.getComponentType());
+/* 209 */     this.entityChunk = (EntityChunk)holder.getComponent(EntityChunk.getComponentType());
+/* 210 */     this.blockChunk.load(x, z);
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public void setBlockComponentChunk(BlockComponentChunk blockComponentChunk) {
-/* 214 */     this.blockComponentChunk = blockComponentChunk;
+/* 215 */     this.blockComponentChunk = blockComponentChunk;
 /*     */   }
 /*     */   
 /*     */   public void initFlags() {
-/* 218 */     this.world.debugAssertInTickingThread();
-/* 219 */     if (!is(ChunkFlag.START_INIT)) throw new IllegalArgumentException("START_INIT hasn't been set!"); 
-/* 220 */     if (is(ChunkFlag.INIT)) throw new IllegalArgumentException("INIT is already set!");
+/* 219 */     this.world.debugAssertInTickingThread();
+/* 220 */     if (!is(ChunkFlag.START_INIT)) throw new IllegalArgumentException("START_INIT hasn't been set!"); 
+/* 221 */     if (is(ChunkFlag.INIT)) throw new IllegalArgumentException("INIT is already set!");
 /*     */ 
 /*     */     
-/* 223 */     for (int i = 0; i < ChunkFlag.VALUES.length; i++) {
-/* 224 */       ChunkFlag flag = ChunkFlag.VALUES[i];
-/* 225 */       updateFlag(flag, is(flag));
+/* 224 */     for (int i = 0; i < ChunkFlag.VALUES.length; i++) {
+/* 225 */       ChunkFlag flag = ChunkFlag.VALUES[i];
+/* 226 */       updateFlag(flag, is(flag));
 /*     */     } 
-/* 227 */     setFlag(ChunkFlag.INIT, true);
+/* 228 */     setFlag(ChunkFlag.INIT, true);
 /*     */   }
 /*     */   
 /*     */   private void updateFlag(ChunkFlag flag, boolean value) {
-/* 231 */     if (flag == ChunkFlag.TICKING) {
+/* 232 */     if (flag == ChunkFlag.TICKING) {
 /*     */ 
 /*     */       
-/* 234 */       this.world.debugAssertInTickingThread();
-/* 235 */       resetKeepAlive();
-/* 236 */       if (value) {
-/* 237 */         startsTicking();
+/* 235 */       this.world.debugAssertInTickingThread();
+/* 236 */       resetKeepAlive();
+/* 237 */       if (value) {
+/* 238 */         startsTicking();
 /*     */       } else {
-/* 239 */         stopsTicking();
+/* 240 */         stopsTicking();
 /*     */       } 
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private void startsTicking() {
-/* 245 */     this.world.debugAssertInTickingThread();
-/* 246 */     LOGGER.at(Level.FINER).log("Chunk started ticking %s", this);
+/* 246 */     this.world.debugAssertInTickingThread();
+/* 247 */     LOGGER.at(Level.FINER).log("Chunk started ticking %s", this);
 /*     */ 
 /*     */     
-/* 249 */     Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
-/* 250 */     componentStore.tryRemoveComponent(this.reference, ChunkStore.REGISTRY.getNonTickingComponentType());
+/* 250 */     Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
+/* 251 */     componentStore.tryRemoveComponent(this.reference, ChunkStore.REGISTRY.getNonTickingComponentType());
 /*     */   }
 /*     */   
 /*     */   private void stopsTicking() {
-/* 254 */     this.world.debugAssertInTickingThread();
-/* 255 */     LOGGER.at(Level.FINER).log("Chunk stopped ticking %s", this);
+/* 255 */     this.world.debugAssertInTickingThread();
+/* 256 */     LOGGER.at(Level.FINER).log("Chunk stopped ticking %s", this);
 /*     */ 
 /*     */     
-/* 258 */     Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
-/* 259 */     componentStore.ensureComponent(this.reference, ChunkStore.REGISTRY.getNonTickingComponentType());
+/* 259 */     Store<ChunkStore> componentStore = this.world.getChunkStore().getStore();
+/* 260 */     componentStore.ensureComponent(this.reference, ChunkStore.REGISTRY.getNonTickingComponentType());
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public BlockChunk getBlockChunk() {
-/* 264 */     return this.blockChunk;
+/* 265 */     return this.blockChunk;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -271,7 +272,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public BlockComponentChunk getBlockComponentChunk() {
-/* 274 */     return this.blockComponentChunk;
+/* 275 */     return this.blockComponentChunk;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -281,129 +282,133 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public EntityChunk getEntityChunk() {
-/* 284 */     return this.entityChunk;
+/* 285 */     return this.entityChunk;
 /*     */   }
 /*     */   
 /*     */   public boolean shouldKeepLoaded() {
-/* 288 */     return this.keepLoaded;
+/* 289 */     return (this.keepLoaded.get() > 0);
 /*     */   }
 /*     */   
-/*     */   public void setKeepLoaded(boolean keepLoaded) {
-/* 292 */     this.keepLoaded = keepLoaded;
+/*     */   public void addKeepLoaded() {
+/* 293 */     this.keepLoaded.incrementAndGet();
+/*     */   }
+/*     */   
+/*     */   public void removeKeepLoaded() {
+/* 297 */     this.keepLoaded.decrementAndGet();
 /*     */   }
 /*     */   
 /*     */   public int pollKeepAlive(int pollCount) {
-/* 296 */     return this.keepAlive = Math.max(this.keepAlive - pollCount, 0);
+/* 301 */     return this.keepAlive = Math.max(this.keepAlive - pollCount, 0);
 /*     */   }
 /*     */   
 /*     */   public void resetKeepAlive() {
-/* 300 */     this.keepAlive = 15;
+/* 305 */     this.keepAlive = 15;
 /*     */   }
 /*     */   
 /*     */   public int pollActiveTimer(int pollCount) {
-/* 304 */     return this.activeTimer = Math.max(this.activeTimer - pollCount, 0);
+/* 309 */     return this.activeTimer = Math.max(this.activeTimer - pollCount, 0);
 /*     */   }
 /*     */   
 /*     */   public void resetActiveTimer() {
-/* 308 */     this.activeTimer = 15;
+/* 313 */     this.activeTimer = 15;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public ChunkAccessor getChunkAccessor() {
-/* 313 */     return (ChunkAccessor)this.world;
+/* 318 */     return (ChunkAccessor)this.world;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int getBlock(int x, int y, int z) {
-/* 318 */     if (y < 0 || y >= 320) return 0; 
-/* 319 */     return this.blockChunk.getBlock(x, y, z);
+/* 323 */     if (y < 0 || y >= 320) return 0; 
+/* 324 */     return this.blockChunk.getBlock(x, y, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean setBlock(int x, int y, int z, int id, @Nonnull BlockType blockType, int rotation, int filler, int settings) {
-/* 324 */     if (y < 0 || y >= 320) return false;
+/* 329 */     if (y < 0 || y >= 320) return false;
 /*     */     
-/* 326 */     short oldHeight = this.blockChunk.getHeight(x, z);
-/* 327 */     BlockSection blockSection = this.blockChunk.getSectionAtBlockY(y);
-/* 328 */     int oldRotation = blockSection.getRotationIndex(x, y, z);
-/* 329 */     int oldFiller = blockSection.getFiller(x, y, z);
-/* 330 */     int oldBlock = blockSection.get(x, y, z);
+/* 331 */     short oldHeight = this.blockChunk.getHeight(x, z);
+/* 332 */     BlockSection blockSection = this.blockChunk.getSectionAtBlockY(y);
+/* 333 */     int oldRotation = blockSection.getRotationIndex(x, y, z);
+/* 334 */     int oldFiller = blockSection.getFiller(x, y, z);
+/* 335 */     int oldBlock = blockSection.get(x, y, z);
 /*     */     
-/* 332 */     boolean changed = ((oldBlock != id || rotation != oldRotation) && blockSection.set(x, y, z, id, rotation, filler));
+/* 337 */     boolean changed = ((oldBlock != id || rotation != oldRotation) && blockSection.set(x, y, z, id, rotation, filler));
 /*     */     
-/* 334 */     if (changed || (settings & 0x40) != 0) {
-/* 335 */       int worldX = (getX() << 5) + (x & 0x1F);
-/* 336 */       int worldZ = (getZ() << 5) + (z & 0x1F);
+/* 339 */     if (changed || (settings & 0x40) != 0) {
+/* 340 */       int worldX = (getX() << 5) + (x & 0x1F);
+/* 341 */       int worldZ = (getZ() << 5) + (z & 0x1F);
 /*     */       
-/* 338 */       if ((settings & 0x40) != 0) {
-/* 339 */         blockSection.invalidateBlock(x, y, z);
+/* 343 */       if ((settings & 0x40) != 0) {
+/* 344 */         blockSection.invalidateBlock(x, y, z);
 /*     */       }
 /*     */       
-/* 342 */       short newHeight = oldHeight;
-/* 343 */       if ((settings & 0x200) == 0)
+/* 347 */       short newHeight = oldHeight;
+/* 348 */       if ((settings & 0x200) == 0)
 /*     */       {
-/* 345 */         if (oldHeight <= y) {
-/* 346 */           if (oldHeight == y && id == 0) {
+/* 350 */         if (oldHeight <= y) {
+/* 351 */           if (oldHeight == y && id == 0) {
 /*     */             
-/* 348 */             newHeight = this.blockChunk.updateHeight(x, z, (short)y);
-/* 349 */           } else if (oldHeight < y && id != 0 && 
-/* 350 */             blockType.getOpacity() != Opacity.Transparent) {
+/* 353 */             newHeight = this.blockChunk.updateHeight(x, z, (short)y);
+/* 354 */           } else if (oldHeight < y && id != 0 && 
+/* 355 */             blockType.getOpacity() != Opacity.Transparent) {
 /*     */             
-/* 352 */             newHeight = (short)y;
-/* 353 */             this.blockChunk.setHeight(x, z, newHeight);
+/* 357 */             newHeight = (short)y;
+/* 358 */             this.blockChunk.setHeight(x, z, newHeight);
 /*     */           } 
 /*     */         }
 /*     */       }
 /*     */ 
 /*     */       
-/* 359 */       WorldNotificationHandler notificationHandler = getWorld().getNotificationHandler();
+/* 364 */       WorldNotificationHandler notificationHandler = getWorld().getNotificationHandler();
 /*     */       
-/* 361 */       if ((settings & 0x4) == 0)
+/* 366 */       if ((settings & 0x4) == 0)
 /*     */       {
 /*     */         
-/* 364 */         if (oldBlock == 0 && id != 0) {
-/* 365 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, id, BlockParticleEvent.Build);
+/* 369 */         if (oldBlock == 0 && id != 0) {
+/* 370 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, id, BlockParticleEvent.Build);
 /*     */         
 /*     */         }
-/* 368 */         else if (oldBlock != 0 && id == 0) {
-/* 369 */           BlockParticleEvent particleType = ((settings & 0x20) != 0) ? BlockParticleEvent.Physics : BlockParticleEvent.Break;
-/* 370 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, oldBlock, particleType);
+/* 373 */         else if (oldBlock != 0 && id == 0) {
+/* 374 */           BlockParticleEvent particleType = ((settings & 0x20) != 0) ? BlockParticleEvent.Physics : BlockParticleEvent.Break;
+/* 375 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, oldBlock, particleType);
 /*     */         }
 /*     */         else {
 /*     */           
-/* 374 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, oldBlock, BlockParticleEvent.Break);
-/* 375 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, id, BlockParticleEvent.Build);
+/* 379 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, oldBlock, BlockParticleEvent.Break);
+/* 380 */           notificationHandler.sendBlockParticle(worldX + 0.5D, y + 0.5D, worldZ + 0.5D, id, BlockParticleEvent.Build);
 /*     */         } 
 /*     */       }
 /*     */       
-/* 379 */       BlockTypeAssetMap<String, BlockType> blockTypeAssetMap = BlockType.getAssetMap();
-/* 380 */       IndexedLookupTableAssetMap<String, BlockBoundingBoxes> hitboxAssetMap = BlockBoundingBoxes.getAssetMap();
+/* 384 */       BlockTypeAssetMap<String, BlockType> blockTypeAssetMap = BlockType.getAssetMap();
+/* 385 */       IndexedLookupTableAssetMap<String, BlockBoundingBoxes> hitboxAssetMap = BlockBoundingBoxes.getAssetMap();
 /*     */       
-/* 382 */       String blockTypeKey = blockType.getId();
-/* 383 */       if ((settings & 0x2) == 0) {
-/* 384 */         Holder<ChunkStore> blockEntity = blockType.getBlockEntity();
-/* 385 */         if (blockEntity != null && filler == 0) {
-/* 386 */           Holder<ChunkStore> newComponents = blockEntity.clone();
-/* 387 */           setState(x, y, z, newComponents);
+/* 387 */       String blockTypeKey = blockType.getId();
+/* 388 */       if ((settings & 0x2) == 0) {
+/* 389 */         Holder<ChunkStore> blockEntity = blockType.getBlockEntity();
+/* 390 */         if (blockEntity != null && filler == 0) {
+/* 391 */           Holder<ChunkStore> newComponents = blockEntity.clone();
+/* 392 */           setState(x, y, z, newComponents);
 /*     */         } else {
-/* 389 */           BlockState blockState = null;
-/* 390 */           String blockStateType = (blockType.getState() != null) ? blockType.getState().getId() : null;
-/* 391 */           if (id != 0 && blockStateType != null && filler == 0) {
-/* 392 */             blockState = BlockStateModule.get().createBlockState(blockStateType, this, new Vector3i(x, y, z), blockType);
-/* 393 */             if (blockState == null) {
-/* 394 */               LOGGER.at(Level.WARNING).log("Failed to create BlockState: %s for BlockType: %s", blockStateType, blockTypeKey);
+/* 394 */           BlockState blockState = null;
+/* 395 */           String blockStateType = (blockType.getState() != null) ? blockType.getState().getId() : null;
+/* 396 */           if (id != 0 && blockStateType != null && filler == 0) {
+/* 397 */             blockState = BlockStateModule.get().createBlockState(blockStateType, this, new Vector3i(x, y, z), blockType);
+/* 398 */             if (blockState == null) {
+/* 399 */               LOGGER.at(Level.WARNING).log("Failed to create BlockState: %s for BlockType: %s", blockStateType, blockTypeKey);
 /*     */             }
 /*     */           } 
-/* 397 */           BlockState oldState = getState(x, y, z);
+/* 402 */           BlockState oldState = getState(x, y, z);
 /*     */ 
 /*     */           
-/* 400 */           if (blockState instanceof ItemContainerState) { ItemContainerState newState = (ItemContainerState)blockState;
-/* 401 */             FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> {
+/* 405 */           if (blockState instanceof ItemContainerState) { ItemContainerState newState = (ItemContainerState)blockState;
+/* 406 */             FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> {
 /*     */                   int blockX = worldX + x1;
 /*     */                   
 /*     */                   int blockY = y + y1;
 /*     */                   int blockZ = worldZ + z1;
-/* 406 */                   boolean isZero = (x1 == 0 && y1 == 0 && z1 == 0);
+/* 411 */                   boolean isZero = (x1 == 0 && y1 == 0 && z1 == 0);
 /*     */                   BlockState stateAtFiller = isZero ? oldState : getState(blockX, blockY, blockZ);
 /*     */                   if (stateAtFiller instanceof ItemContainerState) {
 /*     */                     ItemContainerState oldContainer = (ItemContainerState)stateAtFiller;
@@ -411,29 +416,29 @@
 /*     */                   } 
 /*     */                 }); }
 /*     */           
-/* 414 */           setState(x, y, z, blockState, ((settings & 0x1) == 0));
+/* 419 */           setState(x, y, z, blockState, ((settings & 0x1) == 0));
 /*     */         } 
 /*     */       } 
 /*     */       
-/* 418 */       if (this.lightingUpdatesEnabled) {
-/* 419 */         this.world.getChunkLighting().invalidateLightAtBlock(this, x, y, z, blockType, oldHeight, newHeight);
+/* 423 */       if (this.lightingUpdatesEnabled) {
+/* 424 */         this.world.getChunkLighting().invalidateLightAtBlock(this, x, y, z, blockType, oldHeight, newHeight);
 /*     */       }
 /*     */       
-/* 422 */       TickProcedure tickProcedure = BlockTickManager.getBlockTickProvider().getTickProcedure(id);
-/* 423 */       this.blockChunk.setTicking(x, y, z, (tickProcedure != null));
+/* 427 */       TickProcedure tickProcedure = BlockTickManager.getBlockTickProvider().getTickProcedure(id);
+/* 428 */       this.blockChunk.setTicking(x, y, z, (tickProcedure != null));
 /*     */       
-/* 425 */       if ((settings & 0x10) == 0) {
-/* 426 */         int settingsWithoutFiller = settings | 0x8 | 0x10;
+/* 430 */       if ((settings & 0x10) == 0) {
+/* 431 */         int settingsWithoutFiller = settings | 0x8 | 0x10;
 /*     */         
-/* 428 */         BlockType oldBlockType = (BlockType)blockTypeAssetMap.getAsset(oldBlock);
-/* 429 */         String oldBlockKey = oldBlockType.getId();
+/* 433 */         BlockType oldBlockType = (BlockType)blockTypeAssetMap.getAsset(oldBlock);
+/* 434 */         String oldBlockKey = oldBlockType.getId();
 /*     */         
-/* 431 */         int baseX = worldX - FillerBlockUtil.unpackX(oldFiller);
-/* 432 */         int baseY = y - FillerBlockUtil.unpackY(oldFiller);
-/* 433 */         int baseZ = worldZ - FillerBlockUtil.unpackZ(oldFiller);
+/* 436 */         int baseX = worldX - FillerBlockUtil.unpackX(oldFiller);
+/* 437 */         int baseY = y - FillerBlockUtil.unpackY(oldFiller);
+/* 438 */         int baseZ = worldZ - FillerBlockUtil.unpackZ(oldFiller);
 /*     */ 
 /*     */         
-/* 436 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(oldBlockType.getHitboxTypeIndex())).get(oldRotation), (x1, y1, z1) -> {
+/* 441 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(oldBlockType.getHitboxTypeIndex())).get(oldRotation), (x1, y1, z1) -> {
 /*     */               if (x1 == 0 && y1 == 0 && z1 == 0) {
 /*     */                 return;
 /*     */               }
@@ -454,15 +459,15 @@
 /*     */               } 
 /*     */             });
 /*     */       } 
-/* 457 */       if ((settings & 0x8) == 0 && filler == 0) {
-/* 458 */         int settingsWithoutSetFiller = settings | 0x8;
+/* 462 */       if ((settings & 0x8) == 0 && filler == 0) {
+/* 463 */         int settingsWithoutSetFiller = settings | 0x8;
 /*     */ 
 /*     */ 
 /*     */         
-/* 462 */         BlockType finalBlockType = blockType;
-/* 463 */         int blockId = id;
-/* 464 */         int finalRotation = rotation;
-/* 465 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> {
+/* 467 */         BlockType finalBlockType = blockType;
+/* 468 */         int blockId = id;
+/* 469 */         int finalRotation = rotation;
+/* 470 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> {
 /*     */               if (x1 == 0 && y1 == 0 && z1 == 0) {
 /*     */                 return;
 /*     */               }
@@ -479,40 +484,40 @@
 /*     */               } 
 /*     */             });
 /*     */       } 
-/* 482 */       if ((settings & 0x100) != 0)
+/* 487 */       if ((settings & 0x100) != 0)
 /*     */       {
-/* 484 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> getChunkAccessor().performBlockUpdate(worldX + x1, y + y1, worldZ + z1));
+/* 489 */         FillerBlockUtil.forEachFillerBlock(((BlockBoundingBoxes)hitboxAssetMap.getAsset(blockType.getHitboxTypeIndex())).get(rotation), (x1, y1, z1) -> getChunkAccessor().performBlockUpdate(worldX + x1, y + y1, worldZ + z1));
 /*     */       }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */       
-/* 490 */       if (this.reference != null && this.reference.isValid()) {
-/* 491 */         if (this.world.isInThread()) {
-/* 492 */           setBlockPhysics(x, y, z, blockType);
+/* 495 */       if (this.reference != null && this.reference.isValid()) {
+/* 496 */         if (this.world.isInThread()) {
+/* 497 */           setBlockPhysics(x, y, z, blockType);
 /*     */         } else {
-/* 494 */           BlockType tempFinalBlockType = blockType;
-/* 495 */           CompletableFutureUtil._catch(CompletableFuture.runAsync(() -> setBlockPhysics(x, y, z, tempFinalBlockType), (Executor)this.world));
+/* 499 */           BlockType tempFinalBlockType = blockType;
+/* 500 */           CompletableFutureUtil._catch(CompletableFuture.runAsync(() -> setBlockPhysics(x, y, z, tempFinalBlockType), (Executor)this.world));
 /*     */         } 
 /*     */       }
 /*     */     } 
 /*     */ 
 /*     */ 
 /*     */     
-/* 502 */     return changed;
+/* 507 */     return changed;
 /*     */   }
 /*     */   
 /*     */   private void setBlockPhysics(int x, int y, int z, @Nonnull BlockType blockType) {
-/* 506 */     Store<ChunkStore> store = this.reference.getStore();
-/* 507 */     ChunkColumn column = (ChunkColumn)store.getComponent(this.reference, ChunkColumn.getComponentType());
-/* 508 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 509 */     if (section != null) {
-/* 510 */       if (!blockType.hasSupport()) {
-/* 511 */         BlockPhysics.clear(store, section, x, y, z);
+/* 511 */     Store<ChunkStore> store = this.reference.getStore();
+/* 512 */     ChunkColumn column = (ChunkColumn)store.getComponent(this.reference, ChunkColumn.getComponentType());
+/* 513 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 514 */     if (section != null) {
+/* 515 */       if (!blockType.hasSupport()) {
+/* 516 */         BlockPhysics.clear(store, section, x, y, z);
 /*     */       }
 /*     */       else {
 /*     */         
-/* 515 */         BlockPhysics.reset(store, section, x, y, z);
+/* 520 */         BlockPhysics.reset(store, section, x, y, z);
 /*     */       } 
 /*     */     }
 /*     */   }
@@ -520,275 +525,275 @@
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   public int getFiller(int x, int y, int z) {
-/* 523 */     if (y < 0 || y >= 320) return 0; 
-/* 524 */     return this.blockChunk.getSectionAtBlockY(y).getFiller(x, y, z);
+/* 528 */     if (y < 0 || y >= 320) return 0; 
+/* 529 */     return this.blockChunk.getSectionAtBlockY(y).getFiller(x, y, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   public int getRotationIndex(int x, int y, int z) {
-/* 530 */     if (y < 0 || y >= 320) return 0; 
-/* 531 */     return this.blockChunk.getSectionAtBlockY(y).getRotationIndex(x, y, z);
+/* 535 */     if (y < 0 || y >= 320) return 0; 
+/* 536 */     return this.blockChunk.getSectionAtBlockY(y).getRotationIndex(x, y, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean setTicking(int x, int y, int z, boolean ticking) {
-/* 536 */     return this.blockChunk.setTicking(x, y, z, ticking);
+/* 541 */     return this.blockChunk.setTicking(x, y, z, ticking);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isTicking(int x, int y, int z) {
-/* 541 */     return this.blockChunk.isTicking(x, y, z);
+/* 546 */     return this.blockChunk.isTicking(x, y, z);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public short getHeight(int x, int z) {
-/* 548 */     return this.blockChunk.getHeight(x, z);
+/* 553 */     return this.blockChunk.getHeight(x, z);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public short getHeight(int index) {
-/* 555 */     return this.blockChunk.getHeight(index);
+/* 560 */     return this.blockChunk.getHeight(index);
 /*     */   }
 /*     */   
 /*     */   public int getTint(int x, int z) {
-/* 559 */     return this.blockChunk.getTint(x, z);
+/* 564 */     return this.blockChunk.getTint(x, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public BlockState getState(int x, int y, int z) {
-/* 565 */     if (y < 0 || y >= 320) return null;
+/* 570 */     if (y < 0 || y >= 320) return null;
 /*     */     
-/* 567 */     if (!this.world.isInThread()) {
-/* 568 */       return CompletableFuture.<BlockState>supplyAsync(() -> getState(x, y, z), (Executor)this.world).join();
+/* 572 */     if (!this.world.isInThread()) {
+/* 573 */       return CompletableFuture.<BlockState>supplyAsync(() -> getState(x, y, z), (Executor)this.world).join();
 /*     */     }
 /*     */     
-/* 571 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
+/* 576 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
 /*     */     
-/* 573 */     Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
-/* 574 */     if (reference != null) return BlockState.getBlockState(reference, (ComponentAccessor)reference.getStore());
+/* 578 */     Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
+/* 579 */     if (reference != null) return BlockState.getBlockState(reference, (ComponentAccessor)reference.getStore());
 /*     */     
-/* 576 */     Holder<ChunkStore> holder = this.blockComponentChunk.getEntityHolder(index);
-/* 577 */     if (holder != null) return BlockState.getBlockState(holder);
+/* 581 */     Holder<ChunkStore> holder = this.blockComponentChunk.getEntityHolder(index);
+/* 582 */     if (holder != null) return BlockState.getBlockState(holder);
 /*     */     
-/* 579 */     return null;
+/* 584 */     return null;
 /*     */   }
 /*     */   
 /*     */   @Nullable
 /*     */   public Ref<ChunkStore> getBlockComponentEntity(int x, int y, int z) {
-/* 584 */     if (y < 0 || y >= 320) return null;
+/* 589 */     if (y < 0 || y >= 320) return null;
 /*     */     
-/* 586 */     if (!this.world.isInThread()) {
-/* 587 */       return CompletableFuture.<Ref<ChunkStore>>supplyAsync(() -> getBlockComponentEntity(x, y, z), (Executor)this.world).join();
+/* 591 */     if (!this.world.isInThread()) {
+/* 592 */       return CompletableFuture.<Ref<ChunkStore>>supplyAsync(() -> getBlockComponentEntity(x, y, z), (Executor)this.world).join();
 /*     */     }
 /*     */     
-/* 590 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
+/* 595 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
 /*     */     
-/* 592 */     return this.blockComponentChunk.getEntityReference(index);
+/* 597 */     return this.blockComponentChunk.getEntityReference(index);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public Holder<ChunkStore> getBlockComponentHolder(int x, int y, int z) {
-/* 598 */     if (y < 0 || y >= 320) return null;
+/* 603 */     if (y < 0 || y >= 320) return null;
 /*     */     
-/* 600 */     if (!this.world.isInThread()) {
-/* 601 */       return CompletableFuture.<Holder<ChunkStore>>supplyAsync(() -> getBlockComponentHolder(x, y, z), (Executor)this.world).join();
+/* 605 */     if (!this.world.isInThread()) {
+/* 606 */       return CompletableFuture.<Holder<ChunkStore>>supplyAsync(() -> getBlockComponentHolder(x, y, z), (Executor)this.world).join();
 /*     */     }
 /*     */     
-/* 604 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
+/* 609 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
 /*     */     
-/* 606 */     Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
-/* 607 */     if (reference != null) {
-/* 608 */       return reference.getStore().copyEntity(reference);
+/* 611 */     Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
+/* 612 */     if (reference != null) {
+/* 613 */       return reference.getStore().copyEntity(reference);
 /*     */     }
 /*     */     
-/* 611 */     Holder<ChunkStore> holder = this.blockComponentChunk.getEntityHolder(index);
-/* 612 */     return (holder != null) ? holder.clone() : null;
+/* 616 */     Holder<ChunkStore> holder = this.blockComponentChunk.getEntityHolder(index);
+/* 617 */     return (holder != null) ? holder.clone() : null;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void setState(int x, int y, int z, @Nullable BlockState state, boolean notify) {
-/* 617 */     if (y < 0 || y >= 320)
+/* 622 */     if (y < 0 || y >= 320)
 /*     */       return; 
-/* 619 */     Holder<ChunkStore> holder = (state != null) ? state.toHolder() : null;
-/* 620 */     setState(x, y, z, holder);
+/* 624 */     Holder<ChunkStore> holder = (state != null) ? state.toHolder() : null;
+/* 625 */     setState(x, y, z, holder);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   public int getFluidId(int x, int y, int z) {
-/* 626 */     Ref<ChunkStore> columnRef = getReference();
-/* 627 */     Store<ChunkStore> store = columnRef.getStore();
-/* 628 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
-/* 629 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 630 */     if (section == null) return Integer.MIN_VALUE; 
-/* 631 */     FluidSection fluidSection = (FluidSection)store.getComponent(section, FluidSection.getComponentType());
-/* 632 */     return fluidSection.getFluidId(x, y, z);
+/* 631 */     Ref<ChunkStore> columnRef = getReference();
+/* 632 */     Store<ChunkStore> store = columnRef.getStore();
+/* 633 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
+/* 634 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 635 */     if (section == null) return Integer.MIN_VALUE; 
+/* 636 */     FluidSection fluidSection = (FluidSection)store.getComponent(section, FluidSection.getComponentType());
+/* 637 */     return fluidSection.getFluidId(x, y, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   public byte getFluidLevel(int x, int y, int z) {
-/* 638 */     Ref<ChunkStore> columnRef = getReference();
-/* 639 */     Store<ChunkStore> store = columnRef.getStore();
-/* 640 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
-/* 641 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 642 */     if (section == null) return 0; 
-/* 643 */     FluidSection fluidSection = (FluidSection)store.getComponent(section, FluidSection.getComponentType());
-/* 644 */     return fluidSection.getFluidLevel(x, y, z);
+/* 643 */     Ref<ChunkStore> columnRef = getReference();
+/* 644 */     Store<ChunkStore> store = columnRef.getStore();
+/* 645 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
+/* 646 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 647 */     if (section == null) return 0; 
+/* 648 */     FluidSection fluidSection = (FluidSection)store.getComponent(section, FluidSection.getComponentType());
+/* 649 */     return fluidSection.getFluidLevel(x, y, z);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Deprecated(forRemoval = true)
 /*     */   public int getSupportValue(int x, int y, int z) {
-/* 650 */     Ref<ChunkStore> columnRef = getReference();
-/* 651 */     Store<ChunkStore> store = columnRef.getStore();
-/* 652 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
-/* 653 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
-/* 654 */     if (section == null) return 0; 
-/* 655 */     BlockPhysics blockPhysics = (BlockPhysics)store.getComponent(section, BlockPhysics.getComponentType());
-/* 656 */     return (blockPhysics != null) ? blockPhysics.get(x, y, z) : 0;
+/* 655 */     Ref<ChunkStore> columnRef = getReference();
+/* 656 */     Store<ChunkStore> store = columnRef.getStore();
+/* 657 */     ChunkColumn column = (ChunkColumn)store.getComponent(columnRef, ChunkColumn.getComponentType());
+/* 658 */     Ref<ChunkStore> section = column.getSection(ChunkUtil.chunkCoordinate(y));
+/* 659 */     if (section == null) return 0; 
+/* 660 */     BlockPhysics blockPhysics = (BlockPhysics)store.getComponent(section, BlockPhysics.getComponentType());
+/* 661 */     return (blockPhysics != null) ? blockPhysics.get(x, y, z) : 0;
 /*     */   }
 /*     */   
 /*     */   @Deprecated
 /*     */   public void setState(int x, int y, int z, @Nullable Holder<ChunkStore> holder) {
-/* 661 */     if (y < 0 || y >= 320)
+/* 666 */     if (y < 0 || y >= 320)
 /*     */       return; 
-/* 663 */     if (!this.world.isInThread()) {
-/* 664 */       CompletableFutureUtil._catch(CompletableFuture.runAsync(() -> setState(x, y, z, holder), (Executor)this.world));
+/* 668 */     if (!this.world.isInThread()) {
+/* 669 */       CompletableFutureUtil._catch(CompletableFuture.runAsync(() -> setState(x, y, z, holder), (Executor)this.world));
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 668 */     boolean notify = true;
+/* 673 */     boolean notify = true;
 /*     */     
-/* 670 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
+/* 675 */     int index = ChunkUtil.indexBlockInColumn(x, y, z);
 /*     */     
-/* 672 */     if (holder == null) {
-/* 673 */       Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
-/* 674 */       if (reference != null) {
-/* 675 */         Holder<ChunkStore> oldHolder = reference.getStore().removeEntity(reference, RemoveReason.REMOVE);
-/* 676 */         BlockState blockState = BlockState.getBlockState(oldHolder);
+/* 677 */     if (holder == null) {
+/* 678 */       Ref<ChunkStore> reference = this.blockComponentChunk.getEntityReference(index);
+/* 679 */       if (reference != null) {
+/* 680 */         Holder<ChunkStore> oldHolder = reference.getStore().removeEntity(reference, RemoveReason.REMOVE);
+/* 681 */         BlockState blockState = BlockState.getBlockState(oldHolder);
 /*     */         
-/* 678 */         if (notify) {
-/* 679 */           this.world.getNotificationHandler().updateState(x, y, z, null, blockState);
+/* 683 */         if (notify) {
+/* 684 */           this.world.getNotificationHandler().updateState(x, y, z, null, blockState);
 /*     */         }
 /*     */       } else {
-/* 682 */         this.blockComponentChunk.removeEntityHolder(index);
+/* 687 */         this.blockComponentChunk.removeEntityHolder(index);
 /*     */       } 
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 687 */     BlockState state = BlockState.getBlockState(holder);
-/* 688 */     if (state != null) {
-/* 689 */       state.setPosition(this, new Vector3i(x, y, z));
+/* 692 */     BlockState state = BlockState.getBlockState(holder);
+/* 693 */     if (state != null) {
+/* 694 */       state.setPosition(this, new Vector3i(x, y, z));
 /*     */     }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */     
-/* 696 */     Store<ChunkStore> blockComponentStore = this.world.getChunkStore().getStore();
+/* 701 */     Store<ChunkStore> blockComponentStore = this.world.getChunkStore().getStore();
 /*     */     
-/* 698 */     if (!is(ChunkFlag.TICKING)) {
-/* 699 */       Holder<ChunkStore> oldHolder = this.blockComponentChunk.getEntityHolder(index);
+/* 703 */     if (!is(ChunkFlag.TICKING)) {
+/* 704 */       Holder<ChunkStore> oldHolder = this.blockComponentChunk.getEntityHolder(index);
 /*     */       
-/* 701 */       BlockState blockState = null;
-/* 702 */       if (oldHolder != null) {
-/* 703 */         blockState = BlockState.getBlockState(oldHolder);
+/* 706 */       BlockState blockState = null;
+/* 707 */       if (oldHolder != null) {
+/* 708 */         blockState = BlockState.getBlockState(oldHolder);
 /*     */       }
-/* 705 */       this.blockComponentChunk.removeEntityHolder(index);
+/* 710 */       this.blockComponentChunk.removeEntityHolder(index);
 /*     */       
-/* 707 */       holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(index, this.reference));
-/* 708 */       this.blockComponentChunk.addEntityHolder(index, holder);
+/* 712 */       holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(index, this.reference));
+/* 713 */       this.blockComponentChunk.addEntityHolder(index, holder);
 /*     */       
-/* 710 */       if (notify) {
-/* 711 */         this.world.getNotificationHandler().updateState(x, y, z, state, blockState);
+/* 715 */       if (notify) {
+/* 716 */         this.world.getNotificationHandler().updateState(x, y, z, state, blockState);
 /*     */       }
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 716 */     Ref<ChunkStore> oldReference = this.blockComponentChunk.getEntityReference(index);
+/* 721 */     Ref<ChunkStore> oldReference = this.blockComponentChunk.getEntityReference(index);
 /*     */     
-/* 718 */     BlockState oldState = null;
-/* 719 */     if (oldReference != null) {
-/* 720 */       Holder<ChunkStore> oldEntityHolder = blockComponentStore.removeEntity(oldReference, RemoveReason.REMOVE);
-/* 721 */       oldState = BlockState.getBlockState(oldEntityHolder);
+/* 723 */     BlockState oldState = null;
+/* 724 */     if (oldReference != null) {
+/* 725 */       Holder<ChunkStore> oldEntityHolder = blockComponentStore.removeEntity(oldReference, RemoveReason.REMOVE);
+/* 726 */       oldState = BlockState.getBlockState(oldEntityHolder);
 /*     */     } else {
-/* 723 */       this.blockComponentChunk.removeEntityHolder(index);
+/* 728 */       this.blockComponentChunk.removeEntityHolder(index);
 /*     */     } 
 /*     */     
-/* 726 */     holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(index, this.reference));
-/* 727 */     blockComponentStore.addEntity(holder, AddReason.SPAWN);
+/* 731 */     holder.putComponent(BlockModule.BlockStateInfo.getComponentType(), (Component)new BlockModule.BlockStateInfo(index, this.reference));
+/* 732 */     blockComponentStore.addEntity(holder, AddReason.SPAWN);
 /*     */     
-/* 729 */     if (notify) {
-/* 730 */       this.world.getNotificationHandler().updateState(x, y, z, state, oldState);
+/* 734 */     if (notify) {
+/* 735 */       this.world.getNotificationHandler().updateState(x, y, z, state, oldState);
 /*     */     }
 /*     */   }
 /*     */   
 /*     */   public void markNeedsSaving() {
-/* 735 */     this.needsSaving = true;
+/* 740 */     this.needsSaving = true;
 /*     */   }
 /*     */   
 /*     */   public boolean getNeedsSaving() {
-/* 739 */     return (this.needsSaving || this.blockChunk.getNeedsSaving() || this.blockComponentChunk.getNeedsSaving() || this.entityChunk.getNeedsSaving());
+/* 744 */     return (this.needsSaving || this.blockChunk.getNeedsSaving() || this.blockComponentChunk.getNeedsSaving() || this.entityChunk.getNeedsSaving());
 /*     */   }
 /*     */   
 /*     */   public boolean consumeNeedsSaving() {
-/* 743 */     boolean out = this.needsSaving;
-/* 744 */     if (this.blockChunk.consumeNeedsSaving()) out = true; 
-/* 745 */     if (this.blockComponentChunk.consumeNeedsSaving()) out = true; 
-/* 746 */     if (this.entityChunk.consumeNeedsSaving()) out = true; 
-/* 747 */     this.needsSaving = false;
-/* 748 */     return out;
+/* 748 */     boolean out = this.needsSaving;
+/* 749 */     if (this.blockChunk.consumeNeedsSaving()) out = true; 
+/* 750 */     if (this.blockComponentChunk.consumeNeedsSaving()) out = true; 
+/* 751 */     if (this.entityChunk.consumeNeedsSaving()) out = true; 
+/* 752 */     this.needsSaving = false;
+/* 753 */     return out;
 /*     */   }
 /*     */   
 /*     */   public boolean isSaving() {
-/* 752 */     return this.isSaving;
+/* 757 */     return this.isSaving;
 /*     */   }
 /*     */   
 /*     */   public void setSaving(boolean saving) {
-/* 756 */     this.isSaving = saving;
+/* 761 */     this.isSaving = saving;
 /*     */   }
 /*     */   
 /*     */   public long getIndex() {
-/* 760 */     return this.blockChunk.getIndex();
+/* 765 */     return this.blockChunk.getIndex();
 /*     */   }
 /*     */   
 /*     */   public int getX() {
-/* 764 */     return this.blockChunk.getX();
+/* 769 */     return this.blockChunk.getX();
 /*     */   }
 /*     */   
 /*     */   public int getZ() {
-/* 768 */     return this.blockChunk.getZ();
+/* 773 */     return this.blockChunk.getZ();
 /*     */   }
 /*     */   
 /*     */   public void setLightingUpdatesEnabled(boolean enableLightUpdates) {
-/* 772 */     this.lightingUpdatesEnabled = enableLightUpdates;
+/* 777 */     this.lightingUpdatesEnabled = enableLightUpdates;
 /*     */   }
 /*     */   
 /*     */   public boolean isLightingUpdatesEnabled() {
-/* 776 */     return this.lightingUpdatesEnabled;
+/* 781 */     return this.lightingUpdatesEnabled;
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public World getWorld() {
-/* 783 */     return this.world;
+/* 788 */     return this.world;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 789 */     return "WorldChunk{x=" + this.blockChunk
-/* 790 */       .getX() + ", z=" + this.blockChunk
-/* 791 */       .getZ() + ", flags=" + String.valueOf(this.flags) + "}";
+/* 794 */     return "WorldChunk{x=" + this.blockChunk
+/* 795 */       .getX() + ", z=" + this.blockChunk
+/* 796 */       .getZ() + ", flags=" + String.valueOf(this.flags) + "}";
 /*     */   }
 /*     */ }
 

@@ -4460,38 +4460,131 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class CachedAccessor
 /*      */   extends AbstractCachedAccessor
 /*      */ {
-/* 4466 */   private static final ThreadLocal<CachedAccessor> THREAD_LOCAL = ThreadLocal.withInitial(CachedAccessor::new);
+/* 4559 */   private static final ThreadLocal<CachedAccessor> THREAD_LOCAL = ThreadLocal.withInitial(CachedAccessor::new);
 /*      */   private static final int FLUID_COMPONENT = 0;
 /*      */   private static final int PHYSICS_COMPONENT = 1;
 /*      */   private static final int BLOCKS_COMPONENT = 2;
 /*      */   
 /*      */   public CachedAccessor() {
-/* 4472 */     super(3);
+/* 4565 */     super(3);
 /*      */   }
 /*      */   
 /*      */   @Nonnull
 /*      */   public static CachedAccessor of(ComponentAccessor<ChunkStore> accessor, int cx, int cy, int cz, int radius) {
-/* 4477 */     CachedAccessor cachedAccessor = THREAD_LOCAL.get();
-/* 4478 */     cachedAccessor.init(accessor, cx, cy, cz, radius);
-/* 4479 */     return cachedAccessor;
+/* 4570 */     CachedAccessor cachedAccessor = THREAD_LOCAL.get();
+/* 4571 */     cachedAccessor.init(accessor, cx, cy, cz, radius);
+/* 4572 */     return cachedAccessor;
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public FluidSection getFluidSection(int cx, int cy, int cz) {
-/* 4484 */     return (FluidSection)getComponentSection(cx, cy, cz, 0, FluidSection.getComponentType());
+/* 4577 */     return (FluidSection)getComponentSection(cx, cy, cz, 0, FluidSection.getComponentType());
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public BlockPhysics getBlockPhysics(int cx, int cy, int cz) {
-/* 4489 */     return (BlockPhysics)getComponentSection(cx, cy, cz, 1, BlockPhysics.getComponentType());
+/* 4582 */     return (BlockPhysics)getComponentSection(cx, cy, cz, 1, BlockPhysics.getComponentType());
 /*      */   }
 /*      */   
 /*      */   @Nullable
 /*      */   public BlockSection getBlockSection(int cx, int cy, int cz) {
-/* 4494 */     return (BlockSection)getComponentSection(cx, cy, cz, 2, BlockSection.getComponentType());
+/* 4587 */     return (BlockSection)getComponentSection(cx, cy, cz, 2, BlockSection.getComponentType());
 /*      */   }
 /*      */ }
 

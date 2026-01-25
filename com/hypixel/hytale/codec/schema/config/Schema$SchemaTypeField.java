@@ -527,6 +527,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class SchemaTypeField
 /*     */ {
 /*     */   public static final BuilderCodec<SchemaTypeField> CODEC;
@@ -536,7 +539,7 @@
 /*     */   private String parentPropertyKey;
 /*     */   
 /*     */   static {
-/* 539 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(SchemaTypeField.class, SchemaTypeField::new).addField(new KeyedCodec("property", (Codec)Codec.STRING, false, true), (o, i) -> o.property = i, o -> o.property)).addField(new KeyedCodec("defaultValue", (Codec)Codec.STRING, false, true), (o, i) -> o.defaultValue = i, o -> o.defaultValue)).addField(new KeyedCodec("values", (Codec)Codec.STRING_ARRAY, false, true), (o, i) -> o.values = i, o -> o.values)).addField(new KeyedCodec("parentPropertyKey", (Codec)Codec.STRING, false, true), (o, i) -> o.parentPropertyKey = i, o -> o.parentPropertyKey)).build();
+/* 542 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(SchemaTypeField.class, SchemaTypeField::new).addField(new KeyedCodec("property", (Codec)Codec.STRING, false, true), (o, i) -> o.property = i, o -> o.property)).addField(new KeyedCodec("defaultValue", (Codec)Codec.STRING, false, true), (o, i) -> o.defaultValue = i, o -> o.defaultValue)).addField(new KeyedCodec("values", (Codec)Codec.STRING_ARRAY, false, true), (o, i) -> o.values = i, o -> o.values)).addField(new KeyedCodec("parentPropertyKey", (Codec)Codec.STRING, false, true), (o, i) -> o.parentPropertyKey = i, o -> o.parentPropertyKey)).build();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -561,49 +564,49 @@
 /*     */ 
 /*     */   
 /*     */   public SchemaTypeField(String property, String defaultValue, String... values) {
-/* 564 */     this.property = property;
-/* 565 */     this.defaultValue = defaultValue;
-/* 566 */     this.values = values;
+/* 567 */     this.property = property;
+/* 568 */     this.defaultValue = defaultValue;
+/* 569 */     this.values = values;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected SchemaTypeField() {}
 /*     */   
 /*     */   public String getProperty() {
-/* 573 */     return this.property;
+/* 576 */     return this.property;
 /*     */   }
 /*     */   
 /*     */   public String getDefaultValue() {
-/* 577 */     return this.defaultValue;
+/* 580 */     return this.defaultValue;
 /*     */   }
 /*     */   
 /*     */   public String[] getValues() {
-/* 581 */     return this.values;
+/* 584 */     return this.values;
 /*     */   }
 /*     */   
 /*     */   public String getParentPropertyKey() {
-/* 585 */     return this.parentPropertyKey;
+/* 588 */     return this.parentPropertyKey;
 /*     */   }
 /*     */   
 /*     */   public void setParentPropertyKey(String parentPropertyKey) {
-/* 589 */     this.parentPropertyKey = parentPropertyKey;
+/* 592 */     this.parentPropertyKey = parentPropertyKey;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean equals(Object o) {
-/* 594 */     if (o == null || getClass() != o.getClass()) return false;
+/* 597 */     if (o == null || getClass() != o.getClass()) return false;
 /*     */     
-/* 596 */     SchemaTypeField that = (SchemaTypeField)o;
-/* 597 */     return (Objects.equals(this.property, that.property) && Objects.equals(this.defaultValue, that.defaultValue) && Arrays.deepEquals((Object[])this.values, (Object[])that.values) && Objects.equals(this.parentPropertyKey, that.parentPropertyKey));
+/* 599 */     SchemaTypeField that = (SchemaTypeField)o;
+/* 600 */     return (Objects.equals(this.property, that.property) && Objects.equals(this.defaultValue, that.defaultValue) && Arrays.deepEquals((Object[])this.values, (Object[])that.values) && Objects.equals(this.parentPropertyKey, that.parentPropertyKey));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 602 */     int result = Objects.hashCode(this.property);
-/* 603 */     result = 31 * result + Objects.hashCode(this.defaultValue);
-/* 604 */     result = 31 * result + Arrays.hashCode((Object[])this.values);
-/* 605 */     result = 31 * result + Objects.hashCode(this.parentPropertyKey);
-/* 606 */     return result;
+/* 605 */     int result = Objects.hashCode(this.property);
+/* 606 */     result = 31 * result + Objects.hashCode(this.defaultValue);
+/* 607 */     result = 31 * result + Arrays.hashCode((Object[])this.values);
+/* 608 */     result = 31 * result + Objects.hashCode(this.parentPropertyKey);
+/* 609 */     return result;
 /*     */   }
 /*     */ }
 

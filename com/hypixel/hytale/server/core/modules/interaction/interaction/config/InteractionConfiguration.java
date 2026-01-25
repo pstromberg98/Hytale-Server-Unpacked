@@ -89,23 +89,32 @@
 /*     */     
 /*  90 */     return priority.getPriority(slot);
 /*     */   }
+/*     */   
+/*     */   public float getUseDistance(GameMode mode) {
+/*  94 */     if (this.useDistance == null) {
+/*  95 */       return DEFAULT_USE_DISTANCE.getOrDefault(mode, 1.0F);
+/*     */     }
+/*  97 */     return this.useDistance.getOrDefault(mode, 1.0F);
+/*     */   }
+/*     */ 
+/*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public InteractionConfiguration toPacket() {
-/*  96 */     InteractionConfiguration packet = new InteractionConfiguration();
-/*  97 */     packet.displayOutlines = this.displayOutlines;
-/*  98 */     packet.debugOutlines = this.debugOutlines;
-/*  99 */     packet.useDistance = (Map)this.useDistance;
-/* 100 */     packet.allEntities = this.allEntities;
+/* 105 */     InteractionConfiguration packet = new InteractionConfiguration();
+/* 106 */     packet.displayOutlines = this.displayOutlines;
+/* 107 */     packet.debugOutlines = this.debugOutlines;
+/* 108 */     packet.useDistance = (Map)this.useDistance;
+/* 109 */     packet.allEntities = this.allEntities;
 /*     */     
-/* 102 */     if (this.priorities != null && !this.priorities.isEmpty()) {
-/* 103 */       Object2ObjectOpenHashMap<InteractionType, InteractionPriority> packetPriorities = new Object2ObjectOpenHashMap();
-/* 104 */       for (Map.Entry<InteractionType, InteractionPriority> entry : this.priorities.entrySet()) packetPriorities.put(entry.getKey(), ((InteractionPriority)entry.getValue()).toPacket()); 
-/* 105 */       packet.priorities = (Map)packetPriorities;
+/* 111 */     if (this.priorities != null && !this.priorities.isEmpty()) {
+/* 112 */       Object2ObjectOpenHashMap<InteractionType, InteractionPriority> packetPriorities = new Object2ObjectOpenHashMap();
+/* 113 */       for (Map.Entry<InteractionType, InteractionPriority> entry : this.priorities.entrySet()) packetPriorities.put(entry.getKey(), ((InteractionPriority)entry.getValue()).toPacket()); 
+/* 114 */       packet.priorities = (Map)packetPriorities;
 /*     */     } 
 /*     */     
-/* 108 */     return packet;
+/* 117 */     return packet;
 /*     */   }
 /*     */   
 /*     */   public InteractionConfiguration() {}

@@ -71,37 +71,36 @@
 /*     */   extends CommandBase
 /*     */ {
 /*  73 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/*  74 */   private static final Message MESSAGE_EFFECT_APPLIED_OTHER = Message.translation("server.commands.player.effect.apply.success.other");
 /*     */   
 /*     */   @Nonnull
-/*  77 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/*  76 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*     */   
 /*     */   @Nonnull
-/*  80 */   private final RequiredArg<EntityEffect> effectArg = withRequiredArg("effect", "server.commands.player.effect.apply.effect.desc", (ArgumentType)ArgTypes.EFFECT_ASSET);
+/*  79 */   private final RequiredArg<EntityEffect> effectArg = withRequiredArg("effect", "server.commands.player.effect.apply.effect.desc", (ArgumentType)ArgTypes.EFFECT_ASSET);
 /*     */   @Nonnull
-/*  82 */   private final DefaultArg<Float> durationArg = (DefaultArg<Float>)
-/*  83 */     withDefaultArg("duration", "server.commands.player.effect.apply.duration.desc", (ArgumentType)ArgTypes.FLOAT, Float.valueOf(100.0F), "server.commands.entity.effect.duration")
-/*  84 */     .addValidator(Validators.greaterThan(Float.valueOf(0.0F)));
+/*  81 */   private final DefaultArg<Float> durationArg = (DefaultArg<Float>)
+/*  82 */     withDefaultArg("duration", "server.commands.player.effect.apply.duration.desc", (ArgumentType)ArgTypes.FLOAT, Float.valueOf(100.0F), "server.commands.entity.effect.duration")
+/*  83 */     .addValidator(Validators.greaterThan(Float.valueOf(0.0F)));
 /*     */   
 /*     */   PlayerEffectApplyOtherCommand() {
-/*  87 */     super("server.commands.player.effect.apply.other.desc");
-/*  88 */     requirePermission(HytalePermissions.fromCommand("player.effect.apply.other"));
+/*  86 */     super("server.commands.player.effect.apply.other.desc");
+/*  87 */     requirePermission(HytalePermissions.fromCommand("player.effect.apply.other"));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void executeSync(@Nonnull CommandContext context) {
-/*  93 */     PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
-/*  94 */     Ref<EntityStore> ref = targetPlayerRef.getReference();
+/*  92 */     PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
+/*  93 */     Ref<EntityStore> ref = targetPlayerRef.getReference();
 /*     */     
-/*  96 */     if (ref == null || !ref.isValid()) {
-/*  97 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/*  95 */     if (ref == null || !ref.isValid()) {
+/*  96 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 101 */     Store<EntityStore> store = ref.getStore();
-/* 102 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 100 */     Store<EntityStore> store = ref.getStore();
+/* 101 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 104 */     world.execute(() -> {
+/* 103 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           if (playerComponent == null) {
 /*     */             context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
@@ -114,7 +113,7 @@
 /*     */           EntityEffect effect = (EntityEffect)this.effectArg.get(context);
 /*     */           Float duration = (Float)this.durationArg.get(context);
 /*     */           effectControllerComponent.addEffect(ref, effect, duration.floatValue(), OverlapBehavior.OVERWRITE, (ComponentAccessor)store);
-/*     */           context.sendMessage(MESSAGE_EFFECT_APPLIED_OTHER.param("username", playerRefComponent.getUsername()).param("effect", effect.getId()).param("duration", duration.floatValue()));
+/*     */           context.sendMessage(Message.translation("server.commands.player.effect.apply.success.other").param("username", playerRefComponent.getUsername()).param("effect", effect.getId()).param("duration", duration.floatValue()));
 /*     */         });
 /*     */   }
 /*     */ }

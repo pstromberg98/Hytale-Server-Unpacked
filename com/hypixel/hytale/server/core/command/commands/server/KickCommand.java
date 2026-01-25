@@ -10,31 +10,28 @@
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class KickCommand
 /*    */   extends CommandBase
 /*    */ {
 /*    */   @Nonnull
-/* 17 */   private static final Message MESSAGE_COMMANDS_KICK_SUCCESS = Message.translation("server.commands.kick.success");
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 23 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.kick.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 20 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.kick.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public KickCommand() {
-/* 29 */     super("kick", "server.commands.kick.desc");
+/* 26 */     super("kick", "server.commands.kick.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 34 */     PlayerRef playerToKick = (PlayerRef)this.playerArg.get(context);
-/* 35 */     playerToKick.getPacketHandler().disconnect("You were kicked.");
-/* 36 */     context.sendMessage(MESSAGE_COMMANDS_KICK_SUCCESS
-/* 37 */         .param("username", playerToKick.getUsername()));
+/* 31 */     PlayerRef playerToKick = (PlayerRef)this.playerArg.get(context);
+/* 32 */     playerToKick.getPacketHandler().disconnect("You were kicked.");
+/* 33 */     context.sendMessage(Message.translation("server.commands.kick.success")
+/* 34 */         .param("username", playerToKick.getUsername()));
 /*    */   }
 /*    */ }
 

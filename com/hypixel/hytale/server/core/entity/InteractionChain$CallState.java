@@ -782,6 +782,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ final class CallState
 /*     */   extends Record
 /*     */ {
@@ -795,7 +798,7 @@
 /*     */     //   6: areturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #804	-> 0
+/*     */     //   #807	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
@@ -808,7 +811,7 @@
 /*     */     //   6: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #804	-> 0
+/*     */     //   #807	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	7	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
@@ -822,7 +825,7 @@
 /*     */     //   7: ireturn
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #804	-> 0
+/*     */     //   #807	-> 0
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   0	8	0	this	Lcom/hypixel/hytale/server/core/entity/InteractionChain$CallState;
@@ -830,7 +833,7 @@
 /*     */   }
 /*     */   
 /*     */   private CallState(RootInteraction rootInteraction, int operationCounter) {
-/* 804 */     this.rootInteraction = rootInteraction; this.operationCounter = operationCounter; } public RootInteraction rootInteraction() { return this.rootInteraction; } public int operationCounter() { return this.operationCounter; }
+/* 807 */     this.rootInteraction = rootInteraction; this.operationCounter = operationCounter; } public RootInteraction rootInteraction() { return this.rootInteraction; } public int operationCounter() { return this.operationCounter; }
 /*     */ 
 /*     */ }
 

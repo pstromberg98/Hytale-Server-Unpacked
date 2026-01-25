@@ -105,53 +105,58 @@
 /*     */ 
 /*     */     
 /* 107 */     Player playerComponent = (Player)commandBuffer.getComponent(ref, Player.getComponentType());
-/* 108 */     if (playerComponent == null)
-/*     */       return; 
-/* 110 */     boolean hasRequiredGameMode = (this.requiredGameMode == null || playerComponent.getGameMode() == this.requiredGameMode);
-/* 111 */     if (!hasRequiredGameMode)
-/* 112 */       return;  CombinedItemContainer combinedHotbarFirst = playerComponent.getInventory().getCombinedHotbarFirst();
+/* 108 */     if (playerComponent == null) {
+/* 109 */       (context.getState()).state = InteractionState.Failed;
+/*     */       
+/*     */       return;
+/*     */     } 
+/* 113 */     boolean hasRequiredGameMode = (this.requiredGameMode == null || playerComponent.getGameMode() == this.requiredGameMode);
+/* 114 */     if (!hasRequiredGameMode) {
+/*     */       return;
+/*     */     }
+/* 117 */     CombinedItemContainer combinedHotbarFirst = playerComponent.getInventory().getCombinedHotbarFirst();
 /*     */     
-/* 114 */     if (this.itemToRemove != null) {
-/* 115 */       ItemStackTransaction removeItemStack = combinedHotbarFirst.removeItemStack(this.itemToRemove, true, true);
-/* 116 */       if (!removeItemStack.succeeded()) {
-/* 117 */         (context.getState()).state = InteractionState.Failed;
+/* 119 */     if (this.itemToRemove != null) {
+/* 120 */       ItemStackTransaction removeItemStack = combinedHotbarFirst.removeItemStack(this.itemToRemove, true, true);
+/* 121 */       if (!removeItemStack.succeeded()) {
+/* 122 */         (context.getState()).state = InteractionState.Failed;
 /*     */         
 /*     */         return;
 /*     */       } 
 /*     */     } 
-/* 122 */     ItemStack heldItem = context.getHeldItem();
-/* 123 */     if (heldItem != null && this.adjustHeldItemQuantity != 0) {
-/* 124 */       if (this.adjustHeldItemQuantity < 0) {
-/* 125 */         ItemStackSlotTransaction itemStackSlotTransaction = context.getHeldItemContainer().removeItemStackFromSlot((short)context.getHeldItemSlot(), heldItem, -this.adjustHeldItemQuantity);
-/* 126 */         if (!itemStackSlotTransaction.succeeded()) {
-/* 127 */           (context.getState()).state = InteractionState.Failed;
+/* 127 */     ItemStack heldItem = context.getHeldItem();
+/* 128 */     if (heldItem != null && this.adjustHeldItemQuantity != 0) {
+/* 129 */       if (this.adjustHeldItemQuantity < 0) {
+/* 130 */         ItemStackSlotTransaction itemStackSlotTransaction = context.getHeldItemContainer().removeItemStackFromSlot((short)context.getHeldItemSlot(), heldItem, -this.adjustHeldItemQuantity);
+/* 131 */         if (!itemStackSlotTransaction.succeeded()) {
+/* 132 */           (context.getState()).state = InteractionState.Failed;
 /*     */           
 /*     */           return;
 /*     */         } 
-/* 131 */         context.setHeldItem(itemStackSlotTransaction.getSlotAfter());
+/* 136 */         context.setHeldItem(itemStackSlotTransaction.getSlotAfter());
 /*     */       } else {
-/* 133 */         SimpleItemContainer.addOrDropItemStack((ComponentAccessor)commandBuffer, ref, (ItemContainer)combinedHotbarFirst, heldItem.withQuantity(this.adjustHeldItemQuantity));
+/* 138 */         SimpleItemContainer.addOrDropItemStack((ComponentAccessor)commandBuffer, ref, (ItemContainer)combinedHotbarFirst, heldItem.withQuantity(this.adjustHeldItemQuantity));
 /*     */       } 
 /*     */     }
 /*     */     
-/* 137 */     if (this.itemToAdd != null) SimpleItemContainer.addOrDropItemStack((ComponentAccessor)commandBuffer, ref, (ItemContainer)combinedHotbarFirst, this.itemToAdd);
+/* 142 */     if (this.itemToAdd != null) SimpleItemContainer.addOrDropItemStack((ComponentAccessor)commandBuffer, ref, (ItemContainer)combinedHotbarFirst, this.itemToAdd);
 /*     */     
-/* 139 */     if (this.adjustHeldItemDurability == 0.0D)
+/* 144 */     if (this.adjustHeldItemDurability == 0.0D)
 /*     */       return; 
-/* 141 */     ItemStack item = context.getHeldItem();
-/* 142 */     if (item == null)
+/* 146 */     ItemStack item = context.getHeldItem();
+/* 147 */     if (item == null)
 /*     */       return; 
-/* 144 */     ItemStack newItem = item.withIncreasedDurability(this.adjustHeldItemDurability);
-/* 145 */     boolean justBroke = (newItem.isBroken() && !item.isBroken());
-/* 146 */     if (newItem.isBroken())
+/* 149 */     ItemStack newItem = item.withIncreasedDurability(this.adjustHeldItemDurability);
+/* 150 */     boolean justBroke = (newItem.isBroken() && !item.isBroken());
+/* 151 */     if (newItem.isBroken())
 /*     */     {
-/* 148 */       if (this.brokenItem != null) {
-/* 149 */         if (this.brokenItem.equals("Empty")) {
+/* 153 */       if (this.brokenItem != null) {
+/* 154 */         if (this.brokenItem.equals("Empty")) {
 /*     */           
-/* 151 */           newItem = null;
-/* 152 */         } else if (!this.brokenItem.equals(item.getItemId())) {
+/* 156 */           newItem = null;
+/* 157 */         } else if (!this.brokenItem.equals(item.getItemId())) {
 /*     */           
-/* 154 */           newItem = new ItemStack(this.brokenItem, 1);
+/* 159 */           newItem = new ItemStack(this.brokenItem, 1);
 /*     */         } 
 /*     */       }
 /*     */     }
@@ -159,51 +164,51 @@
 /*     */ 
 /*     */ 
 /*     */     
-/* 162 */     boolean isTransformation = (this.brokenItem != null && !this.brokenItem.equals(item.getItemId()));
-/* 163 */     boolean shouldNotify = (this.notifyOnBreak != null) ? this.notifyOnBreak.booleanValue() : (!isTransformation);
-/* 164 */     if (justBroke && shouldNotify) {
-/* 165 */       Message itemNameMessage = Message.translation(item.getItem().getTranslationKey());
-/* 166 */       String messageKey = (this.notifyOnBreakMessage != null) ? this.notifyOnBreakMessage : "server.general.repair.itemBroken";
-/* 167 */       playerComponent.sendMessage(Message.translation(messageKey).param("itemName", itemNameMessage).color("#ff5555"));
+/* 167 */     boolean isTransformation = (this.brokenItem != null && !this.brokenItem.equals(item.getItemId()));
+/* 168 */     boolean shouldNotify = (this.notifyOnBreak != null) ? this.notifyOnBreak.booleanValue() : (!isTransformation);
+/* 169 */     if (justBroke && shouldNotify) {
+/* 170 */       Message itemNameMessage = Message.translation(item.getItem().getTranslationKey());
+/* 171 */       String messageKey = (this.notifyOnBreakMessage != null) ? this.notifyOnBreakMessage : "server.general.repair.itemBroken";
+/* 172 */       playerComponent.sendMessage(Message.translation(messageKey).param("itemName", itemNameMessage).color("#ff5555"));
 /*     */       
-/* 169 */       PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(ref, PlayerRef.getComponentType());
-/* 170 */       if (playerRefComponent != null) {
-/* 171 */         int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Item_Break");
-/* 172 */         SoundUtil.playSoundEvent2dToPlayer(playerRefComponent, soundEventIndex, SoundCategory.SFX);
+/* 174 */       PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+/* 175 */       if (playerRefComponent != null) {
+/* 176 */         int soundEventIndex = TempAssetIdUtil.getSoundEventIndex("SFX_Item_Break");
+/* 177 */         SoundUtil.playSoundEvent2dToPlayer(playerRefComponent, soundEventIndex, SoundCategory.SFX);
 /*     */       } 
 /*     */     } 
 /*     */ 
 /*     */     
-/* 177 */     ItemStackSlotTransaction slotTransaction = context.getHeldItemContainer().setItemStackForSlot((short)context.getHeldItemSlot(), newItem);
-/* 178 */     if (!slotTransaction.succeeded()) {
-/* 179 */       (context.getState()).state = InteractionState.Failed;
+/* 182 */     ItemStackSlotTransaction slotTransaction = context.getHeldItemContainer().setItemStackForSlot((short)context.getHeldItemSlot(), newItem);
+/* 183 */     if (!slotTransaction.succeeded()) {
+/* 184 */       (context.getState()).state = InteractionState.Failed;
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 183 */     context.setHeldItem(newItem);
+/* 188 */     context.setHeldItem(newItem);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected Interaction generatePacket() {
-/* 189 */     return (Interaction)new com.hypixel.hytale.protocol.ModifyInventoryInteraction();
+/* 194 */     return (Interaction)new com.hypixel.hytale.protocol.ModifyInventoryInteraction();
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void configurePacket(Interaction packet) {
-/* 194 */     super.configurePacket(packet);
-/* 195 */     com.hypixel.hytale.protocol.ModifyInventoryInteraction p = (com.hypixel.hytale.protocol.ModifyInventoryInteraction)packet;
-/* 196 */     if (this.itemToRemove != null) p.itemToRemove = this.itemToRemove.toPacket(); 
-/* 197 */     p.adjustHeldItemQuantity = this.adjustHeldItemQuantity;
-/* 198 */     if (this.itemToAdd != null) p.itemToAdd = this.itemToAdd.toPacket(); 
-/* 199 */     if (this.brokenItem != null) p.brokenItem = this.brokenItem.toString(); 
-/* 200 */     p.adjustHeldItemDurability = this.adjustHeldItemDurability;
+/* 199 */     super.configurePacket(packet);
+/* 200 */     com.hypixel.hytale.protocol.ModifyInventoryInteraction p = (com.hypixel.hytale.protocol.ModifyInventoryInteraction)packet;
+/* 201 */     if (this.itemToRemove != null) p.itemToRemove = this.itemToRemove.toPacket(); 
+/* 202 */     p.adjustHeldItemQuantity = this.adjustHeldItemQuantity;
+/* 203 */     if (this.itemToAdd != null) p.itemToAdd = this.itemToAdd.toPacket(); 
+/* 204 */     if (this.brokenItem != null) p.brokenItem = this.brokenItem.toString(); 
+/* 205 */     p.adjustHeldItemDurability = this.adjustHeldItemDurability;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 206 */     return "ModifyInventoryInteraction{requiredGameMode=" + String.valueOf(this.requiredGameMode) + ", itemToRemove=" + String.valueOf(this.itemToRemove) + ", adjustHeldItemQuantity=" + this.adjustHeldItemQuantity + ", itemToAdd=" + String.valueOf(this.itemToAdd) + ", adjustHeldItemDurability=" + this.adjustHeldItemDurability + ", brokenItem=" + this.brokenItem + ", notifyOnBreak=" + this.notifyOnBreak + ", notifyOnBreakMessage='" + this.notifyOnBreakMessage + "'} " + super
+/* 211 */     return "ModifyInventoryInteraction{requiredGameMode=" + String.valueOf(this.requiredGameMode) + ", itemToRemove=" + String.valueOf(this.itemToRemove) + ", adjustHeldItemQuantity=" + this.adjustHeldItemQuantity + ", itemToAdd=" + String.valueOf(this.itemToAdd) + ", adjustHeldItemDurability=" + this.adjustHeldItemDurability + ", brokenItem=" + this.brokenItem + ", notifyOnBreak=" + this.notifyOnBreak + ", notifyOnBreakMessage='" + this.notifyOnBreakMessage + "'} " + super
 /*     */ 
 /*     */ 
 /*     */ 
@@ -212,7 +217,7 @@
 /*     */ 
 /*     */ 
 /*     */       
-/* 215 */       .toString();
+/* 220 */       .toString();
 /*     */   }
 /*     */ }
 

@@ -114,76 +114,64 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ class GiveOtherCommand
 /*     */   extends CommandBase
 /*     */ {
 /*     */   @Nonnull
-/* 127 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
-/*     */   @Nonnull
-/* 129 */   private static final Message MESSAGE_COMMANDS_GIVE_GAVE = Message.translation("server.commands.give.gave");
-/*     */   @Nonnull
-/* 131 */   private static final Message MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE = Message.translation("server.commands.give.insufficientInvSpace");
-/*     */   @Nonnull
-/* 133 */   private static final Message MESSAGE_COMMANDS_GIVE_INVALID_METADATA = Message.translation("server.commands.give.invalidMetadata");
+/* 121 */   private static final Message MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD = Message.translation("server.commands.errors.playerNotInWorld");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 139 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
+/* 127 */   private final RequiredArg<PlayerRef> playerArg = withRequiredArg("player", "server.commands.argtype.player.desc", (ArgumentType)ArgTypes.PLAYER_REF);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 145 */   private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
+/* 133 */   private final RequiredArg<Item> itemArg = withRequiredArg("item", "server.commands.give.item.desc", (ArgumentType)ArgTypes.ITEM_ASSET);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 151 */   private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
+/* 139 */   private final DefaultArg<Integer> quantityArg = withDefaultArg("quantity", "server.commands.give.quantity.desc", (ArgumentType)ArgTypes.INTEGER, Integer.valueOf(1), "1");
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 157 */   private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
+/* 145 */   private final OptionalArg<Double> durabilityArg = withOptionalArg("durability", "server.commands.give.durability.desc", (ArgumentType)ArgTypes.DOUBLE);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 163 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
+/* 151 */   private final OptionalArg<String> metadataArg = withOptionalArg("metadata", "server.commands.give.metadata.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   GiveOtherCommand() {
-/* 169 */     super("server.commands.give.other.desc");
-/* 170 */     requirePermission(HytalePermissions.fromCommand("give.other"));
+/* 157 */     super("server.commands.give.other.desc");
+/* 158 */     requirePermission(HytalePermissions.fromCommand("give.other"));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void executeSync(@Nonnull CommandContext context) {
-/* 175 */     PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
-/* 176 */     Ref<EntityStore> ref = targetPlayerRef.getReference();
+/* 163 */     PlayerRef targetPlayerRef = (PlayerRef)this.playerArg.get(context);
+/* 164 */     Ref<EntityStore> ref = targetPlayerRef.getReference();
 /*     */     
-/* 178 */     if (ref == null || !ref.isValid()) {
-/* 179 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
+/* 166 */     if (ref == null || !ref.isValid()) {
+/* 167 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_PLAYER_NOT_IN_WORLD);
 /*     */       
 /*     */       return;
 /*     */     } 
-/* 183 */     Store<EntityStore> store = ref.getStore();
-/* 184 */     World world = ((EntityStore)store.getExternalData()).getWorld();
+/* 171 */     Store<EntityStore> store = ref.getStore();
+/* 172 */     World world = ((EntityStore)store.getExternalData()).getWorld();
 /*     */     
-/* 186 */     world.execute(() -> {
+/* 174 */     world.execute(() -> {
 /*     */           Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
 /*     */           
 /*     */           if (playerComponent == null) {
@@ -211,8 +199,8 @@
 /*     */             String metadataStr = (String)this.metadataArg.get(context);
 /*     */             try {
 /*     */               metadata = BsonDocument.parse(metadataStr);
-/* 214 */             } catch (Exception e) {
-/*     */               context.sendMessage(MESSAGE_COMMANDS_GIVE_INVALID_METADATA.param("error", e.getMessage()));
+/* 202 */             } catch (Exception e) {
+/*     */               context.sendMessage(Message.translation("server.commands.give.invalidMetadata").param("error", e.getMessage()));
 /*     */               return;
 /*     */             } 
 /*     */           } 
@@ -221,9 +209,9 @@
 /*     */           ItemStack remainder = transaction.getRemainder();
 /*     */           Message itemNameMessage = Message.translation(item.getTranslationKey());
 /*     */           if (remainder == null || remainder.isEmpty()) {
-/*     */             context.sendMessage(MESSAGE_COMMANDS_GIVE_GAVE.param("targetUsername", targetPlayerRef.getUsername()).param("quantity", quantity.intValue()).param("item", itemNameMessage));
+/*     */             context.sendMessage(Message.translation("server.commands.give.gave").param("targetUsername", targetPlayerRef.getUsername()).param("quantity", quantity.intValue()).param("item", itemNameMessage));
 /*     */           } else {
-/*     */             context.sendMessage(MESSAGE_COMMANDS_GIVE_INSUFFICIENT_INV_SPACE.param("quantity", quantity.intValue()).param("item", itemNameMessage));
+/*     */             context.sendMessage(Message.translation("server.commands.give.insufficientInvSpace").param("quantity", quantity.intValue()).param("item", itemNameMessage));
 /*     */           } 
 /*     */         });
 /*     */   }

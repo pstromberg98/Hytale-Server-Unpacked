@@ -208,41 +208,42 @@
 /*     */ 
 /*     */ 
 /*     */   
+/*     */   @Nonnull
 /*     */   public Archetype<ECS_TYPE> getSerializableArchetype(@Nonnull ComponentRegistry.Data<ECS_TYPE> data) {
-/* 212 */     if (isEmpty()) {
-/* 213 */       return EMPTY;
+/* 213 */     if (isEmpty()) {
+/* 214 */       return EMPTY;
 /*     */     }
 /*     */     
-/* 216 */     if (contains(data.getRegistry().getNonSerializedComponentType())) {
-/* 217 */       return EMPTY;
+/* 217 */     if (contains(data.getRegistry().getNonSerializedComponentType())) {
+/* 218 */       return EMPTY;
 /*     */     }
 /*     */     
-/* 220 */     int lastSerializableIndex = this.componentTypes.length - 1;
-/* 221 */     for (int index = this.componentTypes.length - 1; index >= this.minIndex; index--) {
-/* 222 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[index];
-/* 223 */       if (componentType != null && data.getComponentCodec(componentType) != null) {
-/* 224 */         lastSerializableIndex = index;
+/* 221 */     int lastSerializableIndex = this.componentTypes.length - 1;
+/* 222 */     for (int index = this.componentTypes.length - 1; index >= this.minIndex; index--) {
+/* 223 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[index];
+/* 224 */       if (componentType != null && data.getComponentCodec(componentType) != null) {
+/* 225 */         lastSerializableIndex = index;
 /*     */         
 /*     */         break;
 /*     */       } 
 /*     */     } 
-/* 229 */     if (lastSerializableIndex < this.minIndex) {
-/* 230 */       return EMPTY;
+/* 230 */     if (lastSerializableIndex < this.minIndex) {
+/* 231 */       return EMPTY;
 /*     */     }
 /*     */ 
 /*     */     
-/* 234 */     ComponentType[] arrayOfComponentType = new ComponentType[lastSerializableIndex + 1];
+/* 235 */     ComponentType[] arrayOfComponentType = new ComponentType[lastSerializableIndex + 1];
 /*     */     
-/* 236 */     int serializableMinIndex = this.minIndex;
-/* 237 */     for (int i = serializableMinIndex; i < arrayOfComponentType.length; i++) {
+/* 237 */     int serializableMinIndex = this.minIndex;
+/* 238 */     for (int i = serializableMinIndex; i < arrayOfComponentType.length; i++) {
 /*     */       
-/* 239 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[i];
-/* 240 */       if (componentType != null && data.getComponentCodec(componentType) != null) {
-/* 241 */         serializableMinIndex = Math.min(serializableMinIndex, i);
-/* 242 */         arrayOfComponentType[i] = componentType;
+/* 240 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[i];
+/* 241 */       if (componentType != null && data.getComponentCodec(componentType) != null) {
+/* 242 */         serializableMinIndex = Math.min(serializableMinIndex, i);
+/* 243 */         arrayOfComponentType[i] = componentType;
 /*     */       } 
 /*     */     } 
-/* 245 */     return new Archetype(this.minIndex, arrayOfComponentType.length, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 246 */     return new Archetype(this.minIndex, arrayOfComponentType.length, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -250,7 +251,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public ExactArchetypeQuery<ECS_TYPE> asExactQuery() {
-/* 253 */     return this.exactQuery;
+/* 254 */     return this.exactQuery;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -262,12 +263,12 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public static <ECS_TYPE> Archetype<ECS_TYPE> of(@Nonnull ComponentType<ECS_TYPE, ?> componentTypes) {
-/* 265 */     int index = componentTypes.getIndex();
+/* 266 */     int index = componentTypes.getIndex();
 /*     */ 
 /*     */     
-/* 268 */     ComponentType[] arrayOfComponentType = new ComponentType[index + 1];
-/* 269 */     arrayOfComponentType[index] = componentTypes;
-/* 270 */     return new Archetype<>(index, 1, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 269 */     ComponentType[] arrayOfComponentType = new ComponentType[index + 1];
+/* 270 */     arrayOfComponentType[index] = componentTypes;
+/* 271 */     return new Archetype<>(index, 1, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -279,38 +280,38 @@
 /*     */   
 /*     */   @SafeVarargs
 /*     */   public static <ECS_TYPE> Archetype<ECS_TYPE> of(@Nonnull ComponentType<ECS_TYPE, ?>... componentTypes) {
-/* 282 */     if (componentTypes.length == 0)
+/* 283 */     if (componentTypes.length == 0)
 /*     */     {
-/* 284 */       return EMPTY;
+/* 285 */       return EMPTY;
 /*     */     }
 /*     */     
-/* 287 */     ComponentRegistry<ECS_TYPE> registry = componentTypes[0].getRegistry();
+/* 288 */     ComponentRegistry<ECS_TYPE> registry = componentTypes[0].getRegistry();
 /*     */     
-/* 289 */     int minIndex = Integer.MAX_VALUE;
-/* 290 */     int maxIndex = Integer.MIN_VALUE;
-/* 291 */     for (int i = 0; i < componentTypes.length; i++) {
+/* 290 */     int minIndex = Integer.MAX_VALUE;
+/* 291 */     int maxIndex = Integer.MIN_VALUE;
+/* 292 */     for (int i = 0; i < componentTypes.length; i++) {
 /*     */       
-/* 293 */       componentTypes[i].validateRegistry(registry);
+/* 294 */       componentTypes[i].validateRegistry(registry);
 /*     */ 
 /*     */       
-/* 296 */       int index = componentTypes[i].getIndex();
-/* 297 */       if (index < minIndex) minIndex = index; 
-/* 298 */       if (index > maxIndex) maxIndex = index;
+/* 297 */       int index = componentTypes[i].getIndex();
+/* 298 */       if (index < minIndex) minIndex = index; 
+/* 299 */       if (index > maxIndex) maxIndex = index;
 /*     */ 
 /*     */       
-/* 301 */       for (int n = i + 1; n < componentTypes.length; n++) {
-/* 302 */         if (componentTypes[i] == componentTypes[n]) {
-/* 303 */           throw new IllegalArgumentException("ComponentType provided multiple times! " + Arrays.toString(componentTypes));
+/* 302 */       for (int n = i + 1; n < componentTypes.length; n++) {
+/* 303 */         if (componentTypes[i] == componentTypes[n]) {
+/* 304 */           throw new IllegalArgumentException("ComponentType provided multiple times! " + Arrays.toString(componentTypes));
 /*     */         }
 /*     */       } 
 /*     */     } 
 /*     */ 
 /*     */     
-/* 309 */     ComponentType[] arrayOfComponentType = new ComponentType[maxIndex + 1];
-/* 310 */     for (ComponentType<ECS_TYPE, ?> componentType : componentTypes) {
-/* 311 */       arrayOfComponentType[componentType.getIndex()] = componentType;
+/* 310 */     ComponentType[] arrayOfComponentType = new ComponentType[maxIndex + 1];
+/* 311 */     for (ComponentType<ECS_TYPE, ?> componentType : componentTypes) {
+/* 312 */       arrayOfComponentType[componentType.getIndex()] = componentType;
 /*     */     }
-/* 313 */     return new Archetype<>(minIndex, componentTypes.length, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 314 */     return new Archetype<>(minIndex, componentTypes.length, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -325,17 +326,17 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public static <ECS_TYPE, T extends Component<ECS_TYPE>> Archetype<ECS_TYPE> add(@Nonnull Archetype<ECS_TYPE> archetype, @Nonnull ComponentType<ECS_TYPE, T> componentType) {
-/* 328 */     if (archetype.isEmpty()) return of(componentType); 
-/* 329 */     if (archetype.contains(componentType)) throw new IllegalArgumentException("ComponentType is already in Archetype! " + String.valueOf(archetype) + ", " + String.valueOf(componentType));
+/* 329 */     if (archetype.isEmpty()) return of(componentType); 
+/* 330 */     if (archetype.contains(componentType)) throw new IllegalArgumentException("ComponentType is already in Archetype! " + String.valueOf(archetype) + ", " + String.valueOf(componentType));
 /*     */     
-/* 331 */     archetype.validateRegistry(componentType.getRegistry());
+/* 332 */     archetype.validateRegistry(componentType.getRegistry());
 /*     */     
-/* 333 */     int index = componentType.getIndex();
-/* 334 */     int minIndex = Math.min(index, archetype.minIndex);
-/* 335 */     int newLength = Math.max(index + 1, archetype.componentTypes.length);
-/* 336 */     ComponentType[] arrayOfComponentType = Arrays.<ComponentType>copyOf((ComponentType[])archetype.componentTypes, newLength);
-/* 337 */     arrayOfComponentType[index] = componentType;
-/* 338 */     return new Archetype<>(minIndex, archetype.count + 1, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 334 */     int index = componentType.getIndex();
+/* 335 */     int minIndex = Math.min(index, archetype.minIndex);
+/* 336 */     int newLength = Math.max(index + 1, archetype.componentTypes.length);
+/* 337 */     ComponentType[] arrayOfComponentType = Arrays.<ComponentType>copyOf((ComponentType[])archetype.componentTypes, newLength);
+/* 338 */     arrayOfComponentType[index] = componentType;
+/* 339 */     return new Archetype<>(minIndex, archetype.count + 1, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -349,96 +350,96 @@
 /*     */ 
 /*     */   
 /*     */   public static <ECS_TYPE, T extends Component<ECS_TYPE>> Archetype<ECS_TYPE> remove(@Nonnull Archetype<ECS_TYPE> archetype, @Nonnull ComponentType<ECS_TYPE, T> componentType) {
-/* 352 */     if (archetype.isEmpty()) throw new IllegalArgumentException("Archetype is already empty!"); 
-/* 353 */     if (!archetype.contains(componentType)) {
-/* 354 */       throw new IllegalArgumentException("Archetype doesn't contain ComponentType! " + String.valueOf(archetype) + ", " + String.valueOf(componentType));
+/* 353 */     if (archetype.isEmpty()) throw new IllegalArgumentException("Archetype is already empty!"); 
+/* 354 */     if (!archetype.contains(componentType)) {
+/* 355 */       throw new IllegalArgumentException("Archetype doesn't contain ComponentType! " + String.valueOf(archetype) + ", " + String.valueOf(componentType));
 /*     */     }
 /*     */     
-/* 357 */     int oldLength = archetype.componentTypes.length;
-/* 358 */     int oldMinIndex = archetype.minIndex;
-/* 359 */     int oldMaxIndex = oldLength - 1;
-/* 360 */     if (oldMinIndex == oldMaxIndex)
+/* 358 */     int oldLength = archetype.componentTypes.length;
+/* 359 */     int oldMinIndex = archetype.minIndex;
+/* 360 */     int oldMaxIndex = oldLength - 1;
+/* 361 */     if (oldMinIndex == oldMaxIndex)
 /*     */     {
-/* 362 */       return EMPTY;
+/* 363 */       return EMPTY;
 /*     */     }
 /*     */     
-/* 365 */     int newCount = archetype.count - 1;
-/* 366 */     int index = componentType.getIndex();
+/* 366 */     int newCount = archetype.count - 1;
+/* 367 */     int index = componentType.getIndex();
 /*     */ 
 /*     */     
-/* 369 */     if (index == oldMaxIndex) {
+/* 370 */     if (index == oldMaxIndex) {
 /*     */ 
 /*     */       
-/* 372 */       int maxIndex = index - 1;
-/* 373 */       for (; maxIndex > oldMinIndex && 
-/* 374 */         archetype.componentTypes[maxIndex] == null; maxIndex--);
+/* 373 */       int maxIndex = index - 1;
+/* 374 */       for (; maxIndex > oldMinIndex && 
+/* 375 */         archetype.componentTypes[maxIndex] == null; maxIndex--);
 /*     */ 
 /*     */       
-/* 377 */       return new Archetype<>(oldMinIndex, newCount, Arrays.<ComponentType<ECS_TYPE, ?>>copyOf(archetype.componentTypes, maxIndex + 1));
+/* 378 */       return new Archetype<>(oldMinIndex, newCount, Arrays.<ComponentType<ECS_TYPE, ?>>copyOf(archetype.componentTypes, maxIndex + 1));
 /*     */     } 
 /*     */     
-/* 380 */     ComponentType[] arrayOfComponentType = Arrays.<ComponentType>copyOf((ComponentType[])archetype.componentTypes, oldLength);
-/* 381 */     arrayOfComponentType[index] = null;
+/* 381 */     ComponentType[] arrayOfComponentType = Arrays.<ComponentType>copyOf((ComponentType[])archetype.componentTypes, oldLength);
+/* 382 */     arrayOfComponentType[index] = null;
 /*     */ 
 /*     */     
-/* 384 */     if (index == oldMinIndex) {
+/* 385 */     if (index == oldMinIndex) {
 /*     */       
-/* 386 */       int minIndex = index + 1;
-/* 387 */       for (; minIndex < oldLength && 
-/* 388 */         arrayOfComponentType[minIndex] == null; minIndex++);
+/* 387 */       int minIndex = index + 1;
+/* 388 */       for (; minIndex < oldLength && 
+/* 389 */         arrayOfComponentType[minIndex] == null; minIndex++);
 /*     */ 
 /*     */       
-/* 391 */       return new Archetype<>(minIndex, newCount, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 392 */       return new Archetype<>(minIndex, newCount, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */     } 
 /*     */ 
 /*     */     
-/* 395 */     return new Archetype<>(oldMinIndex, newCount, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
+/* 396 */     return new Archetype<>(oldMinIndex, newCount, (ComponentType<ECS_TYPE, ?>[])arrayOfComponentType);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean test(@Nonnull Archetype<ECS_TYPE> archetype) {
-/* 400 */     return archetype.contains(this);
+/* 401 */     return archetype.contains(this);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean requiresComponentType(@Nonnull ComponentType<ECS_TYPE, ?> componentType) {
-/* 405 */     return contains(componentType);
+/* 406 */     return contains(componentType);
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void validateRegistry(ComponentRegistry<ECS_TYPE> registry) {
-/* 410 */     if (isEmpty())
-/* 411 */       return;  this.componentTypes[this.minIndex].validateRegistry(registry);
+/*     */   public void validateRegistry(@Nonnull ComponentRegistry<ECS_TYPE> registry) {
+/* 411 */     if (isEmpty())
+/* 412 */       return;  this.componentTypes[this.minIndex].validateRegistry(registry);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void validate() {
-/* 416 */     for (int i = this.minIndex; i < this.componentTypes.length; i++) {
-/* 417 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[i];
-/* 418 */       if (componentType != null) componentType.validate();
+/* 417 */     for (int i = this.minIndex; i < this.componentTypes.length; i++) {
+/* 418 */       ComponentType<ECS_TYPE, ?> componentType = this.componentTypes[i];
+/* 419 */       if (componentType != null) componentType.validate();
 /*     */     
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public boolean equals(@Nullable Object o) {
-/* 424 */     if (this == o) return true; 
-/* 425 */     if (o == null || getClass() != o.getClass()) return false;
+/* 425 */     if (this == o) return true; 
+/* 426 */     if (o == null || getClass() != o.getClass()) return false;
 /*     */     
-/* 427 */     Archetype<?> archetype = (Archetype)o;
+/* 428 */     Archetype<?> archetype = (Archetype)o;
 /*     */     
-/* 429 */     return Arrays.equals((Object[])this.componentTypes, (Object[])archetype.componentTypes);
+/* 430 */     return Arrays.equals((Object[])this.componentTypes, (Object[])archetype.componentTypes);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public int hashCode() {
-/* 434 */     return Arrays.hashCode((Object[])this.componentTypes);
+/* 435 */     return Arrays.hashCode((Object[])this.componentTypes);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public String toString() {
-/* 441 */     return "Archetype{componentTypes=" + Arrays.toString((Object[])this.componentTypes) + "}";
+/* 442 */     return "Archetype{componentTypes=" + Arrays.toString((Object[])this.componentTypes) + "}";
 /*     */   }
 /*     */ }
 

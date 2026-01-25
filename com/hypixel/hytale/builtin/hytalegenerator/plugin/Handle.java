@@ -39,7 +39,7 @@
 /*    */ 
 /*    */   
 /*    */   public Transform[] getSpawnPoints(int seed) {
-/* 42 */     return new Transform[] { this.profile.spawnPosition().clone() };
+/* 42 */     return new Transform[] { new Transform(0.0D, 140.0D, 0.0D) };
 /*    */   }
 /*    */ 
 /*    */   

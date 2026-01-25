@@ -16,7 +16,7 @@
 /*     */   public static final int FIXED_BLOCK_SIZE = 1;
 /*     */   public static final int VARIABLE_FIELD_COUNT = 1;
 /*     */   public static final int VARIABLE_BLOCK_START = 1;
-/*     */   public static final int MAX_SIZE = 16384006;
+/*     */   public static final int MAX_SIZE = 67108866;
 /*     */   @Nullable
 /*     */   public String content;
 /*     */   
@@ -38,7 +38,7 @@
 /*  38 */     int pos = offset + 1;
 /*  39 */     if ((nullBits & 0x1) != 0) { int contentLen = VarInt.peek(buf, pos);
 /*  40 */       if (contentLen < 0) throw ProtocolException.negativeLength("Content", contentLen); 
-/*  41 */       if (contentLen > 4096000) throw ProtocolException.stringTooLong("Content", contentLen, 4096000); 
+/*  41 */       if (contentLen > 16777215) throw ProtocolException.stringTooLong("Content", contentLen, 16777215); 
 /*  42 */       int contentVarLen = VarInt.length(buf, pos);
 /*  43 */       obj.content = PacketIO.readVarString(buf, pos, PacketIO.UTF8);
 /*  44 */       pos += contentVarLen + contentLen; }
@@ -60,7 +60,7 @@
 /*  60 */     buf.writeByte(nullBits);
 /*     */ 
 /*     */     
-/*  63 */     if (this.content != null) PacketIO.writeVarString(buf, this.content, 4096000);
+/*  63 */     if (this.content != null) PacketIO.writeVarString(buf, this.content, 16777215);
 /*     */   
 /*     */   }
 /*     */   
@@ -85,8 +85,8 @@
 /*  85 */       if (contentLen < 0) {
 /*  86 */         return ValidationResult.error("Invalid string length for Content");
 /*     */       }
-/*  88 */       if (contentLen > 4096000) {
-/*  89 */         return ValidationResult.error("Content exceeds max length 4096000");
+/*  88 */       if (contentLen > 16777215) {
+/*  89 */         return ValidationResult.error("Content exceeds max length 16777215");
 /*     */       }
 /*  91 */       pos += VarInt.length(buffer, pos);
 /*  92 */       pos += contentLen;

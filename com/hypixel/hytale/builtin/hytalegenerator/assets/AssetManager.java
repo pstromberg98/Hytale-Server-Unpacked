@@ -41,11 +41,11 @@
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.propassignments.AssignmentsAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.props.ClusterPropAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.props.ColumnPropAsset;
+/*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.props.OffsetPropAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.props.PropAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.props.prefabprop.directionality.DirectionalityAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.scanners.ScannerAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.vectorproviders.ExportedVectorProviderAsset;
-/*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.vectorproviders.ImportedVectorProviderAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.vectorproviders.VectorProviderAsset;
 /*     */ import com.hypixel.hytale.builtin.hytalegenerator.assets.worldstructures.WorldStructureAsset;
 /*     */ import com.hypixel.hytale.event.EventRegistry;
@@ -211,7 +211,7 @@
 /* 211 */     PositionProviderAsset.CODEC.register("Occurrence", FieldFunctionOccurrencePositionProviderAsset.class, FieldFunctionOccurrencePositionProviderAsset.CODEC);
 /* 212 */     PositionProviderAsset.CODEC.register("Offset", OffsetPositionProviderAsset.class, OffsetPositionProviderAsset.CODEC);
 /* 213 */     PositionProviderAsset.CODEC.register("Union", UnionPositionProviderAsset.class, UnionPositionProviderAsset.CODEC);
-/* 214 */     PositionProviderAsset.CODEC.register("VerticalEliminator", VerticalEliminatorPositionProviderAsset.class, VerticalEliminatorPositionProviderAsset.CODEC);
+/* 214 */     PositionProviderAsset.CODEC.register("SimpleHorizontal", SimpleHorizontalPositionProviderAsset.class, SimpleHorizontalPositionProviderAsset.CODEC);
 /* 215 */     PositionProviderAsset.CODEC.register("Cache", CachedPositionProviderAsset.class, CachedPositionProviderAsset.CODEC);
 /* 216 */     PositionProviderAsset.CODEC.register("BaseHeight", BaseHeightPositionProviderAsset.class, BaseHeightPositionProviderAsset.CODEC);
 /* 217 */     PositionProviderAsset.CODEC.register("Imported", ImportedPositionProviderAsset.class, ImportedPositionProviderAsset.CODEC);
@@ -235,79 +235,81 @@
 /* 235 */     PropAsset.CODEC.register("Prefab", PrefabPropAsset.class, PrefabPropAsset.CODEC);
 /* 236 */     PropAsset.CODEC.register("PondFiller", PondFillerPropAsset.class, PondFillerPropAsset.CODEC);
 /* 237 */     PropAsset.CODEC.register("Density", DensityPropAsset.class, DensityPropAsset.CODEC);
+/* 238 */     PropAsset.CODEC.register("Offset", OffsetPropAsset.class, OffsetPropAsset.CODEC);
+/* 239 */     PropAsset.CODEC.register("Weighted", WeightedPropAsset.class, WeightedPropAsset.CODEC);
 /*     */     
-/* 239 */     DirectionalityAsset.CODEC.register("Imported", ImportedDirectionalityAsset.class, ImportedDirectionalityAsset.CODEC);
-/* 240 */     DirectionalityAsset.CODEC.register("Static", StaticDirectionalityAsset.class, StaticDirectionalityAsset.CODEC);
-/* 241 */     DirectionalityAsset.CODEC.register("Random", RandomDirectionalityAsset.class, RandomDirectionalityAsset.CODEC);
-/* 242 */     DirectionalityAsset.CODEC.register("Pattern", PatternDirectionalityAsset.class, PatternDirectionalityAsset.CODEC);
+/* 241 */     DirectionalityAsset.CODEC.register("Imported", ImportedDirectionalityAsset.class, ImportedDirectionalityAsset.CODEC);
+/* 242 */     DirectionalityAsset.CODEC.register("Static", StaticDirectionalityAsset.class, StaticDirectionalityAsset.CODEC);
+/* 243 */     DirectionalityAsset.CODEC.register("Random", RandomDirectionalityAsset.class, RandomDirectionalityAsset.CODEC);
+/* 244 */     DirectionalityAsset.CODEC.register("Pattern", PatternDirectionalityAsset.class, PatternDirectionalityAsset.CODEC);
 /*     */     
-/* 244 */     PatternAsset.CODEC.register("BlockType", MaterialPatternAsset.class, MaterialPatternAsset.CODEC);
-/* 245 */     PatternAsset.CODEC.register("BlockSet", BlockSetPatternAsset.class, BlockSetPatternAsset.CODEC);
-/* 246 */     PatternAsset.CODEC.register("Offset", OffsetPatternAsset.class, OffsetPatternAsset.CODEC);
-/* 247 */     PatternAsset.CODEC.register("Floor", FloorPatternAsset.class, FloorPatternAsset.CODEC);
-/* 248 */     PatternAsset.CODEC.register("Ceiling", CeilingPatternAsset.class, CeilingPatternAsset.CODEC);
-/* 249 */     PatternAsset.CODEC.register("Wall", WallPatternAsset.class, WallPatternAsset.CODEC);
-/* 250 */     PatternAsset.CODEC.register("Cuboid", CuboidPatternAsset.class, CuboidPatternAsset.CODEC);
-/* 251 */     PatternAsset.CODEC.register("And", AndPatternAsset.class, AndPatternAsset.CODEC);
-/* 252 */     PatternAsset.CODEC.register("Or", OrPatternAsset.class, OrPatternAsset.CODEC);
-/* 253 */     PatternAsset.CODEC.register("Not", NotPatternAsset.class, NotPatternAsset.CODEC);
-/* 254 */     PatternAsset.CODEC.register("Surface", SurfacePatternAsset.class, SurfacePatternAsset.CODEC);
-/* 255 */     PatternAsset.CODEC.register("Gap", GapPatternAsset.class, GapPatternAsset.CODEC);
-/* 256 */     PatternAsset.CODEC.register("FieldFunction", DensityPatternAsset.class, DensityPatternAsset.CODEC);
-/* 257 */     PatternAsset.CODEC.register("Imported", ImportedPatternAsset.class, ImportedPatternAsset.CODEC);
-/* 258 */     PatternAsset.CODEC.register("Constant", ConstantPatternAsset.class, ConstantPatternAsset.CODEC);
+/* 246 */     PatternAsset.CODEC.register("BlockType", MaterialPatternAsset.class, MaterialPatternAsset.CODEC);
+/* 247 */     PatternAsset.CODEC.register("BlockSet", BlockSetPatternAsset.class, BlockSetPatternAsset.CODEC);
+/* 248 */     PatternAsset.CODEC.register("Offset", OffsetPatternAsset.class, OffsetPatternAsset.CODEC);
+/* 249 */     PatternAsset.CODEC.register("Floor", FloorPatternAsset.class, FloorPatternAsset.CODEC);
+/* 250 */     PatternAsset.CODEC.register("Ceiling", CeilingPatternAsset.class, CeilingPatternAsset.CODEC);
+/* 251 */     PatternAsset.CODEC.register("Wall", WallPatternAsset.class, WallPatternAsset.CODEC);
+/* 252 */     PatternAsset.CODEC.register("Cuboid", CuboidPatternAsset.class, CuboidPatternAsset.CODEC);
+/* 253 */     PatternAsset.CODEC.register("And", AndPatternAsset.class, AndPatternAsset.CODEC);
+/* 254 */     PatternAsset.CODEC.register("Or", OrPatternAsset.class, OrPatternAsset.CODEC);
+/* 255 */     PatternAsset.CODEC.register("Not", NotPatternAsset.class, NotPatternAsset.CODEC);
+/* 256 */     PatternAsset.CODEC.register("Surface", SurfacePatternAsset.class, SurfacePatternAsset.CODEC);
+/* 257 */     PatternAsset.CODEC.register("Gap", GapPatternAsset.class, GapPatternAsset.CODEC);
+/* 258 */     PatternAsset.CODEC.register("FieldFunction", DensityPatternAsset.class, DensityPatternAsset.CODEC);
+/* 259 */     PatternAsset.CODEC.register("Imported", ImportedPatternAsset.class, ImportedPatternAsset.CODEC);
+/* 260 */     PatternAsset.CODEC.register("Constant", ConstantPatternAsset.class, ConstantPatternAsset.CODEC);
 /*     */     
-/* 260 */     ScannerAsset.CODEC.register("ColumnLinear", ColumnLinearScannerAsset.class, ColumnLinearScannerAsset.CODEC);
-/* 261 */     ScannerAsset.CODEC.register("ColumnRandom", ColumnRandomScannerAsset.class, ColumnRandomScannerAsset.CODEC);
-/* 262 */     ScannerAsset.CODEC.register("Origin", OriginScannerAsset.class, OriginScannerAsset.CODEC);
-/* 263 */     ScannerAsset.CODEC.register("Area", AreaScannerAsset.class, AreaScannerAsset.CODEC);
-/* 264 */     ScannerAsset.CODEC.register("Imported", ImportedScannerAsset.class, ImportedScannerAsset.CODEC);
+/* 262 */     ScannerAsset.CODEC.register("ColumnLinear", ColumnLinearScannerAsset.class, ColumnLinearScannerAsset.CODEC);
+/* 263 */     ScannerAsset.CODEC.register("ColumnRandom", ColumnRandomScannerAsset.class, ColumnRandomScannerAsset.CODEC);
+/* 264 */     ScannerAsset.CODEC.register("Origin", OriginScannerAsset.class, OriginScannerAsset.CODEC);
+/* 265 */     ScannerAsset.CODEC.register("Area", AreaScannerAsset.class, AreaScannerAsset.CODEC);
+/* 266 */     ScannerAsset.CODEC.register("Imported", ImportedScannerAsset.class, ImportedScannerAsset.CODEC);
 /*     */     
-/* 266 */     CurveAsset.CODEC.register("Imported", ImportedCurveAsset.class, ImportedCurveAsset.CODEC);
-/* 267 */     CurveAsset.CODEC.register("Manual", ManualCurveAsset.class, ManualCurveAsset.CODEC);
-/* 268 */     CurveAsset.CODEC.register("DistanceExponential", DistanceExponentialCurveAsset.class, DistanceExponentialCurveAsset.CODEC);
-/* 269 */     CurveAsset.CODEC.register("DistanceS", DistanceSCurveAsset.class, DistanceSCurveAsset.CODEC);
-/* 270 */     CurveAsset.CODEC.register("Not", NotCurveAsset.class, NotCurveAsset.CODEC);
-/* 271 */     CurveAsset.CODEC.register("Multiplier", MultiplierCurveAsset.class, MultiplierCurveAsset.CODEC);
-/* 272 */     CurveAsset.CODEC.register("Sum", SumCurveAsset.class, SumCurveAsset.CODEC);
-/* 273 */     CurveAsset.CODEC.register("Inverter", InverterCurveAsset.class, InverterCurveAsset.CODEC);
-/* 274 */     CurveAsset.CODEC.register("Clamp", ClampCurveAsset.class, ClampCurveAsset.CODEC);
-/* 275 */     CurveAsset.CODEC.register("SmoothClamp", SmoothClampCurveAsset.class, SmoothClampCurveAsset.CODEC);
-/* 276 */     CurveAsset.CODEC.register("Min", MinCurveAsset.class, MinCurveAsset.CODEC);
-/* 277 */     CurveAsset.CODEC.register("Max", MinCurveAsset.class, MinCurveAsset.CODEC);
-/* 278 */     CurveAsset.CODEC.register("SmoothMin", SmoothMinCurveAsset.class, SmoothMinCurveAsset.CODEC);
-/* 279 */     CurveAsset.CODEC.register("SmoothMax", SmoothMaxCurveAsset.class, SmoothMaxCurveAsset.CODEC);
-/* 280 */     CurveAsset.CODEC.register("SmoothFloor", SmoothFloorCurveAsset.class, SmoothFloorCurveAsset.CODEC);
-/* 281 */     CurveAsset.CODEC.register("SmoothCeiling", SmoothCeilingCurveAsset.class, SmoothCeilingCurveAsset.CODEC);
-/* 282 */     CurveAsset.CODEC.register("Floor", FloorCurveAsset.class, FloorCurveAsset.CODEC);
-/* 283 */     CurveAsset.CODEC.register("Ceiling", CeilingCurveAsset.class, CeilingCurveAsset.CODEC);
-/* 284 */     CurveAsset.CODEC.register("Constant", ConstantCurveAsset.class, ConstantCurveAsset.CODEC);
+/* 268 */     CurveAsset.CODEC.register("Imported", ImportedCurveAsset.class, ImportedCurveAsset.CODEC);
+/* 269 */     CurveAsset.CODEC.register("Manual", ManualCurveAsset.class, ManualCurveAsset.CODEC);
+/* 270 */     CurveAsset.CODEC.register("DistanceExponential", DistanceExponentialCurveAsset.class, DistanceExponentialCurveAsset.CODEC);
+/* 271 */     CurveAsset.CODEC.register("DistanceS", DistanceSCurveAsset.class, DistanceSCurveAsset.CODEC);
+/* 272 */     CurveAsset.CODEC.register("Not", NotCurveAsset.class, NotCurveAsset.CODEC);
+/* 273 */     CurveAsset.CODEC.register("Multiplier", MultiplierCurveAsset.class, MultiplierCurveAsset.CODEC);
+/* 274 */     CurveAsset.CODEC.register("Sum", SumCurveAsset.class, SumCurveAsset.CODEC);
+/* 275 */     CurveAsset.CODEC.register("Inverter", InverterCurveAsset.class, InverterCurveAsset.CODEC);
+/* 276 */     CurveAsset.CODEC.register("Clamp", ClampCurveAsset.class, ClampCurveAsset.CODEC);
+/* 277 */     CurveAsset.CODEC.register("SmoothClamp", SmoothClampCurveAsset.class, SmoothClampCurveAsset.CODEC);
+/* 278 */     CurveAsset.CODEC.register("Min", MinCurveAsset.class, MinCurveAsset.CODEC);
+/* 279 */     CurveAsset.CODEC.register("Max", MinCurveAsset.class, MinCurveAsset.CODEC);
+/* 280 */     CurveAsset.CODEC.register("SmoothMin", SmoothMinCurveAsset.class, SmoothMinCurveAsset.CODEC);
+/* 281 */     CurveAsset.CODEC.register("SmoothMax", SmoothMaxCurveAsset.class, SmoothMaxCurveAsset.CODEC);
+/* 282 */     CurveAsset.CODEC.register("SmoothFloor", SmoothFloorCurveAsset.class, SmoothFloorCurveAsset.CODEC);
+/* 283 */     CurveAsset.CODEC.register("SmoothCeiling", SmoothCeilingCurveAsset.class, SmoothCeilingCurveAsset.CODEC);
+/* 284 */     CurveAsset.CODEC.register("Floor", FloorCurveAsset.class, FloorCurveAsset.CODEC);
+/* 285 */     CurveAsset.CODEC.register("Ceiling", CeilingCurveAsset.class, CeilingCurveAsset.CODEC);
+/* 286 */     CurveAsset.CODEC.register("Constant", ConstantCurveAsset.class, ConstantCurveAsset.CODEC);
 /*     */     
-/* 286 */     ReturnTypeAsset.CODEC.register("CellValue", CellValueReturnTypeAsset.class, CellValueReturnTypeAsset.CODEC);
-/* 287 */     ReturnTypeAsset.CODEC.register("Curve", CurveReturnTypeAsset.class, CurveReturnTypeAsset.CODEC);
-/* 288 */     ReturnTypeAsset.CODEC.register("Distance", DistanceReturnTypeAsset.class, DistanceReturnTypeAsset.CODEC);
-/* 289 */     ReturnTypeAsset.CODEC.register("Distance2", Distance2ReturnTypeAsset.class, Distance2ReturnTypeAsset.CODEC);
-/* 290 */     ReturnTypeAsset.CODEC.register("Distance2Add", Distance2AddReturnTypeAsset.class, Distance2AddReturnTypeAsset.CODEC);
-/* 291 */     ReturnTypeAsset.CODEC.register("Distance2Sub", Distance2SubReturnTypeAsset.class, Distance2SubReturnTypeAsset.CODEC);
-/* 292 */     ReturnTypeAsset.CODEC.register("Distance2Mul", Distance2MulReturnTypeAsset.class, Distance2MulReturnTypeAsset.CODEC);
-/* 293 */     ReturnTypeAsset.CODEC.register("Distance2Div", Distance2DivReturnTypeAsset.class, Distance2DivReturnTypeAsset.CODEC);
-/* 294 */     ReturnTypeAsset.CODEC.register("Imported", ImportedReturnTypeAsset.class, ImportedReturnTypeAsset.CODEC);
-/* 295 */     ReturnTypeAsset.CODEC.register("Density", DensityReturnTypeAsset.class, DensityReturnTypeAsset.CODEC);
+/* 288 */     ReturnTypeAsset.CODEC.register("CellValue", CellValueReturnTypeAsset.class, CellValueReturnTypeAsset.CODEC);
+/* 289 */     ReturnTypeAsset.CODEC.register("Curve", CurveReturnTypeAsset.class, CurveReturnTypeAsset.CODEC);
+/* 290 */     ReturnTypeAsset.CODEC.register("Distance", DistanceReturnTypeAsset.class, DistanceReturnTypeAsset.CODEC);
+/* 291 */     ReturnTypeAsset.CODEC.register("Distance2", Distance2ReturnTypeAsset.class, Distance2ReturnTypeAsset.CODEC);
+/* 292 */     ReturnTypeAsset.CODEC.register("Distance2Add", Distance2AddReturnTypeAsset.class, Distance2AddReturnTypeAsset.CODEC);
+/* 293 */     ReturnTypeAsset.CODEC.register("Distance2Sub", Distance2SubReturnTypeAsset.class, Distance2SubReturnTypeAsset.CODEC);
+/* 294 */     ReturnTypeAsset.CODEC.register("Distance2Mul", Distance2MulReturnTypeAsset.class, Distance2MulReturnTypeAsset.CODEC);
+/* 295 */     ReturnTypeAsset.CODEC.register("Distance2Div", Distance2DivReturnTypeAsset.class, Distance2DivReturnTypeAsset.CODEC);
+/* 296 */     ReturnTypeAsset.CODEC.register("Imported", ImportedReturnTypeAsset.class, ImportedReturnTypeAsset.CODEC);
+/* 297 */     ReturnTypeAsset.CODEC.register("Density", DensityReturnTypeAsset.class, DensityReturnTypeAsset.CODEC);
 /*     */     
-/* 297 */     DistanceFunctionAsset.CODEC.register("Euclidean", EuclideanDistanceFunctionAsset.class, EuclideanDistanceFunctionAsset.CODEC);
-/* 298 */     DistanceFunctionAsset.CODEC.register("Manhattan", ManhattanDistanceFunctionAsset.class, ManhattanDistanceFunctionAsset.CODEC);
+/* 299 */     DistanceFunctionAsset.CODEC.register("Euclidean", EuclideanDistanceFunctionAsset.class, EuclideanDistanceFunctionAsset.CODEC);
+/* 300 */     DistanceFunctionAsset.CODEC.register("Manhattan", ManhattanDistanceFunctionAsset.class, ManhattanDistanceFunctionAsset.CODEC);
 /*     */     
-/* 300 */     EnvironmentProviderAsset.CODEC.register("Constant", ConstantEnvironmentProviderAsset.class, ConstantEnvironmentProviderAsset.CODEC);
-/* 301 */     EnvironmentProviderAsset.CODEC.register("DensityDelimited", DensityDelimitedEnvironmentProviderAsset.class, DensityDelimitedEnvironmentProviderAsset.CODEC);
+/* 302 */     EnvironmentProviderAsset.CODEC.register("Constant", ConstantEnvironmentProviderAsset.class, ConstantEnvironmentProviderAsset.CODEC);
+/* 303 */     EnvironmentProviderAsset.CODEC.register("DensityDelimited", DensityDelimitedEnvironmentProviderAsset.class, DensityDelimitedEnvironmentProviderAsset.CODEC);
 /*     */     
-/* 303 */     TintProviderAsset.CODEC.register("Constant", ConstantTintProviderAsset.class, ConstantTintProviderAsset.CODEC);
-/* 304 */     TintProviderAsset.CODEC.register("DensityDelimited", DensityDelimitedTintProviderAsset.class, DensityDelimitedTintProviderAsset.CODEC);
+/* 305 */     TintProviderAsset.CODEC.register("Constant", ConstantTintProviderAsset.class, ConstantTintProviderAsset.CODEC);
+/* 306 */     TintProviderAsset.CODEC.register("DensityDelimited", DensityDelimitedTintProviderAsset.class, DensityDelimitedTintProviderAsset.CODEC);
 /*     */     
-/* 306 */     VectorProviderAsset.CODEC.register("Constant", ConstantVectorProviderAsset.class, ConstantVectorProviderAsset.CODEC);
-/* 307 */     VectorProviderAsset.CODEC.register("DensityGradient", DensityGradientVectorProviderAsset.class, DensityGradientVectorProviderAsset.CODEC);
-/* 308 */     VectorProviderAsset.CODEC.register("Cache", CacheVectorProviderAsset.class, CacheVectorProviderAsset.CODEC);
-/* 309 */     VectorProviderAsset.CODEC.register("Exported", ExportedVectorProviderAsset.class, ExportedVectorProviderAsset.CODEC);
-/* 310 */     VectorProviderAsset.CODEC.register("Imported", ImportedVectorProviderAsset.class, ImportedVectorProviderAsset.CODEC);
+/* 308 */     VectorProviderAsset.CODEC.register("Constant", ConstantVectorProviderAsset.class, ConstantVectorProviderAsset.CODEC);
+/* 309 */     VectorProviderAsset.CODEC.register("DensityGradient", DensityGradientVectorProviderAsset.class, DensityGradientVectorProviderAsset.CODEC);
+/* 310 */     VectorProviderAsset.CODEC.register("Cache", CacheVectorProviderAsset.class, CacheVectorProviderAsset.CODEC);
+/* 311 */     VectorProviderAsset.CODEC.register("Exported", ExportedVectorProviderAsset.class, ExportedVectorProviderAsset.CODEC);
+/* 312 */     VectorProviderAsset.CODEC.register("Imported", ImportedVectorProviderAsset.class, ImportedVectorProviderAsset.CODEC);
 /*     */   }
 /*     */ 
 /*     */   
@@ -327,104 +329,104 @@
 /*     */   private List<Runnable> reloadListeners;
 /*     */   
 /*     */   public AssetManager(@Nonnull EventRegistry eventRegistry, @Nonnull HytaleLogger logger) {
-/* 330 */     this.logger = logger;
+/* 332 */     this.logger = logger;
 /*     */     
-/* 332 */     this.reloadListeners = new ArrayList<>(1);
+/* 334 */     this.reloadListeners = new ArrayList<>(1);
 /*     */     
-/* 334 */     this.densityAssets = new HashMap<>(1);
-/* 335 */     this.assigmentAssets = new HashMap<>(1);
-/* 336 */     this.biomeAssets = new HashMap<>(1);
-/* 337 */     this.worldStructureAssets = new HashMap<>(1);
-/* 338 */     this.blockMaskAssets = new HashMap<>(1);
+/* 336 */     this.densityAssets = new HashMap<>(1);
+/* 337 */     this.assigmentAssets = new HashMap<>(1);
+/* 338 */     this.biomeAssets = new HashMap<>(1);
+/* 339 */     this.worldStructureAssets = new HashMap<>(1);
+/* 340 */     this.blockMaskAssets = new HashMap<>(1);
 /*     */     
-/* 340 */     eventRegistry.register(LoadedAssetsEvent.class, DensityAsset.class, this::loadDensityAssets);
-/* 341 */     eventRegistry.register(LoadedAssetsEvent.class, AssignmentsAsset.class, this::loadAssignmentsAssets);
-/* 342 */     eventRegistry.register(LoadedAssetsEvent.class, BiomeAsset.class, this::loadBiomeAssets);
-/* 343 */     eventRegistry.register(LoadedAssetsEvent.class, WorldStructureAsset.class, this::loadWorldStructureAssets);
-/* 344 */     eventRegistry.register(LoadedAssetsEvent.class, SettingsAsset.class, this::loadSettingsAssets);
-/* 345 */     eventRegistry.register(LoadedAssetsEvent.class, BlockMaskAsset.class, this::loadBlockMaskAssets);
+/* 342 */     eventRegistry.register(LoadedAssetsEvent.class, DensityAsset.class, this::loadDensityAssets);
+/* 343 */     eventRegistry.register(LoadedAssetsEvent.class, AssignmentsAsset.class, this::loadAssignmentsAssets);
+/* 344 */     eventRegistry.register(LoadedAssetsEvent.class, BiomeAsset.class, this::loadBiomeAssets);
+/* 345 */     eventRegistry.register(LoadedAssetsEvent.class, WorldStructureAsset.class, this::loadWorldStructureAssets);
+/* 346 */     eventRegistry.register(LoadedAssetsEvent.class, SettingsAsset.class, this::loadSettingsAssets);
+/* 347 */     eventRegistry.register(LoadedAssetsEvent.class, BlockMaskAsset.class, this::loadBlockMaskAssets);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   private void loadBlockMaskAssets(@Nonnull LoadedAssetsEvent<String, BlockMaskAsset, DefaultAssetMap<String, BlockMaskAsset>> event) {
-/* 351 */     this.blockMaskAssets.clear();
-/* 352 */     for (BlockMaskAsset value : event.getLoadedAssets().values()) {
-/* 353 */       this.blockMaskAssets.put(value.getId(), value);
-/* 354 */       this.logger.at(Level.FINE).log("Loaded BlockMask asset " + value.toString());
+/* 353 */     this.blockMaskAssets.clear();
+/* 354 */     for (BlockMaskAsset value : event.getLoadedAssets().values()) {
+/* 355 */       this.blockMaskAssets.put(value.getId(), value);
+/* 356 */       this.logger.at(Level.FINE).log("Loaded BlockMask asset " + value.toString());
 /*     */     } 
-/* 356 */     triggerReloadListeners();
+/* 358 */     triggerReloadListeners();
 /*     */   }
 /*     */   
 /*     */   private void loadDensityAssets(@Nonnull LoadedAssetsEvent<String, DensityAsset, DefaultAssetMap<String, DensityAsset>> event) {
-/* 360 */     this.densityAssets.clear();
-/* 361 */     for (DensityAsset value : event.getLoadedAssets().values()) {
-/* 362 */       this.densityAssets.put(value.getId(), value);
-/* 363 */       this.logger.at(Level.FINE).log("Loaded Density asset " + value.toString());
+/* 362 */     this.densityAssets.clear();
+/* 363 */     for (DensityAsset value : event.getLoadedAssets().values()) {
+/* 364 */       this.densityAssets.put(value.getId(), value);
+/* 365 */       this.logger.at(Level.FINE).log("Loaded Density asset " + value.toString());
 /*     */     } 
-/* 365 */     triggerReloadListeners();
+/* 367 */     triggerReloadListeners();
 /*     */   }
 /*     */   
 /*     */   private void loadAssignmentsAssets(@Nonnull LoadedAssetsEvent<String, AssignmentsAsset, DefaultAssetMap<String, AssignmentsAsset>> event) {
-/* 369 */     this.assigmentAssets.clear();
-/* 370 */     for (AssignmentsAsset value : event.getLoadedAssets().values()) {
-/* 371 */       this.assigmentAssets.put(value.getId(), value);
+/* 371 */     this.assigmentAssets.clear();
+/* 372 */     for (AssignmentsAsset value : event.getLoadedAssets().values()) {
+/* 373 */       this.assigmentAssets.put(value.getId(), value);
 /*     */     }
-/* 373 */     triggerReloadListeners();
+/* 375 */     triggerReloadListeners();
 /*     */   }
 /*     */   
 /*     */   private void loadBiomeAssets(@Nonnull LoadedAssetsEvent<String, BiomeAsset, DefaultAssetMap<String, BiomeAsset>> event) {
-/* 377 */     this.biomeAssets.clear();
-/* 378 */     for (BiomeAsset value : event.getLoadedAssets().values()) {
-/* 379 */       this.biomeAssets.put(value.getId(), value);
+/* 379 */     this.biomeAssets.clear();
+/* 380 */     for (BiomeAsset value : event.getLoadedAssets().values()) {
+/* 381 */       this.biomeAssets.put(value.getId(), value);
 /*     */     }
-/* 381 */     triggerReloadListeners();
+/* 383 */     triggerReloadListeners();
 /*     */   }
 /*     */   
 /*     */   private void loadWorldStructureAssets(@Nonnull LoadedAssetsEvent<String, WorldStructureAsset, DefaultAssetMap<String, WorldStructureAsset>> event) {
-/* 385 */     this.biomeAssets.clear();
-/* 386 */     for (WorldStructureAsset value : event.getLoadedAssets().values()) {
-/* 387 */       this.worldStructureAssets.put(value.getId(), value);
+/* 387 */     this.biomeAssets.clear();
+/* 388 */     for (WorldStructureAsset value : event.getLoadedAssets().values()) {
+/* 389 */       this.worldStructureAssets.put(value.getId(), value);
 /*     */     }
-/* 389 */     triggerReloadListeners();
+/* 391 */     triggerReloadListeners();
 /*     */   }
 /*     */   
 /*     */   private void loadSettingsAssets(@Nonnull LoadedAssetsEvent<String, SettingsAsset, DefaultAssetMap<String, SettingsAsset>> event) {
-/* 393 */     SettingsAsset asset = (SettingsAsset)event.getLoadedAssets().get("Settings");
-/* 394 */     if (asset == null)
-/* 395 */       return;  this.settingsAsset = asset;
-/* 396 */     this.logger.at(Level.INFO).log("Loaded Settings asset.");
-/* 397 */     triggerReloadListeners();
+/* 395 */     SettingsAsset asset = (SettingsAsset)event.getLoadedAssets().get("Settings");
+/* 396 */     if (asset == null)
+/* 397 */       return;  this.settingsAsset = asset;
+/* 398 */     this.logger.at(Level.INFO).log("Loaded Settings asset.");
+/* 399 */     triggerReloadListeners();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public SettingsAsset getSettingsAsset() {
-/* 403 */     return this.settingsAsset;
+/* 405 */     return this.settingsAsset;
 /*     */   }
 /*     */   
 /*     */   public WorldStructureAsset getWorldStructureAsset(@Nonnull String id) {
-/* 407 */     return this.worldStructureAssets.get(id);
+/* 409 */     return this.worldStructureAssets.get(id);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public void registerReloadListener(@Nonnull Runnable l) {
-/* 413 */     this.reloadListeners.add(l);
+/* 415 */     this.reloadListeners.add(l);
 /*     */   }
 /*     */   
 /*     */   public void unregisterReloadListener(@Nonnull Runnable l) {
-/* 417 */     this.reloadListeners.remove(l);
+/* 419 */     this.reloadListeners.remove(l);
 /*     */   }
 /*     */   
 /*     */   private void triggerReloadListeners() {
-/* 421 */     for (Runnable l : this.reloadListeners) {
+/* 423 */     for (Runnable l : this.reloadListeners) {
 /*     */       try {
-/* 423 */         l.run();
-/* 424 */       } catch (Exception e) {
-/* 425 */         String msg = "Exception thrown by HytaleGenerator while executing a reload listener:\n";
-/* 426 */         msg = msg + msg;
-/* 427 */         LoggerUtil.getLogger().severe(msg);
+/* 425 */         l.run();
+/* 426 */       } catch (Exception e) {
+/* 427 */         String msg = "Exception thrown by HytaleGenerator while executing a reload listener:\n";
+/* 428 */         msg = msg + msg;
+/* 429 */         LoggerUtil.getLogger().severe(msg);
 /*     */       } 
 /*     */     } 
 /*     */   }

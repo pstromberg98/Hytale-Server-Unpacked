@@ -206,137 +206,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyEntityModel
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -346,60 +215,60 @@
 /*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public LegacyEntityModel(ComponentType<EntityStore, EntityTrackerSystems.Visible> componentType) {
-/* 349 */     this.componentType = componentType;
-/* 350 */     this.modelComponentType = ModelComponent.getComponentType();
-/* 351 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, (Query)this.modelComponentType });
+/* 218 */     this.componentType = componentType;
+/* 219 */     this.modelComponentType = ModelComponent.getComponentType();
+/* 220 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)componentType, (Query)this.modelComponentType });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 357 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
+/* 226 */     return EntityTrackerSystems.QUEUE_UPDATE_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 363 */     return this.query;
+/* 232 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 368 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 237 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 373 */     EntityTrackerSystems.Visible visibleComponent = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.componentType);
-/* 374 */     assert visibleComponent != null;
+/* 242 */     EntityTrackerSystems.Visible visibleComponent = (EntityTrackerSystems.Visible)archetypeChunk.getComponent(index, this.componentType);
+/* 243 */     assert visibleComponent != null;
 /*     */     
-/* 376 */     ModelComponent modelComponent = (ModelComponent)archetypeChunk.getComponent(index, this.modelComponentType);
-/* 377 */     assert modelComponent != null;
+/* 245 */     ModelComponent modelComponent = (ModelComponent)archetypeChunk.getComponent(index, this.modelComponentType);
+/* 246 */     assert modelComponent != null;
 /*     */     
-/* 379 */     float entityScale = 0.0F;
-/* 380 */     boolean scaleOutdated = false;
-/* 381 */     EntityScaleComponent entityScaleComponent = (EntityScaleComponent)archetypeChunk.getComponent(index, EntityScaleComponent.getComponentType());
-/* 382 */     if (entityScaleComponent != null) {
-/* 383 */       entityScale = entityScaleComponent.getScale();
-/* 384 */       scaleOutdated = entityScaleComponent.consumeNetworkOutdated();
+/* 248 */     float entityScale = 0.0F;
+/* 249 */     boolean scaleOutdated = false;
+/* 250 */     EntityScaleComponent entityScaleComponent = (EntityScaleComponent)archetypeChunk.getComponent(index, EntityScaleComponent.getComponentType());
+/* 251 */     if (entityScaleComponent != null) {
+/* 252 */       entityScale = entityScaleComponent.getScale();
+/* 253 */       scaleOutdated = entityScaleComponent.consumeNetworkOutdated();
 /*     */     } 
 /*     */     
-/* 387 */     boolean modelOutdated = modelComponent.consumeNetworkOutdated();
-/* 388 */     if (modelOutdated || scaleOutdated) {
-/* 389 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), modelComponent, entityScale, visibleComponent.visibleTo);
-/* 390 */     } else if (!visibleComponent.newlyVisibleTo.isEmpty()) {
-/* 391 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), modelComponent, entityScale, visibleComponent.newlyVisibleTo);
+/* 256 */     boolean modelOutdated = modelComponent.consumeNetworkOutdated();
+/* 257 */     if (modelOutdated || scaleOutdated) {
+/* 258 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), modelComponent, entityScale, visibleComponent.visibleTo);
+/* 259 */     } else if (!visibleComponent.newlyVisibleTo.isEmpty()) {
+/* 260 */       queueUpdatesFor(archetypeChunk.getReferenceTo(index), modelComponent, entityScale, visibleComponent.newlyVisibleTo);
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static void queueUpdatesFor(Ref<EntityStore> ref, @Nullable ModelComponent model, float entityScale, @Nonnull Map<Ref<EntityStore>, EntityTrackerSystems.EntityViewer> visibleTo) {
-/* 396 */     ComponentUpdate update = new ComponentUpdate();
-/* 397 */     update.type = ComponentUpdateType.Model;
-/* 398 */     update.model = (model != null) ? model.getModel().toPacket() : null;
-/* 399 */     update.entityScale = entityScale;
+/* 265 */     ComponentUpdate update = new ComponentUpdate();
+/* 266 */     update.type = ComponentUpdateType.Model;
+/* 267 */     update.model = (model != null) ? model.getModel().toPacket() : null;
+/* 268 */     update.entityScale = entityScale;
 /*     */     
-/* 401 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
-/* 402 */       viewer.queueUpdate(ref, update); 
+/* 270 */     for (EntityTrackerSystems.EntityViewer viewer : visibleTo.values())
+/* 271 */       viewer.queueUpdate(ref, update); 
 /*     */   }
 /*     */ }
 

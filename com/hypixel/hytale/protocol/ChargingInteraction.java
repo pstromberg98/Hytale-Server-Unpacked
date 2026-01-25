@@ -90,13 +90,13 @@
 /*  90 */     obj.failOnDamage = (buf.getByte(offset + 18) != 0);
 /*  91 */     obj.mouseSensitivityAdjustmentTarget = buf.getFloatLE(offset + 19);
 /*  92 */     obj.mouseSensitivityAdjustmentDuration = buf.getFloatLE(offset + 23);
-/*  93 */     if ((nullBits & 0x80) != 0) obj.chargingDelay = ChargingDelay.deserialize(buf, offset + 27);
+/*  93 */     if ((nullBits & 0x1) != 0) obj.chargingDelay = ChargingDelay.deserialize(buf, offset + 27);
 /*     */     
-/*  95 */     if ((nullBits & 0x1) != 0) {
+/*  95 */     if ((nullBits & 0x2) != 0) {
 /*  96 */       int varPos0 = offset + 75 + buf.getIntLE(offset + 47);
 /*  97 */       obj.effects = InteractionEffects.deserialize(buf, varPos0);
 /*     */     } 
-/*  99 */     if ((nullBits & 0x2) != 0) {
+/*  99 */     if ((nullBits & 0x4) != 0) {
 /* 100 */       int varPos1 = offset + 75 + buf.getIntLE(offset + 51);
 /* 101 */       int settingsCount = VarInt.peek(buf, varPos1);
 /* 102 */       if (settingsCount < 0) throw ProtocolException.negativeLength("Settings", settingsCount); 
@@ -112,11 +112,11 @@
 /* 112 */           throw ProtocolException.duplicateKey("settings", key); 
 /*     */       } 
 /*     */     } 
-/* 115 */     if ((nullBits & 0x4) != 0) {
+/* 115 */     if ((nullBits & 0x8) != 0) {
 /* 116 */       int varPos2 = offset + 75 + buf.getIntLE(offset + 55);
 /* 117 */       obj.rules = InteractionRules.deserialize(buf, varPos2);
 /*     */     } 
-/* 119 */     if ((nullBits & 0x8) != 0) {
+/* 119 */     if ((nullBits & 0x10) != 0) {
 /* 120 */       int varPos3 = offset + 75 + buf.getIntLE(offset + 59);
 /* 121 */       int tagsCount = VarInt.peek(buf, varPos3);
 /* 122 */       if (tagsCount < 0) throw ProtocolException.negativeLength("Tags", tagsCount); 
@@ -129,11 +129,11 @@
 /* 129 */         obj.tags[i] = buf.getIntLE(varPos3 + varIntLen + i * 4);
 /*     */       }
 /*     */     } 
-/* 132 */     if ((nullBits & 0x10) != 0) {
+/* 132 */     if ((nullBits & 0x20) != 0) {
 /* 133 */       int varPos4 = offset + 75 + buf.getIntLE(offset + 63);
 /* 134 */       obj.camera = InteractionCameraSettings.deserialize(buf, varPos4);
 /*     */     } 
-/* 136 */     if ((nullBits & 0x20) != 0) {
+/* 136 */     if ((nullBits & 0x40) != 0) {
 /* 137 */       int varPos5 = offset + 75 + buf.getIntLE(offset + 67);
 /* 138 */       int chargedNextCount = VarInt.peek(buf, varPos5);
 /* 139 */       if (chargedNextCount < 0) throw ProtocolException.negativeLength("ChargedNext", chargedNextCount); 
@@ -148,7 +148,7 @@
 /* 148 */           throw ProtocolException.duplicateKey("chargedNext", Float.valueOf(key)); 
 /*     */       } 
 /*     */     } 
-/* 151 */     if ((nullBits & 0x40) != 0) {
+/* 151 */     if ((nullBits & 0x80) != 0) {
 /* 152 */       int varPos6 = offset + 75 + buf.getIntLE(offset + 71);
 /* 153 */       int forksCount = VarInt.peek(buf, varPos6);
 /* 154 */       if (forksCount < 0) throw ProtocolException.negativeLength("Forks", forksCount); 
@@ -170,45 +170,45 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 171 */     byte nullBits = buf.getByte(offset);
 /* 172 */     int maxEnd = 75;
-/* 173 */     if ((nullBits & 0x1) != 0) {
+/* 173 */     if ((nullBits & 0x2) != 0) {
 /* 174 */       int fieldOffset0 = buf.getIntLE(offset + 47);
 /* 175 */       int pos0 = offset + 75 + fieldOffset0;
 /* 176 */       pos0 += InteractionEffects.computeBytesConsumed(buf, pos0);
 /* 177 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*     */     } 
-/* 179 */     if ((nullBits & 0x2) != 0) {
+/* 179 */     if ((nullBits & 0x4) != 0) {
 /* 180 */       int fieldOffset1 = buf.getIntLE(offset + 51);
 /* 181 */       int pos1 = offset + 75 + fieldOffset1;
 /* 182 */       int dictLen = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1);
 /* 183 */       for (int i = 0; i < dictLen; ) { pos1 = ++pos1 + InteractionSettings.computeBytesConsumed(buf, pos1); i++; }
 /* 184 */        if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*     */     } 
-/* 186 */     if ((nullBits & 0x4) != 0) {
+/* 186 */     if ((nullBits & 0x8) != 0) {
 /* 187 */       int fieldOffset2 = buf.getIntLE(offset + 55);
 /* 188 */       int pos2 = offset + 75 + fieldOffset2;
 /* 189 */       pos2 += InteractionRules.computeBytesConsumed(buf, pos2);
 /* 190 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*     */     } 
-/* 192 */     if ((nullBits & 0x8) != 0) {
+/* 192 */     if ((nullBits & 0x10) != 0) {
 /* 193 */       int fieldOffset3 = buf.getIntLE(offset + 59);
 /* 194 */       int pos3 = offset + 75 + fieldOffset3;
 /* 195 */       int arrLen = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + arrLen * 4;
 /* 196 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*     */     } 
-/* 198 */     if ((nullBits & 0x10) != 0) {
+/* 198 */     if ((nullBits & 0x20) != 0) {
 /* 199 */       int fieldOffset4 = buf.getIntLE(offset + 63);
 /* 200 */       int pos4 = offset + 75 + fieldOffset4;
 /* 201 */       pos4 += InteractionCameraSettings.computeBytesConsumed(buf, pos4);
 /* 202 */       if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*     */     } 
-/* 204 */     if ((nullBits & 0x20) != 0) {
+/* 204 */     if ((nullBits & 0x40) != 0) {
 /* 205 */       int fieldOffset5 = buf.getIntLE(offset + 67);
 /* 206 */       int pos5 = offset + 75 + fieldOffset5;
 /* 207 */       int dictLen = VarInt.peek(buf, pos5); pos5 += VarInt.length(buf, pos5);
 /* 208 */       for (int i = 0; i < dictLen; ) { pos5 += 4; pos5 += 4; i++; }
 /* 209 */        if (pos5 - offset > maxEnd) maxEnd = pos5 - offset; 
 /*     */     } 
-/* 211 */     if ((nullBits & 0x40) != 0) {
+/* 211 */     if ((nullBits & 0x80) != 0) {
 /* 212 */       int fieldOffset6 = buf.getIntLE(offset + 71);
 /* 213 */       int pos6 = offset + 75 + fieldOffset6;
 /* 214 */       int dictLen = VarInt.peek(buf, pos6); pos6 += VarInt.length(buf, pos6);
@@ -223,14 +223,14 @@
 /*     */   public int serialize(@Nonnull ByteBuf buf) {
 /* 224 */     int startPos = buf.writerIndex();
 /* 225 */     byte nullBits = 0;
-/* 226 */     if (this.effects != null) nullBits = (byte)(nullBits | 0x1); 
-/* 227 */     if (this.settings != null) nullBits = (byte)(nullBits | 0x2); 
-/* 228 */     if (this.rules != null) nullBits = (byte)(nullBits | 0x4); 
-/* 229 */     if (this.tags != null) nullBits = (byte)(nullBits | 0x8); 
-/* 230 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x10); 
-/* 231 */     if (this.chargedNext != null) nullBits = (byte)(nullBits | 0x20); 
-/* 232 */     if (this.forks != null) nullBits = (byte)(nullBits | 0x40); 
-/* 233 */     if (this.chargingDelay != null) nullBits = (byte)(nullBits | 0x80); 
+/* 226 */     if (this.chargingDelay != null) nullBits = (byte)(nullBits | 0x1); 
+/* 227 */     if (this.effects != null) nullBits = (byte)(nullBits | 0x2); 
+/* 228 */     if (this.settings != null) nullBits = (byte)(nullBits | 0x4); 
+/* 229 */     if (this.rules != null) nullBits = (byte)(nullBits | 0x8); 
+/* 230 */     if (this.tags != null) nullBits = (byte)(nullBits | 0x10); 
+/* 231 */     if (this.camera != null) nullBits = (byte)(nullBits | 0x20); 
+/* 232 */     if (this.chargedNext != null) nullBits = (byte)(nullBits | 0x40); 
+/* 233 */     if (this.forks != null) nullBits = (byte)(nullBits | 0x80); 
 /* 234 */     buf.writeByte(nullBits);
 /*     */     
 /* 236 */     buf.writeByte(this.waitForDataFrom.getValue());
@@ -330,7 +330,7 @@
 /* 330 */     byte nullBits = buffer.getByte(offset);
 /*     */ 
 /*     */     
-/* 333 */     if ((nullBits & 0x1) != 0) {
+/* 333 */     if ((nullBits & 0x2) != 0) {
 /* 334 */       int effectsOffset = buffer.getIntLE(offset + 47);
 /* 335 */       if (effectsOffset < 0) {
 /* 336 */         return ValidationResult.error("Invalid offset for Effects");
@@ -346,7 +346,7 @@
 /* 346 */       pos += InteractionEffects.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 349 */     if ((nullBits & 0x2) != 0) {
+/* 349 */     if ((nullBits & 0x4) != 0) {
 /* 350 */       int settingsOffset = buffer.getIntLE(offset + 51);
 /* 351 */       if (settingsOffset < 0) {
 /* 352 */         return ValidationResult.error("Invalid offset for Settings");
@@ -371,7 +371,7 @@
 /*     */     } 
 /*     */ 
 /*     */     
-/* 374 */     if ((nullBits & 0x4) != 0) {
+/* 374 */     if ((nullBits & 0x8) != 0) {
 /* 375 */       int rulesOffset = buffer.getIntLE(offset + 55);
 /* 376 */       if (rulesOffset < 0) {
 /* 377 */         return ValidationResult.error("Invalid offset for Rules");
@@ -387,7 +387,7 @@
 /* 387 */       pos += InteractionRules.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 390 */     if ((nullBits & 0x8) != 0) {
+/* 390 */     if ((nullBits & 0x10) != 0) {
 /* 391 */       int tagsOffset = buffer.getIntLE(offset + 59);
 /* 392 */       if (tagsOffset < 0) {
 /* 393 */         return ValidationResult.error("Invalid offset for Tags");
@@ -410,7 +410,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 413 */     if ((nullBits & 0x10) != 0) {
+/* 413 */     if ((nullBits & 0x20) != 0) {
 /* 414 */       int cameraOffset = buffer.getIntLE(offset + 63);
 /* 415 */       if (cameraOffset < 0) {
 /* 416 */         return ValidationResult.error("Invalid offset for Camera");
@@ -426,7 +426,7 @@
 /* 426 */       pos += InteractionCameraSettings.computeBytesConsumed(buffer, pos);
 /*     */     } 
 /*     */     
-/* 429 */     if ((nullBits & 0x20) != 0) {
+/* 429 */     if ((nullBits & 0x40) != 0) {
 /* 430 */       int chargedNextOffset = buffer.getIntLE(offset + 67);
 /* 431 */       if (chargedNextOffset < 0) {
 /* 432 */         return ValidationResult.error("Invalid offset for ChargedNext");
@@ -455,7 +455,7 @@
 /*     */       } 
 /*     */     } 
 /*     */     
-/* 458 */     if ((nullBits & 0x40) != 0) {
+/* 458 */     if ((nullBits & 0x80) != 0) {
 /* 459 */       int forksOffset = buffer.getIntLE(offset + 71);
 /* 460 */       if (forksOffset < 0) {
 /* 461 */         return ValidationResult.error("Invalid offset for Forks");

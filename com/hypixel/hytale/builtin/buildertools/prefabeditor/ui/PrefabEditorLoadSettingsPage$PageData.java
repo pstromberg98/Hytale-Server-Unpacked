@@ -1151,6 +1151,18 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class PageData
 /*      */ {
 /*      */   public static final String CONFIG_NAME = "@ConfigName";
@@ -1177,21 +1189,21 @@
 /*      */   public PrefabEditorLoadSettingsPage.Action uiAction;
 /*      */   
 /*      */   static {
-/* 1180 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).append(new KeyedCodec("Action", (Codec)new EnumCodec(PrefabEditorLoadSettingsPage.Action.class, EnumCodec.EnumStyle.LEGACY)), (o, uiAction) -> o.uiAction = uiAction, o -> o.uiAction).add()).append(new KeyedCodec("@ConfigName", (Codec)Codec.STRING), (o, configName) -> o.configName = configName, o -> o.configName).add()).append(new KeyedCodec("@RootDir", (Codec)new EnumCodec(PrefabRootDirectory.class, EnumCodec.EnumStyle.LEGACY)), (o, rootDirectory) -> o.prefabRootDirectory = rootDirectory, o -> o.prefabRootDirectory).add()).append(new KeyedCodec("@PrefabPaths", (Codec)Codec.STRING), (o, unprocessedPrefabPaths) -> o.unprocessedPrefabPaths = unprocessedPrefabPaths, o -> o.unprocessedPrefabPaths).add()).append(new KeyedCodec("@DesiredYLevel", (Codec)Codec.INTEGER), (o, pasteYLevelGoal) -> o.pasteYLevelGoal = pasteYLevelGoal.intValue(), o -> Integer.valueOf(o.pasteYLevelGoal)).add()).append(new KeyedCodec("@BlocksBetweenPrefabs", (Codec)Codec.INTEGER), (o, blocksBetweenEachPrefab) -> o.blocksBetweenEachPrefab = blocksBetweenEachPrefab.intValue(), o -> Integer.valueOf(o.blocksBetweenEachPrefab)).add()).append(new KeyedCodec("@WorldGenType", (Codec)new EnumCodec(WorldGenType.class, EnumCodec.EnumStyle.LEGACY)), (o, worldGenType) -> o.worldGenType = worldGenType, o -> o.worldGenType).add()).append(new KeyedCodec("@Environment", (Codec)Codec.STRING), (o, environment) -> o.environment = environment, o -> o.environment).add()).append(new KeyedCodec("@GrassTint", (Codec)Codec.STRING), (o, grassTint) -> o.grassTint = grassTint, o -> o.grassTint).add()).append(new KeyedCodec("@NumAirBeforeGround", (Codec)Codec.INTEGER), (o, blocksAboveSurface) -> o.blocksAboveSurface = blocksAboveSurface.intValue(), o -> Integer.valueOf(o.blocksAboveSurface)).add()).append(new KeyedCodec("@PasteAxis", (Codec)new EnumCodec(PrefabStackingAxis.class, EnumCodec.EnumStyle.LEGACY)), (o, stackingAxis) -> o.stackingAxis = stackingAxis, o -> o.stackingAxis).add()).append(new KeyedCodec("@AlignmentMethod", (Codec)new EnumCodec(PrefabAlignment.class, EnumCodec.EnumStyle.LEGACY)), (o, alignment) -> o.alignment = alignment, o -> o.alignment).add()).append(new KeyedCodec("@RowSplitMode", (Codec)new EnumCodec(PrefabRowSplitMode.class, EnumCodec.EnumStyle.LEGACY)), (o, rowSplitMode) -> o.rowSplitMode = rowSplitMode, o -> o.rowSplitMode).add()).append(new KeyedCodec("@Recursive", (Codec)Codec.BOOLEAN), (o, recursive) -> o.recursive = recursive.booleanValue(), o -> Boolean.valueOf(o.recursive)).add()).append(new KeyedCodec("@Children", (Codec)Codec.BOOLEAN), (o, loadChildren) -> o.loadChildren = loadChildren.booleanValue(), o -> Boolean.valueOf(o.loadChildren)).add()).append(new KeyedCodec("@Entities", (Codec)Codec.BOOLEAN), (o, loadEntities) -> o.loadEntities = loadEntities.booleanValue(), o -> Boolean.valueOf(o.loadEntities)).add()).append(new KeyedCodec("@EnableWorldTicking", (Codec)Codec.BOOLEAN), (o, enableWorldTicking) -> o.enableWorldTicking = enableWorldTicking.booleanValue(), o -> Boolean.valueOf(o.enableWorldTicking)).add()).append(new KeyedCodec("File", (Codec)Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile).add()).append(new KeyedCodec("@BrowserRoot", (Codec)Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr).add()).append(new KeyedCodec("@BrowserSearch", (Codec)Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr).add()).build();
+/* 1192 */     CODEC = ((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)((BuilderCodec.Builder)BuilderCodec.builder(PageData.class, PageData::new).append(new KeyedCodec("Action", (Codec)new EnumCodec(PrefabEditorLoadSettingsPage.Action.class, EnumCodec.EnumStyle.LEGACY)), (o, uiAction) -> o.uiAction = uiAction, o -> o.uiAction).add()).append(new KeyedCodec("@ConfigName", (Codec)Codec.STRING), (o, configName) -> o.configName = configName, o -> o.configName).add()).append(new KeyedCodec("@RootDir", (Codec)new EnumCodec(PrefabRootDirectory.class, EnumCodec.EnumStyle.LEGACY)), (o, rootDirectory) -> o.prefabRootDirectory = rootDirectory, o -> o.prefabRootDirectory).add()).append(new KeyedCodec("@PrefabPaths", (Codec)Codec.STRING), (o, unprocessedPrefabPaths) -> o.unprocessedPrefabPaths = unprocessedPrefabPaths, o -> o.unprocessedPrefabPaths).add()).append(new KeyedCodec("@DesiredYLevel", (Codec)Codec.INTEGER), (o, pasteYLevelGoal) -> o.pasteYLevelGoal = pasteYLevelGoal.intValue(), o -> Integer.valueOf(o.pasteYLevelGoal)).add()).append(new KeyedCodec("@BlocksBetweenPrefabs", (Codec)Codec.INTEGER), (o, blocksBetweenEachPrefab) -> o.blocksBetweenEachPrefab = blocksBetweenEachPrefab.intValue(), o -> Integer.valueOf(o.blocksBetweenEachPrefab)).add()).append(new KeyedCodec("@WorldGenType", (Codec)new EnumCodec(WorldGenType.class, EnumCodec.EnumStyle.LEGACY)), (o, worldGenType) -> o.worldGenType = worldGenType, o -> o.worldGenType).add()).append(new KeyedCodec("@Environment", (Codec)Codec.STRING), (o, environment) -> o.environment = environment, o -> o.environment).add()).append(new KeyedCodec("@GrassTint", (Codec)Codec.STRING), (o, grassTint) -> o.grassTint = grassTint, o -> o.grassTint).add()).append(new KeyedCodec("@NumAirBeforeGround", (Codec)Codec.INTEGER), (o, blocksAboveSurface) -> o.blocksAboveSurface = blocksAboveSurface.intValue(), o -> Integer.valueOf(o.blocksAboveSurface)).add()).append(new KeyedCodec("@PasteAxis", (Codec)new EnumCodec(PrefabStackingAxis.class, EnumCodec.EnumStyle.LEGACY)), (o, stackingAxis) -> o.stackingAxis = stackingAxis, o -> o.stackingAxis).add()).append(new KeyedCodec("@AlignmentMethod", (Codec)new EnumCodec(PrefabAlignment.class, EnumCodec.EnumStyle.LEGACY)), (o, alignment) -> o.alignment = alignment, o -> o.alignment).add()).append(new KeyedCodec("@RowSplitMode", (Codec)new EnumCodec(PrefabRowSplitMode.class, EnumCodec.EnumStyle.LEGACY)), (o, rowSplitMode) -> o.rowSplitMode = rowSplitMode, o -> o.rowSplitMode).add()).append(new KeyedCodec("@Recursive", (Codec)Codec.BOOLEAN), (o, recursive) -> o.recursive = recursive.booleanValue(), o -> Boolean.valueOf(o.recursive)).add()).append(new KeyedCodec("@Children", (Codec)Codec.BOOLEAN), (o, loadChildren) -> o.loadChildren = loadChildren.booleanValue(), o -> Boolean.valueOf(o.loadChildren)).add()).append(new KeyedCodec("@Entities", (Codec)Codec.BOOLEAN), (o, loadEntities) -> o.loadEntities = loadEntities.booleanValue(), o -> Boolean.valueOf(o.loadEntities)).add()).append(new KeyedCodec("@EnableWorldTicking", (Codec)Codec.BOOLEAN), (o, enableWorldTicking) -> o.enableWorldTicking = enableWorldTicking.booleanValue(), o -> Boolean.valueOf(o.enableWorldTicking)).add()).append(new KeyedCodec("File", (Codec)Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile).add()).append(new KeyedCodec("@BrowserRoot", (Codec)Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr).add()).append(new KeyedCodec("@BrowserSearch", (Codec)Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr).add()).build();
 /*      */   }
 /*      */ 
 /*      */   
-/* 1184 */   public PrefabRootDirectory prefabRootDirectory = PrefabRootDirectory.ASSET;
-/* 1185 */   public String unprocessedPrefabPaths = "";
-/* 1186 */   public int pasteYLevelGoal = 55;
-/* 1187 */   public int blocksBetweenEachPrefab = 15;
-/* 1188 */   public WorldGenType worldGenType = PrefabEditLoadCommand.DEFAULT_WORLD_GEN_TYPE;
-/* 1189 */   public String environment = "Env_Zone1_Plains";
-/* 1190 */   public String grassTint = "#5B9E28";
-/* 1191 */   public int blocksAboveSurface = 0;
-/* 1192 */   public PrefabStackingAxis stackingAxis = PrefabEditLoadCommand.DEFAULT_PREFAB_STACKING_AXIS;
-/* 1193 */   public PrefabAlignment alignment = PrefabEditLoadCommand.DEFAULT_PREFAB_ALIGNMENT;
-/* 1194 */   public PrefabRowSplitMode rowSplitMode = PrefabEditLoadCommand.DEFAULT_ROW_SPLIT_MODE;
+/* 1196 */   public PrefabRootDirectory prefabRootDirectory = PrefabRootDirectory.ASSET;
+/* 1197 */   public String unprocessedPrefabPaths = "";
+/* 1198 */   public int pasteYLevelGoal = 55;
+/* 1199 */   public int blocksBetweenEachPrefab = 15;
+/* 1200 */   public WorldGenType worldGenType = PrefabEditLoadCommand.DEFAULT_WORLD_GEN_TYPE;
+/* 1201 */   public String environment = "Env_Zone1_Plains";
+/* 1202 */   public String grassTint = "#5B9E28";
+/* 1203 */   public int blocksAboveSurface = 0;
+/* 1204 */   public PrefabStackingAxis stackingAxis = PrefabEditLoadCommand.DEFAULT_PREFAB_STACKING_AXIS;
+/* 1205 */   public PrefabAlignment alignment = PrefabEditLoadCommand.DEFAULT_PREFAB_ALIGNMENT;
+/* 1206 */   public PrefabRowSplitMode rowSplitMode = PrefabEditLoadCommand.DEFAULT_ROW_SPLIT_MODE;
 /*      */   
 /*      */   public boolean recursive;
 /*      */   
@@ -1207,12 +1219,12 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public PrefabEditorCreationSettings toCreationSettings() {
-/* 1210 */     String normalizedGrassTint = this.grassTint;
-/* 1211 */     if (normalizedGrassTint != null && normalizedGrassTint.length() > 7) {
-/* 1212 */       normalizedGrassTint = normalizedGrassTint.substring(0, 7);
+/* 1222 */     String normalizedGrassTint = this.grassTint;
+/* 1223 */     if (normalizedGrassTint != null && normalizedGrassTint.length() > 7) {
+/* 1224 */       normalizedGrassTint = normalizedGrassTint.substring(0, 7);
 /*      */     }
-/* 1214 */     return new PrefabEditorCreationSettings(this.prefabRootDirectory, 
-/* 1215 */         List.of(this.unprocessedPrefabPaths.split(",")), this.pasteYLevelGoal, this.blocksBetweenEachPrefab, this.worldGenType, this.blocksAboveSurface, this.stackingAxis, this.alignment, this.recursive, this.loadChildren, this.loadEntities, this.enableWorldTicking, this.rowSplitMode, this.environment, normalizedGrassTint);
+/* 1226 */     return new PrefabEditorCreationSettings(this.prefabRootDirectory, 
+/* 1227 */         List.of(this.unprocessedPrefabPaths.split(",")), this.pasteYLevelGoal, this.blocksBetweenEachPrefab, this.worldGenType, this.blocksAboveSurface, this.stackingAxis, this.alignment, this.recursive, this.loadChildren, this.loadEntities, this.enableWorldTicking, this.rowSplitMode, this.environment, normalizedGrassTint);
 /*      */   }
 /*      */ }
 

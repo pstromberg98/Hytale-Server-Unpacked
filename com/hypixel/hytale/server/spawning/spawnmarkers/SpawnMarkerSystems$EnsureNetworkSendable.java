@@ -1,7 +1,9 @@
 /*     */ package com.hypixel.hytale.server.spawning.spawnmarkers;
 /*     */ 
 /*     */ import com.hypixel.hytale.component.AddReason;
+/*     */ import com.hypixel.hytale.component.Archetype;
 /*     */ import com.hypixel.hytale.component.Component;
+/*     */ import com.hypixel.hytale.component.ComponentType;
 /*     */ import com.hypixel.hytale.component.Holder;
 /*     */ import com.hypixel.hytale.component.RemoveReason;
 /*     */ import com.hypixel.hytale.component.Store;
@@ -101,17 +103,66 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class EnsureNetworkSendable
 /*     */   extends HolderSystem<EntityStore>
 /*     */ {
-/* 107 */   private final Query<EntityStore> query = (Query)SpawnMarkerEntity.getComponentType();
+/*     */   @Nonnull
+/* 153 */   private final Query<EntityStore> query = (Query)SpawnMarkerEntity.getComponentType();
 /*     */ 
 /*     */   
 /*     */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 111 */     if (!holder.getArchetype().contains(NetworkId.getComponentType())) {
-/* 112 */       holder.addComponent(NetworkId.getComponentType(), (Component)new NetworkId(((EntityStore)store.getExternalData()).takeNextNetworkId()));
+/* 157 */     Archetype<EntityStore> archetype = holder.getArchetype();
+/* 158 */     assert archetype != null;
+/*     */     
+/* 160 */     ComponentType<EntityStore, NetworkId> networkIdComponentType = NetworkId.getComponentType();
+/*     */     
+/* 162 */     if (!archetype.contains(networkIdComponentType)) {
+/* 163 */       holder.addComponent(networkIdComponentType, (Component)new NetworkId(((EntityStore)store.getExternalData()).takeNextNetworkId()));
 /*     */     }
-/* 114 */     holder.ensureComponent(Intangible.getComponentType());
+/* 165 */     holder.ensureComponent(Intangible.getComponentType());
 /*     */   }
 /*     */ 
 /*     */ 
@@ -119,8 +170,9 @@
 /*     */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}
 /*     */ 
 /*     */   
+/*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 123 */     return this.query;
+/* 175 */     return this.query;
 /*     */   }
 /*     */ }
 

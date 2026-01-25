@@ -310,33 +310,36 @@
 /*     */ {
 /*     */   @Nonnull
 /*     */   private final ComponentType<EntityStore, EntityStatMap> entityStatMapComponentType;
+/*     */   @Nonnull
+/*     */   private final Query<EntityStore> query;
 /*     */   
 /*     */   public Recalculate(@Nonnull ComponentType<EntityStore, EntityStatMap> entityStatMapComponentType) {
-/* 315 */     this.entityStatMapComponentType = entityStatMapComponentType;
+/* 317 */     this.entityStatMapComponentType = entityStatMapComponentType;
+/* 318 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, (Query)entityStatMapComponentType });
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 322 */     return (Query<EntityStore>)AllLegacyLivingEntityTypesQuery.INSTANCE;
+/* 325 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 327 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 330 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 332 */     LivingEntity livingEntity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
-/* 333 */     assert livingEntity != null;
+/* 335 */     LivingEntity livingEntity = (LivingEntity)EntityUtils.getEntity(index, archetypeChunk);
+/* 336 */     assert livingEntity != null;
 /*     */     
-/* 335 */     EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, this.entityStatMapComponentType);
-/* 336 */     assert entityStatMapComponent != null;
+/* 338 */     EntityStatMap entityStatMapComponent = (EntityStatMap)archetypeChunk.getComponent(index, this.entityStatMapComponentType);
+/* 339 */     assert entityStatMapComponent != null;
 /*     */     
-/* 338 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
-/* 339 */     livingEntity.getStatModifiersManager().recalculateEntityStatModifiers(ref, entityStatMapComponent, (ComponentAccessor)commandBuffer);
+/* 341 */     Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+/* 342 */     livingEntity.getStatModifiersManager().recalculateEntityStatModifiers(ref, entityStatMapComponent, (ComponentAccessor)commandBuffer);
 /*     */   }
 /*     */ }
 

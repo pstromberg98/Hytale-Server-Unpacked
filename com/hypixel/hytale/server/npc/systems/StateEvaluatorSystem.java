@@ -35,11 +35,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   private final ComponentType<EntityStore, StateEvaluator> stateEvaluatorComponent;
-/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -51,7 +49,15 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
+/*  52 */   private final ComponentType<EntityStore, UUIDComponent> uuidComponentType = UUIDComponent.getComponentType();
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   
+/*     */   @Nonnull
 /*     */   private final Set<Dependency<EntityStore>> dependencies;
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -62,76 +68,78 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
 /*     */   
 /*     */   public StateEvaluatorSystem(@Nonnull ComponentType<EntityStore, StateEvaluator> stateEvaluatorComponent, @Nonnull ComponentType<EntityStore, NPCEntity> npcComponentType) {
-/*  67 */     this.stateEvaluatorComponent = stateEvaluatorComponent;
-/*  68 */     this.npcComponentType = npcComponentType;
-/*  69 */     this.dependencies = Set.of(new SystemDependency(Order.BEFORE, RoleSystems.BehaviourTickSystem.class), new SystemDependency(Order.AFTER, RoleSystems.PreBehaviourSupportTickSystem.class));
+/*  74 */     this.stateEvaluatorComponent = stateEvaluatorComponent;
+/*  75 */     this.npcComponentType = npcComponentType;
+/*  76 */     this.dependencies = Set.of(new SystemDependency(Order.BEFORE, RoleSystems.BehaviourTickSystem.class), new SystemDependency(Order.AFTER, RoleSystems.PreBehaviourSupportTickSystem.class));
 /*     */     
-/*  71 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)stateEvaluatorComponent });
+/*  78 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)npcComponentType, (Query)stateEvaluatorComponent, (Query)this.uuidComponentType });
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/*  77 */     return this.dependencies;
+/*  84 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/*  82 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/*  89 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/*  88 */     return this.query;
+/*  95 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/*  93 */     NPCEntity npcComponent = (NPCEntity)archetypeChunk.getComponent(index, this.npcComponentType);
-/*  94 */     assert npcComponent != null;
+/* 100 */     NPCEntity npcComponent = (NPCEntity)archetypeChunk.getComponent(index, this.npcComponentType);
+/* 101 */     assert npcComponent != null;
 /*     */     
-/*  96 */     UUIDComponent uuidComponent = (UUIDComponent)archetypeChunk.getComponent(index, UUIDComponent.getComponentType());
-/*  97 */     assert uuidComponent != null;
+/* 103 */     UUIDComponent uuidComponent = (UUIDComponent)archetypeChunk.getComponent(index, this.uuidComponentType);
+/* 104 */     assert uuidComponent != null;
 /*     */     
-/*  99 */     Role role = npcComponent.getRole();
-/*     */     
-/* 101 */     StateSupport stateSupport = role.getStateSupport();
-/* 102 */     if (stateSupport.isRunningTransitionActions())
+/* 106 */     Role role = npcComponent.getRole();
+/* 107 */     if (role == null)
 /*     */       return; 
-/* 104 */     StateEvaluator stateEvaluator = (StateEvaluator)archetypeChunk.getComponent(index, this.stateEvaluatorComponent);
-/* 105 */     assert stateEvaluator != null;
-/* 106 */     if (!stateEvaluator.isActive() || !stateEvaluator.shouldExecute(dt))
+/* 109 */     StateSupport stateSupport = role.getStateSupport();
+/* 110 */     if (stateSupport.isRunningTransitionActions())
 /*     */       return; 
-/* 108 */     HytaleLogger.Api logContext = LOGGER.at(Level.FINE);
-/* 109 */     if (logContext.isEnabled()) {
-/* 110 */       logContext.log("%s with uuid %s: Beginning state evaluation", npcComponent.getRoleName(), uuidComponent.getUuid());
+/* 112 */     StateEvaluator stateEvaluator = (StateEvaluator)archetypeChunk.getComponent(index, this.stateEvaluatorComponent);
+/* 113 */     assert stateEvaluator != null;
+/* 114 */     if (!stateEvaluator.isActive() || !stateEvaluator.shouldExecute(dt))
+/*     */       return; 
+/* 116 */     HytaleLogger.Api logContext = LOGGER.at(Level.FINE);
+/* 117 */     if (logContext.isEnabled()) {
+/* 118 */       logContext.log("%s with uuid %s: Beginning state evaluation", npcComponent.getRoleName(), uuidComponent.getUuid());
 /*     */     }
 /*     */     
-/* 113 */     EvaluationContext evaluationContext = stateEvaluator.getEvaluationContext();
-/* 114 */     stateEvaluator.prepareEvaluationContext(evaluationContext);
+/* 121 */     EvaluationContext evaluationContext = stateEvaluator.getEvaluationContext();
+/* 122 */     stateEvaluator.prepareEvaluationContext(evaluationContext);
 /*     */     
-/* 116 */     Evaluator<StateOption>.OptionHolder chosenOption = stateEvaluator.evaluate(index, archetypeChunk, commandBuffer, evaluationContext);
-/* 117 */     evaluationContext.reset();
-/* 118 */     logContext = LOGGER.at(Level.FINE);
-/* 119 */     if (logContext.isEnabled()) {
-/* 120 */       logContext.log("%s with uuid %s: Chose state option %s", npcComponent.getRoleName(), uuidComponent.getUuid(), chosenOption);
+/* 124 */     Evaluator<StateOption>.OptionHolder chosenOption = stateEvaluator.evaluate(index, archetypeChunk, commandBuffer, evaluationContext);
+/* 125 */     evaluationContext.reset();
+/* 126 */     logContext = LOGGER.at(Level.FINE);
+/* 127 */     if (logContext.isEnabled()) {
+/* 128 */       logContext.log("%s with uuid %s: Chose state option %s", npcComponent.getRoleName(), uuidComponent.getUuid(), chosenOption);
 /*     */     }
 /*     */     
-/* 123 */     if (chosenOption == null)
+/* 131 */     if (chosenOption == null)
 /*     */       return; 
-/* 125 */     StateOption action = (StateOption)chosenOption.getOption();
-/* 126 */     int targetState = action.getStateIndex();
-/* 127 */     int targetSubState = action.getSubStateIndex();
-/* 128 */     if (!stateSupport.inState(targetState) || !stateSupport.inSubState(targetSubState)) {
-/* 129 */       stateSupport.setState(action.getStateIndex(), action.getSubStateIndex(), true, false);
-/* 130 */       logContext = LOGGER.at(Level.FINE);
-/* 131 */       if (logContext.isEnabled()) {
-/* 132 */         logContext.log("%s with uuid %s: Setting state", npcComponent.getRoleName(), uuidComponent.getUuid());
+/* 133 */     StateOption action = (StateOption)chosenOption.getOption();
+/* 134 */     int targetState = action.getStateIndex();
+/* 135 */     int targetSubState = action.getSubStateIndex();
+/* 136 */     if (!stateSupport.inState(targetState) || !stateSupport.inSubState(targetSubState)) {
+/* 137 */       stateSupport.setState(action.getStateIndex(), action.getSubStateIndex(), true, false);
+/* 138 */       logContext = LOGGER.at(Level.FINE);
+/* 139 */       if (logContext.isEnabled()) {
+/* 140 */         logContext.log("%s with uuid %s: Setting state", npcComponent.getRoleName(), uuidComponent.getUuid());
 /*     */       }
-/* 134 */       stateEvaluator.onStateSwitched();
+/* 142 */       stateEvaluator.onStateSwitched();
 /*     */     } 
 /*     */   }
 /*     */ }

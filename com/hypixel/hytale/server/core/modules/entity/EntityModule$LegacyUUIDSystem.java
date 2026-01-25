@@ -1287,23 +1287,30 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ public class LegacyUUIDSystem
 /*      */   extends EntityModule.MigrationSystem
 /*      */ {
-/* 1293 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.BEFORE, EntityStore.UUIDSystem.class), 
+/* 1300 */   private final Set<Dependency<EntityStore>> dependencies = (Set)Set.of(new SystemDependency(Order.BEFORE, EntityStore.UUIDSystem.class), 
 /*      */       
-/* 1295 */       RootDependency.first());
+/* 1302 */       RootDependency.first());
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 1300 */     UUIDComponent uuid = (UUIDComponent)holder.getComponent(UUIDComponent.getComponentType());
-/* 1301 */     Entity entity = EntityUtils.getEntity(holder);
-/* 1302 */     if (uuid == null) {
-/* 1303 */       UUID legacyUuid = entity.getUuid();
-/* 1304 */       if (legacyUuid != null) holder.addComponent(UUIDComponent.getComponentType(), (Component)new UUIDComponent(legacyUuid)); 
+/* 1307 */     UUIDComponent uuid = (UUIDComponent)holder.getComponent(UUIDComponent.getComponentType());
+/* 1308 */     Entity entity = EntityUtils.getEntity(holder);
+/* 1309 */     if (uuid == null) {
+/* 1310 */       UUID legacyUuid = entity.getUuid();
+/* 1311 */       if (legacyUuid != null) holder.addComponent(UUIDComponent.getComponentType(), (Component)new UUIDComponent(legacyUuid)); 
 /*      */     } else {
-/* 1306 */       entity.setLegacyUUID(uuid.getUuid());
+/* 1313 */       entity.setLegacyUUID(uuid.getUuid());
 /*      */     } 
 /*      */   }
 /*      */ 
@@ -1314,13 +1321,13 @@
 /*      */   
 /*      */   @Nonnull
 /*      */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 1317 */     return this.dependencies;
+/* 1324 */     return this.dependencies;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1323 */     return AllLegacyEntityTypesQuery.INSTANCE;
+/* 1330 */     return AllLegacyEntityTypesQuery.INSTANCE;
 /*      */   }
 /*      */ }
 

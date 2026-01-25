@@ -470,6 +470,9 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ @Deprecated(forRemoval = true)
 /*     */ public class ConversionResult
 /*     */ {
@@ -478,9 +481,9 @@
 /*     */   public byte fluidLevel;
 /*     */   
 /*     */   public ConversionResult(String blockTypeStr, int fluidId, byte fluidLevel) {
-/* 481 */     this.blockTypeStr = blockTypeStr;
-/* 482 */     this.fluidId = fluidId;
-/* 483 */     this.fluidLevel = fluidLevel;
+/* 484 */     this.blockTypeStr = blockTypeStr;
+/* 485 */     this.fluidId = fluidId;
+/* 486 */     this.fluidLevel = fluidLevel;
 /*     */   }
 /*     */ }
 

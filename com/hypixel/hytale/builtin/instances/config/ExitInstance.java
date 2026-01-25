@@ -5,7 +5,6 @@
 /*    */ import com.hypixel.hytale.codec.KeyedCodec;
 /*    */ import com.hypixel.hytale.codec.builder.BuilderCodec;
 /*    */ import com.hypixel.hytale.codec.validation.Validators;
-/*    */ import com.hypixel.hytale.component.CommandBuffer;
 /*    */ import com.hypixel.hytale.component.ComponentAccessor;
 /*    */ import com.hypixel.hytale.component.Ref;
 /*    */ import com.hypixel.hytale.logger.HytaleLogger;
@@ -14,9 +13,11 @@
 /*    */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*    */ import com.hypixel.hytale.server.core.universe.world.World;
 /*    */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+/*    */ import java.util.concurrent.CompletableFuture;
 /*    */ import java.util.function.Supplier;
 /*    */ import java.util.logging.Level;
 /*    */ import javax.annotation.Nonnull;
+/*    */ 
 /*    */ 
 /*    */ 
 /*    */ 
@@ -32,23 +33,24 @@
 /*    */   public static final BuilderCodec<ExitInstance> CODEC;
 /*    */   
 /*    */   static {
-/* 35 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(ExitInstance.class, ExitInstance::new).append(new KeyedCodec("Fallback", (Codec)RespawnController.CODEC), (o, i) -> o.fallback = i, o -> o.fallback).addValidator(Validators.nonNull()).add()).build();
+/* 36 */     CODEC = ((BuilderCodec.Builder)BuilderCodec.builder(ExitInstance.class, ExitInstance::new).append(new KeyedCodec("Fallback", (Codec)RespawnController.CODEC), (o, i) -> o.fallback = i, o -> o.fallback).addValidator(Validators.nonNull()).add()).build();
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 40 */   private RespawnController fallback = (RespawnController)HomeOrSpawnPoint.INSTANCE;
+/* 41 */   private RespawnController fallback = (RespawnController)HomeOrSpawnPoint.INSTANCE;
 /*    */ 
 /*    */ 
 /*    */   
-/*    */   public void respawnPlayer(@Nonnull World world, @Nonnull Ref<EntityStore> playerReference, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
+/*    */   public CompletableFuture<Void> respawnPlayer(@Nonnull World world, @Nonnull Ref<EntityStore> playerReference, @Nonnull ComponentAccessor<EntityStore> commandBuffer) {
 /*    */     try {
-/* 46 */       InstancesPlugin.exitInstance(playerReference, (ComponentAccessor)commandBuffer);
-/* 47 */     } catch (Exception e) {
-/* 48 */       PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(playerReference, PlayerRef.getComponentType());
-/* 49 */       assert playerRefComponent != null;
-/* 50 */       ((HytaleLogger.Api)InstancesPlugin.get().getLogger().at(Level.WARNING).withCause(e)).log(playerRefComponent.getUsername() + " failed to leave an instance");
-/* 51 */       this.fallback.respawnPlayer(world, playerReference, commandBuffer);
+/* 47 */       InstancesPlugin.exitInstance(playerReference, commandBuffer);
+/* 48 */       return CompletableFuture.completedFuture(null);
+/* 49 */     } catch (Exception e) {
+/* 50 */       PlayerRef playerRefComponent = (PlayerRef)commandBuffer.getComponent(playerReference, PlayerRef.getComponentType());
+/* 51 */       assert playerRefComponent != null;
+/* 52 */       ((HytaleLogger.Api)InstancesPlugin.get().getLogger().at(Level.WARNING).withCause(e)).log(playerRefComponent.getUsername() + " failed to leave an instance");
+/* 53 */       return this.fallback.respawnPlayer(world, playerReference, commandBuffer);
 /*    */     } 
 /*    */   }
 /*    */ }

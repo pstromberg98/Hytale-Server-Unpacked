@@ -9,25 +9,24 @@
 /*    */ public class VersionCommand
 /*    */   extends CommandBase
 /*    */ {
-/* 12 */   private static final Message MESSAGE_RESPONSE = Message.translation("server.commands.version.response");
-/* 13 */   private static final Message MESSAGE_RESPONSE_WITH_ENV = Message.translation("server.commands.version.response.withEnvironment");
-/*    */   
 /*    */   public VersionCommand() {
-/* 16 */     super("version", "Displays version information about the currently running server");
+/* 13 */     super("version", "Displays version information about the currently running server");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 21 */     String version = ManifestUtil.getImplementationVersion();
-/* 22 */     String patchline = ManifestUtil.getPatchline();
+/* 18 */     String version = ManifestUtil.getImplementationVersion();
+/* 19 */     String patchline = ManifestUtil.getPatchline();
 /*    */     
-/* 24 */     if ("release".equals(patchline)) {
-/* 25 */       context.sendMessage(MESSAGE_RESPONSE.param("version", version).param("patchline", patchline));
+/* 21 */     if ("release".equals(patchline)) {
+/* 22 */       context.sendMessage(Message.translation("server.commands.version.response")
+/* 23 */           .param("version", version)
+/* 24 */           .param("patchline", patchline));
 /*    */     } else {
-/* 27 */       context.sendMessage(MESSAGE_RESPONSE_WITH_ENV
-/* 28 */           .param("version", version)
-/* 29 */           .param("patchline", patchline)
-/* 30 */           .param("environment", "release"));
+/* 26 */       context.sendMessage(Message.translation("server.commands.version.response.withEnvironment")
+/* 27 */           .param("version", version)
+/* 28 */           .param("patchline", patchline)
+/* 29 */           .param("environment", "release"));
 /*    */     } 
 /*    */   }
 /*    */ }

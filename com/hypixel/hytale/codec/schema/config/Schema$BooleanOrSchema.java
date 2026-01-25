@@ -1153,30 +1153,33 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ @Deprecated
 /*      */ public class BooleanOrSchema
 /*      */   implements Codec<Object>
 /*      */ {
 /*      */   public Object decode(@Nonnull BsonValue bsonValue, ExtraInfo extraInfo) {
-/* 1161 */     if (bsonValue.isBoolean()) return Codec.BOOLEAN.decode(bsonValue, extraInfo); 
-/* 1162 */     return Schema.CODEC.decode(bsonValue, extraInfo);
+/* 1164 */     if (bsonValue.isBoolean()) return Codec.BOOLEAN.decode(bsonValue, extraInfo); 
+/* 1165 */     return Schema.CODEC.decode(bsonValue, extraInfo);
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public BsonValue encode(Object o, ExtraInfo extraInfo) {
-/* 1167 */     if (o instanceof Boolean) {
-/* 1168 */       return Codec.BOOLEAN.encode((Boolean)o, extraInfo);
+/* 1170 */     if (o instanceof Boolean) {
+/* 1171 */       return Codec.BOOLEAN.encode((Boolean)o, extraInfo);
 /*      */     }
-/* 1170 */     return Schema.CODEC.encode(o, extraInfo);
+/* 1173 */     return Schema.CODEC.encode(o, extraInfo);
 /*      */   }
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Schema toSchema(@Nonnull SchemaContext context) {
-/* 1177 */     return Schema.anyOf(new Schema[] { new BooleanSchema(), Schema.CODEC
+/* 1180 */     return Schema.anyOf(new Schema[] { new BooleanSchema(), Schema.CODEC
 /*      */           
-/* 1179 */           .toSchema(context) });
+/* 1182 */           .toSchema(context) });
 /*      */   }
 /*      */ }
 

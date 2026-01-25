@@ -256,6 +256,20 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public interface Constants
 /*     */ {
 /*     */   public static final String KEY_YAW = "Yaw";
@@ -275,7 +289,7 @@
 /*     */   public static final String KEY_SUBMERGE = "Submerge";
 /*     */   public static final String KEY_MAXIMUM_SIZE = "MaximumSize";
 /*     */   public static final String KEY_ENVIRONMENT = "Environment";
-/* 278 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
+/* 292 */   public static final Boolean DEFAULT_SUBMERGE = Boolean.FALSE;
 /*     */   public static final String ERROR_NO_ENTRY = "\"Entry\" is not defined. Define an entry node type";
 /*     */   public static final String ERROR_NO_ENTRY_POINTS = "\"EntryPoints\" is not defined, no spawn information for caves available";
 /*     */   public static final String ERROR_LOADING_ENVIRONMENT = "Error while looking up environment \"%s\"!";

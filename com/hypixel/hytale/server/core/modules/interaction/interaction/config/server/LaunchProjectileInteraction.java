@@ -67,19 +67,19 @@
 /*  67 */     assert commandBuffer != null;
 /*     */     
 /*  69 */     World world = ((EntityStore)commandBuffer.getExternalData()).getWorld();
-/*  70 */     Ref<EntityStore> attackerRef = context.getEntity();
+/*  70 */     Ref<EntityStore> sourceRef = context.getEntity();
 /*     */     
-/*  72 */     Entity entity = EntityUtils.getEntity(attackerRef, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { attackerLivingEntity = (LivingEntity)entity; }
+/*  72 */     Entity entity = EntityUtils.getEntity(sourceRef, (ComponentAccessor)commandBuffer); if (entity instanceof LivingEntity) { attackerLivingEntity = (LivingEntity)entity; }
 /*     */     else
 /*     */     { return; }
-/*  75 */      Transform lookVec = TargetUtil.getLook(attackerRef, (ComponentAccessor)commandBuffer);
+/*  75 */      Transform lookVec = TargetUtil.getLook(sourceRef, (ComponentAccessor)commandBuffer);
 /*  76 */     Vector3d lookPosition = lookVec.getPosition();
 /*  77 */     Vector3f lookRotation = lookVec.getRotation();
 /*     */     
-/*  79 */     UUIDComponent attackerUuidComponent = (UUIDComponent)commandBuffer.getComponent(attackerRef, UUIDComponent.getComponentType());
-/*  80 */     assert attackerUuidComponent != null;
-/*     */     
-/*  82 */     UUID attackerUuid = attackerUuidComponent.getUuid();
+/*  79 */     UUIDComponent sourceUuidComponent = (UUIDComponent)commandBuffer.getComponent(sourceRef, UUIDComponent.getComponentType());
+/*  80 */     if (sourceUuidComponent == null)
+/*     */       return; 
+/*  82 */     UUID sourceUuid = sourceUuidComponent.getUuid();
 /*     */     
 /*  84 */     TimeResource timeResource = (TimeResource)commandBuffer.getResource(TimeResource.getResourceType());
 /*  85 */     Holder<EntityStore> holder = ProjectileComponent.assembleDefaultProjectile(timeResource, this.projectileId, lookPosition, lookRotation);
@@ -97,7 +97,7 @@
 /*     */       }
 /*     */     } 
 /*     */     
-/* 100 */     projectileComponent.shoot(holder, attackerUuid, lookPosition.getX(), lookPosition.getY(), lookPosition.getZ(), lookRotation.getYaw(), lookRotation.getPitch());
+/* 100 */     projectileComponent.shoot(holder, sourceUuid, lookPosition.getX(), lookPosition.getY(), lookPosition.getZ(), lookRotation.getYaw(), lookRotation.getPitch());
 /* 101 */     commandBuffer.addEntity(holder, AddReason.SPAWN);
 /*     */     
 /* 103 */     ItemStack itemInHand = context.getHeldItem();
@@ -105,13 +105,13 @@
 /*     */ 
 /*     */       
 /* 107 */       Item item = itemInHand.getItem();
-/* 108 */       if (attackerLivingEntity.canDecreaseItemStackDurability(attackerRef, (ComponentAccessor)commandBuffer) && !itemInHand.isUnbreakable() && 
+/* 108 */       if (attackerLivingEntity.canDecreaseItemStackDurability(sourceRef, (ComponentAccessor)commandBuffer) && !itemInHand.isUnbreakable() && 
 /* 109 */         item.getWeapon() != null) {
 /* 110 */         Inventory inventory = attackerLivingEntity.getInventory();
 /* 111 */         ItemContainer section = inventory.getSectionById(context.getHeldItemSectionId());
 /*     */         
 /* 113 */         if (section != null) {
-/* 114 */           attackerLivingEntity.updateItemStackDurability(attackerRef, itemInHand, section, context.getHeldItemSlot(), -item.getDurabilityLossOnHit(), (ComponentAccessor)commandBuffer);
+/* 114 */           attackerLivingEntity.updateItemStackDurability(sourceRef, itemInHand, section, context.getHeldItemSlot(), -item.getDurabilityLossOnHit(), (ComponentAccessor)commandBuffer);
 /*     */         }
 /*     */       } 
 /*     */ 

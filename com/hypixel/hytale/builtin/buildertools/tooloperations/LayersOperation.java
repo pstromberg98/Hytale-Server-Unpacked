@@ -32,106 +32,119 @@
 /*     */   private boolean failed;
 /*     */   private final int layerTwoDepthEnd;
 /*     */   private final int layerThreeDepthEnd;
+/*     */   private final boolean skipLayerOne;
+/*     */   private final boolean skipLayerTwo;
+/*     */   private final boolean skipLayerThree;
 /*     */   
 /*     */   public LayersOperation(@Nonnull Ref<EntityStore> ref, @Nonnull Player player, @Nonnull BuilderToolOnUseInteraction packet, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  37 */     super(ref, packet, componentAccessor);
+/*  40 */     super(ref, packet, componentAccessor);
 /*     */     
-/*  39 */     HeadRotation headRotationComponent = (HeadRotation)componentAccessor.getComponent(ref, HeadRotation.getComponentType());
-/*  40 */     assert headRotationComponent != null;
+/*  42 */     HeadRotation headRotationComponent = (HeadRotation)componentAccessor.getComponent(ref, HeadRotation.getComponentType());
+/*  43 */     assert headRotationComponent != null;
 /*     */     
-/*  42 */     switch ((String)this.args.tool().get("aDirection")) { case "Up":
-/*  43 */         this.depthDirection = Vector3i.UP; break;
-/*  44 */       case "Down": this.depthDirection = Vector3i.DOWN; break;
-/*  45 */       case "North": this.depthDirection = Vector3i.NORTH; break;
-/*  46 */       case "South": this.depthDirection = Vector3i.SOUTH; break;
-/*  47 */       case "East": this.depthDirection = Vector3i.EAST; break;
-/*  48 */       case "West": this.depthDirection = Vector3i.WEST; break;
-/*  49 */       case "Camera": this.depthDirection = headRotationComponent.getAxisDirection(); break;
-/*  50 */       default: this.depthDirection = Vector3i.DOWN;
+/*  45 */     switch ((String)this.args.tool().get("aDirection")) { case "Up":
+/*  46 */         this.depthDirection = Vector3i.UP; break;
+/*  47 */       case "Down": this.depthDirection = Vector3i.DOWN; break;
+/*  48 */       case "North": this.depthDirection = Vector3i.NORTH; break;
+/*  49 */       case "South": this.depthDirection = Vector3i.SOUTH; break;
+/*  50 */       case "East": this.depthDirection = Vector3i.EAST; break;
+/*  51 */       case "West": this.depthDirection = Vector3i.WEST; break;
+/*  52 */       case "Camera": this.depthDirection = headRotationComponent.getAxisDirection(); break;
+/*  53 */       default: this.depthDirection = Vector3i.DOWN;
 /*     */         break; }
 /*     */     
-/*  53 */     this.brushDensity = ((Integer)this.args.tool().get("jBrushDensity")).intValue();
+/*  56 */     this.brushDensity = ((Integer)this.args.tool().get("jBrushDensity")).intValue();
 /*     */     
-/*  55 */     this.layerOneLength = ((Integer)this.args.tool().get("bLayerOneLength")).intValue();
-/*  56 */     this.layerTwoLength = ((Integer)this.args.tool().get("eLayerTwoLength")).intValue();
-/*  57 */     this.layerThreeLength = ((Integer)this.args.tool().get("hLayerThreeLength")).intValue();
+/*  58 */     this.layerOneLength = ((Integer)this.args.tool().get("bLayerOneLength")).intValue();
+/*  59 */     this.layerTwoLength = ((Integer)this.args.tool().get("eLayerTwoLength")).intValue();
+/*  60 */     this.layerThreeLength = ((Integer)this.args.tool().get("hLayerThreeLength")).intValue();
 /*     */     
-/*  59 */     this.layerOneBlockPattern = (BlockPattern)this.args.tool().get("cLayerOneMaterial");
-/*  60 */     this.layerTwoBlockPattern = (BlockPattern)this.args.tool().get("fLayerTwoMaterial");
-/*  61 */     this.layerThreeBlockPattern = (BlockPattern)this.args.tool().get("iLayerThreeMaterial");
+/*  62 */     this.layerOneBlockPattern = (BlockPattern)this.args.tool().get("cLayerOneMaterial");
+/*  63 */     this.layerTwoBlockPattern = (BlockPattern)this.args.tool().get("fLayerTwoMaterial");
+/*  64 */     this.layerThreeBlockPattern = (BlockPattern)this.args.tool().get("iLayerThreeMaterial");
 /*     */     
-/*  63 */     this.enableLayerTwo = ((Boolean)this.args.tool().get("dEnableLayerTwo")).booleanValue();
-/*  64 */     this.enableLayerThree = ((Boolean)this.args.tool().get("gEnableLayerThree")).booleanValue();
+/*  66 */     this.enableLayerTwo = ((Boolean)this.args.tool().get("dEnableLayerTwo")).booleanValue();
+/*  67 */     this.enableLayerThree = ((Boolean)this.args.tool().get("gEnableLayerThree")).booleanValue();
 /*     */     
-/*  66 */     this.maxDepthNecessary = this.layerOneLength + (this.enableLayerTwo ? this.layerTwoLength : 0) + (this.enableLayerThree ? this.layerThreeLength : 0);
+/*  69 */     this.skipLayerOne = ((Boolean)this.args.tool().getOrDefault("kSkipLayerOne", Boolean.valueOf(false))).booleanValue();
+/*  70 */     this.skipLayerTwo = ((Boolean)this.args.tool().getOrDefault("lSkipLayerTwo", Boolean.valueOf(false))).booleanValue();
+/*  71 */     this.skipLayerThree = ((Boolean)this.args.tool().getOrDefault("mSkipLayerThree", Boolean.valueOf(false))).booleanValue();
 /*     */     
-/*  68 */     this.layerTwoDepthEnd = this.layerOneLength + this.layerTwoLength;
-/*  69 */     this.layerThreeDepthEnd = this.layerTwoDepthEnd + this.layerThreeLength;
+/*  73 */     this.maxDepthNecessary = this.layerOneLength + (this.enableLayerTwo ? this.layerTwoLength : 0) + (this.enableLayerThree ? this.layerThreeLength : 0);
 /*     */     
-/*  71 */     if (this.enableLayerThree && !this.enableLayerTwo) {
-/*  72 */       player.sendMessage(Message.translation("server.builderTools.layerOperation.layerTwoRequired"));
-/*  73 */       this.failed = true;
+/*  75 */     this.layerTwoDepthEnd = this.layerOneLength + this.layerTwoLength;
+/*  76 */     this.layerThreeDepthEnd = this.layerTwoDepthEnd + this.layerThreeLength;
+/*     */     
+/*  78 */     if (this.enableLayerThree && !this.enableLayerTwo) {
+/*  79 */       player.sendMessage(Message.translation("server.builderTools.layerOperation.layerTwoRequired"));
+/*  80 */       this.failed = true;
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   boolean execute0(int x, int y, int z) {
-/*  80 */     if (this.failed) {
-/*  81 */       return false;
+/*  87 */     if (this.failed) {
+/*  88 */       return false;
 /*     */     }
 /*     */     
-/*  84 */     if (this.random.nextInt(100) > this.brushDensity) {
-/*  85 */       return true;
+/*  91 */     if (this.random.nextInt(100) > this.brushDensity) {
+/*  92 */       return true;
 /*     */     }
 /*     */     
-/*  88 */     int currentBlock = this.edit.getBlock(x, y, z);
+/*  95 */     int currentBlock = this.edit.getBlock(x, y, z);
 /*     */     
-/*  90 */     if (currentBlock <= 0) {
-/*  91 */       return true;
+/*  97 */     if (currentBlock <= 0) {
+/*  98 */       return true;
 /*     */     }
 /*     */     
-/*  94 */     if (this.depthDirection.x == 1) {
-/*  95 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/*  96 */         if (this.edit.getBlock(x - i - 1, y, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
+/* 101 */     if (this.depthDirection.x == 1) {
+/* 102 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 103 */         if (this.edit.getBlock(x - i - 1, y, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
 /*     */       } 
-/*  98 */     } else if (this.depthDirection.x == -1) {
-/*  99 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/* 100 */         if (this.edit.getBlock(x + i + 1, y, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
+/* 105 */     } else if (this.depthDirection.x == -1) {
+/* 106 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 107 */         if (this.edit.getBlock(x + i + 1, y, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
 /*     */       } 
-/* 102 */     } else if (this.depthDirection.y == 1) {
-/* 103 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/* 104 */         if (this.edit.getBlock(x, y - i - 1, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
+/* 109 */     } else if (this.depthDirection.y == 1) {
+/* 110 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 111 */         if (this.edit.getBlock(x, y - i - 1, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
 /*     */       } 
-/* 106 */     } else if (this.depthDirection.y == -1) {
-/* 107 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/* 108 */         if (this.edit.getBlock(x, y + i + 1, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
+/* 113 */     } else if (this.depthDirection.y == -1) {
+/* 114 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 115 */         if (this.edit.getBlock(x, y + i + 1, z) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
 /*     */       } 
-/* 110 */     } else if (this.depthDirection.z == 1) {
-/* 111 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/* 112 */         if (this.edit.getBlock(x, y, z - i - 1) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
+/* 117 */     } else if (this.depthDirection.z == 1) {
+/* 118 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 119 */         if (this.edit.getBlock(x, y, z - i - 1) <= 0 && attemptSetBlock(x, y, z, i)) return true; 
 /*     */       } 
-/* 114 */     } else if (this.depthDirection.z == -1) {
-/* 115 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
-/* 116 */         if (this.edit.getBlock(x, y, z + i + 1) <= 0 && attemptSetBlock(x, y, z, i)) return true;
+/* 121 */     } else if (this.depthDirection.z == -1) {
+/* 122 */       for (int i = 0; i < this.maxDepthNecessary; i++) {
+/* 123 */         if (this.edit.getBlock(x, y, z + i + 1) <= 0 && attemptSetBlock(x, y, z, i)) return true;
 /*     */       
 /*     */       } 
 /*     */     } 
-/* 120 */     return true;
+/* 127 */     return true;
 /*     */   }
 /*     */   
 /*     */   public boolean attemptSetBlock(int x, int y, int z, int depth) {
-/* 124 */     if (depth < this.layerOneLength) {
-/* 125 */       this.edit.setBlock(x, y, z, this.layerOneBlockPattern.nextBlock(this.random));
-/* 126 */       return true;
-/* 127 */     }  if (this.enableLayerTwo && depth < this.layerTwoDepthEnd && !this.layerThreeBlockPattern.isEmpty()) {
-/* 128 */       this.edit.setBlock(x, y, z, this.layerTwoBlockPattern.nextBlock(this.random));
-/* 129 */       return true;
-/* 130 */     }  if (this.enableLayerThree && depth < this.layerThreeDepthEnd && !this.layerThreeBlockPattern.isEmpty()) {
-/* 131 */       this.edit.setBlock(x, y, z, this.layerThreeBlockPattern.nextBlock(this.random));
-/* 132 */       return true;
+/* 131 */     if (depth < this.layerOneLength) {
+/* 132 */       if (!this.skipLayerOne) {
+/* 133 */         this.edit.setBlock(x, y, z, this.layerOneBlockPattern.nextBlock(this.random));
+/*     */       }
+/* 135 */       return true;
+/* 136 */     }  if (this.enableLayerTwo && depth < this.layerTwoDepthEnd) {
+/* 137 */       if (!this.skipLayerTwo && !this.layerTwoBlockPattern.isEmpty()) {
+/* 138 */         this.edit.setBlock(x, y, z, this.layerTwoBlockPattern.nextBlock(this.random));
+/*     */       }
+/* 140 */       return true;
+/* 141 */     }  if (this.enableLayerThree && depth < this.layerThreeDepthEnd) {
+/* 142 */       if (!this.skipLayerThree && !this.layerThreeBlockPattern.isEmpty()) {
+/* 143 */         this.edit.setBlock(x, y, z, this.layerThreeBlockPattern.nextBlock(this.random));
+/*     */       }
+/* 145 */       return true;
 /*     */     } 
-/* 134 */     return false;
+/* 147 */     return false;
 /*     */   }
 /*     */ }
 

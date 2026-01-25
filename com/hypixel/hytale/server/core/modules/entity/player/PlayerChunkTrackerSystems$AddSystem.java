@@ -18,23 +18,26 @@
 /*    */ 
 /*    */ 
 /*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class AddSystem
 /*    */   extends HolderSystem<EntityStore>
 /*    */ {
 /*    */   @Nonnull
-/* 25 */   private static final ComponentType<EntityStore, ChunkTracker> CHUNK_TRACKER_COMPONENT_TYPE = ChunkTracker.getComponentType();
+/* 28 */   private static final ComponentType<EntityStore, ChunkTracker> CHUNK_TRACKER_COMPONENT_TYPE = ChunkTracker.getComponentType();
 /*    */ 
 /*    */   
 /*    */   public Query<EntityStore> getQuery() {
-/* 29 */     return (Query)CHUNK_TRACKER_COMPONENT_TYPE;
+/* 32 */     return (Query)CHUNK_TRACKER_COMPONENT_TYPE;
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason, @Nonnull Store<EntityStore> store) {
-/* 34 */     ChunkTracker chunkTrackerComponent = (ChunkTracker)holder.getComponent(CHUNK_TRACKER_COMPONENT_TYPE);
-/* 35 */     assert chunkTrackerComponent != null;
+/* 37 */     ChunkTracker chunkTrackerComponent = (ChunkTracker)holder.getComponent(CHUNK_TRACKER_COMPONENT_TYPE);
+/* 38 */     assert chunkTrackerComponent != null;
 /*    */     
-/* 37 */     chunkTrackerComponent.setReadyForChunks(true);
+/* 40 */     chunkTrackerComponent.setReadyForChunks(true);
 /*    */   }
 /*    */   
 /*    */   public void onEntityRemoved(@Nonnull Holder<EntityStore> holder, @Nonnull RemoveReason reason, @Nonnull Store<EntityStore> store) {}

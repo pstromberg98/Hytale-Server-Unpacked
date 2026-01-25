@@ -1,6 +1,7 @@
 /*     */ package com.hypixel.hytale.builtin.adventure.objectives.commands;
 /*     */ 
 /*     */ import com.hypixel.hytale.component.Store;
+/*     */ import com.hypixel.hytale.server.core.Message;
 /*     */ import com.hypixel.hytale.server.core.command.system.CommandContext;
 /*     */ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractWorldCommand;
 /*     */ import com.hypixel.hytale.server.core.universe.world.World;
@@ -122,30 +123,20 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class DisableLocationMarkerCommand
 /*     */   extends AbstractWorldCommand
 /*     */ {
 /*     */   public DisableLocationMarkerCommand() {
-/* 139 */     super("disable", "server.commands.objective.locationMarker.disable");
+/* 130 */     super("disable", "server.commands.objective.locationMarker.disable");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/* 144 */     WorldConfig worldConfig = world.getWorldConfig();
-/* 145 */     worldConfig.setObjectiveMarkersEnabled(false);
-/* 146 */     worldConfig.markChanged();
-/* 147 */     context.sendMessage(ObjectiveLocationMarkerCommand.MESSAGE_COMMANDS_OBJECTIVE_LOCATION_MARKER_DISABLED
-/* 148 */         .param("worldName", world.getName()));
+/* 135 */     WorldConfig worldConfig = world.getWorldConfig();
+/* 136 */     worldConfig.setObjectiveMarkersEnabled(false);
+/* 137 */     worldConfig.markChanged();
+/* 138 */     context.sendMessage(Message.translation("server.commands.objective.locationMarker.disabled")
+/* 139 */         .param("worldName", world.getName()));
 /*     */   }
 /*     */ }
 

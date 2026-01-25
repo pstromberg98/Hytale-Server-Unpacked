@@ -170,17 +170,12 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ class null
 /*     */   extends Fluid
 /*     */ {
 /*     */   null(String id) {
-/* 182 */     super(id);
-/* 183 */     processConfig();
+/* 177 */     super(id);
+/* 178 */     processConfig();
 /*     */   }
 /*     */ }
 

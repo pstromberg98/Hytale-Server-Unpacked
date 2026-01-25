@@ -1058,6 +1058,147 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ class CraftingJob
 /*      */ {
 /*      */   @Nonnull
@@ -1072,7 +1213,7 @@
 /*      */   @Nonnull
 /*      */   private final CraftingManager.InputRemovalType inputRemovalType;
 /*      */   @Nonnull
-/* 1075 */   private final Int2ObjectMap<List<ItemStack>> removedItems = (Int2ObjectMap<List<ItemStack>>)new Int2ObjectOpenHashMap();
+/* 1216 */   private final Int2ObjectMap<List<ItemStack>> removedItems = (Int2ObjectMap<List<ItemStack>>)new Int2ObjectOpenHashMap();
 /*      */ 
 /*      */ 
 /*      */ 
@@ -1110,19 +1251,19 @@
 /*      */ 
 /*      */   
 /*      */   public CraftingJob(@Nonnull CraftingWindow window, int transactionId, @Nonnull CraftingRecipe recipe, int quantity, float timeSeconds, @Nonnull ItemContainer inputItemContainer, @Nonnull CraftingManager.InputRemovalType inputRemovalType) {
-/* 1113 */     this.window = window;
-/* 1114 */     this.transactionId = transactionId;
-/* 1115 */     this.recipe = recipe;
-/* 1116 */     this.quantity = quantity;
-/* 1117 */     this.timeSeconds = timeSeconds;
-/* 1118 */     this.inputItemContainer = inputItemContainer;
-/* 1119 */     this.inputRemovalType = inputRemovalType;
+/* 1254 */     this.window = window;
+/* 1255 */     this.transactionId = transactionId;
+/* 1256 */     this.recipe = recipe;
+/* 1257 */     this.quantity = quantity;
+/* 1258 */     this.timeSeconds = timeSeconds;
+/* 1259 */     this.inputItemContainer = inputItemContainer;
+/* 1260 */     this.inputRemovalType = inputRemovalType;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public String toString() {
-/* 1125 */     return "CraftingJob{window=" + String.valueOf(this.window) + ", transactionId=" + this.transactionId + ", recipe=" + String.valueOf(this.recipe) + ", quantity=" + this.quantity + ", timeSeconds=" + this.timeSeconds + ", inputItemContainer=" + String.valueOf(this.inputItemContainer) + ", inputRemovalType=" + String.valueOf(this.inputRemovalType) + ", removedItems=" + String.valueOf(this.removedItems) + ", quantityStarted=" + this.quantityStarted + ", quantityCompleted=" + this.quantityCompleted + ", timeSecondsCompleted=" + this.timeSecondsCompleted + "}";
+/* 1266 */     return "CraftingJob{window=" + String.valueOf(this.window) + ", transactionId=" + this.transactionId + ", recipe=" + String.valueOf(this.recipe) + ", quantity=" + this.quantity + ", timeSeconds=" + this.timeSeconds + ", inputItemContainer=" + String.valueOf(this.inputItemContainer) + ", inputRemovalType=" + String.valueOf(this.inputRemovalType) + ", removedItems=" + String.valueOf(this.removedItems) + ", quantityStarted=" + this.quantityStarted + ", quantityCompleted=" + this.quantityCompleted + ", timeSecondsCompleted=" + this.timeSecondsCompleted + "}";
 /*      */   }
 /*      */ }
 

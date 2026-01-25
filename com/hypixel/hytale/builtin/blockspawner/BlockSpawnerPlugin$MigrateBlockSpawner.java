@@ -166,16 +166,50 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ @Deprecated(forRemoval = true)
 /*     */ public class MigrateBlockSpawner
 /*     */   extends BlockModule.MigrationSystem
 /*     */ {
 /*     */   public void onEntityAdd(@Nonnull Holder<ChunkStore> holder, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store) {
-/* 174 */     UnknownComponents<ChunkStore> unknown = (UnknownComponents<ChunkStore>)holder.getComponent(ChunkStore.REGISTRY.getUnknownComponentType());
-/* 175 */     assert unknown != null;
-/* 176 */     BlockSpawner blockSpawner = (BlockSpawner)unknown.removeComponent("blockspawner", (Codec)BlockSpawner.CODEC);
-/* 177 */     if (blockSpawner != null) {
-/* 178 */       holder.putComponent(BlockSpawner.getComponentType(), (Component)blockSpawner);
+/* 208 */     UnknownComponents<ChunkStore> unknown = (UnknownComponents<ChunkStore>)holder.getComponent(ChunkStore.REGISTRY.getUnknownComponentType());
+/* 209 */     assert unknown != null;
+/* 210 */     BlockSpawner blockSpawner = (BlockSpawner)unknown.removeComponent("blockspawner", (Codec)BlockSpawner.CODEC);
+/* 211 */     if (blockSpawner != null) {
+/* 212 */       holder.putComponent(BlockSpawner.getComponentType(), (Component)blockSpawner);
 /*     */     }
 /*     */   }
 /*     */ 
@@ -187,7 +221,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public Query<ChunkStore> getQuery() {
-/* 190 */     return (Query<ChunkStore>)ChunkStore.REGISTRY.getUnknownComponentType();
+/* 224 */     return (Query<ChunkStore>)ChunkStore.REGISTRY.getUnknownComponentType();
 /*     */   }
 /*     */ }
 

@@ -26,13 +26,11 @@
 /*     */ 
 /*     */ public class StashCommand extends AbstractPlayerCommand {
 /*     */   @Nonnull
-/*  29 */   private static final Message MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED = Message.translation("server.commands.errors.chunkNotLoaded");
+/*  29 */   private static final Message MESSAGE_COMMANDS_STASH_DROP_LIST_SET = Message.translation("server.commands.stash.droplistSet");
 /*     */   @Nonnull
-/*  31 */   private static final Message MESSAGE_COMMANDS_STASH_DROP_LIST_SET = Message.translation("server.commands.stash.droplistSet");
+/*  31 */   private static final Message MESSAGE_COMMANDS_STASH_NO_DROP_LIST = Message.translation("server.commands.stash.noDroplist");
 /*     */   @Nonnull
-/*  33 */   private static final Message MESSAGE_COMMANDS_STASH_NO_DROP_LIST = Message.translation("server.commands.stash.noDroplist");
-/*     */   @Nonnull
-/*  35 */   private static final Message MESSAGE_GENERAL_BLOCK_TARGET_NOT_IN_RANGE = Message.translation("server.general.blockTargetNotInRange");
+/*  33 */   private static final Message MESSAGE_GENERAL_BLOCK_TARGET_NOT_IN_RANGE = Message.translation("server.general.blockTargetNotInRange");
 /*     */ 
 /*     */ 
 /*     */ 
@@ -43,13 +41,13 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/*  46 */   private final OptionalArg<String> setArg = withOptionalArg("set", "server.commands.stash.setDroplist.desc", (ArgumentType)ArgTypes.STRING);
+/*  44 */   private final OptionalArg<String> setArg = withOptionalArg("set", "server.commands.stash.setDroplist.desc", (ArgumentType)ArgTypes.STRING);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public StashCommand() {
-/*  52 */     super("stash", "server.commands.stash.getDroplist.desc");
+/*  50 */     super("stash", "server.commands.stash.getDroplist.desc");
 /*     */   }
 /*     */ 
 /*     */ 
@@ -59,20 +57,20 @@
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> ref, @Nonnull PlayerRef playerRef, @Nonnull World world) {
-/*  62 */     ItemContainerState itemContainerState = getItemContainerState(ref, world, context, (ComponentAccessor<EntityStore>)store);
-/*  63 */     if (itemContainerState == null)
+/*  60 */     ItemContainerState itemContainerState = getItemContainerState(ref, world, context, (ComponentAccessor<EntityStore>)store);
+/*  61 */     if (itemContainerState == null)
 /*     */       return; 
-/*  65 */     if (this.setArg.provided(context)) {
-/*  66 */       String dropList = (String)this.setArg.get(context);
-/*  67 */       itemContainerState.setDroplist(dropList);
-/*  68 */       context.sendMessage(MESSAGE_COMMANDS_STASH_DROP_LIST_SET);
+/*  63 */     if (this.setArg.provided(context)) {
+/*  64 */       String dropList = (String)this.setArg.get(context);
+/*  65 */       itemContainerState.setDroplist(dropList);
+/*  66 */       context.sendMessage(MESSAGE_COMMANDS_STASH_DROP_LIST_SET);
 /*     */     } else {
-/*  70 */       String droplist = itemContainerState.getDroplist();
-/*  71 */       if (droplist != null) {
-/*  72 */         context.sendMessage(Message.translation("server.commands.stash.currentDroplist")
-/*  73 */             .param("droplist", droplist));
+/*  68 */       String droplist = itemContainerState.getDroplist();
+/*  69 */       if (droplist != null) {
+/*  70 */         context.sendMessage(Message.translation("server.commands.stash.currentDroplist")
+/*  71 */             .param("droplist", droplist));
 /*     */       } else {
-/*  75 */         context.sendMessage(MESSAGE_COMMANDS_STASH_NO_DROP_LIST);
+/*  73 */         context.sendMessage(MESSAGE_COMMANDS_STASH_NO_DROP_LIST);
 /*     */       } 
 /*     */     } 
 /*     */   }
@@ -91,52 +89,52 @@
 /*     */   
 /*     */   @Nullable
 /*     */   private ItemContainerState getItemContainerState(@Nonnull Ref<EntityStore> ref, @Nonnull World world, @Nonnull CommandContext context, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
-/*  94 */     Vector3i block = TargetUtil.getTargetBlock(ref, 10.0D, componentAccessor);
-/*  95 */     if (block == null) {
-/*  96 */       context.sendMessage(MESSAGE_GENERAL_BLOCK_TARGET_NOT_IN_RANGE);
-/*  97 */       return null;
+/*  92 */     Vector3i block = TargetUtil.getTargetBlock(ref, 10.0D, componentAccessor);
+/*  93 */     if (block == null) {
+/*  94 */       context.sendMessage(MESSAGE_GENERAL_BLOCK_TARGET_NOT_IN_RANGE);
+/*  95 */       return null;
 /*     */     } 
 /*     */     
-/* 100 */     ChunkStore chunkStore = world.getChunkStore();
-/* 101 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(block.x, block.z);
-/* 102 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/*  98 */     ChunkStore chunkStore = world.getChunkStore();
+/*  99 */     long chunkIndex = ChunkUtil.indexChunkFromBlock(block.x, block.z);
+/* 100 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*     */ 
 /*     */     
-/* 105 */     if (chunkRef == null || !chunkRef.isValid()) {
-/* 106 */       int chunkX = ChunkUtil.chunkCoordinate(block.x);
-/* 107 */       int chunkZ = ChunkUtil.chunkCoordinate(block.z);
+/* 103 */     if (chunkRef == null || !chunkRef.isValid()) {
+/* 104 */       int chunkX = ChunkUtil.chunkCoordinate(block.x);
+/* 105 */       int chunkZ = ChunkUtil.chunkCoordinate(block.z);
 /*     */       
-/* 109 */       context.sendMessage(MESSAGE_COMMANDS_ERRORS_CHUNK_NOT_LOADED
-/* 110 */           .param("chunkX", chunkX)
-/* 111 */           .param("chunkZ", chunkZ)
-/* 112 */           .param("world", world.getName()));
-/* 113 */       return null;
+/* 107 */       context.sendMessage(Message.translation("server.commands.errors.chunkNotLoaded")
+/* 108 */           .param("chunkX", chunkX)
+/* 109 */           .param("chunkZ", chunkZ)
+/* 110 */           .param("world", world.getName()));
+/* 111 */       return null;
 /*     */     } 
 /*     */     
-/* 116 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
+/* 114 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
 /*     */     
-/* 118 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
-/* 119 */     assert blockChunkComponent != null;
+/* 116 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
+/* 117 */     assert blockChunkComponent != null;
 /*     */     
-/* 121 */     WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
-/* 122 */     assert worldChunkComponent != null;
+/* 119 */     WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
+/* 120 */     assert worldChunkComponent != null;
 /*     */     
-/* 124 */     BlockSection section = blockChunkComponent.getSectionAtBlockY(block.y);
-/* 125 */     int filler = section.getFiller(block.x, block.y, block.z);
-/* 126 */     if (filler != 0) {
-/* 127 */       block.x -= FillerBlockUtil.unpackX(filler);
-/* 128 */       block.y -= FillerBlockUtil.unpackY(filler);
-/* 129 */       block.z -= FillerBlockUtil.unpackZ(filler);
+/* 122 */     BlockSection section = blockChunkComponent.getSectionAtBlockY(block.y);
+/* 123 */     int filler = section.getFiller(block.x, block.y, block.z);
+/* 124 */     if (filler != 0) {
+/* 125 */       block.x -= FillerBlockUtil.unpackX(filler);
+/* 126 */       block.y -= FillerBlockUtil.unpackY(filler);
+/* 127 */       block.z -= FillerBlockUtil.unpackZ(filler);
 /*     */     } 
 /*     */     
-/* 132 */     BlockState state = worldChunkComponent.getState(block.x, block.y, block.z);
-/* 133 */     if (!(state instanceof ItemContainerState)) {
-/* 134 */       context.sendMessage(Message.translation("server.general.containerNotFound")
-/* 135 */           .param("block", block.toString()));
-/* 136 */       return null;
+/* 130 */     BlockState state = worldChunkComponent.getState(block.x, block.y, block.z);
+/* 131 */     if (!(state instanceof ItemContainerState)) {
+/* 132 */       context.sendMessage(Message.translation("server.general.containerNotFound")
+/* 133 */           .param("block", block.toString()));
+/* 134 */       return null;
 /*     */     } 
 /*     */     
-/* 139 */     return (ItemContainerState)state;
+/* 137 */     return (ItemContainerState)state;
 /*     */   }
 /*     */ }
 

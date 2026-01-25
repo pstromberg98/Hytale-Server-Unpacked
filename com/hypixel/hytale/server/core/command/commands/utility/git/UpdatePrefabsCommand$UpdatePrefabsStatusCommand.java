@@ -123,17 +123,21 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ class UpdatePrefabsStatusCommand
 /*     */   extends UpdatePrefabsCommand.UpdatePrefabsGitCommand
 /*     */ {
 /*     */   public UpdatePrefabsStatusCommand() {
-/* 130 */     super("status", "server.commands.update.prefabs.status.desc");
+/* 134 */     super("status", "server.commands.git.prefabs.status.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   protected String[][] getCommands(@Nonnull String senderDisplayName) {
-/* 136 */     return new String[][] { { "git", "status" }, { "git", "submodule", "foreach", "git", "status" } };
+/* 140 */     return new String[][] { { "git", "status" }, { "git", "submodule", "foreach", "git", "status" } };
 /*     */   }
 /*     */ }
 

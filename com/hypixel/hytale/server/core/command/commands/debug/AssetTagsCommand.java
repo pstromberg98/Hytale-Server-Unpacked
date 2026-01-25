@@ -17,63 +17,60 @@
 /*    */ import java.util.stream.Collectors;
 /*    */ import javax.annotation.Nonnull;
 /*    */ 
+/*    */ 
+/*    */ 
 /*    */ public class AssetTagsCommand
-/*    */   extends CommandBase {
+/*    */   extends CommandBase
+/*    */ {
 /*    */   @Nonnull
-/* 23 */   private static final Message MESSAGE_COMMANDS_ASSETS_TAGS_TAG_NOT_FOUND = Message.translation("server.commands.assets.tags.tagNotFound");
+/* 26 */   private final RequiredArg<String> classArg = withRequiredArg("class", "server.commands.assets.tags.class.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   @Nonnull
-/* 29 */   private final RequiredArg<String> classArg = withRequiredArg("class", "server.commands.assets.tags.class.desc", (ArgumentType)ArgTypes.STRING);
-/*    */ 
-/*    */ 
-/*    */ 
-/*    */   
-/*    */   @Nonnull
-/* 35 */   private final RequiredArg<String> tagArg = withRequiredArg("tag", "server.commands.assets.tags.tag.desc", (ArgumentType)ArgTypes.STRING);
+/* 32 */   private final RequiredArg<String> tagArg = withRequiredArg("tag", "server.commands.assets.tags.tag.desc", (ArgumentType)ArgTypes.STRING);
 /*    */ 
 /*    */ 
 /*    */ 
 /*    */   
 /*    */   public AssetTagsCommand() {
-/* 41 */     super("tags", "server.commands.assets.tags.desc");
+/* 38 */     super("tags", "server.commands.assets.tags.desc");
 /*    */   }
 /*    */ 
 /*    */   
 /*    */   protected void executeSync(@Nonnull CommandContext context) {
-/* 46 */     String assetClass = (String)this.classArg.get(context);
-/* 47 */     String tag = (String)this.tagArg.get(context);
-/* 48 */     int tagIndex = AssetRegistry.getTagIndex(tag);
+/* 43 */     String assetClass = (String)this.classArg.get(context);
+/* 44 */     String tag = (String)this.tagArg.get(context);
+/* 45 */     int tagIndex = AssetRegistry.getTagIndex(tag);
 /*    */     
-/* 50 */     if (tagIndex == Integer.MIN_VALUE) {
-/* 51 */       context.sendMessage(MESSAGE_COMMANDS_ASSETS_TAGS_TAG_NOT_FOUND
-/* 52 */           .param("tag", tag));
+/* 47 */     if (tagIndex == Integer.MIN_VALUE) {
+/* 48 */       context.sendMessage(Message.translation("server.commands.assets.tags.tagNotFound")
+/* 49 */           .param("tag", tag));
 /*    */       
 /*    */       return;
 /*    */     } 
-/* 56 */     for (Map.Entry<Class<? extends JsonAssetWithMap>, AssetStore<?, ?, ?>> entry : (Iterable<Map.Entry<Class<? extends JsonAssetWithMap>, AssetStore<?, ?, ?>>>)AssetRegistry.getStoreMap().entrySet()) {
-/* 57 */       String simpleName = ((Class)entry.getKey()).getSimpleName();
-/* 58 */       if (!simpleName.equalsIgnoreCase(assetClass))
+/* 53 */     for (Map.Entry<Class<? extends JsonAssetWithMap>, AssetStore<?, ?, ?>> entry : (Iterable<Map.Entry<Class<? extends JsonAssetWithMap>, AssetStore<?, ?, ?>>>)AssetRegistry.getStoreMap().entrySet()) {
+/* 54 */       String simpleName = ((Class)entry.getKey()).getSimpleName();
+/* 55 */       if (!simpleName.equalsIgnoreCase(assetClass))
 /*    */         continue; 
-/* 60 */       context.sendMessage(Message.translation("server.commands.assets.tags.assetsOfTypeWithTag")
-/* 61 */           .param("type", simpleName)
-/* 62 */           .param("tag", tag));
+/* 57 */       context.sendMessage(Message.translation("server.commands.assets.tags.assetsOfTypeWithTag")
+/* 58 */           .param("type", simpleName)
+/* 59 */           .param("tag", tag));
 /*    */       
-/* 64 */       AssetMap<?, ?> assetMap = ((AssetStore)entry.getValue()).getAssetMap();
+/* 61 */       AssetMap<?, ?> assetMap = ((AssetStore)entry.getValue()).getAssetMap();
 /*    */ 
 /*    */ 
 /*    */       
-/* 68 */       Set<Message> keysForTag = (Set<Message>)assetMap.getKeysForTag(tagIndex).stream().map(Object::toString).map(Message::raw).collect(Collectors.toSet());
-/* 69 */       context.sendMessage(MessageFormat.list(Message.translation("server.commands.assets.tags.assetKeys"), keysForTag));
+/* 65 */       Set<Message> keysForTag = (Set<Message>)assetMap.getKeysForTag(tagIndex).stream().map(Object::toString).map(Message::raw).collect(Collectors.toSet());
+/* 66 */       context.sendMessage(MessageFormat.list(Message.translation("server.commands.assets.tags.assetKeys"), keysForTag));
 /*    */       
-/* 71 */       if (assetMap instanceof AssetMapWithIndexes) { AssetMapWithIndexes<?, ?> assetMapWithIndexes = (AssetMapWithIndexes<?, ?>)assetMap;
+/* 68 */       if (assetMap instanceof AssetMapWithIndexes) { AssetMapWithIndexes<?, ?> assetMapWithIndexes = (AssetMapWithIndexes<?, ?>)assetMap;
 /*    */ 
 /*    */ 
 /*    */         
-/* 75 */         Set<Message> indexesForTag = (Set<Message>)assetMapWithIndexes.getIndexesForTag(tagIndex).intStream().mapToObj(Integer::toString).map(Message::raw).collect(Collectors.toSet());
-/* 76 */         context.sendMessage(MessageFormat.list(Message.translation("server.commands.assets.tags.assetIndexes"), indexesForTag)); }
+/* 72 */         Set<Message> indexesForTag = (Set<Message>)assetMapWithIndexes.getIndexesForTag(tagIndex).intStream().mapToObj(Integer::toString).map(Message::raw).collect(Collectors.toSet());
+/* 73 */         context.sendMessage(MessageFormat.list(Message.translation("server.commands.assets.tags.assetIndexes"), indexesForTag)); }
 /*    */     
 /*    */     } 
 /*    */   }

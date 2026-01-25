@@ -1,7 +1,9 @@
 /*     */ package com.hypixel.hytale.server.core.command.commands.world.chunk;
+/*     */ 
 /*     */ import com.hypixel.hytale.component.ComponentAccessor;
 /*     */ import com.hypixel.hytale.component.Ref;
 /*     */ import com.hypixel.hytale.component.Store;
+/*     */ import com.hypixel.hytale.math.util.ChunkUtil;
 /*     */ import com.hypixel.hytale.math.vector.Vector2i;
 /*     */ import com.hypixel.hytale.server.core.Message;
 /*     */ import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -20,53 +22,46 @@
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import javax.annotation.Nonnull;
 /*     */ 
-/*     */ public class ChunkInfoCommand extends AbstractWorldCommand {
+/*     */ public class ChunkInfoCommand
+/*     */   extends AbstractWorldCommand {
 /*     */   @Nonnull
-/*  25 */   private static final Message MESSAGE_GENERAL_CHUNK_NOT_LOADED = Message.translation("server.general.chunkNotLoaded");
-/*     */   @Nonnull
-/*  27 */   private static final Message MESSAGE_COMMANDS_CHUNKINFO_LOAD_USAGE = Message.translation("server.commands.chunkinfo.load.usage");
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */   
-/*     */   @Nonnull
-/*  33 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.info.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
+/*  28 */   private final RequiredArg<RelativeChunkPosition> chunkPosArg = withRequiredArg("x z", "server.commands.chunk.info.position.desc", ArgTypes.RELATIVE_CHUNK_POSITION);
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public ChunkInfoCommand() {
-/*  39 */     super("info", "server.commands.chunk.info.desc");
+/*  34 */     super("info", "server.commands.chunk.info.desc");
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   protected void execute(@Nonnull CommandContext context, @Nonnull World world, @Nonnull Store<EntityStore> store) {
-/*  44 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
-/*  45 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
+/*  39 */     RelativeChunkPosition chunkPosition = (RelativeChunkPosition)this.chunkPosArg.get(context);
+/*  40 */     Vector2i position = chunkPosition.getChunkPosition(context, (ComponentAccessor)store);
 /*     */     
-/*  47 */     ChunkStore chunkStore = world.getChunkStore();
-/*  48 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
-/*  49 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
-/*  50 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
+/*  42 */     ChunkStore chunkStore = world.getChunkStore();
+/*  43 */     Store<ChunkStore> chunkStoreStore = chunkStore.getStore();
+/*  44 */     long chunkIndex = ChunkUtil.indexChunk(position.x, position.y);
+/*  45 */     Ref<ChunkStore> chunkRef = chunkStore.getChunkReference(chunkIndex);
 /*     */ 
 /*     */     
-/*  53 */     if (chunkRef == null || !chunkRef.isValid()) {
-/*  54 */       context.sendMessage(MESSAGE_GENERAL_CHUNK_NOT_LOADED
-/*  55 */           .param("chunkX", position.x)
-/*  56 */           .param("chunkZ", position.y));
+/*  48 */     if (chunkRef == null || !chunkRef.isValid()) {
+/*  49 */       context.sendMessage(Message.translation("server.general.chunkNotLoaded")
+/*  50 */           .param("chunkX", position.x)
+/*  51 */           .param("chunkZ", position.y));
 /*     */ 
 /*     */       
-/*  59 */       context.sendMessage(MESSAGE_COMMANDS_CHUNKINFO_LOAD_USAGE
-/*  60 */           .param("chunkX", position.x)
-/*  61 */           .param("chunkZ", position.y));
+/*  54 */       context.sendMessage(Message.translation("server.commands.chunkinfo.load.usage")
+/*  55 */           .param("chunkX", position.x)
+/*  56 */           .param("chunkZ", position.y));
 /*     */       
 /*     */       return;
 /*     */     } 
-/*  65 */     WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
-/*  66 */     assert worldChunkComponent != null;
+/*  60 */     WorldChunk worldChunkComponent = (WorldChunk)chunkStoreStore.getComponent(chunkRef, WorldChunk.getComponentType());
+/*  61 */     assert worldChunkComponent != null;
 /*     */     
-/*  68 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
-/*  69 */     assert blockChunkComponent != null;
+/*  63 */     BlockChunk blockChunkComponent = (BlockChunk)chunkStoreStore.getComponent(chunkRef, BlockChunk.getComponentType());
+/*  64 */     assert blockChunkComponent != null;
 /*     */ 
 /*     */ 
 /*     */ 
@@ -79,33 +74,33 @@
 /*     */ 
 /*     */ 
 /*     */     
-/*  82 */     Message msg = Message.translation("server.commands.chunkinfo.chunk").param("chunkX", position.x).param("chunkZ", position.y).param("startInit", worldChunkComponent.is(ChunkFlag.START_INIT)).param("init", worldChunkComponent.is(ChunkFlag.INIT)).param("newlyGenerated", worldChunkComponent.is(ChunkFlag.NEWLY_GENERATED)).param("onDisk", worldChunkComponent.is(ChunkFlag.ON_DISK)).param("ticking", worldChunkComponent.is(ChunkFlag.TICKING)).param("keepLoaded", worldChunkComponent.shouldKeepLoaded()).param("saving", worldChunkComponent.getNeedsSaving()).param("savingChunk", blockChunkComponent.getNeedsSaving());
+/*  77 */     Message msg = Message.translation("server.commands.chunkinfo.chunk").param("chunkX", position.x).param("chunkZ", position.y).param("startInit", worldChunkComponent.is(ChunkFlag.START_INIT)).param("init", worldChunkComponent.is(ChunkFlag.INIT)).param("newlyGenerated", worldChunkComponent.is(ChunkFlag.NEWLY_GENERATED)).param("onDisk", worldChunkComponent.is(ChunkFlag.ON_DISK)).param("ticking", worldChunkComponent.is(ChunkFlag.TICKING)).param("keepLoaded", worldChunkComponent.shouldKeepLoaded()).param("saving", worldChunkComponent.getNeedsSaving()).param("savingChunk", blockChunkComponent.getNeedsSaving());
 /*     */     
-/*  84 */     for (int i = 0; i < 10; i++) {
-/*  85 */       BlockSection section = blockChunkComponent.getSectionAtIndex(i);
-/*  86 */       msg.insert(Message.translation("server.commands.chunkinfo.section").param("index", i));
-/*  87 */       if (section instanceof BlockSection) { BlockSection blockSection = section;
-/*  88 */         msg.insert(Message.translation("server.commands.chunkinfo.dataType")
-/*  89 */             .param("data", blockSection.getChunkSection().getClass().getSimpleName())); }
+/*  79 */     for (int i = 0; i < 10; i++) {
+/*  80 */       BlockSection section = blockChunkComponent.getSectionAtIndex(i);
+/*  81 */       msg.insert(Message.translation("server.commands.chunkinfo.section").param("index", i));
+/*  82 */       if (section instanceof BlockSection) { BlockSection blockSection = section;
+/*  83 */         msg.insert(Message.translation("server.commands.chunkinfo.dataType")
+/*  84 */             .param("data", blockSection.getChunkSection().getClass().getSimpleName())); }
 /*     */       
-/*  91 */       msg.insert(Message.translation("server.commands.chunkinfo.sectionInfo")
-/*  92 */           .param("ticking", section.hasTicking())
-/*  93 */           .param("solidAir", section.isSolidAir())
-/*  94 */           .param("count", section.count())
-/*  95 */           .param("counts", section.valueCounts().toString()));
+/*  86 */       msg.insert(Message.translation("server.commands.chunkinfo.sectionInfo")
+/*  87 */           .param("ticking", section.hasTicking())
+/*  88 */           .param("solidAir", section.isSolidAir())
+/*  89 */           .param("count", section.count())
+/*  90 */           .param("counts", section.valueCounts().toString()));
 /*     */     } 
 /*     */     
-/*  98 */     BlockComponentChunk blockStateChunk = (BlockComponentChunk)chunkStoreStore.getComponent(chunkRef, BlockComponentChunk.getComponentType());
-/*  99 */     EntityChunk entityChunk = (EntityChunk)chunkStoreStore.getComponent(chunkRef, EntityChunk.getComponentType());
-/* 100 */     if (blockStateChunk != null && entityChunk != null) {
-/* 101 */       msg.insert(Message.translation("server.commands.chunkinfo.blockStateChunk")
-/* 102 */           .param("saving", blockStateChunk.getNeedsSaving())
-/* 103 */           .param("countStates", blockStateChunk.getEntityHolders().size() + blockStateChunk.getEntityReferences().size())
-/* 104 */           .param("savingEntity", entityChunk.getNeedsSaving())
-/* 105 */           .param("countEntities", entityChunk.getEntityHolders().size() + entityChunk.getEntityReferences().size()));
+/*  93 */     BlockComponentChunk blockStateChunk = (BlockComponentChunk)chunkStoreStore.getComponent(chunkRef, BlockComponentChunk.getComponentType());
+/*  94 */     EntityChunk entityChunk = (EntityChunk)chunkStoreStore.getComponent(chunkRef, EntityChunk.getComponentType());
+/*  95 */     if (blockStateChunk != null && entityChunk != null) {
+/*  96 */       msg.insert(Message.translation("server.commands.chunkinfo.blockStateChunk")
+/*  97 */           .param("saving", blockStateChunk.getNeedsSaving())
+/*  98 */           .param("countStates", blockStateChunk.getEntityHolders().size() + blockStateChunk.getEntityReferences().size())
+/*  99 */           .param("savingEntity", entityChunk.getNeedsSaving())
+/* 100 */           .param("countEntities", entityChunk.getEntityHolders().size() + entityChunk.getEntityReferences().size()));
 /*     */     }
 /*     */     
-/* 108 */     context.sendMessage(msg);
+/* 103 */     context.sendMessage(msg);
 /*     */   }
 /*     */ }
 

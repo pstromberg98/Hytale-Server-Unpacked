@@ -139,137 +139,6 @@
 /*     */ 
 /*     */ 
 /*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
-/*     */ 
 /*     */ public class LegacyHideFromEntity
 /*     */   extends EntityTickingSystem<EntityStore>
 /*     */ {
@@ -281,61 +150,61 @@
 /*     */   private final Set<Dependency<EntityStore>> dependencies;
 /*     */   
 /*     */   public LegacyHideFromEntity(ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> entityViewerComponentType) {
-/* 284 */     this.entityViewerComponentType = entityViewerComponentType;
-/* 285 */     this.playerSettingsComponentType = EntityModule.get().getPlayerSettingsComponentType();
-/* 286 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)entityViewerComponentType, (Query)AllLegacyLivingEntityTypesQuery.INSTANCE });
-/* 287 */     this.dependencies = Collections.singleton(new SystemDependency(Order.AFTER, EntityTrackerSystems.CollectVisible.class));
+/* 153 */     this.entityViewerComponentType = entityViewerComponentType;
+/* 154 */     this.playerSettingsComponentType = EntityModule.get().getPlayerSettingsComponentType();
+/* 155 */     this.query = (Query<EntityStore>)Query.and(new Query[] { (Query)entityViewerComponentType, (Query)AllLegacyLivingEntityTypesQuery.INSTANCE });
+/* 156 */     this.dependencies = Collections.singleton(new SystemDependency(Order.AFTER, EntityTrackerSystems.CollectVisible.class));
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nullable
 /*     */   public SystemGroup<EntityStore> getGroup() {
-/* 293 */     return EntityTrackerSystems.FIND_VISIBLE_ENTITIES_GROUP;
+/* 162 */     return EntityTrackerSystems.FIND_VISIBLE_ENTITIES_GROUP;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Set<Dependency<EntityStore>> getDependencies() {
-/* 299 */     return this.dependencies;
+/* 168 */     return this.dependencies;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public Query<EntityStore> getQuery() {
-/* 305 */     return this.query;
+/* 174 */     return this.query;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 310 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 179 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 315 */     Ref<EntityStore> viewerRef = archetypeChunk.getReferenceTo(index);
-/* 316 */     PlayerSettings settings = (PlayerSettings)archetypeChunk.getComponent(index, this.playerSettingsComponentType);
-/* 317 */     if (settings == null) {
-/* 318 */       settings = PlayerSettings.defaults();
+/* 184 */     Ref<EntityStore> viewerRef = archetypeChunk.getReferenceTo(index);
+/* 185 */     PlayerSettings settings = (PlayerSettings)archetypeChunk.getComponent(index, this.playerSettingsComponentType);
+/* 186 */     if (settings == null) {
+/* 187 */       settings = PlayerSettings.defaults();
 /*     */     }
 /*     */     
-/* 321 */     EntityTrackerSystems.EntityViewer entityViewerComponent = (EntityTrackerSystems.EntityViewer)archetypeChunk.getComponent(index, this.entityViewerComponentType);
-/* 322 */     assert entityViewerComponent != null;
+/* 190 */     EntityTrackerSystems.EntityViewer entityViewerComponent = (EntityTrackerSystems.EntityViewer)archetypeChunk.getComponent(index, this.entityViewerComponentType);
+/* 191 */     assert entityViewerComponent != null;
 /*     */     
-/* 324 */     for (Iterator<Ref<EntityStore>> iterator = entityViewerComponent.visible.iterator(); iterator.hasNext(); ) {
-/* 325 */       Ref<EntityStore> ref = iterator.next();
+/* 193 */     for (Iterator<Ref<EntityStore>> iterator = entityViewerComponent.visible.iterator(); iterator.hasNext(); ) {
+/* 194 */       Ref<EntityStore> ref = iterator.next();
 /*     */       
-/* 327 */       Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer);
-/* 328 */       if (entity == null)
+/* 196 */       Entity entity = EntityUtils.getEntity(ref, (ComponentAccessor)commandBuffer);
+/* 197 */       if (entity == null)
 /*     */         continue; 
-/* 330 */       if (entity.isHiddenFromLivingEntity(ref, viewerRef, (ComponentAccessor)commandBuffer) && canHideEntities(entity, settings)) {
-/* 331 */         entityViewerComponent.hiddenCount++;
-/* 332 */         iterator.remove();
+/* 199 */       if (entity.isHiddenFromLivingEntity(ref, viewerRef, (ComponentAccessor)commandBuffer) && canHideEntities(entity, settings)) {
+/* 200 */         entityViewerComponent.hiddenCount++;
+/* 201 */         iterator.remove();
 /*     */       } 
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   private static boolean canHideEntities(Entity entity, @Nonnull PlayerSettings settings) {
-/* 338 */     return (entity instanceof com.hypixel.hytale.server.core.entity.entities.Player && !settings.showEntityMarkers());
+/* 207 */     return (entity instanceof com.hypixel.hytale.server.core.entity.entities.Player && !settings.showEntityMarkers());
 /*     */   }
 /*     */ }
 

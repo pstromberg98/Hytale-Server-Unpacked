@@ -70,19 +70,19 @@
 /*     */   public static ParticleSpawnerGroup deserialize(@Nonnull ByteBuf buf, int offset) {
 /*  71 */     ParticleSpawnerGroup obj = new ParticleSpawnerGroup();
 /*  72 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
-/*  73 */     if ((nullBits[0] & 0x2) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 2); 
-/*  74 */     if ((nullBits[0] & 0x4) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 14); 
+/*  73 */     if ((nullBits[0] & 0x1) != 0) obj.positionOffset = Vector3f.deserialize(buf, offset + 2); 
+/*  74 */     if ((nullBits[0] & 0x2) != 0) obj.rotationOffset = Direction.deserialize(buf, offset + 14); 
 /*  75 */     obj.fixedRotation = (buf.getByte(offset + 26) != 0);
 /*  76 */     obj.startDelay = buf.getFloatLE(offset + 27);
-/*  77 */     if ((nullBits[0] & 0x8) != 0) obj.spawnRate = Rangef.deserialize(buf, offset + 31); 
-/*  78 */     if ((nullBits[0] & 0x10) != 0) obj.waveDelay = Rangef.deserialize(buf, offset + 39); 
+/*  77 */     if ((nullBits[0] & 0x4) != 0) obj.spawnRate = Rangef.deserialize(buf, offset + 31); 
+/*  78 */     if ((nullBits[0] & 0x8) != 0) obj.waveDelay = Rangef.deserialize(buf, offset + 39); 
 /*  79 */     obj.totalSpawners = buf.getIntLE(offset + 47);
 /*  80 */     obj.maxConcurrent = buf.getIntLE(offset + 51);
-/*  81 */     if ((nullBits[0] & 0x20) != 0) obj.initialVelocity = InitialVelocity.deserialize(buf, offset + 55); 
-/*  82 */     if ((nullBits[0] & 0x40) != 0) obj.emitOffset = RangeVector3f.deserialize(buf, offset + 80); 
-/*  83 */     if ((nullBits[0] & 0x80) != 0) obj.lifeSpan = Rangef.deserialize(buf, offset + 105);
+/*  81 */     if ((nullBits[0] & 0x10) != 0) obj.initialVelocity = InitialVelocity.deserialize(buf, offset + 55); 
+/*  82 */     if ((nullBits[0] & 0x20) != 0) obj.emitOffset = RangeVector3f.deserialize(buf, offset + 80); 
+/*  83 */     if ((nullBits[0] & 0x40) != 0) obj.lifeSpan = Rangef.deserialize(buf, offset + 105);
 /*     */     
-/*  85 */     if ((nullBits[0] & 0x1) != 0) {
+/*  85 */     if ((nullBits[0] & 0x80) != 0) {
 /*  86 */       int varPos0 = offset + 121 + buf.getIntLE(offset + 113);
 /*  87 */       int spawnerIdLen = VarInt.peek(buf, varPos0);
 /*  88 */       if (spawnerIdLen < 0) throw ProtocolException.negativeLength("SpawnerId", spawnerIdLen); 
@@ -111,7 +111,7 @@
 /*     */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /* 112 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 2);
 /* 113 */     int maxEnd = 121;
-/* 114 */     if ((nullBits[0] & 0x1) != 0) {
+/* 114 */     if ((nullBits[0] & 0x80) != 0) {
 /* 115 */       int fieldOffset0 = buf.getIntLE(offset + 113);
 /* 116 */       int pos0 = offset + 121 + fieldOffset0;
 /* 117 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
@@ -131,14 +131,14 @@
 /*     */   public void serialize(@Nonnull ByteBuf buf) {
 /* 132 */     int startPos = buf.writerIndex();
 /* 133 */     byte[] nullBits = new byte[2];
-/* 134 */     if (this.spawnerId != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
-/* 135 */     if (this.positionOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/* 136 */     if (this.rotationOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/* 137 */     if (this.spawnRate != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/* 138 */     if (this.waveDelay != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/* 139 */     if (this.initialVelocity != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/* 140 */     if (this.emitOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/* 141 */     if (this.lifeSpan != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/* 134 */     if (this.positionOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
+/* 135 */     if (this.rotationOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
+/* 136 */     if (this.spawnRate != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/* 137 */     if (this.waveDelay != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/* 138 */     if (this.initialVelocity != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/* 139 */     if (this.emitOffset != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/* 140 */     if (this.lifeSpan != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/* 141 */     if (this.spawnerId != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
 /* 142 */     if (this.attractors != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
 /* 143 */     buf.writeBytes(nullBits);
 /*     */     
@@ -190,7 +190,7 @@
 /*     */     
 /* 191 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 2);
 /*     */     
-/* 193 */     if ((nullBits[0] & 0x1) != 0) {
+/* 193 */     if ((nullBits[0] & 0x80) != 0) {
 /* 194 */       int spawnerIdOffset = buffer.getIntLE(offset + 113);
 /* 195 */       if (spawnerIdOffset < 0) {
 /* 196 */         return ValidationResult.error("Invalid offset for SpawnerId");

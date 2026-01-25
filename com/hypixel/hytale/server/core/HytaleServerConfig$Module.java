@@ -653,25 +653,56 @@
 /*     */ 
 /*     */ 
 /*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
 /*     */ public class Module
 /*     */ {
 /*     */   @Nonnull
 /*     */   protected static BuilderCodec.Builder<Module> BUILDER_CODEC_BUILDER;
 /*     */   
 /*     */   static {
-/* 662 */     BUILDER_CODEC_BUILDER = (BuilderCodec.Builder<Module>)BuilderCodec.builder(Module.class, Module::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, i) -> o.enabled = i, o -> o.enabled);
+/* 693 */     BUILDER_CODEC_BUILDER = (BuilderCodec.Builder<Module>)BuilderCodec.builder(Module.class, Module::new).addField(new KeyedCodec("Enabled", (Codec)Codec.BOOLEAN), (o, i) -> o.enabled = i, o -> o.enabled);
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 668 */   protected static BuilderCodec<Module> BUILDER_CODEC = BUILDER_CODEC_BUILDER.build();
+/* 699 */   protected static BuilderCodec<Module> BUILDER_CODEC = BUILDER_CODEC_BUILDER.build();
 /*     */   
 /*     */   @Nonnull
 /*     */   public static final DocumentContainingCodec<Module> CODEC;
 /*     */   
 /*     */   static {
-/* 674 */     CODEC = new DocumentContainingCodec(BUILDER_CODEC, (o, i) -> o.document = i, o -> o.document);
+/* 705 */     CODEC = new DocumentContainingCodec(BUILDER_CODEC, (o, i) -> o.document = i, o -> o.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -687,13 +718,13 @@
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 690 */   private Map<String, Module> modules = new ConcurrentHashMap<>();
+/* 721 */   private Map<String, Module> modules = new ConcurrentHashMap<>();
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   @Nonnull
-/* 696 */   private BsonDocument document = new BsonDocument();
+/* 727 */   private BsonDocument document = new BsonDocument();
 /*     */ 
 /*     */ 
 /*     */ 
@@ -710,7 +741,7 @@
 /*     */ 
 /*     */   
 /*     */   private Module(@Nonnull HytaleServerConfig hytaleServerConfig) {
-/* 713 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 744 */     this.hytaleServerConfig = hytaleServerConfig;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -720,7 +751,7 @@
 /*     */ 
 /*     */   
 /*     */   public boolean isEnabled(boolean def) {
-/* 723 */     return (this.enabled != null) ? this.enabled.booleanValue() : def;
+/* 754 */     return (this.enabled != null) ? this.enabled.booleanValue() : def;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -729,15 +760,15 @@
 /*     */ 
 /*     */   
 /*     */   public void setEnabled(boolean enabled) {
-/* 732 */     this.enabled = Boolean.valueOf(enabled);
-/* 733 */     this.hytaleServerConfig.markChanged();
+/* 763 */     this.enabled = Boolean.valueOf(enabled);
+/* 764 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
 /*     */ 
 /*     */   
 /*     */   public Boolean getEnabled() {
-/* 740 */     return this.enabled;
+/* 771 */     return this.enabled;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -745,7 +776,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Map<String, Module> getModules() {
-/* 748 */     return Collections.unmodifiableMap(this.modules);
+/* 779 */     return Collections.unmodifiableMap(this.modules);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -756,7 +787,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public Module getModule(@Nonnull String moduleName) {
-/* 759 */     return this.modules.computeIfAbsent(moduleName, k -> new Module(this.hytaleServerConfig));
+/* 790 */     return this.modules.computeIfAbsent(moduleName, k -> new Module(this.hytaleServerConfig));
 /*     */   }
 /*     */ 
 /*     */ 
@@ -765,8 +796,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setModules(@Nonnull Map<String, Module> modules) {
-/* 768 */     this.modules = modules;
-/* 769 */     this.hytaleServerConfig.markChanged();
+/* 799 */     this.modules = modules;
+/* 800 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -774,7 +805,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public BsonDocument getDocument() {
-/* 777 */     return this.document;
+/* 808 */     return this.document;
 /*     */   }
 /*     */ 
 /*     */ 
@@ -786,7 +817,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public <T> T decode(@Nonnull Codec<T> codec) {
-/* 789 */     return (T)codec.decode((BsonValue)this.document);
+/* 820 */     return (T)codec.decode((BsonValue)this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -797,7 +828,7 @@
 /*     */ 
 /*     */   
 /*     */   public <T> void encode(@Nonnull Codec<T> codec, @Nonnull T t) {
-/* 800 */     this.document = codec.encode(t).asDocument();
+/* 831 */     this.document = codec.encode(t).asDocument();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -809,7 +840,7 @@
 /*     */   
 /*     */   @Nonnull
 /*     */   public <T> Optional<T> getData(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 812 */     return keyedCodec.get(this.document);
+/* 843 */     return keyedCodec.get(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -821,7 +852,7 @@
 /*     */   
 /*     */   @Nullable
 /*     */   public <T> T getDataOrNull(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 824 */     return (T)keyedCodec.getOrNull(this.document);
+/* 855 */     return (T)keyedCodec.getOrNull(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -832,7 +863,7 @@
 /*     */ 
 /*     */   
 /*     */   public <T> T getDataNow(@Nonnull KeyedCodec<T> keyedCodec) {
-/* 835 */     return (T)keyedCodec.getNow(this.document);
+/* 866 */     return (T)keyedCodec.getNow(this.document);
 /*     */   }
 /*     */ 
 /*     */ 
@@ -843,8 +874,8 @@
 /*     */ 
 /*     */   
 /*     */   public <T> void put(@Nonnull KeyedCodec<T> keyedCodec, T t) {
-/* 846 */     keyedCodec.put(this.document, t);
-/* 847 */     this.hytaleServerConfig.markChanged();
+/* 877 */     keyedCodec.put(this.document, t);
+/* 878 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -853,8 +884,8 @@
 /*     */ 
 /*     */   
 /*     */   public void setDocument(@Nonnull BsonDocument document) {
-/* 856 */     this.document = document;
-/* 857 */     this.hytaleServerConfig.markChanged();
+/* 887 */     this.document = document;
+/* 888 */     this.hytaleServerConfig.markChanged();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -863,8 +894,8 @@
 /*     */ 
 /*     */   
 /*     */   void setHytaleServerConfig(@Nonnull HytaleServerConfig hytaleServerConfig) {
-/* 866 */     this.hytaleServerConfig = hytaleServerConfig;
-/* 867 */     this.modules.values().forEach(module -> module.setHytaleServerConfig(hytaleServerConfig));
+/* 897 */     this.hytaleServerConfig = hytaleServerConfig;
+/* 898 */     this.modules.values().forEach(module -> module.setHytaleServerConfig(hytaleServerConfig));
 /*     */   }
 /*     */   
 /*     */   private Module() {}

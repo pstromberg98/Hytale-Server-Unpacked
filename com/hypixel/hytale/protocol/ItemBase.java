@@ -170,69 +170,69 @@
 /*  170 */     obj.usePlayerAnimations = (buf.getByte(offset + 8) != 0);
 /*  171 */     obj.maxStack = buf.getIntLE(offset + 9);
 /*  172 */     obj.reticleIndex = buf.getIntLE(offset + 13);
-/*  173 */     if ((nullBits[0] & 0x40) != 0) obj.iconProperties = AssetIconProperties.deserialize(buf, offset + 17); 
+/*  173 */     if ((nullBits[0] & 0x1) != 0) obj.iconProperties = AssetIconProperties.deserialize(buf, offset + 17); 
 /*  174 */     obj.itemLevel = buf.getIntLE(offset + 42);
 /*  175 */     obj.qualityIndex = buf.getIntLE(offset + 46);
 /*  176 */     obj.consumable = (buf.getByte(offset + 50) != 0);
 /*  177 */     obj.variant = (buf.getByte(offset + 51) != 0);
 /*  178 */     obj.blockId = buf.getIntLE(offset + 52);
-/*  179 */     if ((nullBits[1] & 0x10) != 0) obj.gliderConfig = ItemGlider.deserialize(buf, offset + 56); 
-/*  180 */     if ((nullBits[1] & 0x40) != 0) obj.blockSelectorTool = BlockSelectorToolData.deserialize(buf, offset + 72); 
-/*  181 */     if ((nullBits[2] & 0x40) != 0) obj.light = ColorLight.deserialize(buf, offset + 76); 
+/*  179 */     if ((nullBits[0] & 0x2) != 0) obj.gliderConfig = ItemGlider.deserialize(buf, offset + 56); 
+/*  180 */     if ((nullBits[0] & 0x4) != 0) obj.blockSelectorTool = BlockSelectorToolData.deserialize(buf, offset + 72); 
+/*  181 */     if ((nullBits[0] & 0x8) != 0) obj.light = ColorLight.deserialize(buf, offset + 76); 
 /*  182 */     obj.durability = buf.getDoubleLE(offset + 80);
 /*  183 */     obj.soundEventIndex = buf.getIntLE(offset + 88);
 /*  184 */     obj.itemSoundSetIndex = buf.getIntLE(offset + 92);
-/*  185 */     if ((nullBits[3] & 0x40) != 0) obj.pullbackConfig = ItemPullbackConfiguration.deserialize(buf, offset + 96); 
+/*  185 */     if ((nullBits[0] & 0x10) != 0) obj.pullbackConfig = ItemPullbackConfiguration.deserialize(buf, offset + 96); 
 /*  186 */     obj.clipsGeometry = (buf.getByte(offset + 145) != 0);
 /*  187 */     obj.renderDeployablePreview = (buf.getByte(offset + 146) != 0);
 /*      */     
-/*  189 */     if ((nullBits[0] & 0x1) != 0) {
+/*  189 */     if ((nullBits[0] & 0x20) != 0) {
 /*  190 */       int varPos0 = offset + 251 + buf.getIntLE(offset + 147);
 /*  191 */       int idLen = VarInt.peek(buf, varPos0);
 /*  192 */       if (idLen < 0) throw ProtocolException.negativeLength("Id", idLen); 
 /*  193 */       if (idLen > 4096000) throw ProtocolException.stringTooLong("Id", idLen, 4096000); 
 /*  194 */       obj.id = PacketIO.readVarString(buf, varPos0, PacketIO.UTF8);
 /*      */     } 
-/*  196 */     if ((nullBits[0] & 0x2) != 0) {
+/*  196 */     if ((nullBits[0] & 0x40) != 0) {
 /*  197 */       int varPos1 = offset + 251 + buf.getIntLE(offset + 151);
 /*  198 */       int modelLen = VarInt.peek(buf, varPos1);
 /*  199 */       if (modelLen < 0) throw ProtocolException.negativeLength("Model", modelLen); 
 /*  200 */       if (modelLen > 4096000) throw ProtocolException.stringTooLong("Model", modelLen, 4096000); 
 /*  201 */       obj.model = PacketIO.readVarString(buf, varPos1, PacketIO.UTF8);
 /*      */     } 
-/*  203 */     if ((nullBits[0] & 0x4) != 0) {
+/*  203 */     if ((nullBits[0] & 0x80) != 0) {
 /*  204 */       int varPos2 = offset + 251 + buf.getIntLE(offset + 155);
 /*  205 */       int textureLen = VarInt.peek(buf, varPos2);
 /*  206 */       if (textureLen < 0) throw ProtocolException.negativeLength("Texture", textureLen); 
 /*  207 */       if (textureLen > 4096000) throw ProtocolException.stringTooLong("Texture", textureLen, 4096000); 
 /*  208 */       obj.texture = PacketIO.readVarString(buf, varPos2, PacketIO.UTF8);
 /*      */     } 
-/*  210 */     if ((nullBits[0] & 0x8) != 0) {
+/*  210 */     if ((nullBits[1] & 0x1) != 0) {
 /*  211 */       int varPos3 = offset + 251 + buf.getIntLE(offset + 159);
 /*  212 */       int animationLen = VarInt.peek(buf, varPos3);
 /*  213 */       if (animationLen < 0) throw ProtocolException.negativeLength("Animation", animationLen); 
 /*  214 */       if (animationLen > 4096000) throw ProtocolException.stringTooLong("Animation", animationLen, 4096000); 
 /*  215 */       obj.animation = PacketIO.readVarString(buf, varPos3, PacketIO.UTF8);
 /*      */     } 
-/*  217 */     if ((nullBits[0] & 0x10) != 0) {
+/*  217 */     if ((nullBits[1] & 0x2) != 0) {
 /*  218 */       int varPos4 = offset + 251 + buf.getIntLE(offset + 163);
 /*  219 */       int playerAnimationsIdLen = VarInt.peek(buf, varPos4);
 /*  220 */       if (playerAnimationsIdLen < 0) throw ProtocolException.negativeLength("PlayerAnimationsId", playerAnimationsIdLen); 
 /*  221 */       if (playerAnimationsIdLen > 4096000) throw ProtocolException.stringTooLong("PlayerAnimationsId", playerAnimationsIdLen, 4096000); 
 /*  222 */       obj.playerAnimationsId = PacketIO.readVarString(buf, varPos4, PacketIO.UTF8);
 /*      */     } 
-/*  224 */     if ((nullBits[0] & 0x20) != 0) {
+/*  224 */     if ((nullBits[1] & 0x4) != 0) {
 /*  225 */       int varPos5 = offset + 251 + buf.getIntLE(offset + 167);
 /*  226 */       int iconLen = VarInt.peek(buf, varPos5);
 /*  227 */       if (iconLen < 0) throw ProtocolException.negativeLength("Icon", iconLen); 
 /*  228 */       if (iconLen > 4096000) throw ProtocolException.stringTooLong("Icon", iconLen, 4096000); 
 /*  229 */       obj.icon = PacketIO.readVarString(buf, varPos5, PacketIO.UTF8);
 /*      */     } 
-/*  231 */     if ((nullBits[0] & 0x80) != 0) {
+/*  231 */     if ((nullBits[1] & 0x8) != 0) {
 /*  232 */       int varPos6 = offset + 251 + buf.getIntLE(offset + 171);
 /*  233 */       obj.translationProperties = ItemTranslationProperties.deserialize(buf, varPos6);
 /*      */     } 
-/*  235 */     if ((nullBits[1] & 0x1) != 0) {
+/*  235 */     if ((nullBits[1] & 0x10) != 0) {
 /*  236 */       int varPos7 = offset + 251 + buf.getIntLE(offset + 175);
 /*  237 */       int resourceTypesCount = VarInt.peek(buf, varPos7);
 /*  238 */       if (resourceTypesCount < 0) throw ProtocolException.negativeLength("ResourceTypes", resourceTypesCount); 
@@ -247,38 +247,38 @@
 /*  247 */         elemPos += ItemResourceType.computeBytesConsumed(buf, elemPos);
 /*      */       } 
 /*      */     } 
-/*  250 */     if ((nullBits[1] & 0x2) != 0) {
+/*  250 */     if ((nullBits[1] & 0x20) != 0) {
 /*  251 */       int varPos8 = offset + 251 + buf.getIntLE(offset + 179);
 /*  252 */       obj.tool = ItemTool.deserialize(buf, varPos8);
 /*      */     } 
-/*  254 */     if ((nullBits[1] & 0x4) != 0) {
+/*  254 */     if ((nullBits[1] & 0x40) != 0) {
 /*  255 */       int varPos9 = offset + 251 + buf.getIntLE(offset + 183);
 /*  256 */       obj.weapon = ItemWeapon.deserialize(buf, varPos9);
 /*      */     } 
-/*  258 */     if ((nullBits[1] & 0x8) != 0) {
+/*  258 */     if ((nullBits[1] & 0x80) != 0) {
 /*  259 */       int varPos10 = offset + 251 + buf.getIntLE(offset + 187);
 /*  260 */       obj.armor = ItemArmor.deserialize(buf, varPos10);
 /*      */     } 
-/*  262 */     if ((nullBits[1] & 0x20) != 0) {
+/*  262 */     if ((nullBits[2] & 0x1) != 0) {
 /*  263 */       int varPos11 = offset + 251 + buf.getIntLE(offset + 191);
 /*  264 */       obj.utility = ItemUtility.deserialize(buf, varPos11);
 /*      */     } 
-/*  266 */     if ((nullBits[1] & 0x80) != 0) {
+/*  266 */     if ((nullBits[2] & 0x2) != 0) {
 /*  267 */       int varPos12 = offset + 251 + buf.getIntLE(offset + 195);
 /*  268 */       obj.builderToolData = ItemBuilderToolData.deserialize(buf, varPos12);
 /*      */     } 
-/*  270 */     if ((nullBits[2] & 0x1) != 0) {
+/*  270 */     if ((nullBits[2] & 0x4) != 0) {
 /*  271 */       int varPos13 = offset + 251 + buf.getIntLE(offset + 199);
 /*  272 */       obj.itemEntity = ItemEntityConfig.deserialize(buf, varPos13);
 /*      */     } 
-/*  274 */     if ((nullBits[2] & 0x2) != 0) {
+/*  274 */     if ((nullBits[2] & 0x8) != 0) {
 /*  275 */       int varPos14 = offset + 251 + buf.getIntLE(offset + 203);
 /*  276 */       int setLen = VarInt.peek(buf, varPos14);
 /*  277 */       if (setLen < 0) throw ProtocolException.negativeLength("Set", setLen); 
 /*  278 */       if (setLen > 4096000) throw ProtocolException.stringTooLong("Set", setLen, 4096000); 
 /*  279 */       obj.set = PacketIO.readVarString(buf, varPos14, PacketIO.UTF8);
 /*      */     } 
-/*  281 */     if ((nullBits[2] & 0x4) != 0) {
+/*  281 */     if ((nullBits[2] & 0x10) != 0) {
 /*  282 */       int varPos15 = offset + 251 + buf.getIntLE(offset + 207);
 /*  283 */       int categoriesCount = VarInt.peek(buf, varPos15);
 /*  284 */       if (categoriesCount < 0) throw ProtocolException.negativeLength("Categories", categoriesCount); 
@@ -297,7 +297,7 @@
 /*  297 */         elemPos += strVarLen + strLen;
 /*      */       } 
 /*      */     } 
-/*  300 */     if ((nullBits[2] & 0x8) != 0) {
+/*  300 */     if ((nullBits[2] & 0x20) != 0) {
 /*  301 */       int varPos16 = offset + 251 + buf.getIntLE(offset + 211);
 /*  302 */       int particlesCount = VarInt.peek(buf, varPos16);
 /*  303 */       if (particlesCount < 0) throw ProtocolException.negativeLength("Particles", particlesCount); 
@@ -312,7 +312,7 @@
 /*  312 */         elemPos += ModelParticle.computeBytesConsumed(buf, elemPos);
 /*      */       } 
 /*      */     } 
-/*  315 */     if ((nullBits[2] & 0x10) != 0) {
+/*  315 */     if ((nullBits[2] & 0x40) != 0) {
 /*  316 */       int varPos17 = offset + 251 + buf.getIntLE(offset + 215);
 /*  317 */       int firstPersonParticlesCount = VarInt.peek(buf, varPos17);
 /*  318 */       if (firstPersonParticlesCount < 0) throw ProtocolException.negativeLength("FirstPersonParticles", firstPersonParticlesCount); 
@@ -327,7 +327,7 @@
 /*  327 */         elemPos += ModelParticle.computeBytesConsumed(buf, elemPos);
 /*      */       } 
 /*      */     } 
-/*  330 */     if ((nullBits[2] & 0x20) != 0) {
+/*  330 */     if ((nullBits[2] & 0x80) != 0) {
 /*  331 */       int varPos18 = offset + 251 + buf.getIntLE(offset + 219);
 /*  332 */       int trailsCount = VarInt.peek(buf, varPos18);
 /*  333 */       if (trailsCount < 0) throw ProtocolException.negativeLength("Trails", trailsCount); 
@@ -342,7 +342,7 @@
 /*  342 */         elemPos += ModelTrail.computeBytesConsumed(buf, elemPos);
 /*      */       } 
 /*      */     } 
-/*  345 */     if ((nullBits[2] & 0x80) != 0) {
+/*  345 */     if ((nullBits[3] & 0x1) != 0) {
 /*  346 */       int varPos19 = offset + 251 + buf.getIntLE(offset + 223);
 /*  347 */       int interactionsCount = VarInt.peek(buf, varPos19);
 /*  348 */       if (interactionsCount < 0) throw ProtocolException.negativeLength("Interactions", interactionsCount); 
@@ -357,7 +357,7 @@
 /*  357 */           throw ProtocolException.duplicateKey("interactions", key); 
 /*      */       } 
 /*      */     } 
-/*  360 */     if ((nullBits[3] & 0x1) != 0) {
+/*  360 */     if ((nullBits[3] & 0x2) != 0) {
 /*  361 */       int varPos20 = offset + 251 + buf.getIntLE(offset + 227);
 /*  362 */       int interactionVarsCount = VarInt.peek(buf, varPos20);
 /*  363 */       if (interactionVarsCount < 0) throw ProtocolException.negativeLength("InteractionVars", interactionVarsCount); 
@@ -377,18 +377,18 @@
 /*  377 */           throw ProtocolException.duplicateKey("interactionVars", key); 
 /*      */       } 
 /*      */     } 
-/*  380 */     if ((nullBits[3] & 0x2) != 0) {
+/*  380 */     if ((nullBits[3] & 0x4) != 0) {
 /*  381 */       int varPos21 = offset + 251 + buf.getIntLE(offset + 231);
 /*  382 */       obj.interactionConfig = InteractionConfiguration.deserialize(buf, varPos21);
 /*      */     } 
-/*  384 */     if ((nullBits[3] & 0x4) != 0) {
+/*  384 */     if ((nullBits[3] & 0x8) != 0) {
 /*  385 */       int varPos22 = offset + 251 + buf.getIntLE(offset + 235);
 /*  386 */       int droppedItemAnimationLen = VarInt.peek(buf, varPos22);
 /*  387 */       if (droppedItemAnimationLen < 0) throw ProtocolException.negativeLength("DroppedItemAnimation", droppedItemAnimationLen); 
 /*  388 */       if (droppedItemAnimationLen > 4096000) throw ProtocolException.stringTooLong("DroppedItemAnimation", droppedItemAnimationLen, 4096000); 
 /*  389 */       obj.droppedItemAnimation = PacketIO.readVarString(buf, varPos22, PacketIO.UTF8);
 /*      */     } 
-/*  391 */     if ((nullBits[3] & 0x8) != 0) {
+/*  391 */     if ((nullBits[3] & 0x10) != 0) {
 /*  392 */       int varPos23 = offset + 251 + buf.getIntLE(offset + 239);
 /*  393 */       int tagIndexesCount = VarInt.peek(buf, varPos23);
 /*  394 */       if (tagIndexesCount < 0) throw ProtocolException.negativeLength("TagIndexes", tagIndexesCount); 
@@ -401,7 +401,7 @@
 /*  401 */         obj.tagIndexes[i] = buf.getIntLE(varPos23 + varIntLen + i * 4);
 /*      */       }
 /*      */     } 
-/*  404 */     if ((nullBits[3] & 0x10) != 0) {
+/*  404 */     if ((nullBits[3] & 0x20) != 0) {
 /*  405 */       int varPos24 = offset + 251 + buf.getIntLE(offset + 243);
 /*  406 */       int itemAppearanceConditionsCount = VarInt.peek(buf, varPos24);
 /*  407 */       if (itemAppearanceConditionsCount < 0) throw ProtocolException.negativeLength("ItemAppearanceConditions", itemAppearanceConditionsCount); 
@@ -427,7 +427,7 @@
 /*  427 */           throw ProtocolException.duplicateKey("itemAppearanceConditions", Integer.valueOf(key)); 
 /*      */       } 
 /*      */     } 
-/*  430 */     if ((nullBits[3] & 0x20) != 0) {
+/*  430 */     if ((nullBits[3] & 0x40) != 0) {
 /*  431 */       int varPos25 = offset + 251 + buf.getIntLE(offset + 247);
 /*  432 */       int displayEntityStatsHUDCount = VarInt.peek(buf, varPos25);
 /*  433 */       if (displayEntityStatsHUDCount < 0) throw ProtocolException.negativeLength("DisplayEntityStatsHUD", displayEntityStatsHUDCount); 
@@ -447,165 +447,165 @@
 /*      */   public static int computeBytesConsumed(@Nonnull ByteBuf buf, int offset) {
 /*  448 */     byte[] nullBits = PacketIO.readBytes(buf, offset, 4);
 /*  449 */     int maxEnd = 251;
-/*  450 */     if ((nullBits[0] & 0x1) != 0) {
+/*  450 */     if ((nullBits[0] & 0x20) != 0) {
 /*  451 */       int fieldOffset0 = buf.getIntLE(offset + 147);
 /*  452 */       int pos0 = offset + 251 + fieldOffset0;
 /*  453 */       int sl = VarInt.peek(buf, pos0); pos0 += VarInt.length(buf, pos0) + sl;
 /*  454 */       if (pos0 - offset > maxEnd) maxEnd = pos0 - offset; 
 /*      */     } 
-/*  456 */     if ((nullBits[0] & 0x2) != 0) {
+/*  456 */     if ((nullBits[0] & 0x40) != 0) {
 /*  457 */       int fieldOffset1 = buf.getIntLE(offset + 151);
 /*  458 */       int pos1 = offset + 251 + fieldOffset1;
 /*  459 */       int sl = VarInt.peek(buf, pos1); pos1 += VarInt.length(buf, pos1) + sl;
 /*  460 */       if (pos1 - offset > maxEnd) maxEnd = pos1 - offset; 
 /*      */     } 
-/*  462 */     if ((nullBits[0] & 0x4) != 0) {
+/*  462 */     if ((nullBits[0] & 0x80) != 0) {
 /*  463 */       int fieldOffset2 = buf.getIntLE(offset + 155);
 /*  464 */       int pos2 = offset + 251 + fieldOffset2;
 /*  465 */       int sl = VarInt.peek(buf, pos2); pos2 += VarInt.length(buf, pos2) + sl;
 /*  466 */       if (pos2 - offset > maxEnd) maxEnd = pos2 - offset; 
 /*      */     } 
-/*  468 */     if ((nullBits[0] & 0x8) != 0) {
+/*  468 */     if ((nullBits[1] & 0x1) != 0) {
 /*  469 */       int fieldOffset3 = buf.getIntLE(offset + 159);
 /*  470 */       int pos3 = offset + 251 + fieldOffset3;
 /*  471 */       int sl = VarInt.peek(buf, pos3); pos3 += VarInt.length(buf, pos3) + sl;
 /*  472 */       if (pos3 - offset > maxEnd) maxEnd = pos3 - offset; 
 /*      */     } 
-/*  474 */     if ((nullBits[0] & 0x10) != 0) {
+/*  474 */     if ((nullBits[1] & 0x2) != 0) {
 /*  475 */       int fieldOffset4 = buf.getIntLE(offset + 163);
 /*  476 */       int pos4 = offset + 251 + fieldOffset4;
 /*  477 */       int sl = VarInt.peek(buf, pos4); pos4 += VarInt.length(buf, pos4) + sl;
 /*  478 */       if (pos4 - offset > maxEnd) maxEnd = pos4 - offset; 
 /*      */     } 
-/*  480 */     if ((nullBits[0] & 0x20) != 0) {
+/*  480 */     if ((nullBits[1] & 0x4) != 0) {
 /*  481 */       int fieldOffset5 = buf.getIntLE(offset + 167);
 /*  482 */       int pos5 = offset + 251 + fieldOffset5;
 /*  483 */       int sl = VarInt.peek(buf, pos5); pos5 += VarInt.length(buf, pos5) + sl;
 /*  484 */       if (pos5 - offset > maxEnd) maxEnd = pos5 - offset; 
 /*      */     } 
-/*  486 */     if ((nullBits[0] & 0x80) != 0) {
+/*  486 */     if ((nullBits[1] & 0x8) != 0) {
 /*  487 */       int fieldOffset6 = buf.getIntLE(offset + 171);
 /*  488 */       int pos6 = offset + 251 + fieldOffset6;
 /*  489 */       pos6 += ItemTranslationProperties.computeBytesConsumed(buf, pos6);
 /*  490 */       if (pos6 - offset > maxEnd) maxEnd = pos6 - offset; 
 /*      */     } 
-/*  492 */     if ((nullBits[1] & 0x1) != 0) {
+/*  492 */     if ((nullBits[1] & 0x10) != 0) {
 /*  493 */       int fieldOffset7 = buf.getIntLE(offset + 175);
 /*  494 */       int pos7 = offset + 251 + fieldOffset7;
 /*  495 */       int arrLen = VarInt.peek(buf, pos7); pos7 += VarInt.length(buf, pos7);
 /*  496 */       for (int i = 0; i < arrLen; ) { pos7 += ItemResourceType.computeBytesConsumed(buf, pos7); i++; }
 /*  497 */        if (pos7 - offset > maxEnd) maxEnd = pos7 - offset; 
 /*      */     } 
-/*  499 */     if ((nullBits[1] & 0x2) != 0) {
+/*  499 */     if ((nullBits[1] & 0x20) != 0) {
 /*  500 */       int fieldOffset8 = buf.getIntLE(offset + 179);
 /*  501 */       int pos8 = offset + 251 + fieldOffset8;
 /*  502 */       pos8 += ItemTool.computeBytesConsumed(buf, pos8);
 /*  503 */       if (pos8 - offset > maxEnd) maxEnd = pos8 - offset; 
 /*      */     } 
-/*  505 */     if ((nullBits[1] & 0x4) != 0) {
+/*  505 */     if ((nullBits[1] & 0x40) != 0) {
 /*  506 */       int fieldOffset9 = buf.getIntLE(offset + 183);
 /*  507 */       int pos9 = offset + 251 + fieldOffset9;
 /*  508 */       pos9 += ItemWeapon.computeBytesConsumed(buf, pos9);
 /*  509 */       if (pos9 - offset > maxEnd) maxEnd = pos9 - offset; 
 /*      */     } 
-/*  511 */     if ((nullBits[1] & 0x8) != 0) {
+/*  511 */     if ((nullBits[1] & 0x80) != 0) {
 /*  512 */       int fieldOffset10 = buf.getIntLE(offset + 187);
 /*  513 */       int pos10 = offset + 251 + fieldOffset10;
 /*  514 */       pos10 += ItemArmor.computeBytesConsumed(buf, pos10);
 /*  515 */       if (pos10 - offset > maxEnd) maxEnd = pos10 - offset; 
 /*      */     } 
-/*  517 */     if ((nullBits[1] & 0x20) != 0) {
+/*  517 */     if ((nullBits[2] & 0x1) != 0) {
 /*  518 */       int fieldOffset11 = buf.getIntLE(offset + 191);
 /*  519 */       int pos11 = offset + 251 + fieldOffset11;
 /*  520 */       pos11 += ItemUtility.computeBytesConsumed(buf, pos11);
 /*  521 */       if (pos11 - offset > maxEnd) maxEnd = pos11 - offset; 
 /*      */     } 
-/*  523 */     if ((nullBits[1] & 0x80) != 0) {
+/*  523 */     if ((nullBits[2] & 0x2) != 0) {
 /*  524 */       int fieldOffset12 = buf.getIntLE(offset + 195);
 /*  525 */       int pos12 = offset + 251 + fieldOffset12;
 /*  526 */       pos12 += ItemBuilderToolData.computeBytesConsumed(buf, pos12);
 /*  527 */       if (pos12 - offset > maxEnd) maxEnd = pos12 - offset; 
 /*      */     } 
-/*  529 */     if ((nullBits[2] & 0x1) != 0) {
+/*  529 */     if ((nullBits[2] & 0x4) != 0) {
 /*  530 */       int fieldOffset13 = buf.getIntLE(offset + 199);
 /*  531 */       int pos13 = offset + 251 + fieldOffset13;
 /*  532 */       pos13 += ItemEntityConfig.computeBytesConsumed(buf, pos13);
 /*  533 */       if (pos13 - offset > maxEnd) maxEnd = pos13 - offset; 
 /*      */     } 
-/*  535 */     if ((nullBits[2] & 0x2) != 0) {
+/*  535 */     if ((nullBits[2] & 0x8) != 0) {
 /*  536 */       int fieldOffset14 = buf.getIntLE(offset + 203);
 /*  537 */       int pos14 = offset + 251 + fieldOffset14;
 /*  538 */       int sl = VarInt.peek(buf, pos14); pos14 += VarInt.length(buf, pos14) + sl;
 /*  539 */       if (pos14 - offset > maxEnd) maxEnd = pos14 - offset; 
 /*      */     } 
-/*  541 */     if ((nullBits[2] & 0x4) != 0) {
+/*  541 */     if ((nullBits[2] & 0x10) != 0) {
 /*  542 */       int fieldOffset15 = buf.getIntLE(offset + 207);
 /*  543 */       int pos15 = offset + 251 + fieldOffset15;
 /*  544 */       int arrLen = VarInt.peek(buf, pos15); pos15 += VarInt.length(buf, pos15);
 /*  545 */       for (int i = 0; i < arrLen; ) { int sl = VarInt.peek(buf, pos15); pos15 += VarInt.length(buf, pos15) + sl; i++; }
 /*  546 */        if (pos15 - offset > maxEnd) maxEnd = pos15 - offset; 
 /*      */     } 
-/*  548 */     if ((nullBits[2] & 0x8) != 0) {
+/*  548 */     if ((nullBits[2] & 0x20) != 0) {
 /*  549 */       int fieldOffset16 = buf.getIntLE(offset + 211);
 /*  550 */       int pos16 = offset + 251 + fieldOffset16;
 /*  551 */       int arrLen = VarInt.peek(buf, pos16); pos16 += VarInt.length(buf, pos16);
 /*  552 */       for (int i = 0; i < arrLen; ) { pos16 += ModelParticle.computeBytesConsumed(buf, pos16); i++; }
 /*  553 */        if (pos16 - offset > maxEnd) maxEnd = pos16 - offset; 
 /*      */     } 
-/*  555 */     if ((nullBits[2] & 0x10) != 0) {
+/*  555 */     if ((nullBits[2] & 0x40) != 0) {
 /*  556 */       int fieldOffset17 = buf.getIntLE(offset + 215);
 /*  557 */       int pos17 = offset + 251 + fieldOffset17;
 /*  558 */       int arrLen = VarInt.peek(buf, pos17); pos17 += VarInt.length(buf, pos17);
 /*  559 */       for (int i = 0; i < arrLen; ) { pos17 += ModelParticle.computeBytesConsumed(buf, pos17); i++; }
 /*  560 */        if (pos17 - offset > maxEnd) maxEnd = pos17 - offset; 
 /*      */     } 
-/*  562 */     if ((nullBits[2] & 0x20) != 0) {
+/*  562 */     if ((nullBits[2] & 0x80) != 0) {
 /*  563 */       int fieldOffset18 = buf.getIntLE(offset + 219);
 /*  564 */       int pos18 = offset + 251 + fieldOffset18;
 /*  565 */       int arrLen = VarInt.peek(buf, pos18); pos18 += VarInt.length(buf, pos18);
 /*  566 */       for (int i = 0; i < arrLen; ) { pos18 += ModelTrail.computeBytesConsumed(buf, pos18); i++; }
 /*  567 */        if (pos18 - offset > maxEnd) maxEnd = pos18 - offset; 
 /*      */     } 
-/*  569 */     if ((nullBits[2] & 0x80) != 0) {
+/*  569 */     if ((nullBits[3] & 0x1) != 0) {
 /*  570 */       int fieldOffset19 = buf.getIntLE(offset + 223);
 /*  571 */       int pos19 = offset + 251 + fieldOffset19;
 /*  572 */       int dictLen = VarInt.peek(buf, pos19); pos19 += VarInt.length(buf, pos19);
 /*  573 */       for (int i = 0; i < dictLen; ) { pos19++; pos19 += 4; i++; }
 /*  574 */        if (pos19 - offset > maxEnd) maxEnd = pos19 - offset; 
 /*      */     } 
-/*  576 */     if ((nullBits[3] & 0x1) != 0) {
+/*  576 */     if ((nullBits[3] & 0x2) != 0) {
 /*  577 */       int fieldOffset20 = buf.getIntLE(offset + 227);
 /*  578 */       int pos20 = offset + 251 + fieldOffset20;
 /*  579 */       int dictLen = VarInt.peek(buf, pos20); pos20 += VarInt.length(buf, pos20);
 /*  580 */       for (int i = 0; i < dictLen; ) { int sl = VarInt.peek(buf, pos20); pos20 += VarInt.length(buf, pos20) + sl; pos20 += 4; i++; }
 /*  581 */        if (pos20 - offset > maxEnd) maxEnd = pos20 - offset; 
 /*      */     } 
-/*  583 */     if ((nullBits[3] & 0x2) != 0) {
+/*  583 */     if ((nullBits[3] & 0x4) != 0) {
 /*  584 */       int fieldOffset21 = buf.getIntLE(offset + 231);
 /*  585 */       int pos21 = offset + 251 + fieldOffset21;
 /*  586 */       pos21 += InteractionConfiguration.computeBytesConsumed(buf, pos21);
 /*  587 */       if (pos21 - offset > maxEnd) maxEnd = pos21 - offset; 
 /*      */     } 
-/*  589 */     if ((nullBits[3] & 0x4) != 0) {
+/*  589 */     if ((nullBits[3] & 0x8) != 0) {
 /*  590 */       int fieldOffset22 = buf.getIntLE(offset + 235);
 /*  591 */       int pos22 = offset + 251 + fieldOffset22;
 /*  592 */       int sl = VarInt.peek(buf, pos22); pos22 += VarInt.length(buf, pos22) + sl;
 /*  593 */       if (pos22 - offset > maxEnd) maxEnd = pos22 - offset; 
 /*      */     } 
-/*  595 */     if ((nullBits[3] & 0x8) != 0) {
+/*  595 */     if ((nullBits[3] & 0x10) != 0) {
 /*  596 */       int fieldOffset23 = buf.getIntLE(offset + 239);
 /*  597 */       int pos23 = offset + 251 + fieldOffset23;
 /*  598 */       int arrLen = VarInt.peek(buf, pos23); pos23 += VarInt.length(buf, pos23) + arrLen * 4;
 /*  599 */       if (pos23 - offset > maxEnd) maxEnd = pos23 - offset; 
 /*      */     } 
-/*  601 */     if ((nullBits[3] & 0x10) != 0) {
+/*  601 */     if ((nullBits[3] & 0x20) != 0) {
 /*  602 */       int fieldOffset24 = buf.getIntLE(offset + 243);
 /*  603 */       int pos24 = offset + 251 + fieldOffset24;
 /*  604 */       int dictLen = VarInt.peek(buf, pos24); pos24 += VarInt.length(buf, pos24);
 /*  605 */       for (int i = 0; i < dictLen; ) { int al; int j; for (pos24 += 4, al = VarInt.peek(buf, pos24), pos24 += VarInt.length(buf, pos24), j = 0; j < al; ) { pos24 += ItemAppearanceCondition.computeBytesConsumed(buf, pos24); j++; }  i++; }
 /*  606 */        if (pos24 - offset > maxEnd) maxEnd = pos24 - offset; 
 /*      */     } 
-/*  608 */     if ((nullBits[3] & 0x20) != 0) {
+/*  608 */     if ((nullBits[3] & 0x40) != 0) {
 /*  609 */       int fieldOffset25 = buf.getIntLE(offset + 247);
 /*  610 */       int pos25 = offset + 251 + fieldOffset25;
 /*  611 */       int arrLen = VarInt.peek(buf, pos25); pos25 += VarInt.length(buf, pos25) + arrLen * 4;
@@ -618,37 +618,37 @@
 /*      */   public void serialize(@Nonnull ByteBuf buf) {
 /*  619 */     int startPos = buf.writerIndex();
 /*  620 */     byte[] nullBits = new byte[4];
-/*  621 */     if (this.id != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
-/*  622 */     if (this.model != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
-/*  623 */     if (this.texture != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
-/*  624 */     if (this.animation != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
-/*  625 */     if (this.playerAnimationsId != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
-/*  626 */     if (this.icon != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
-/*  627 */     if (this.iconProperties != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
-/*  628 */     if (this.translationProperties != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
-/*  629 */     if (this.resourceTypes != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
-/*  630 */     if (this.tool != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
-/*  631 */     if (this.weapon != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
-/*  632 */     if (this.armor != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
-/*  633 */     if (this.gliderConfig != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
-/*  634 */     if (this.utility != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
-/*  635 */     if (this.blockSelectorTool != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
-/*  636 */     if (this.builderToolData != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
-/*  637 */     if (this.itemEntity != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
-/*  638 */     if (this.set != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
-/*  639 */     if (this.categories != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
-/*  640 */     if (this.particles != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
-/*  641 */     if (this.firstPersonParticles != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
-/*  642 */     if (this.trails != null) nullBits[2] = (byte)(nullBits[2] | 0x20); 
-/*  643 */     if (this.light != null) nullBits[2] = (byte)(nullBits[2] | 0x40); 
-/*  644 */     if (this.interactions != null) nullBits[2] = (byte)(nullBits[2] | 0x80); 
-/*  645 */     if (this.interactionVars != null) nullBits[3] = (byte)(nullBits[3] | 0x1); 
-/*  646 */     if (this.interactionConfig != null) nullBits[3] = (byte)(nullBits[3] | 0x2); 
-/*  647 */     if (this.droppedItemAnimation != null) nullBits[3] = (byte)(nullBits[3] | 0x4); 
-/*  648 */     if (this.tagIndexes != null) nullBits[3] = (byte)(nullBits[3] | 0x8); 
-/*  649 */     if (this.itemAppearanceConditions != null) nullBits[3] = (byte)(nullBits[3] | 0x10); 
-/*  650 */     if (this.displayEntityStatsHUD != null) nullBits[3] = (byte)(nullBits[3] | 0x20); 
-/*  651 */     if (this.pullbackConfig != null) nullBits[3] = (byte)(nullBits[3] | 0x40); 
+/*  621 */     if (this.iconProperties != null) nullBits[0] = (byte)(nullBits[0] | 0x1); 
+/*  622 */     if (this.gliderConfig != null) nullBits[0] = (byte)(nullBits[0] | 0x2); 
+/*  623 */     if (this.blockSelectorTool != null) nullBits[0] = (byte)(nullBits[0] | 0x4); 
+/*  624 */     if (this.light != null) nullBits[0] = (byte)(nullBits[0] | 0x8); 
+/*  625 */     if (this.pullbackConfig != null) nullBits[0] = (byte)(nullBits[0] | 0x10); 
+/*  626 */     if (this.id != null) nullBits[0] = (byte)(nullBits[0] | 0x20); 
+/*  627 */     if (this.model != null) nullBits[0] = (byte)(nullBits[0] | 0x40); 
+/*  628 */     if (this.texture != null) nullBits[0] = (byte)(nullBits[0] | 0x80); 
+/*  629 */     if (this.animation != null) nullBits[1] = (byte)(nullBits[1] | 0x1); 
+/*  630 */     if (this.playerAnimationsId != null) nullBits[1] = (byte)(nullBits[1] | 0x2); 
+/*  631 */     if (this.icon != null) nullBits[1] = (byte)(nullBits[1] | 0x4); 
+/*  632 */     if (this.translationProperties != null) nullBits[1] = (byte)(nullBits[1] | 0x8); 
+/*  633 */     if (this.resourceTypes != null) nullBits[1] = (byte)(nullBits[1] | 0x10); 
+/*  634 */     if (this.tool != null) nullBits[1] = (byte)(nullBits[1] | 0x20); 
+/*  635 */     if (this.weapon != null) nullBits[1] = (byte)(nullBits[1] | 0x40); 
+/*  636 */     if (this.armor != null) nullBits[1] = (byte)(nullBits[1] | 0x80); 
+/*  637 */     if (this.utility != null) nullBits[2] = (byte)(nullBits[2] | 0x1); 
+/*  638 */     if (this.builderToolData != null) nullBits[2] = (byte)(nullBits[2] | 0x2); 
+/*  639 */     if (this.itemEntity != null) nullBits[2] = (byte)(nullBits[2] | 0x4); 
+/*  640 */     if (this.set != null) nullBits[2] = (byte)(nullBits[2] | 0x8); 
+/*  641 */     if (this.categories != null) nullBits[2] = (byte)(nullBits[2] | 0x10); 
+/*  642 */     if (this.particles != null) nullBits[2] = (byte)(nullBits[2] | 0x20); 
+/*  643 */     if (this.firstPersonParticles != null) nullBits[2] = (byte)(nullBits[2] | 0x40); 
+/*  644 */     if (this.trails != null) nullBits[2] = (byte)(nullBits[2] | 0x80); 
+/*  645 */     if (this.interactions != null) nullBits[3] = (byte)(nullBits[3] | 0x1); 
+/*  646 */     if (this.interactionVars != null) nullBits[3] = (byte)(nullBits[3] | 0x2); 
+/*  647 */     if (this.interactionConfig != null) nullBits[3] = (byte)(nullBits[3] | 0x4); 
+/*  648 */     if (this.droppedItemAnimation != null) nullBits[3] = (byte)(nullBits[3] | 0x8); 
+/*  649 */     if (this.tagIndexes != null) nullBits[3] = (byte)(nullBits[3] | 0x10); 
+/*  650 */     if (this.itemAppearanceConditions != null) nullBits[3] = (byte)(nullBits[3] | 0x20); 
+/*  651 */     if (this.displayEntityStatsHUD != null) nullBits[3] = (byte)(nullBits[3] | 0x40); 
 /*  652 */     buf.writeBytes(nullBits);
 /*      */     
 /*  654 */     buf.writeFloatLE(this.scale);
@@ -951,7 +951,7 @@
 /*      */     
 /*  952 */     byte[] nullBits = PacketIO.readBytes(buffer, offset, 4);
 /*      */     
-/*  954 */     if ((nullBits[0] & 0x1) != 0) {
+/*  954 */     if ((nullBits[0] & 0x20) != 0) {
 /*  955 */       int idOffset = buffer.getIntLE(offset + 147);
 /*  956 */       if (idOffset < 0) {
 /*  957 */         return ValidationResult.error("Invalid offset for Id");
@@ -974,7 +974,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/*  977 */     if ((nullBits[0] & 0x2) != 0) {
+/*  977 */     if ((nullBits[0] & 0x40) != 0) {
 /*  978 */       int modelOffset = buffer.getIntLE(offset + 151);
 /*  979 */       if (modelOffset < 0) {
 /*  980 */         return ValidationResult.error("Invalid offset for Model");
@@ -997,7 +997,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1000 */     if ((nullBits[0] & 0x4) != 0) {
+/* 1000 */     if ((nullBits[0] & 0x80) != 0) {
 /* 1001 */       int textureOffset = buffer.getIntLE(offset + 155);
 /* 1002 */       if (textureOffset < 0) {
 /* 1003 */         return ValidationResult.error("Invalid offset for Texture");
@@ -1020,7 +1020,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1023 */     if ((nullBits[0] & 0x8) != 0) {
+/* 1023 */     if ((nullBits[1] & 0x1) != 0) {
 /* 1024 */       int animationOffset = buffer.getIntLE(offset + 159);
 /* 1025 */       if (animationOffset < 0) {
 /* 1026 */         return ValidationResult.error("Invalid offset for Animation");
@@ -1043,7 +1043,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1046 */     if ((nullBits[0] & 0x10) != 0) {
+/* 1046 */     if ((nullBits[1] & 0x2) != 0) {
 /* 1047 */       int playerAnimationsIdOffset = buffer.getIntLE(offset + 163);
 /* 1048 */       if (playerAnimationsIdOffset < 0) {
 /* 1049 */         return ValidationResult.error("Invalid offset for PlayerAnimationsId");
@@ -1066,7 +1066,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1069 */     if ((nullBits[0] & 0x20) != 0) {
+/* 1069 */     if ((nullBits[1] & 0x4) != 0) {
 /* 1070 */       int iconOffset = buffer.getIntLE(offset + 167);
 /* 1071 */       if (iconOffset < 0) {
 /* 1072 */         return ValidationResult.error("Invalid offset for Icon");
@@ -1089,7 +1089,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1092 */     if ((nullBits[0] & 0x80) != 0) {
+/* 1092 */     if ((nullBits[1] & 0x8) != 0) {
 /* 1093 */       int translationPropertiesOffset = buffer.getIntLE(offset + 171);
 /* 1094 */       if (translationPropertiesOffset < 0) {
 /* 1095 */         return ValidationResult.error("Invalid offset for TranslationProperties");
@@ -1105,7 +1105,7 @@
 /* 1105 */       pos += ItemTranslationProperties.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1108 */     if ((nullBits[1] & 0x1) != 0) {
+/* 1108 */     if ((nullBits[1] & 0x10) != 0) {
 /* 1109 */       int resourceTypesOffset = buffer.getIntLE(offset + 175);
 /* 1110 */       if (resourceTypesOffset < 0) {
 /* 1111 */         return ValidationResult.error("Invalid offset for ResourceTypes");
@@ -1131,7 +1131,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1134 */     if ((nullBits[1] & 0x2) != 0) {
+/* 1134 */     if ((nullBits[1] & 0x20) != 0) {
 /* 1135 */       int toolOffset = buffer.getIntLE(offset + 179);
 /* 1136 */       if (toolOffset < 0) {
 /* 1137 */         return ValidationResult.error("Invalid offset for Tool");
@@ -1147,7 +1147,7 @@
 /* 1147 */       pos += ItemTool.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1150 */     if ((nullBits[1] & 0x4) != 0) {
+/* 1150 */     if ((nullBits[1] & 0x40) != 0) {
 /* 1151 */       int weaponOffset = buffer.getIntLE(offset + 183);
 /* 1152 */       if (weaponOffset < 0) {
 /* 1153 */         return ValidationResult.error("Invalid offset for Weapon");
@@ -1163,7 +1163,7 @@
 /* 1163 */       pos += ItemWeapon.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1166 */     if ((nullBits[1] & 0x8) != 0) {
+/* 1166 */     if ((nullBits[1] & 0x80) != 0) {
 /* 1167 */       int armorOffset = buffer.getIntLE(offset + 187);
 /* 1168 */       if (armorOffset < 0) {
 /* 1169 */         return ValidationResult.error("Invalid offset for Armor");
@@ -1179,7 +1179,7 @@
 /* 1179 */       pos += ItemArmor.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1182 */     if ((nullBits[1] & 0x20) != 0) {
+/* 1182 */     if ((nullBits[2] & 0x1) != 0) {
 /* 1183 */       int utilityOffset = buffer.getIntLE(offset + 191);
 /* 1184 */       if (utilityOffset < 0) {
 /* 1185 */         return ValidationResult.error("Invalid offset for Utility");
@@ -1195,7 +1195,7 @@
 /* 1195 */       pos += ItemUtility.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1198 */     if ((nullBits[1] & 0x80) != 0) {
+/* 1198 */     if ((nullBits[2] & 0x2) != 0) {
 /* 1199 */       int builderToolDataOffset = buffer.getIntLE(offset + 195);
 /* 1200 */       if (builderToolDataOffset < 0) {
 /* 1201 */         return ValidationResult.error("Invalid offset for BuilderToolData");
@@ -1211,7 +1211,7 @@
 /* 1211 */       pos += ItemBuilderToolData.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1214 */     if ((nullBits[2] & 0x1) != 0) {
+/* 1214 */     if ((nullBits[2] & 0x4) != 0) {
 /* 1215 */       int itemEntityOffset = buffer.getIntLE(offset + 199);
 /* 1216 */       if (itemEntityOffset < 0) {
 /* 1217 */         return ValidationResult.error("Invalid offset for ItemEntity");
@@ -1227,7 +1227,7 @@
 /* 1227 */       pos += ItemEntityConfig.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1230 */     if ((nullBits[2] & 0x2) != 0) {
+/* 1230 */     if ((nullBits[2] & 0x8) != 0) {
 /* 1231 */       int setOffset = buffer.getIntLE(offset + 203);
 /* 1232 */       if (setOffset < 0) {
 /* 1233 */         return ValidationResult.error("Invalid offset for Set");
@@ -1250,7 +1250,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1253 */     if ((nullBits[2] & 0x4) != 0) {
+/* 1253 */     if ((nullBits[2] & 0x10) != 0) {
 /* 1254 */       int categoriesOffset = buffer.getIntLE(offset + 207);
 /* 1255 */       if (categoriesOffset < 0) {
 /* 1256 */         return ValidationResult.error("Invalid offset for Categories");
@@ -1280,7 +1280,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1283 */     if ((nullBits[2] & 0x8) != 0) {
+/* 1283 */     if ((nullBits[2] & 0x20) != 0) {
 /* 1284 */       int particlesOffset = buffer.getIntLE(offset + 211);
 /* 1285 */       if (particlesOffset < 0) {
 /* 1286 */         return ValidationResult.error("Invalid offset for Particles");
@@ -1306,7 +1306,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1309 */     if ((nullBits[2] & 0x10) != 0) {
+/* 1309 */     if ((nullBits[2] & 0x40) != 0) {
 /* 1310 */       int firstPersonParticlesOffset = buffer.getIntLE(offset + 215);
 /* 1311 */       if (firstPersonParticlesOffset < 0) {
 /* 1312 */         return ValidationResult.error("Invalid offset for FirstPersonParticles");
@@ -1332,7 +1332,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1335 */     if ((nullBits[2] & 0x20) != 0) {
+/* 1335 */     if ((nullBits[2] & 0x80) != 0) {
 /* 1336 */       int trailsOffset = buffer.getIntLE(offset + 219);
 /* 1337 */       if (trailsOffset < 0) {
 /* 1338 */         return ValidationResult.error("Invalid offset for Trails");
@@ -1358,7 +1358,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1361 */     if ((nullBits[2] & 0x80) != 0) {
+/* 1361 */     if ((nullBits[3] & 0x1) != 0) {
 /* 1362 */       int interactionsOffset = buffer.getIntLE(offset + 223);
 /* 1363 */       if (interactionsOffset < 0) {
 /* 1364 */         return ValidationResult.error("Invalid offset for Interactions");
@@ -1385,7 +1385,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1388 */     if ((nullBits[3] & 0x1) != 0) {
+/* 1388 */     if ((nullBits[3] & 0x2) != 0) {
 /* 1389 */       int interactionVarsOffset = buffer.getIntLE(offset + 227);
 /* 1390 */       if (interactionVarsOffset < 0) {
 /* 1391 */         return ValidationResult.error("Invalid offset for InteractionVars");
@@ -1422,7 +1422,7 @@
 /*      */       } 
 /*      */     } 
 /*      */     
-/* 1425 */     if ((nullBits[3] & 0x2) != 0) {
+/* 1425 */     if ((nullBits[3] & 0x4) != 0) {
 /* 1426 */       int interactionConfigOffset = buffer.getIntLE(offset + 231);
 /* 1427 */       if (interactionConfigOffset < 0) {
 /* 1428 */         return ValidationResult.error("Invalid offset for InteractionConfig");
@@ -1438,7 +1438,7 @@
 /* 1438 */       pos += InteractionConfiguration.computeBytesConsumed(buffer, pos);
 /*      */     } 
 /*      */     
-/* 1441 */     if ((nullBits[3] & 0x4) != 0) {
+/* 1441 */     if ((nullBits[3] & 0x8) != 0) {
 /* 1442 */       int droppedItemAnimationOffset = buffer.getIntLE(offset + 235);
 /* 1443 */       if (droppedItemAnimationOffset < 0) {
 /* 1444 */         return ValidationResult.error("Invalid offset for DroppedItemAnimation");
@@ -1461,7 +1461,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1464 */     if ((nullBits[3] & 0x8) != 0) {
+/* 1464 */     if ((nullBits[3] & 0x10) != 0) {
 /* 1465 */       int tagIndexesOffset = buffer.getIntLE(offset + 239);
 /* 1466 */       if (tagIndexesOffset < 0) {
 /* 1467 */         return ValidationResult.error("Invalid offset for TagIndexes");
@@ -1484,7 +1484,7 @@
 /*      */       }
 /*      */     } 
 /*      */     
-/* 1487 */     if ((nullBits[3] & 0x10) != 0) {
+/* 1487 */     if ((nullBits[3] & 0x20) != 0) {
 /* 1488 */       int itemAppearanceConditionsOffset = buffer.getIntLE(offset + 243);
 /* 1489 */       if (itemAppearanceConditionsOffset < 0) {
 /* 1490 */         return ValidationResult.error("Invalid offset for ItemAppearanceConditions");
@@ -1518,7 +1518,7 @@
 /*      */     } 
 /*      */ 
 /*      */     
-/* 1521 */     if ((nullBits[3] & 0x20) != 0) {
+/* 1521 */     if ((nullBits[3] & 0x40) != 0) {
 /* 1522 */       int displayEntityStatsHUDOffset = buffer.getIntLE(offset + 247);
 /* 1523 */       if (displayEntityStatsHUDOffset < 0) {
 /* 1524 */         return ValidationResult.error("Invalid offset for DisplayEntityStatsHUD");

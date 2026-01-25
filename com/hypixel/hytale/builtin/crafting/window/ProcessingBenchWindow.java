@@ -7,6 +7,7 @@
 /*     */ import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
 /*     */ import com.hypixel.hytale.builtin.crafting.state.BenchState;
 /*     */ import com.hypixel.hytale.builtin.crafting.state.ProcessingBenchState;
+/*     */ import com.hypixel.hytale.component.ComponentAccessor;
 /*     */ import com.hypixel.hytale.component.Ref;
 /*     */ import com.hypixel.hytale.component.Store;
 /*     */ import com.hypixel.hytale.event.EventRegistration;
@@ -20,12 +21,12 @@
 /*     */ import com.hypixel.hytale.server.core.inventory.Inventory;
 /*     */ import com.hypixel.hytale.server.core.inventory.container.CombinedItemContainer;
 /*     */ import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
-/*     */ import com.hypixel.hytale.server.core.universe.PlayerRef;
 /*     */ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 /*     */ import java.util.HashSet;
 /*     */ import java.util.Set;
 /*     */ import javax.annotation.Nonnull;
 /*     */ import javax.annotation.Nullable;
+/*     */ 
 /*     */ 
 /*     */ 
 /*     */ 
@@ -43,123 +44,123 @@
 /*     */   private int maxFuel;
 /*     */   private float progress;
 /*     */   private boolean active;
-/*  46 */   private final Set<Short> processingSlots = new HashSet<>();
-/*  47 */   private final Set<Short> processingFuelSlots = new HashSet<>();
+/*  47 */   private final Set<Short> processingSlots = new HashSet<>();
+/*  48 */   private final Set<Short> processingFuelSlots = new HashSet<>();
 /*     */   
 /*     */   public ProcessingBenchWindow(ProcessingBenchState benchState) {
-/*  50 */     super(WindowType.Processing, (BenchState)benchState);
+/*  51 */     super(WindowType.Processing, (BenchState)benchState);
 /*     */     
-/*  52 */     ProcessingBench processingBench = (ProcessingBench)this.blockType.getBench();
+/*  53 */     ProcessingBench processingBench = (ProcessingBench)this.blockType.getBench();
 /*     */     
-/*  54 */     CraftingRecipe recipe = benchState.getRecipe();
-/*  55 */     float inputProgress = benchState.getInputProgress();
-/*  56 */     float progress = (recipe != null && recipe.getTimeSeconds() > 0.0F) ? (inputProgress / recipe.getTimeSeconds()) : 0.0F;
+/*  55 */     CraftingRecipe recipe = benchState.getRecipe();
+/*  56 */     float inputProgress = benchState.getInputProgress();
+/*  57 */     float progress = (recipe != null && recipe.getTimeSeconds() > 0.0F) ? (inputProgress / recipe.getTimeSeconds()) : 0.0F;
 /*     */     
-/*  58 */     this.itemContainer = benchState.getItemContainer();
-/*  59 */     this.active = benchState.isActive();
-/*  60 */     this.progress = progress;
+/*  59 */     this.itemContainer = benchState.getItemContainer();
+/*  60 */     this.active = benchState.isActive();
+/*  61 */     this.progress = progress;
 /*     */     
-/*  62 */     this.windowData.addProperty("active", Boolean.valueOf(this.active));
-/*  63 */     this.windowData.addProperty("progress", Float.valueOf(progress));
+/*  63 */     this.windowData.addProperty("active", Boolean.valueOf(this.active));
+/*  64 */     this.windowData.addProperty("progress", Float.valueOf(progress));
 /*     */     
-/*  65 */     if (processingBench.getFuel() != null && (processingBench.getFuel()).length > 0) {
-/*  66 */       JsonArray fuelArray = new JsonArray();
-/*  67 */       for (ProcessingBench.ProcessingSlot benchSlot : processingBench.getFuel()) {
-/*  68 */         JsonObject fuelObj = new JsonObject();
-/*  69 */         fuelObj.addProperty("icon", benchSlot.getIcon());
-/*  70 */         fuelObj.addProperty("resourceTypeId", benchSlot.getResourceTypeId());
-/*  71 */         fuelArray.add((JsonElement)fuelObj);
+/*  66 */     if (processingBench.getFuel() != null && (processingBench.getFuel()).length > 0) {
+/*  67 */       JsonArray fuelArray = new JsonArray();
+/*  68 */       for (ProcessingBench.ProcessingSlot benchSlot : processingBench.getFuel()) {
+/*  69 */         JsonObject fuelObj = new JsonObject();
+/*  70 */         fuelObj.addProperty("icon", benchSlot.getIcon());
+/*  71 */         fuelObj.addProperty("resourceTypeId", benchSlot.getResourceTypeId());
+/*  72 */         fuelArray.add((JsonElement)fuelObj);
 /*     */       } 
-/*  73 */       this.windowData.add("fuel", (JsonElement)fuelArray);
+/*  74 */       this.windowData.add("fuel", (JsonElement)fuelArray);
 /*     */     } 
 /*     */     
-/*  76 */     if (processingBench.getMaxFuel() > 0) this.maxFuel = processingBench.getMaxFuel();
+/*  77 */     if (processingBench.getMaxFuel() > 0) this.maxFuel = processingBench.getMaxFuel();
 /*     */     
-/*  78 */     this.windowData.addProperty("maxFuel", Integer.valueOf(this.maxFuel));
-/*  79 */     this.windowData.addProperty("fuelTime", Float.valueOf(this.fuelTime));
-/*  80 */     this.windowData.addProperty("progress", Float.valueOf(progress));
+/*  79 */     this.windowData.addProperty("maxFuel", Integer.valueOf(this.maxFuel));
+/*  80 */     this.windowData.addProperty("fuelTime", Float.valueOf(this.fuelTime));
+/*  81 */     this.windowData.addProperty("progress", Float.valueOf(progress));
 /*     */     
-/*  82 */     this.windowData.addProperty("processingFuelSlots", Integer.valueOf(0));
-/*  83 */     this.windowData.addProperty("processingSlots", Integer.valueOf(0));
+/*  83 */     this.windowData.addProperty("processingFuelSlots", Integer.valueOf(0));
+/*  84 */     this.windowData.addProperty("processingSlots", Integer.valueOf(0));
 /*     */     
-/*  85 */     int tierLevel = getBenchTierLevel();
-/*  86 */     updateInputSlots(tierLevel);
-/*  87 */     updateOutputSlots(tierLevel);
+/*  86 */     int tierLevel = getBenchTierLevel();
+/*  87 */     updateInputSlots(tierLevel);
+/*  88 */     updateOutputSlots(tierLevel);
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   public JsonObject getData() {
-/*  92 */     return this.windowData;
+/*  93 */     return this.windowData;
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   @Nonnull
 /*     */   public CombinedItemContainer getItemContainer() {
-/*  98 */     return this.itemContainer;
+/*  99 */     return this.itemContainer;
 /*     */   }
 /*     */   
 /*     */   public void setActive(boolean active) {
-/* 102 */     if (this.active != active) {
-/* 103 */       this.active = active;
-/* 104 */       this.windowData.addProperty("active", Boolean.valueOf(active));
-/* 105 */       invalidate();
+/* 103 */     if (this.active != active) {
+/* 104 */       this.active = active;
+/* 105 */       this.windowData.addProperty("active", Boolean.valueOf(active));
+/* 106 */       invalidate();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void setFuelTime(float fuelTime) {
-/* 110 */     if (Float.isInfinite(fuelTime)) throw new IllegalArgumentException("Infinite fuelTime"); 
-/* 111 */     if (Float.isNaN(fuelTime)) throw new IllegalArgumentException("Nan fuelTime"); 
-/* 112 */     if (this.fuelTime != fuelTime) {
-/* 113 */       this.fuelTime = fuelTime;
-/* 114 */       this.windowData.addProperty("fuelTime", Float.valueOf(fuelTime));
-/* 115 */       invalidate();
+/* 111 */     if (Float.isInfinite(fuelTime)) throw new IllegalArgumentException("Infinite fuelTime"); 
+/* 112 */     if (Float.isNaN(fuelTime)) throw new IllegalArgumentException("Nan fuelTime"); 
+/* 113 */     if (this.fuelTime != fuelTime) {
+/* 114 */       this.fuelTime = fuelTime;
+/* 115 */       this.windowData.addProperty("fuelTime", Float.valueOf(fuelTime));
+/* 116 */       invalidate();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void setMaxFuel(int maxFuel) {
-/* 120 */     this.maxFuel = maxFuel;
-/* 121 */     this.windowData.addProperty("maxFuel", Integer.valueOf(maxFuel));
-/* 122 */     invalidate();
+/* 121 */     this.maxFuel = maxFuel;
+/* 122 */     this.windowData.addProperty("maxFuel", Integer.valueOf(maxFuel));
+/* 123 */     invalidate();
 /*     */   }
 /*     */   
 /*     */   public void setProgress(float progress) {
-/* 126 */     if (Float.isInfinite(progress)) throw new IllegalArgumentException("Infinite progress"); 
-/* 127 */     if (Float.isNaN(progress)) throw new IllegalArgumentException("Nan fuelTime"); 
-/* 128 */     if (this.progress != progress) {
-/* 129 */       this.progress = progress;
-/* 130 */       this.windowData.addProperty("progress", Float.valueOf(progress));
-/* 131 */       invalidate();
+/* 127 */     if (Float.isInfinite(progress)) throw new IllegalArgumentException("Infinite progress"); 
+/* 128 */     if (Float.isNaN(progress)) throw new IllegalArgumentException("Nan fuelTime"); 
+/* 129 */     if (this.progress != progress) {
+/* 130 */       this.progress = progress;
+/* 131 */       this.windowData.addProperty("progress", Float.valueOf(progress));
+/* 132 */       invalidate();
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   public void setProcessingSlots(Set<Short> slots) {
-/* 136 */     if (this.processingSlots.equals(slots)) {
+/* 137 */     if (this.processingSlots.equals(slots)) {
 /*     */       return;
 /*     */     }
-/* 139 */     this.processingSlots.clear();
-/* 140 */     this.processingSlots.addAll(slots);
+/* 140 */     this.processingSlots.clear();
+/* 141 */     this.processingSlots.addAll(slots);
 /*     */     
-/* 142 */     int bitMask = 0;
-/* 143 */     for (Short processingSlot : slots) {
-/* 144 */       bitMask |= 1 << processingSlot.intValue();
+/* 143 */     int bitMask = 0;
+/* 144 */     for (Short processingSlot : slots) {
+/* 145 */       bitMask |= 1 << processingSlot.intValue();
 /*     */     }
-/* 146 */     this.windowData.addProperty("processingSlots", Byte.valueOf((byte)bitMask));
-/* 147 */     invalidate();
+/* 147 */     this.windowData.addProperty("processingSlots", Byte.valueOf((byte)bitMask));
+/* 148 */     invalidate();
 /*     */   }
 /*     */   
 /*     */   public void setProcessingFuelSlots(Set<Short> slots) {
-/* 151 */     if (this.processingFuelSlots.equals(slots)) {
+/* 152 */     if (this.processingFuelSlots.equals(slots)) {
 /*     */       return;
 /*     */     }
-/* 154 */     this.processingFuelSlots.clear();
-/* 155 */     this.processingFuelSlots.addAll(slots);
+/* 155 */     this.processingFuelSlots.clear();
+/* 156 */     this.processingFuelSlots.addAll(slots);
 /*     */     
-/* 157 */     int bitMask = 0;
-/* 158 */     for (Short processingFuelSlots : slots) {
-/* 159 */       bitMask |= 1 << processingFuelSlots.intValue();
+/* 158 */     int bitMask = 0;
+/* 159 */     for (Short processingFuelSlots : slots) {
+/* 160 */       bitMask |= 1 << processingFuelSlots.intValue();
 /*     */     }
-/* 161 */     this.windowData.addProperty("processingFuelSlots", Byte.valueOf((byte)bitMask));
-/* 162 */     invalidate();
+/* 162 */     this.windowData.addProperty("processingFuelSlots", Byte.valueOf((byte)bitMask));
+/* 163 */     invalidate();
 /*     */   }
 /*     */ 
 /*     */ 
@@ -275,21 +276,21 @@
 /*     */     //   230: return
 /*     */     // Line number table:
 /*     */     //   Java source line number -> byte code offset
-/*     */     //   #167	-> 0
-/*     */     //   #168	-> 12
-/*     */     //   #169	-> 45
-/*     */     //   #171	-> 64
-/*     */     //   #172	-> 112
-/*     */     //   #173	-> 119
-/*     */     //   #176	-> 132
-/*     */     //   #179	-> 139
-/*     */     //   #182	-> 146
-/*     */     //   #183	-> 159
-/*     */     //   #184	-> 165
-/*     */     //   #185	-> 176
-/*     */     //   #186	-> 186
-/*     */     //   #189	-> 227
-/*     */     //   #193	-> 230
+/*     */     //   #168	-> 0
+/*     */     //   #169	-> 12
+/*     */     //   #170	-> 45
+/*     */     //   #172	-> 64
+/*     */     //   #173	-> 112
+/*     */     //   #174	-> 119
+/*     */     //   #177	-> 132
+/*     */     //   #180	-> 139
+/*     */     //   #183	-> 146
+/*     */     //   #184	-> 159
+/*     */     //   #185	-> 165
+/*     */     //   #186	-> 176
+/*     */     //   #187	-> 186
+/*     */     //   #190	-> 227
+/*     */     //   #194	-> 230
 /*     */     // Local variable table:
 /*     */     //   start	length	slot	name	descriptor
 /*     */     //   60	3	6	benchState	Lcom/hypixel/hytale/builtin/crafting/state/ProcessingBenchState;
@@ -322,66 +323,64 @@
 /*     */ 
 /*     */ 
 /*     */   
-/*     */   protected boolean onOpen0() {
-/* 197 */     super.onOpen0();
+/*     */   protected boolean onOpen0(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+/* 198 */     super.onOpen0(ref, store);
 /*     */     
-/* 199 */     PlayerRef playerRef = getPlayerRef();
-/* 200 */     Ref<EntityStore> ref = playerRef.getReference();
-/* 201 */     Store<EntityStore> store = ref.getStore();
+/* 200 */     Player playerComponent = (Player)store.getComponent(ref, Player.getComponentType());
+/* 201 */     assert playerComponent != null;
 /*     */     
-/* 203 */     Player player = (Player)store.getComponent(ref, Player.getComponentType());
-/* 204 */     Inventory inventory = player.getInventory();
+/* 203 */     Inventory inventory = playerComponent.getInventory();
 /*     */     
-/* 206 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
+/* 205 */     this.inventoryRegistration = inventory.getCombinedHotbarFirst().registerChangeEvent(event -> {
 /*     */           this.windowData.add("inventoryHints", (JsonElement)generateInventoryHints(this.bench, inventory.getCombinedHotbarFirst()));
 /*     */           invalidate();
 /*     */         });
-/* 210 */     this.windowData.add("inventoryHints", (JsonElement)generateInventoryHints(this.bench, inventory.getCombinedHotbarFirst()));
-/* 211 */     return true;
+/* 209 */     this.windowData.add("inventoryHints", (JsonElement)generateInventoryHints(this.bench, inventory.getCombinedHotbarFirst()));
+/* 210 */     return true;
 /*     */   }
 /*     */   
 /*     */   private void updateOutputSlots(int tierLevel) {
-/* 215 */     this.windowData.addProperty("outputSlotsCount", Integer.valueOf(((ProcessingBench)this.blockType.getBench()).getOutputSlotsCount(tierLevel)));
+/* 214 */     this.windowData.addProperty("outputSlotsCount", Integer.valueOf(((ProcessingBench)this.blockType.getBench()).getOutputSlotsCount(tierLevel)));
 /*     */   }
 /*     */   
 /*     */   private void updateInputSlots(int tierLevel) {
-/* 219 */     ProcessingBench.ProcessingSlot[] input = ((ProcessingBench)this.blockType.getBench()).getInput(tierLevel);
-/* 220 */     if (input != null && input.length > 0) {
-/* 221 */       JsonArray inputArr = new JsonArray();
+/* 218 */     ProcessingBench.ProcessingSlot[] input = ((ProcessingBench)this.blockType.getBench()).getInput(tierLevel);
+/* 219 */     if (input != null && input.length > 0) {
+/* 220 */       JsonArray inputArr = new JsonArray();
 /*     */       
-/* 223 */       for (ProcessingBench.ProcessingSlot benchSlot : input) {
-/* 224 */         if (benchSlot != null) {
-/* 225 */           JsonObject slotObj = new JsonObject();
-/* 226 */           slotObj.addProperty("icon", benchSlot.getIcon());
-/* 227 */           inputArr.add((JsonElement)slotObj);
+/* 222 */       for (ProcessingBench.ProcessingSlot benchSlot : input) {
+/* 223 */         if (benchSlot != null) {
+/* 224 */           JsonObject slotObj = new JsonObject();
+/* 225 */           slotObj.addProperty("icon", benchSlot.getIcon());
+/* 226 */           inputArr.add((JsonElement)slotObj);
 /*     */         } 
 /*     */       } 
-/* 230 */       this.windowData.add("input", (JsonElement)inputArr);
+/* 229 */       this.windowData.add("input", (JsonElement)inputArr);
 /*     */     } 
 /*     */   }
 /*     */ 
 /*     */   
 /*     */   public void updateBenchTierLevel(int newValue) {
-/* 236 */     super.updateBenchTierLevel(newValue);
-/* 237 */     updateInputSlots(newValue);
-/* 238 */     updateOutputSlots(newValue);
-/* 239 */     BenchState benchState = this.benchState; if (benchState instanceof ProcessingBenchState) { ProcessingBenchState processingBenchState = (ProcessingBenchState)benchState;
-/* 240 */       this.itemContainer = processingBenchState.getItemContainer(); }
+/* 235 */     super.updateBenchTierLevel(newValue);
+/* 236 */     updateInputSlots(newValue);
+/* 237 */     updateOutputSlots(newValue);
+/* 238 */     BenchState benchState = this.benchState; if (benchState instanceof ProcessingBenchState) { ProcessingBenchState processingBenchState = (ProcessingBenchState)benchState;
+/* 239 */       this.itemContainer = processingBenchState.getItemContainer(); }
 /*     */   
 /*     */   }
 /*     */ 
 /*     */   
-/*     */   public void onClose0() {
-/* 246 */     super.onClose0();
-/* 247 */     if (this.inventoryRegistration != null) {
-/* 248 */       this.inventoryRegistration.unregister();
-/* 249 */       this.inventoryRegistration = null;
+/*     */   public void onClose0(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor) {
+/* 245 */     super.onClose0(ref, componentAccessor);
+/* 246 */     if (this.inventoryRegistration != null) {
+/* 247 */       this.inventoryRegistration.unregister();
+/* 248 */       this.inventoryRegistration = null;
 /*     */     } 
 /*     */   }
 /*     */   
 /*     */   @Nonnull
 /*     */   private static JsonArray generateInventoryHints(@Nonnull Bench bench, @Nonnull CombinedItemContainer combinedInputItemContainer) {
-/* 255 */     return CraftingManager.generateInventoryHints(CraftingPlugin.getBenchRecipes(bench), 0, (ItemContainer)combinedInputItemContainer);
+/* 254 */     return CraftingManager.generateInventoryHints(CraftingPlugin.getBenchRecipes(bench), 0, (ItemContainer)combinedInputItemContainer);
 /*     */   }
 /*     */ }
 

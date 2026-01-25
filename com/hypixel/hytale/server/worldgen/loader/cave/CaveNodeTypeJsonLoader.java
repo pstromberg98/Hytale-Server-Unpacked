@@ -81,14 +81,14 @@
 /*  81 */         CaveNodeType.CaveNodeChildEntry[] children = new CaveNodeType.CaveNodeChildEntry[childrenArray.size()];
 /*  82 */         for (int i = 0; i < childrenArray.size(); i++) {
 /*  83 */           children[i] = (new CaveNodeChildEntryJsonLoader(this.seed
-/*  84 */               .append(String.format(".Child-%s", new Object[] { Integer.valueOf(i) })), this.dataFolder, childrenArray.get(i), this.storage))
+/*  84 */               .append(String.format(".Child-%s", new Object[] { Integer.valueOf(i) })), this.dataFolder, getOrLoad(childrenArray.get(i)), this.storage))
 /*  85 */             .load();
 /*     */         } 
 /*  87 */         return children;
 /*  88 */       }  if (childrenElement.isJsonObject()) {
 /*  89 */         CaveNodeType.CaveNodeChildEntry[] children = new CaveNodeType.CaveNodeChildEntry[1];
 /*  90 */         children[0] = (new CaveNodeChildEntryJsonLoader(this.seed
-/*  91 */             .append(String.format(".Child-%s", new Object[] { Integer.valueOf(0) })), this.dataFolder, childrenElement, this.storage))
+/*  91 */             .append(String.format(".Child-%s", new Object[] { Integer.valueOf(0) })), this.dataFolder, getOrLoad(childrenElement), this.storage))
 /*  92 */           .load();
 /*  93 */         return children;
 /*     */       } 

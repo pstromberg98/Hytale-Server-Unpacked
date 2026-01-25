@@ -1837,48 +1837,77 @@
 /*      */ 
 /*      */ 
 /*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
+/*      */ 
 /*      */ @Deprecated
 /*      */ public class HackKnockbackValues
 /*      */   extends EntityTickingSystem<EntityStore>
 /*      */ {
-/* 1844 */   public static float PLAYER_KNOCKBACK_SCALE = 25.0F;
+/* 1873 */   public static float PLAYER_KNOCKBACK_SCALE = 25.0F;
 /*      */ 
 /*      */ 
 /*      */ 
 /*      */   
-/* 1849 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
+/* 1878 */   private static final Query<EntityStore> QUERY = (Query<EntityStore>)Query.and(new Query[] { (Query)AllLegacyLivingEntityTypesQuery.INSTANCE, 
 /*      */         
-/* 1851 */         (Query)KnockbackComponent.getComponentType() });
+/* 1880 */         (Query)KnockbackComponent.getComponentType() });
 /*      */ 
 /*      */ 
 /*      */   
 /*      */   @Nullable
 /*      */   public SystemGroup<EntityStore> getGroup() {
-/* 1857 */     return DamageModule.get().getFilterDamageGroup();
+/* 1886 */     return DamageModule.get().getFilterDamageGroup();
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   @Nonnull
 /*      */   public Query<EntityStore> getQuery() {
-/* 1863 */     return QUERY;
+/* 1892 */     return QUERY;
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public void tick(float dt, int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk, @Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
-/* 1868 */     KnockbackComponent knockbackComponent = (KnockbackComponent)archetypeChunk.getComponent(index, KnockbackComponent.getComponentType());
-/* 1869 */     assert knockbackComponent != null;
+/* 1897 */     KnockbackComponent knockbackComponent = (KnockbackComponent)archetypeChunk.getComponent(index, KnockbackComponent.getComponentType());
+/* 1898 */     assert knockbackComponent != null;
 /*      */     
-/* 1871 */     if (knockbackComponent.getVelocityConfig() == null || SplitVelocity.SHOULD_MODIFY_VELOCITY) {
-/* 1872 */       Vector3d vector = knockbackComponent.getVelocity();
-/* 1873 */       vector.x *= PLAYER_KNOCKBACK_SCALE;
-/* 1874 */       vector.z *= PLAYER_KNOCKBACK_SCALE;
-/* 1875 */       knockbackComponent.setVelocity(vector);
+/* 1900 */     if (knockbackComponent.getVelocityConfig() == null || SplitVelocity.SHOULD_MODIFY_VELOCITY) {
+/* 1901 */       Vector3d vector = knockbackComponent.getVelocity();
+/* 1902 */       vector.x *= PLAYER_KNOCKBACK_SCALE;
+/* 1903 */       vector.z *= PLAYER_KNOCKBACK_SCALE;
+/* 1904 */       knockbackComponent.setVelocity(vector);
 /*      */     } 
 /*      */   }
 /*      */ 
 /*      */   
 /*      */   public boolean isParallel(int archetypeChunkSize, int taskCount) {
-/* 1881 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
+/* 1910 */     return EntityTickingSystem.maybeUseParallel(archetypeChunkSize, taskCount);
 /*      */   }
 /*      */ }
 

@@ -1752,7 +1752,7 @@
 /* 1752 */     if (rotatedRail == null) {
 /* 1753 */       RotationTuple rotation = RotationTuple.get(rotationIndex);
 /*      */       
-/* 1755 */       rotatedRail = new RailConfig(this.railConfig);
+/* 1755 */       rotatedRail = this.railConfig.clone();
 /* 1756 */       for (RailPoint p : rotatedRail.points) {
 /* 1757 */         Vector3f hyPoint = new Vector3f(p.point.x - 0.5F, p.point.y - 0.5F, p.point.z - 0.5F);
 /* 1758 */         hyPoint = Rotation.rotate(hyPoint, rotation.yaw(), rotation.pitch(), rotation.roll());
