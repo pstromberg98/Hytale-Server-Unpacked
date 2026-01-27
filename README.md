@@ -3,7 +3,7 @@
 This project is auto-generated from the decompiled source code and shared as a reference only, to allow reading of public methods. It is not intended for build purposes. 
 <br>
 
-For more details you can visit our discord channel:  https://discord.gg/Xx86jhzNaJ
+For more details you can visit our discord channel:  https://www.akatron.net/hytale-discord
 
 
 ## AI Integration
