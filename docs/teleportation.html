@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teleportation &amp; World Transfer - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html" class="active">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <header class="page-header">
+                <h1>Teleportation &amp; World Transfer</h1>
+                <p class="page-desc">Same-world teleporting, cross-world transfer, safety mechanisms, and the Teleport component.</p>
+            </header>
+
+            <section>
+                <h2>How Teleportation Works</h2>
+                <p>Teleportation uses the ECS — you add a <span class="code">Teleport</span> component to an entity, and the server's systems process it on the next tick.</p>
+                <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.modules.entity.teleport.Teleport</span></p>
+            </section>
+
+            <section>
+                <h2>Teleport Component Fields</h2>
+                <ul>
+                    <li><span class="code">World world</span> — target world (null = same world)</li>
+                    <li><span class="code">Vector3d position</span> — target position</li>
+                    <li><span class="code">Vector3f rotation</span> — body rotation</li>
+                    <li><span class="code">Vector3f headRotation</span> — head rotation (nullable)</li>
+                    <li><span class="code">boolean resetVelocity</span> — reset velocity on arrival (default: true)</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Factory Methods</h2>
+
+                <h3>For Players (handles head vs body rotation correctly)</h3>
+                <pre><code class="language-java">Teleport.createForPlayer(World world, Transform transform)
+Teleport.createForPlayer(World world, Vector3d position, Vector3f rotation)
+Teleport.createForPlayer(Vector3d position, Vector3f rotation)  // same world
+Teleport.createForPlayer(Transform transform)                    // same world</code></pre>
+
+                <h3>For Entities (exact control)</h3>
+                <pre><code class="language-java">Teleport.createExact(Vector3d position, Vector3f bodyRotation, Vector3f headRotation)
+Teleport.createExact(Vector3d position, Vector3f bodyRotation)</code></pre>
+
+                <h3>Builder Methods</h3>
+                <pre><code class="language-java">teleport.setHeadRotation(new Vector3f(pitch, yaw, roll));  // chaining
+teleport.withoutVelocityReset();                            // keep velocity</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> Always use <span class="code">createForPlayer()</span> for players — it correctly separates head and body rotation.
+                </div>
+            </section>
+
+            <section>
+                <h2>Same-World Teleportation</h2>
+                <pre><code class="language-java">// Create teleport (same world — no world parameter)
+Teleport teleport = Teleport.createForPlayer(
+    new Vector3d(100, 70, 200),
+    new Vector3f(0, 90, 0)  // yaw = 90 degrees
+);
+
+// Add component to trigger teleport
+store.addComponent(playerRef, Teleport.getComponentType(), teleport);</code></pre>
+            </section>
+
+            <section>
+                <h2>Cross-World Teleportation</h2>
+
+                <h3>Method 1: Teleport component (for loaded worlds)</h3>
+                <pre><code class="language-java">World targetWorld = Universe.get().getWorld("adventure");
+Transform spawnPoint = targetWorld.getWorldConfig()
+    .getSpawnProvider()
+    .getSpawnPoint(targetWorld, playerUuid);
+
+Teleport teleport = Teleport.createForPlayer(targetWorld, spawnPoint);
+store.addComponent(ref, Teleport.getComponentType(), teleport);</code></pre>
+
+                <h3>Method 2: World.addPlayer() (for potentially unloaded worlds)</h3>
+                <pre><code class="language-java">// Returns CompletableFuture&lt;PlayerRef&gt;
+targetWorld.addPlayer(playerRef, spawnPoint);</code></pre>
+
+                <div class="info-box note">
+                    <strong>Note:</strong> <span class="code">World.addPlayer()</span> can accept null spawn points — the server will use a default spawn mechanism.
+                </div>
+            </section>
+
+            <section>
+                <h2>Safety Mechanisms</h2>
+
+                <h3>1. Prevent Double-Teleporting</h3>
+                <p>Check if entity already has Teleport or PendingTeleport:</p>
+                <pre><code class="language-java">Archetype&lt;EntityStore&gt; archetype = store.getArchetype(ref);
+if (archetype.contains(Teleport.getComponentType()) ||
+    archetype.contains(PendingTeleport.getComponentType())) {
+    return; // Already teleporting
+}</code></pre>
+
+                <h3>2. Wait for Client Ready</h3>
+                <pre><code class="language-java">Player player = store.getComponent(ref, Player.getComponentType());
+if (player != null && player.isWaitingForClientReady()) {
+    return; // Client not ready
+}</code></pre>
+
+                <h3>3. Cooldowns</h3>
+                <p>Use <span class="code">TeleportRecord</span>:</p>
+                <pre><code class="language-java">TeleportRecord record = store.getComponent(ref, TeleportRecord.getComponentType());
+if (record != null && !record.hasElapsedSinceLastTeleport(cooldown)) {
+    return; // On cooldown
+}</code></pre>
+            </section>
+
+            <section>
+                <h2>Native Teleporter Behavior</h2>
+                <ul>
+                    <li>Teleporter blocks create temporary instance worlds: <span class="code">instance-&lt;TemplateName&gt;-&lt;uuid&gt;</span></li>
+                    <li>Player is removed from current world → added to instance → returned to original world after</li>
+                    <li><span class="code">PlayerInteractEvent</span> does NOT fire for teleporter interactions</li>
+                    <li><span class="code">DrainPlayerFromWorldEvent</span> does NOT fire for teleporter-triggered transfers</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <strong>Important:</strong> Native teleporters bypass event systems. If you need to track teleportation, use the Teleport component directly.
+                </div>
+            </section>
+
+            <section>
+                <h2>Processing Flow</h2>
+                <ol>
+                    <li>Plugin adds <span class="code">Teleport</span> component to entity</li>
+                    <li>Server ECS detects the component on next tick</li>
+                    <li>Same-world: updates <span class="code">TransformComponent</span> directly</li>
+                    <li>Cross-world: moves entity between world stores</li>
+                    <li><span class="code">Teleport</span> component is removed after processing</li>
+                    <li><span class="code">PendingTeleport</span> may be used for multi-stage teleports</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>Related Components</h2>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code">Teleport</span></td>
+                            <td>Request a teleport operation</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">PendingTeleport</span></td>
+                            <td>Teleport in progress (multi-stage)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">TeleportRecord</span></td>
+                            <td>Tracks teleport history and cooldowns</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">TransformComponent</span></td>
+                            <td>Entity's actual position/rotation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Auto-close sidebar on link click (mobile)
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.sidebar').classList.remove('open');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

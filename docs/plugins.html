@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugin Development Guide - Hytale Server</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html" class="active">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Plugin Development Guide</h1>
+            <p class="page-desc">Everything you need to build, configure, and deploy Hytale server plugins.</p>
+
+            <h2>Plugin Entry Point</h2>
+            <p>Every plugin extends <code>JavaPlugin</code>:</p>
+            <pre><code class="language-java">package com.example.myplugin;
+
+import com.hypixel.hytale.plugin.JavaPlugin;
+import com.hypixel.hytale.plugin.JavaPluginInit;
+import javax.annotation.Nonnull;
+
+public class MyPlugin extends JavaPlugin {
+    public MyPlugin(@Nonnull JavaPluginInit init) {
+        super(init);
+    }
+
+    @Override
+    protected void setup() {
+        getLogger().info("MyPlugin loaded!");
+
+        // Register events
+        getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onConnect);
+
+        // Register commands
+        getCommandRegistry().register(new MyCommand());
+    }
+}</code></pre>
+
+            <h2>Project Setup (Gradle)</h2>
+            <p><code>build.gradle.kts</code>:</p>
+            <pre><code class="language-kotlin">plugins { java }
+group = "com.example.myplugin"
+version = "1.0.0"
+
+repositories {
+    mavenCentral()
+    maven { url = uri("https://maven.hytale.com/release") }
+}
+
+dependencies {
+    compileOnly("com.hypixel.hytale:Server:2026.01.24-6e2d4fc36")
+    implementation(project(":libraries:core"))
+}
+
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+
+tasks.jar {
+    archiveBaseName.set("MyPlugin")
+    archiveVersion.set("")
+    from(configurations.runtimeClasspath.get().map {
+        if (it.isDirectory) it else zipTree(it)
+    })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}</code></pre>
+
+            <p>Add to <code>settings.gradle.kts</code>:</p>
+            <pre><code class="language-kotlin">include("plugins:myplugin")</code></pre>
+
+            <h2>Plugin Manifest</h2>
+            <p><code>src/main/resources/manifest.json</code>:</p>
+            <pre><code class="language-json">{
+  "Group": "com.example",
+  "Name": "MyPlugin",
+  "Main": "com.example.myplugin.MyPlugin",
+  "Version": "1.0.0"
+}</code></pre>
+
+            <h2>Core APIs</h2>
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>API</th>
+                        <th>Access</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Logger</td>
+                        <td><code>getLogger()</code></td>
+                        <td>HytaleLogger for plugin logging</td>
+                    </tr>
+                    <tr>
+                        <td>Event Registry</td>
+                        <td><code>getEventRegistry()</code></td>
+                        <td>Register event handlers</td>
+                    </tr>
+                    <tr>
+                        <td>Command Registry</td>
+                        <td><code>getCommandRegistry()</code></td>
+                        <td>Register commands</td>
+                    </tr>
+                    <tr>
+                        <td>Universe</td>
+                        <td><code>Universe.get()</code></td>
+                        <td>Access worlds and players</td>
+                    </tr>
+                    <tr>
+                        <td>Players</td>
+                        <td><code>Universe.get().getPlayers()</code></td>
+                        <td>List of online players</td>
+                    </tr>
+                    <tr>
+                        <td>Worlds</td>
+                        <td><code>Universe.get().getWorlds()</code></td>
+                        <td>Map of loaded worlds</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Configuration System</h2>
+            <p>Extend <code>ConfigManager</code> from the core library:</p>
+            <pre><code class="language-java">public class MyConfig extends ConfigManager {
+    private String welcomeMessage = "Welcome!";
+    private int maxPlayers = 20;
+
+    public MyConfig() {
+        super("myplugin");  // Creates config/myplugin/config.yml
+    }
+
+    @Override
+    protected ConfigEntry[] getDefaults() {
+        return new ConfigEntry[] {
+            new ConfigEntry("welcome_message", "Welcome!",
+                "Message shown to players on join."),
+            new ConfigEntry("max_players", 20,
+                "Maximum players allowed.")
+        };
+    }
+
+    @Override
+    protected void applyConfig(Map&lt;String, Object&gt; config) {
+        this.welcomeMessage = getString("welcome_message", "Welcome!");
+        this.maxPlayers = getInt("max_players", 20);
+    }
+
+    public String getWelcomeMessage() { return welcomeMessage; }
+    public int getMaxPlayers() { return maxPlayers; }
+}</code></pre>
+
+            <p>Config files are stored in <code>config/&lt;pluginname&gt;/config.yml</code>. Runtime data goes in <code>data/&lt;pluginname&gt;/</code>.</p>
+
+            <h2>Data Mods</h2>
+            <p>Plugins can include Hytale data mods (asset overrides) by adding <code>src/main/assets/</code>:</p>
+            <pre><code>plugins/myplugin/src/main/assets/
+├── manifest.json              # Data mod manifest
+└── Server/                    # Asset files (mirrors Assets.zip)
+    ├── Item/Items/...
+    ├── SoundEvent/...
+    └── Audio/...</code></pre>
+
+            <p>Data mod manifest (<code>src/main/assets/manifest.json</code>):</p>
+            <pre><code class="language-json">{
+  "Group": "com.example",
+  "Name": "MyPluginMod",
+  "Version": "1.0.0"
+}</code></pre>
+
+            <div class="info-box">
+                <strong>Note:</strong> The data mod manifest is separate from the plugin JAR manifest in <code>src/main/resources/</code>.
+            </div>
+
+            <h2>Build &amp; Deploy</h2>
+            <pre><code class="language-bash"># Build all plugins
+./gradlew build
+
+# Build specific plugin
+./gradlew plugins:myplugin:jar
+
+# Deploy to server
+./scripts/remote-deploy.sh parker@cobalt.local
+
+# Deploy without restart
+./scripts/remote-deploy.sh parker@cobalt.local --no-restart
+
+# Run tests
+./gradlew test</code></pre>
+
+            <p>Build output:</p>
+            <pre><code>plugins/myplugin/build/libs/MyPlugin.jar
+plugins/myplugin/build/datamod/    # Only if src/main/assets/ exists</code></pre>
+
+            <h2>Common Patterns</h2>
+
+            <h3>Registering events and commands in setup()</h3>
+            <pre><code class="language-java">@Override
+protected void setup() {
+    // Events
+    getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onConnect);
+    getEventRegistry().registerSystem(KillFeedEvent.Display.class, this::onDeath);
+
+    // Commands
+    getCommandRegistry().register(new SpawnCommand());
+    getCommandRegistry().register(new TeleportCommand());
+
+    // Config
+    MyConfig config = new MyConfig();
+    config.load();
+}</code></pre>
+
+            <h3>Sending messages</h3>
+            <pre><code class="language-java">// To one player
+playerRef.sendMessage(Message.raw("Hello!").color(Color.GREEN));
+
+// Broadcast
+Universe.get().sendMessage(Message.raw("Server announcement"));</code></pre>
+
+            <h3>Scheduling on world thread</h3>
+            <pre><code class="language-java">World world = Universe.get().getWorld("overworld");
+world.execute(() -> {
+    // Entity operations here
+});</code></pre>
+
+            <h2>Quick Reference</h2>
+            <table class="reference-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>How</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Get player by UUID</td>
+                        <td><code>Universe.get().getPlayer(uuid)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Get all players</td>
+                        <td><code>Universe.get().getPlayers()</code></td>
+                    </tr>
+                    <tr>
+                        <td>Get world</td>
+                        <td><code>Universe.get().getWorld("name")</code></td>
+                    </tr>
+                    <tr>
+                        <td>Send message</td>
+                        <td><code>playerRef.sendMessage(Message.raw("text"))</code></td>
+                    </tr>
+                    <tr>
+                        <td>Broadcast</td>
+                        <td><code>Universe.get().sendMessage(msg)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Show title</td>
+                        <td><code>EventTitleUtil.showEventTitleToPlayer(...)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Send notification</td>
+                        <td><code>NotificationUtil.sendNotification(...)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Play sound</td>
+                        <td><code>SoundUtil.playSoundEvent3d(...)</code></td>
+                    </tr>
+                    <tr>
+                        <td>Check permission</td>
+                        <td><code>sender.hasPermission("perm")</code></td>
+                    </tr>
+                    <tr>
+                        <td>Schedule on world thread</td>
+                        <td><code>world.execute(() -> { ... })</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

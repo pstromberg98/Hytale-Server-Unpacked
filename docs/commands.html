@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command System - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html" class="active">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Command System</h1>
+            <p class="page-desc">Creating commands, argument handling, permissions, and thread context.</p>
+
+            <h2>Creating a Command</h2>
+            <p>Extend <code>CommandBase</code> to create a new command:</p>
+            <pre><code class="language-java">public class MyCommand extends CommandBase {
+    private final OptionalArg&lt;String&gt; nameArg;
+    private final RequiredArg&lt;Integer&gt; countArg;
+
+    public MyCommand() {
+        super("mycommand", "Description of the command");
+        this.nameArg = withOptionalArg("name", "Player name", ArgTypes.STRING);
+        this.countArg = withRequiredArg("count", "Number of items", ArgTypes.INT);
+    }
+
+    @Override
+    public boolean hasPermission(CommandSender sender) {
+        return sender.hasPermission("myplugin.mycommand");
+    }
+
+    @Override
+    public void executeSync(CommandContext ctx) {
+        int count = ctx.get(countArg);
+        if (ctx.provided(nameArg)) {
+            String name = ctx.get(nameArg);
+            ctx.sendMessage(Message.raw("Hello " + name + ", count: " + count));
+        }
+    }
+}</code></pre>
+
+            <h2>Registering Commands</h2>
+            <p>Register your commands in the plugin's <code>setup()</code> method:</p>
+            <pre><code class="language-java">@Override
+protected void setup() {
+    getCommandRegistry().register(new MyCommand());
+}</code></pre>
+
+            <h2>Argument Types</h2>
+            <p>The following argument types are available:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ArgType</th>
+                        <th>Java Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ArgTypes.STRING</code></td>
+                        <td><code>String</code></td>
+                        <td>Text string</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.INT</code></td>
+                        <td><code>Integer</code></td>
+                        <td>Integer number</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.FLOAT</code></td>
+                        <td><code>Float</code></td>
+                        <td>Decimal number</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.DOUBLE</code></td>
+                        <td><code>Double</code></td>
+                        <td>Double precision</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.BOOLEAN</code></td>
+                        <td><code>Boolean</code></td>
+                        <td>true/false</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.PLAYER</code></td>
+                        <td><code>PlayerRef</code></td>
+                        <td>Online player</td>
+                    </tr>
+                    <tr>
+                        <td><code>ArgTypes.WORLD</code></td>
+                        <td><code>World</code></td>
+                        <td>Loaded world</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>CommandContext</h2>
+            <div class="info-box warning">
+                <strong>Warning:</strong> <code>CommandContext</code> does NOT have a <code>getPlayer()</code> method. Use <code>ctx.sender().getUuid()</code> to get the player's UUID.
+            </div>
+
+            <p>Key methods available on <code>CommandContext</code>:</p>
+            <ul>
+                <li><code>ctx.sender()</code> — returns <code>CommandSender</code> (has <code>getUuid()</code>, <code>hasPermission()</code>)</li>
+                <li><code>ctx.get(arg)</code> — get argument value</li>
+                <li><code>ctx.provided(arg)</code> — check if optional arg was provided</li>
+                <li><code>ctx.sendMessage(Message)</code> — send response to command sender</li>
+                <li><code>ctx.senderAsPlayerRef()</code> — returns <code>Ref&lt;EntityStore&gt;</code> (requires world thread for Store access!)</li>
+            </ul>
+
+            <h2>Thread Context</h2>
+            <div class="info-box warning">
+                <strong>Warning:</strong> Commands run on ForkJoinPool, NOT the world thread. You CANNOT access the EntityStore directly from <code>executeSync()</code>.
+            </div>
+
+            <p>Use thread-safe APIs from the main thread, and schedule world-thread operations when needed:</p>
+            <pre><code class="language-java">@Override
+public void executeSync(CommandContext ctx) {
+    // Thread-safe operations (main thread):
+    UUID uuid = ctx.sender().getUuid();
+    PlayerRef player = Universe.get().getPlayer(uuid);
+    String name = player.getUsername();        // safe
+    Vector3d pos = player.getTransform().getPosition();  // safe
+
+    // For Store operations, schedule on world thread:
+    World world = player.getWorld();
+    world.execute(() -> {
+        Store&lt;EntityStore&gt; store = world.getEntityStore().getStore();
+        // Store operations safe here
+    });
+}</code></pre>
+
+            <h2>Permission Checking</h2>
+            <p>Override <code>hasPermission()</code> to control command access:</p>
+            <pre><code class="language-java">@Override
+public boolean hasPermission(CommandSender sender) {
+    return sender.hasPermission("myplugin.admin");
+}</code></pre>
+
+            <p>The <code>hasPermission()</code> method checks:</p>
+            <ol>
+                <li>Direct player permissions</li>
+                <li>Group permissions (including wildcards)</li>
+                <li>OP group has <code>"*"</code> wildcard (grants all permissions)</li>
+            </ol>
+
+            <h2>Messages</h2>
+            <p>Send messages to command senders and players:</p>
+            <pre><code class="language-java">// Simple text
+ctx.sendMessage(Message.raw("Hello world"));
+
+// Colored text
+Message msg = Message.raw("Success!").color(Color.GREEN).bold(true);
+ctx.sendMessage(msg);
+
+// Send to specific player
+playerRef.sendMessage(Message.raw("Private message"));
+
+// Broadcast to all players
+Universe.get().sendMessage(Message.raw("Server announcement"));</code></pre>
+
+            <div class="info-box info">
+                <strong>Message Formatting:</strong> Messages support color, bold, italic, and other formatting. Check the <code>Message</code> and <code>Color</code> classes for available options.
+            </div>
+        </div>
+    </main>
+</body>
+</html>

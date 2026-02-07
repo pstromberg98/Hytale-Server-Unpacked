@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permissions System - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html" class="active">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Permissions System</h1>
+            <p class="page-desc">Group-based permissions, op management, custom permissions, and permission events.</p>
+
+            <h2>Overview</h2>
+            <p>Hytale uses a group-based permissions system, NOT a boolean op flag like Minecraft. "Op" is membership in the "OP" group which has the <span class="code">"*"</span> wildcard permission.</p>
+
+            <div class="box box-note">
+                <strong>Note:</strong> There is no <span class="code">isOp()</span> method. Op status is checked via group membership or the '*' wildcard permission.
+            </div>
+
+            <h2>Key Classes</h2>
+
+            <h3>PermissionHolder</h3>
+            <p>Base interface for objects that can hold permissions:</p>
+            <pre><code class="language-java">public interface PermissionHolder {
+    boolean hasPermission(String permission);
+    boolean hasPermission(String permission, boolean defaultValue);
+}</code></pre>
+            <p>Implemented by: <span class="code">CommandSender</span>, <span class="code">Player</span></p>
+
+            <h3>CommandSender</h3>
+            <p>Interface for command senders (extends PermissionHolder):</p>
+            <pre><code class="language-java">public interface CommandSender extends PermissionHolder {
+    String getDisplayName();
+    UUID getUuid();
+}</code></pre>
+
+            <h3>PermissionsModule</h3>
+            <p>Singleton API for permission management:</p>
+            <pre><code class="language-java">PermissionsModule.get()  // Access from anywhere (thread-safe)</code></pre>
+
+            <div class="box box-warning">
+                <strong>Warning:</strong> <span class="code">PlayerRef</span> does NOT implement <span class="code">PermissionHolder</span>. To check permissions, use <span class="code">CommandSender</span> in commands, or get the <span class="code">Player</span> entity component.
+            </div>
+
+            <h2>Checking Permissions</h2>
+
+            <h3>In commands (recommended)</h3>
+            <pre><code class="language-java">@Override
+public boolean hasPermission(CommandSender sender) {
+    return sender.hasPermission("myplugin.admin");
+}
+
+@Override
+public void executeSync(CommandContext ctx) {
+    if (ctx.sender().hasPermission("myplugin.special")) {
+        // authorized
+    }
+}</code></pre>
+
+            <h3>By UUID (any thread)</h3>
+            <pre><code class="language-java">if (PermissionsModule.get().hasPermission(playerUuid, "myplugin.admin")) {
+    // authorized
+}</code></pre>
+
+            <h3>From Player component (world thread)</h3>
+            <pre><code class="language-java">Player player = store.getComponent(ref, Player.getComponentType());
+if (player.hasPermission("myplugin.admin")) {
+    // authorized
+}</code></pre>
+
+            <h2>Default Groups</h2>
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th>Permissions</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Default</td>
+                        <td>(none)</td>
+                        <td>All players are in this group</td>
+                    </tr>
+                    <tr>
+                        <td>OP</td>
+                        <td><span class="code">"*"</span> (wildcard)</td>
+                        <td>Operators — grants all permissions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Op Management</h2>
+
+            <h3>Built-in commands</h3>
+            <ul>
+                <li><span class="code">/op add &lt;player&gt;</span> — grant op</li>
+                <li><span class="code">/op remove &lt;player&gt;</span> — remove op</li>
+                <li><span class="code">/opself</span> — grant yourself op</li>
+            </ul>
+
+            <h3>Plugin API</h3>
+            <pre><code class="language-java">// Grant op
+PermissionsModule.get().addUserToGroup(uuid, "OP");
+
+// Remove op
+PermissionsModule.get().removeUserFromGroup(uuid, "OP");
+
+// Check op status
+Set&lt;String&gt; groups = PermissionsModule.get().getGroupsForUser(uuid);
+boolean isOp = groups.contains("OP");</code></pre>
+
+            <h2>Custom Permissions</h2>
+
+            <h3>Add permissions to a player</h3>
+            <pre><code class="language-java">PermissionsModule.get().addUserPermission(uuid, Set.of("myplugin.admin", "myplugin.teleport"));</code></pre>
+
+            <h3>Add permissions to a group</h3>
+            <pre><code class="language-java">PermissionsModule.get().addGroupPermission("Moderator", Set.of("myplugin.kick", "myplugin.mute"));</code></pre>
+
+            <h3>Add player to custom group</h3>
+            <pre><code class="language-java">PermissionsModule.get().addUserToGroup(uuid, "Moderator");</code></pre>
+
+            <h2>Built-in Permissions</h2>
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th>Permission</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="code">hytale.server.command.*</span></td>
+                        <td>Command base namespace</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.asset.editor</span></td>
+                        <td>Asset editor access</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.builder.tools.editor</span></td>
+                        <td>Builder tools</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.editor.brush.use</span></td>
+                        <td>Use brush tools</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.editor.selection.use</span></td>
+                        <td>Use selection tools</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.editor.selection.clipboard</span></td>
+                        <td>Copy/paste</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.editor.history</span></td>
+                        <td>Undo/redo</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.fly.cam</span></td>
+                        <td>Fly cam mode</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">hytale.server.update.notify</span></td>
+                        <td>Update notifications</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Permission Events</h2>
+            <p>Events fired when permissions change (all implement <span class="code">IBaseEvent</span> — use <span class="code">registerGlobal</span>):</p>
+
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="code">PlayerGroupEvent.Added</span></td>
+                        <td>Player added to group</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">PlayerGroupEvent.Removed</span></td>
+                        <td>Player removed from group</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">PlayerPermissionChangeEvent.PermissionsAdded</span></td>
+                        <td>Permission added to player</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">PlayerPermissionChangeEvent.PermissionsRemoved</span></td>
+                        <td>Permission removed from player</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">GroupPermissionChangeEvent.Added</span></td>
+                        <td>Permission added to group</td>
+                    </tr>
+                    <tr>
+                        <td><span class="code">GroupPermissionChangeEvent.Removed</span></td>
+                        <td>Permission removed from group</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Thread Safety</h2>
+            <div class="box box-tip">
+                <strong>Tip:</strong> <span class="code">PermissionsModule.get()</span> methods are thread-safe and can be called from any thread. <span class="code">Player.hasPermission()</span> requires the world thread.
+            </div>
+        </div>
+    </main>
+</body>
+</html>

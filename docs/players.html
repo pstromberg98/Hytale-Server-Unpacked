@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Players & Persistence - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html" class="active">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Players & Persistence</h1>
+            <p class="page-desc">PlayerRef vs Player component, data storage architecture, and inventory persistence.</p>
+
+            <h2>PlayerRef vs Player</h2>
+            <p>Understanding the difference between PlayerRef and the Player component is essential for working with player data in the Hytale server.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>PlayerRef</th>
+                        <th>Player</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>What</td>
+                        <td>Thread-safe handle</td>
+                        <td>ECS entity component</td>
+                    </tr>
+                    <tr>
+                        <td>Package</td>
+                        <td><code>...universe.player.PlayerRef</code></td>
+                        <td><code>...entity.entities.Player</code></td>
+                    </tr>
+                    <tr>
+                        <td>Thread safety</td>
+                        <td>Any thread</td>
+                        <td>World thread only</td>
+                    </tr>
+                    <tr>
+                        <td>Access</td>
+                        <td><code>Universe.get().getPlayer(uuid)</code></td>
+                        <td><code>store.getComponent(ref, Player.getComponentType())</code></td>
+                    </tr>
+                    <tr>
+                        <td>Key methods</td>
+                        <td>getTransform(), getUsername(), getUuid(), sendMessage(), getPacketHandler()</td>
+                        <td>getInventory(), getHudManager(), getPlayerConfigData(), hasPermission()</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box note">
+                <strong>Note:</strong> Use PlayerRef when possible — it's thread-safe and available from any context. Only access the Player component when you need inventory, HUD, or permission data.
+            </div>
+
+            <h2>Getting PlayerRef from ECS</h2>
+            <p>There are several ways to obtain a PlayerRef depending on your context:</p>
+
+            <pre><code class="language-java"><span class="comment">// From Holder (e.g., AddPlayerToWorldEvent):</span>
+<span class="keyword">PlayerRef</span> playerRef = holder.getComponent(<span class="keyword">PlayerRef</span>.getComponentType());
+
+<span class="comment">// From Ref (e.g., ECS event handler):</span>
+<span class="keyword">PlayerRef</span> playerRef = entityRef.getStore().getComponent(entityRef, <span class="keyword">PlayerRef</span>.getComponentType());
+
+<span class="comment">// From UUID (any thread):</span>
+<span class="keyword">PlayerRef</span> playerRef = <span class="keyword">Universe</span>.get().getPlayer(uuid);
+
+<span class="comment">// From CommandContext:</span>
+<span class="type">UUID</span> uuid = ctx.sender().getUuid();
+<span class="keyword">PlayerRef</span> playerRef = <span class="keyword">Universe</span>.get().getPlayer(uuid);</code></pre>
+
+            <h2>Player Data Storage</h2>
+            <p>Player data is persisted to disk in a structured format:</p>
+
+            <div class="info-box warning">
+                <strong>Warning:</strong> Player data is stored GLOBALLY, not per-world. Inventories persist across all worlds.
+            </div>
+
+            <p>The serialization hierarchy is as follows:</p>
+            <ol>
+                <li><code>EntityStore.REGISTRY.serialize(holder)</code> — saves entire entity</li>
+                <li><code>Player.CODEC</code> → inherits from <code>LivingEntity.CODEC</code> → adds PlayerConfigData</li>
+                <li><code>LivingEntity.CODEC</code> → contains <code>Inventory</code> field</li>
+                <li><code>Inventory.CODEC</code> → serializes all inventory slots</li>
+            </ol>
+
+            <p>Player data files are located at: <code>universe/players/&lt;uuid&gt;.json</code></p>
+
+            <h2>Global vs World-Specific Data</h2>
+
+            <h3>Global data (shared across worlds)</h3>
+            <p>The following data persists globally and is shared across all worlds:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Inventory</td>
+                        <td>All slots — hotbar, storage, armor, crafting</td>
+                    </tr>
+                    <tr>
+                        <td>knownRecipes</td>
+                        <td>Unlocked crafting recipes</td>
+                    </tr>
+                    <tr>
+                        <td>discoveredZones</td>
+                        <td>Visited zone IDs</td>
+                    </tr>
+                    <tr>
+                        <td>discoveredInstances</td>
+                        <td>Visited instance UUIDs</td>
+                    </tr>
+                    <tr>
+                        <td>reputationData</td>
+                        <td>NPC faction reputation scores</td>
+                    </tr>
+                    <tr>
+                        <td>activeObjectiveUUIDs</td>
+                        <td>Active quest/objective IDs</td>
+                    </tr>
+                    <tr>
+                        <td>gameMode</td>
+                        <td>Last known game mode</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>World-specific data (in PlayerConfigData.perWorldData)</h3>
+            <p>Some data is tracked separately for each world:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Respawn points</td>
+                        <td>Bed/checkpoint locations per world</td>
+                    </tr>
+                    <tr>
+                        <td>Movement states</td>
+                        <td>Flying, swimming state per world</td>
+                    </tr>
+                    <tr>
+                        <td>Last position</td>
+                        <td>Spawn point when returning to world</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Inventory Persistence</h2>
+
+            <div class="info-box danger">
+                <strong>Danger:</strong> Inventories are GLOBAL across all worlds. When a player changes worlds, their inventory travels with them. There is no built-in per-world inventory system.
+            </div>
+
+            <p>If you need per-world inventories, you must implement manual swapping:</p>
+
+            <pre><code class="language-java"><span class="comment">// On world change — swap inventories</span>
+<span class="annotation">@EventHandler</span>
+<span class="keyword">void</span> onWorldChange(<span class="keyword">AddPlayerToWorldEvent</span> event) {
+    <span class="comment">// Save current inventory to plugin storage</span>
+    saveInventory(uuid, previousWorld);
+    <span class="comment">// Load inventory for new world</span>
+    loadInventory(uuid, newWorld);
+}</code></pre>
+
+            <h2>Player Connect/Disconnect Lifecycle</h2>
+            <p>The following sequence occurs during player connection and disconnection:</p>
+
+            <ol>
+                <li>Player connects → <code>PlayerConnectEvent</code> fires</li>
+                <li><code>Universe.addPlayer()</code> loads player data from <code>universe/players/&lt;uuid&gt;.json</code></li>
+                <li>Player is added to their last world (or default world)</li>
+                <li><code>AddPlayerToWorldEvent</code> fires</li>
+                <li>On disconnect → <code>PlayerDisconnectEvent</code> fires</li>
+                <li>Player data is saved to disk</li>
+            </ol>
+
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entities & NPCs - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html" class="active">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Entities &amp; NPCs</h1>
+            <p class="page-desc">Spawning custom entities, the NPC API, death detection, and damage sources.</p>
+
+            <h2>Minimum Components for Visible Entity</h2>
+            <p>To spawn an entity visible to clients, you need these components:</p>
+
+            <table class="component-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Purpose</th>
+                        <th>Required?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>NetworkId</td>
+                        <td>Client synchronization</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>TransformComponent</td>
+                        <td>Position and rotation</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>ModelComponent</td>
+                        <td>3D model (entity tracker needs it)</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>BoundingBox</td>
+                        <td>Collision and visibility</td>
+                        <td>Recommended</td>
+                    </tr>
+                    <tr>
+                        <td>Nameplate</td>
+                        <td>Floating text</td>
+                        <td>Optional</td>
+                    </tr>
+                    <tr>
+                        <td>UUIDComponent</td>
+                        <td>UUID for tracking</td>
+                        <td>Optional</td>
+                    </tr>
+                    <tr>
+                        <td>Intangible</td>
+                        <td>Non-collidable</td>
+                        <td>Optional</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <strong>Warning:</strong> ModelComponent is REQUIRED even for 'invisible' entities like floating text. The entity tracker will not register entities without a model.
+            </div>
+
+            <h2>Complete Spawn Pattern</h2>
+            <pre><code class="language-java"><span class="comment">// MUST be on world thread!</span>
+EntityStore entityStore = world.getEntityStore();
+Store&lt;EntityStore&gt; store = entityStore.getStore();
+
+<span class="comment">// Create holder</span>
+Holder&lt;EntityStore&gt; holder = EntityStore.REGISTRY.newHolder();
+
+<span class="comment">// Position</span>
+holder.addComponent(TransformComponent.getComponentType(),
+    <span class="keyword">new</span> TransformComponent(<span class="keyword">new</span> Vector3d(x, y, z), <span class="keyword">new</span> Vector3f(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)));
+
+<span class="comment">// Network ID (required for client visibility)</span>
+holder.addComponent(NetworkId.getComponentType(),
+    <span class="keyword">new</span> NetworkId(entityStore.takeNextNetworkId()));
+
+<span class="comment">// Model with large bounding box for LOD (CRITICAL)</span>
+Box lodBox = Box.horizontallyCentered(<span class="number">3.0</span>, <span class="number">3.0</span>, <span class="number">3.0</span>);
+Model model = Model.createScaledModel(
+    ModelAsset.DEBUG, <span class="number">0.001f</span>, Collections.emptyMap(), lodBox);
+holder.addComponent(ModelComponent.getComponentType(),
+    <span class="keyword">new</span> ModelComponent(model));
+
+<span class="comment">// Bounding box (for collision)</span>
+holder.addComponent(BoundingBox.getComponentType(),
+    <span class="keyword">new</span> BoundingBox(lodBox));
+
+<span class="comment">// Optional: nameplate</span>
+holder.addComponent(Nameplate.getComponentType(),
+    <span class="keyword">new</span> Nameplate(<span class="string">"Hello World"</span>));
+
+<span class="comment">// Optional: non-collidable</span>
+holder.ensureComponent(Intangible.getComponentType());
+
+<span class="comment">// Spawn</span>
+Ref&lt;EntityStore&gt; entityRef = store.addEntity(holder, AddReason.SPAWN);</code></pre>
+
+            <h2>Spawning NPCs</h2>
+            <p>Use the <code>NPCPlugin</code> API:</p>
+
+            <pre><code class="language-java"><span class="comment">// Get role index</span>
+<span class="keyword">int</span> roleIndex = NPCPlugin.get().getIndex(<span class="string">"Zombie"</span>);
+
+<span class="comment">// Spawn</span>
+Store&lt;EntityStore&gt; store = world.getEntityStore().getStore();
+Pair&lt;Ref&lt;EntityStore&gt;, NPCEntity&gt; result = NPCPlugin.get().spawnEntity(
+    store,
+    roleIndex,
+    <span class="keyword">new</span> Vector3d(<span class="number">100</span>, <span class="number">70</span>, <span class="number">100</span>),  <span class="comment">// position</span>
+    <span class="keyword">new</span> Vector3f(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>),       <span class="comment">// rotation</span>
+    <span class="keyword">null</span>,                         <span class="comment">// model (null = use role default)</span>
+    <span class="keyword">null</span>                          <span class="comment">// post-spawn callback</span>
+);
+
+Ref&lt;EntityStore&gt; npcRef = result.first();
+NPCEntity npc = result.second();</code></pre>
+
+            <p>The full version includes pre-add and post-add hooks:</p>
+
+            <pre><code class="language-java">NPCPlugin.get().spawnEntity(store, roleIndex, position, rotation, model,
+    (npc, holder, store) -&gt; { <span class="comment">/* pre-add to world */</span> },
+    (npc, ref, store) -&gt; { <span class="comment">/* post-spawn */</span> }
+);</code></pre>
+
+            <h2>Removing Entities</h2>
+
+            <pre><code class="language-java">store.removeEntity(entityRef, RemoveReason.REMOVE);</code></pre>
+
+            <p><code>RemoveReason</code> values:</p>
+            <ul>
+                <li><code>REMOVE</code> — permanent removal</li>
+                <li><code>UNLOAD</code> — temporary (chunk unloading)</li>
+            </ul>
+
+            <h2>Death Detection</h2>
+            <p>Use <code>KillFeedEvent.Display</code> (an EcsEvent — must use <code>registerSystem</code>):</p>
+
+            <pre><code class="language-java">plugin.getEventRegistry().registerSystem(
+    KillFeedEvent.Display.class,
+    (victimRef, event, accessor) -&gt; {
+        <span class="comment">// victimRef IS the entity that died</span>
+
+        <span class="comment">// Check if NPC</span>
+        NPCEntity npc = accessor.getComponent(victimRef, NPCEntity.getComponentType());
+
+        <span class="comment">// Get victim UUID</span>
+        UUIDComponent uuid = accessor.getComponent(victimRef, UUIDComponent.getComponentType());
+
+        <span class="comment">// Get killer</span>
+        Damage damage = event.getDamage();
+        Damage.Source source = damage.getSource();
+
+        <span class="keyword">if</span> (source <span class="keyword">instanceof</span> Damage.EntitySource entitySource) {
+            Ref&lt;EntityStore&gt; killerRef = entitySource.getRef();
+            PlayerRef killer = accessor.getComponent(killerRef, PlayerRef.getComponentType());
+        }
+    }
+);</code></pre>
+
+            <div class="danger-box">
+                <strong>Danger:</strong> KillFeedEvent.Display is an EcsEvent. Using registerGlobal() will compile but silently fail. Use registerSystem().
+            </div>
+
+            <h2>Damage Sources</h2>
+            <p>Different damage sources are represented by these types:</p>
+
+            <table class="component-table">
+                <thead>
+                    <tr>
+                        <th>Source Type</th>
+                        <th>Description</th>
+                        <th>Key Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Damage.EntitySource</td>
+                        <td>Killed by entity</td>
+                        <td>getRef()</td>
+                    </tr>
+                    <tr>
+                        <td>Damage.ProjectileSource</td>
+                        <td>Killed by projectile (extends EntitySource)</td>
+                        <td>getProjectile()</td>
+                    </tr>
+                    <tr>
+                        <td>Damage.EnvironmentSource</td>
+                        <td>Fall, fire, etc.</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Damage.CommandSource</td>
+                        <td>Killed by command</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Damage.NULL_SOURCE</td>
+                        <td>Unknown</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Entity Visibility Flow</h2>
+            <ol>
+                <li>Entity needs <code>NetworkId</code> + <code>ModelComponent</code> → entity tracker registers it</li>
+                <li>Tracker auto-adds <code>Visible</code> component when players are nearby</li>
+                <li>View distance: <code>playerViewRadius * 32</code> blocks (default ~192 blocks)</li>
+                <li><code>NameplateSystems</code> sends floating text for entities with <code>Visible</code> + <code>Nameplate</code></li>
+                <li>LOD culler checks Model's bounding box → removes <code>Visible</code> if too small for distance</li>
+            </ol>
+
+            <h2>Getting UUID from Entity</h2>
+
+            <pre><code class="language-java">UUIDComponent uuidComp = store.getComponent(entityRef, UUIDComponent.getComponentType());
+UUID uuid = uuidComp.getUuid();</code></pre>
+
+            <div class="info-box">
+                <strong>Note:</strong> NPCEntity does NOT have a getUuid() method. Use UUIDComponent instead.
+            </div>
+        </div>
+    </main>
+</body>
+</html>

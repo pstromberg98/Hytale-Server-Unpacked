@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event System - Hytale Server Documentation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html" class="active">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Event System</h1>
+            <p class="page-desc">Two distinct event types, registration patterns, and critical gotchas.</p>
+
+            <section>
+                <h2>Two Event Types</h2>
+                <div class="box danger">
+                    <strong>DANGER:</strong> Hytale has TWO completely different event systems. Using the wrong registration method will silently fail with no errors.
+                </div>
+
+                <p><strong>IBaseEvent</strong> — Traditional global events</p>
+                <ul>
+                    <li>Registered with <code>plugin.getEventRegistry().registerGlobal()</code></li>
+                    <li>Examples: PlayerConnectEvent, PlayerDisconnectEvent, PlayerChatEvent, AddPlayerToWorldEvent</li>
+                </ul>
+
+                <p><strong>EcsEvent</strong> — Entity-specific events tied to the ECS</p>
+                <ul>
+                    <li>Registered with <code>plugin.getEventRegistry().registerSystem()</code></li>
+                    <li>Examples: UseBlockEvent.Pre, KillFeedEvent.Display, CancellableEcsEvent subclasses</li>
+                    <li>Receives the entity ref, event, and ComponentAccessor</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>IBaseEvent Registration</h2>
+                <p>Register a global event handler for traditional event types:</p>
+                <pre><code><span class="keyword">// Register a global event</span>
+<span class="keyword">plugin</span>.getEventRegistry().registerGlobal(
+    PlayerConnectEvent.<span class="keyword">class</span>,
+    <span class="keyword">this</span>::onPlayerConnect
+);
+
+<span class="keyword">// Handler</span>
+<span class="keyword">private void</span> onPlayerConnect(PlayerConnectEvent event) {
+    PlayerRef player = event.getPlayerRef();
+    player.sendMessage(Message.raw(<span class="string">"Welcome!"</span>));
+}</code></pre>
+            </section>
+
+            <section>
+                <h2>EcsEvent Registration</h2>
+                <p>Register an ECS event system for entity-specific events:</p>
+                <pre><code><span class="keyword">// Register an ECS event system</span>
+<span class="keyword">plugin</span>.getEventRegistry().registerSystem(
+    KillFeedEvent.Display.<span class="keyword">class</span>,
+    <span class="keyword">this</span>::onEntityDeath
+);
+
+<span class="keyword">// Handler — receives entity ref, event, and accessor</span>
+<span class="keyword">private void</span> onEntityDeath(
+    Ref&lt;EntityStore&gt; victimRef,
+    KillFeedEvent.Display event,
+    ComponentAccessor&lt;EntityStore&gt; accessor
+) {
+    <span class="keyword">// victimRef IS the entity that died</span>
+    UUIDComponent uuid = accessor.getComponent(victimRef, UUIDComponent.getComponentType());
+    Damage damage = event.getDamage();
+}</code></pre>
+            </section>
+
+            <section>
+                <h2>Critical Gotcha</h2>
+                <div class="box danger">
+                    <strong>SILENT FAILURE:</strong> EcsEvent subclasses do NOT implement IBaseEvent. If you use registerGlobal() with an EcsEvent, the code compiles but the handler NEVER fires. No error, no warning — it just silently does nothing.
+                </div>
+
+                <p><strong>Wrong:</strong></p>
+                <pre><code><span class="keyword">// COMPILES but NEVER FIRES!</span>
+<span class="keyword">plugin</span>.getEventRegistry().registerGlobal(
+    KillFeedEvent.Display.<span class="keyword">class</span>,  <span class="keyword">// This is an EcsEvent!</span>
+    <span class="keyword">this</span>::onDeath
+);</code></pre>
+
+                <p><strong>Right:</strong></p>
+                <pre><code><span class="keyword">// Correct — use registerSystem for EcsEvent</span>
+<span class="keyword">plugin</span>.getEventRegistry().registerSystem(
+    KillFeedEvent.Display.<span class="keyword">class</span>,
+    <span class="keyword">this</span>::onDeath
+);</code></pre>
+            </section>
+
+            <section>
+                <h2>Common Events Reference</h2>
+
+                <h3>IBaseEvent (use registerGlobal)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>PlayerConnectEvent</td>
+                            <td>Player joins server</td>
+                        </tr>
+                        <tr>
+                            <td>PlayerDisconnectEvent</td>
+                            <td>Player leaves server</td>
+                        </tr>
+                        <tr>
+                            <td>PlayerChatEvent</td>
+                            <td>Player sends chat message</td>
+                        </tr>
+                        <tr>
+                            <td>AddPlayerToWorldEvent</td>
+                            <td>Player added to a world (fires on world transfer too)</td>
+                        </tr>
+                        <tr>
+                            <td>PlayerInteractEvent</td>
+                            <td>Player interacts with something</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="box note">
+                    <strong>Note:</strong> AddPlayerToWorldEvent is read-only — you cannot change which world the player is added to.
+                </div>
+
+                <h3>EcsEvent (use registerSystem)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>UseBlockEvent.Pre</td>
+                            <td>Before block interaction</td>
+                        </tr>
+                        <tr>
+                            <td>UseBlockEvent.Post</td>
+                            <td>After block interaction</td>
+                        </tr>
+                        <tr>
+                            <td>KillFeedEvent.Display</td>
+                            <td>Entity death with kill feed</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>Event Threading</h2>
+                <p>All event handlers run on the world thread. Store operations are safe inside event handlers.</p>
+                <div class="box tip">
+                    <strong>Tip:</strong> Since events run on the world thread, you can access the EntityStore directly without needing world.execute().
+                </div>
+            </section>
+
+            <section>
+                <h2>Events That DON'T Fire</h2>
+                <div class="box warning">
+                    <strong>Warning:</strong> Some events you might expect to fire, don't:
+                    <ul>
+                        <li>PlayerInteractEvent does NOT fire for teleporter/portal block interactions</li>
+                        <li>DrainPlayerFromWorldEvent does NOT fire for teleporter-triggered world transfers</li>
+                        <li>There are NO events for builder tool selection changes</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <style>
+        /* Syntax highlighting spans */
+        .keyword { color: #0077aa; font-weight: bold; }
+        .string { color: #669900; }
+    </style>
+</body>
+</html>

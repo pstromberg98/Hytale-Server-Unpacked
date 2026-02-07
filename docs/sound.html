@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound &amp; Audio - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html" class="active">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main"><div class="content">
+        <h1>Sound &amp; Audio</h1>
+        <p class="page-desc">Playing sounds, music control, custom audio via data mods, and the SoundUtil API.</p>
+
+        <h2>Overview</h2>
+        <p>Sounds are asset-driven and referenced by string IDs, converted to integer indices for network transmission. All playback goes through <code>SoundUtil</code> static methods.</p>
+
+        <div class="warning-box">
+            <strong>⚠️ Threading Warning:</strong> All SoundUtil methods must be called from the world thread. Use <code>world.execute()</code> from commands.
+        </div>
+
+        <h2>Sound Categories</h2>
+        <p>Sounds are organized into categories for independent volume control:</p>
+        <pre><code class="language-java"><span class="keyword">SoundCategory</span>.Music    <span class="comment">// Background music</span>
+<span class="keyword">SoundCategory</span>.Ambient  <span class="comment">// Environmental sounds</span>
+<span class="keyword">SoundCategory</span>.SFX      <span class="comment">// Sound effects (most gameplay sounds)</span>
+<span class="keyword">SoundCategory</span>.UI       <span class="comment">// User interface sounds</span></code></pre>
+
+        <h2>Sound Event Resolution</h2>
+        <p>Sounds are identified by string IDs at runtime, then converted to integer indices:</p>
+        <pre><code class="language-java"><span class="comment">// Convert sound ID string to integer index</span>
+<span class="keyword">int</span> soundIndex = <span class="keyword">SoundEvent</span>.getAssetMap().getIndex(<span class="string">"Game/Combat/Sword_Hit"</span>);
+
+<span class="comment">// Check if sound exists</span>
+<span class="keyword">int</span> index = <span class="keyword">SoundEvent</span>.getAssetMap().getIndexOrDefault(<span class="string">"Game/Combat/Sword_Hit"</span>, -<span class="number">1</span>);
+<span class="keyword">if</span> (index != -<span class="number">1</span>) {
+    <span class="comment">// Sound exists</span>
+}</code></pre>
+
+        <div class="info-box">
+            <strong>ℹ️ Note:</strong> Sound event IDs are case-sensitive string paths like <code>'Game/Combat/Sword_Hit'</code>.
+        </div>
+
+        <h2>3D Positional Sounds</h2>
+        <p>Sounds that emanate from a world position with distance attenuation:</p>
+        <pre><code class="language-java"><span class="comment">// Basic 3D sound</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);
+
+<span class="comment">// With volume and pitch modifiers</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z,
+    <span class="number">1.0f</span>,  <span class="comment">// volume (1.0 = default)</span>
+    <span class="number">1.0f</span>,  <span class="comment">// pitch (1.0 = default)</span>
+    accessor);
+
+<span class="comment">// To specific player only</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent3dToPlayer(playerRef, soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);
+
+<span class="comment">// With player filter</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z,
+    <span class="number">1.0f</span>, <span class="number">1.0f</span>,
+    ref -&gt; shouldHear(ref),  <span class="comment">// Predicate&lt;Ref&lt;EntityStore&gt;&gt;</span>
+    accessor);</code></pre>
+
+        <h2>2D Non-Positional Sounds</h2>
+        <p>Constant volume regardless of position (ideal for UI sounds and global effects):</p>
+        <pre><code class="language-java"><span class="comment">// To all players in world</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent2d(soundIndex, <span class="keyword">SoundCategory</span>.UI, accessor);
+
+<span class="comment">// To specific player</span>
+<span class="keyword">SoundUtil</span>.playSoundEvent2dToPlayer(playerRef, soundIndex, <span class="keyword">SoundCategory</span>.UI, accessor);</code></pre>
+
+        <h2>Entity-Attached Sounds</h2>
+        <p>Sounds that follow an entity as it moves:</p>
+        <pre><code class="language-java"><span class="comment">// Attach sound to entity by network ID</span>
+<span class="keyword">SoundUtil</span>.playSoundEventEntity(soundIndex, entityNetworkId, accessor);
+
+<span class="comment">// With volume/pitch</span>
+<span class="keyword">SoundUtil</span>.playSoundEventEntity(soundIndex, entityNetworkId, <span class="number">1.0f</span>, <span class="number">1.0f</span>, accessor);</code></pre>
+
+        <p>For continuous entity audio, use <code>AudioComponent</code>:</p>
+        <pre><code class="language-java"><span class="keyword">AudioComponent</span> audio = <span class="keyword">new</span> <span class="keyword">AudioComponent</span>();
+audio.addSound(loopSoundIndex);
+store.addComponent(entityRef, audio);</code></pre>
+
+        <h2>Volume &amp; Pitch</h2>
+        <p>Sound properties use linear multipliers:</p>
+        <ul>
+            <li><strong>Volume:</strong> 1.0 = default, 0.5 = half, 2.0 = double</li>
+            <li><strong>Pitch:</strong> 1.0 = default, 0.5 = one octave down, 2.0 = one octave up</li>
+        </ul>
+
+        <p>For dB/semitone conversion, use <code>AudioUtil</code>:</p>
+        <pre><code class="language-java"><span class="keyword">float</span> linear = <span class="keyword">AudioUtil</span>.decibelsToLinearGain(-<span class="number">6.0f</span>);
+<span class="keyword">float</span> pitch = <span class="keyword">AudioUtil</span>.semitonesToLinearPitch(<span class="number">12.0f</span>); <span class="comment">// +1 octave</span></code></pre>
+
+        <h2>Custom Sounds via Data Mods</h2>
+        <p>Add custom sounds to your plugin by extending the data mod:</p>
+
+        <h3>File Structure</h3>
+        <pre><code class="language-text">plugins/yourplugin/src/main/assets/
+├── manifest.json
+└── Server/
+    ├── SoundEvent/YourSounds/custom_sound.json
+    └── Audio/YourSounds/sound_file.ogg</code></pre>
+
+        <h3>Sound Event Definition</h3>
+        <p>Create <code>Server/SoundEvent/YourSounds/custom_sound.json</code>:</p>
+        <pre><code class="language-json">{
+  <span class="string">"id"</span>: <span class="string">"YourPlugin/Custom_Sound"</span>,
+  <span class="string">"volume"</span>: <span class="number">1.0</span>,
+  <span class="string">"pitch"</span>: <span class="number">1.0</span>,
+  <span class="string">"startAttenuationDistance"</span>: <span class="number">8.0</span>,
+  <span class="string">"maxDistance"</span>: <span class="number">32.0</span>,
+  <span class="string">"maxInstance"</span>: <span class="number">5</span>,
+  <span class="string">"layers"</span>: [
+    {
+      <span class="string">"files"</span>: [<span class="string">"YourSounds/sound_file.ogg"</span>],
+      <span class="string">"volumeVariance"</span>: <span class="number">0.1</span>,
+      <span class="string">"pitchVariance"</span>: <span class="number">0.05</span>
+    }
+  ]
+}</code></pre>
+
+        <h3>Audio Requirements</h3>
+        <ul>
+            <li><strong>Format:</strong> OGG Vorbis</li>
+            <li><strong>Sample Rate:</strong> 44100 Hz recommended</li>
+            <li><strong>Channels:</strong> Mono or stereo</li>
+        </ul>
+
+        <h3>Playing Custom Sounds</h3>
+        <pre><code class="language-java"><span class="keyword">int</span> soundIndex = <span class="keyword">SoundEvent</span>.getAssetMap().getIndex(<span class="string">"YourPlugin/Custom_Sound"</span>);
+<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);</code></pre>
+
+        <h2>Music Control</h2>
+        <p>Background music is controlled via the AmbienceFX system:</p>
+        <ul>
+            <li><code>AmbienceFX.getAssetMap()</code> — get ambience definitions</li>
+            <li>Built-in command: <code>/setmusic &lt;ambience_fx_id&gt;</code></li>
+        </ul>
+
+        <h2>Sound Event Properties</h2>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>volume</code></td>
+                    <td>Base volume multiplier (1.0 = default)</td>
+                </tr>
+                <tr>
+                    <td><code>pitch</code></td>
+                    <td>Base pitch multiplier (1.0 = default)</td>
+                </tr>
+                <tr>
+                    <td><code>startAttenuationDistance</code></td>
+                    <td>Distance (blocks) where volume begins decreasing</td>
+                </tr>
+                <tr>
+                    <td><code>maxDistance</code></td>
+                    <td>Maximum audible distance (blocks)</td>
+                </tr>
+                <tr>
+                    <td><code>maxInstance</code></td>
+                    <td>Maximum simultaneous plays of this sound</td>
+                </tr>
+                <tr>
+                    <td><code>preventSoundInterruption</code></td>
+                    <td>Don't stop if already playing</td>
+                </tr>
+                <tr>
+                    <td><code>layers</code></td>
+                    <td>Multiple audio layers with randomization</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div></main>
+</body>
+</html>

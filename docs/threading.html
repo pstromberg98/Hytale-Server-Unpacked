@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threading Model - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+        </div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html" class="active">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Threading Model</h1>
+            <p class="page-desc">Critical threading rules for Hytale server plugin development. Violating these rules causes crashes.</p>
+
+            <!-- The Golden Rule -->
+            <section>
+                <h2>The Golden Rule</h2>
+                <div class="danger-box">
+                    <strong>⚠️ CRITICAL:</strong> ALL entity store operations MUST be called from the world thread. Calling Store methods from the wrong thread throws <code>IllegalStateException: Assert not in thread!</code>
+                </div>
+            </section>
+
+            <!-- Thread Context Reference -->
+            <section>
+                <h2>Thread Context Reference</h2>
+                <p>Each context runs on a different thread. Understand where your code executes:</p>
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Context</th>
+                            <th>Thread</th>
+                            <th>Safe for Store?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>CommandBase.executeSync()</code></td>
+                            <td>ForkJoinPool</td>
+                            <td class="no">❌ NO</td>
+                        </tr>
+                        <tr>
+                            <td><code>Interaction.firstRun()</code></td>
+                            <td>World thread</td>
+                            <td class="yes">✓ YES</td>
+                        </tr>
+                        <tr>
+                            <td>Event handlers</td>
+                            <td>World thread</td>
+                            <td class="yes">✓ YES</td>
+                        </tr>
+                        <tr>
+                            <td><code>World.execute(Runnable)</code></td>
+                            <td>World thread</td>
+                            <td class="yes">✓ YES</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Thread-Safe Operations -->
+            <section>
+                <h2>Thread-Safe Operations</h2>
+                <p>These operations can be safely called from ANY thread:</p>
+
+                <h3>PlayerRef Methods</h3>
+                <ul>
+                    <li><code>playerRef.getTransform()</code> — position/rotation</li>
+                    <li><code>playerRef.getUsername()</code> — player name</li>
+                    <li><code>playerRef.getUuid()</code> — UUID</li>
+                    <li><code>playerRef.sendMessage(Message)</code> — sends chat message</li>
+                </ul>
+
+                <h3>Other Thread-Safe APIs</h3>
+                <ul>
+                    <li><code>PacketHandler.writeNoCache()</code> — send packets</li>
+                    <li><code>PermissionsModule.get()</code> methods</li>
+                    <li><code>EventTitleUtil.showEventTitleToPlayer()</code></li>
+                    <li><code>NotificationUtil.sendNotification()</code></li>
+                </ul>
+            </section>
+
+            <!-- Getting Player Data from Commands -->
+            <section>
+                <h2>Getting Player Data from Commands</h2>
+                <p>Commands execute on a ForkJoinPool thread, not the world thread. Here are two recommended approaches:</p>
+
+                <h3>Approach 1 (Recommended): Use Thread-Safe PlayerRef + Schedule Store Ops</h3>
+                <p>Get thread-safe data directly, then schedule Store operations on the world thread:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
+    <span class="type">PlayerRef</span> playerRef = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(ctx.<span class="fn">sender</span>().<span class="fn">getUuid</span>());
+    <span class="type">Vector3d</span> position = playerRef.<span class="fn">getTransform</span>().<span class="fn">getPosition</span>(); <span class="comment">// thread-safe</span>
+
+    <span class="type">World</span> world = playerRef.<span class="fn">getWorld</span>();
+    world.<span class="fn">execute</span>(() -> {
+        <span class="comment">// Store operations here — now on world thread</span>
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+        <span class="comment">// ...</span>
+    });
+}</code></pre>
+
+                <h3>Approach 2: Schedule Everything on World Thread</h3>
+                <p>If you need extensive Store access, schedule the entire operation:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
+    <span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+    world.<span class="fn">execute</span>(() -> {
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+        <span class="type">TransformComponent</span> transform = store.<span class="fn">getComponent</span>(ref, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>());
+        <span class="comment">// all Store ops safe here</span>
+    });
+}</code></pre>
+            </section>
+
+            <!-- World.execute() Pattern -->
+            <section>
+                <h2>World.execute() Pattern</h2>
+                <p><code>World</code> extends <code>TickingThread</code> which implements <code>Executor</code>. The <code>world.execute(Runnable)</code> method queues code to run on the world's tick thread, making it safe for all Store operations.</p>
+                <p>This is the standard way to bridge from any thread back to the world thread:</p>
+                <pre><code>world.<span class="fn">execute</span>(() -> {
+    <span class="comment">// Safe to access Store here</span>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+});</code></pre>
+            </section>
+
+            <!-- Delayed Execution -->
+            <section>
+                <h2>Delayed Execution</h2>
+                <p>For delayed work that requires Store access, use the scheduled executor then dispatch to the world thread:</p>
+                <pre><code><span class="type">HytaleServer</span>.<span class="fn">SCHEDULED_EXECUTOR</span>.<span class="fn">schedule</span>(() -> {
+    world.<span class="fn">execute</span>(() -> {
+        <span class="comment">// runs on world thread after delay</span>
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    });
+}, <span class="str">1000</span>, <span class="type">TimeUnit</span>.MILLISECONDS);</code></pre>
+
+                <div class="warning-box">
+                    <strong>⚠️ WARNING:</strong> <code>HytaleServer.SCHEDULED_EXECUTOR</code> runs on a background thread, NOT the world thread. Always wrap Store operations in <code>world.execute()</code>.
+                </div>
+            </section>
+
+            <!-- Common Mistakes -->
+            <section>
+                <h2>Common Mistakes</h2>
+                <p>Here are dangerous patterns to avoid:</p>
+
+                <h3>❌ WRONG: Accessing Store from Command Thread</h3>
+                <p>This will crash with <code>IllegalStateException</code>:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = ref.<span class="fn">getStore</span>();  <span class="comment">// CRASH!</span>
+}</code></pre>
+
+                <h3>✓ RIGHT: Schedule on World Thread</h3>
+                <p>This is safe:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
+    <span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+    world.<span class="fn">execute</span>(() -> {
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>(); <span class="comment">// Safe!</span>
+    });
+}</code></pre>
+            </section>
+
+            <!-- Store Operation Reference -->
+            <section>
+                <h2>Store Operation Reference</h2>
+                <p>All of these operations MUST be called from the world thread:</p>
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Description</th>
+                            <th>Thread</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Store.getComponent()</code></td>
+                            <td>Get component</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.ensureAndGetComponent()</code></td>
+                            <td>Get or create</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.addEntity()</code></td>
+                            <td>Spawn entity</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.removeEntity()</code></td>
+                            <td>Despawn entity</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.hasComponent()</code></td>
+                            <td>Check component</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.putComponent()</code></td>
+                            <td>Add/update component</td>
+                            <td>World thread</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.removeComponent()</code></td>
+                            <td>Remove component</td>
+                            <td>World thread</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('menuToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+    </script>
+</body>
+</html>

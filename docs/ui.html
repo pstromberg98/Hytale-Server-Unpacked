@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI & HUD Rendering - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html" class="active">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>UI &amp; HUD Rendering</h1>
+            <p class="page-desc">All methods for displaying text and UI elements on player screens.</p>
+
+            <h2>Overview</h2>
+            <p>The server provides four main systems for rendering UI to players. No actionbar/hotbar text system exists like Minecraft.</p>
+
+            <h2>1. Event Titles (Center Screen)</h2>
+            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.util.EventTitleUtil</span></p>
+            <p><strong>Best for:</strong> Large announcements, zone entry, countdowns, phase changes.</p>
+
+            <pre><code>// Show title to single player
+EventTitleUtil.showEventTitleToPlayer(
+    playerRef,
+    Message.raw("Round Starting"),        // primary title
+    Message.raw("Get Ready!"),            // subtitle
+    true,                                  // isMajor (larger appearance)
+    null,                                  // icon (nullable)
+    4.0f,                                  // duration (seconds)
+    1.5f,                                  // fade in (seconds)
+    1.5f                                   // fade out (seconds)
+);
+
+// Simplified version (4s duration, 1.5s fade)
+EventTitleUtil.showEventTitleToPlayer(playerRef, title, subtitle, true);
+
+// Hide title
+EventTitleUtil.hideEventTitleFromPlayer(playerRef, 0.5f);
+
+// Broadcast to all in world
+EventTitleUtil.showEventTitleToWorld(..., store);
+
+// Broadcast to universe
+EventTitleUtil.showEventTitleToUniverse(...);</code></pre>
+
+            <div class="info-box tip">
+                <strong>TIP:</strong> EventTitleUtil methods that take PlayerRef are thread-safe and can be called from commands.
+            </div>
+
+            <h2>2. Notifications (Toast-style)</h2>
+            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.util.NotificationUtil</span></p>
+            <p><strong>Best for:</strong> Short alerts, achievements, item pickups, errors.</p>
+
+            <pre><code>// Simple notification
+NotificationUtil.sendNotification(
+    playerRef.getPacketHandler(),
+    Message.raw("Flag captured!")
+);
+
+// Styled notification
+NotificationUtil.sendNotification(
+    playerRef.getPacketHandler(),
+    Message.raw("You died!"),
+    Message.raw("Killed by zombie"),     // secondary (nullable)
+    null,                                 // icon (nullable)
+    null,                                 // item icon (nullable)
+    NotificationStyle.Danger              // style
+);
+
+// Broadcast to universe
+NotificationUtil.sendNotificationToUniverse(message);</code></pre>
+
+            <h3>Notification Styles</h3>
+            <p><span class="code">NotificationStyle</span> enum:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Style</th>
+                        <th>Appearance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Default</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>Danger</td>
+                        <td>Red/dangerous</td>
+                    </tr>
+                    <tr>
+                        <td>Warning</td>
+                        <td>Yellow/caution</td>
+                    </tr>
+                    <tr>
+                        <td>Success</td>
+                        <td>Green/positive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <strong>TIP:</strong> PacketHandler methods are thread-safe — you can send notifications from any thread.
+            </div>
+
+            <h2>3. Custom HUD (Advanced Overlays)</h2>
+            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud</span></p>
+            <p><strong>Best for:</strong> Persistent scoreboards, stat displays, dynamic counters.</p>
+
+            <pre><code>public class ScoreHud extends CustomUIHud {
+    private int score;
+
+    public ScoreHud(PlayerRef playerRef) {
+        super(playerRef);
+        this.score = 0;
+    }
+
+    @Override
+    protected void build(UICommandBuilder builder) {
+        builder.set("score.text", Message.raw("Score: " + score));
+        builder.set("score.visible", true);
+    }
+
+    public void updateScore(int newScore) {
+        this.score = newScore;
+        UICommandBuilder builder = new UICommandBuilder();
+        builder.set("score.text", Message.raw("Score: " + score));
+        update(false, builder);  // false = don't clear
+    }
+}
+
+// Usage (must be on world thread):
+Player player = store.getComponent(ref, Player.getComponentType());
+ScoreHud hud = new ScoreHud(playerRef);
+player.getHudManager().setCustomHud(playerRef, hud);
+hud.show();</code></pre>
+
+            <div class="info-box warning">
+                <strong>WARNING:</strong> Custom HUD requires knowledge of Hytale's internal UI element paths. There is no public documentation of available paths. For simple text, use EventTitle or Notification instead.
+            </div>
+
+            <h3>UICommandBuilder Methods</h3>
+            <ul>
+                <li><span class="code">builder.set(path, value)</span> — set text, boolean, number</li>
+                <li><span class="code">builder.clear(path)</span> — clear element</li>
+                <li><span class="code">builder.remove(path)</span> — remove element</li>
+                <li><span class="code">builder.append(path)</span> — append element</li>
+            </ul>
+
+            <h2>4. HUD Component Visibility</h2>
+            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.entity.entities.player.hud.HudManager</span></p>
+            <p>Control which native UI elements are visible:</p>
+
+            <pre><code>// Get HudManager (world thread only)
+Player player = store.getComponent(ref, Player.getComponentType());
+HudManager hudManager = player.getHudManager();
+
+// Hide specific components
+hudManager.hideHudComponents(playerRef, HudComponent.Health, HudComponent.Hotbar);
+
+// Show specific components
+hudManager.showHudComponents(playerRef, HudComponent.Chat);
+
+// Hide ALL UI (cinematic mode)
+hudManager.setVisibleHudComponents(playerRef); // empty = hide all
+
+// Reset to defaults
+hudManager.resetHud(playerRef);</code></pre>
+
+            <h3>Available HudComponents</h3>
+            <p>24 total HUD components:</p>
+            <div class="component-grid">
+                <div class="component-column">
+                    <ul>
+                        <li>Hotbar</li>
+                        <li>StatusIcons</li>
+                        <li>Reticle</li>
+                        <li>Chat</li>
+                        <li>Requests</li>
+                        <li>Notifications</li>
+                        <li>KillFeed</li>
+                        <li>InputBindings</li>
+                        <li>PlayerList</li>
+                        <li>EventTitle</li>
+                        <li>Compass</li>
+                        <li>ObjectivePanel</li>
+                    </ul>
+                </div>
+                <div class="component-column">
+                    <ul>
+                        <li>PortalPanel</li>
+                        <li>BuilderToolsLegend</li>
+                        <li>Speedometer</li>
+                        <li>UtilitySlotSelector</li>
+                        <li>BlockVariantSelector</li>
+                        <li>BuilderToolsMaterialSlotSelector</li>
+                        <li>Stamina</li>
+                        <li>AmmoIndicator</li>
+                        <li>Health</li>
+                        <li>Mana</li>
+                        <li>Oxygen</li>
+                        <li>Sleep</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <strong>WARNING:</strong> HudManager requires the Player component — must be accessed from the world thread.
+            </div>
+
+            <h2>5. Objective Panel</h2>
+            <p><strong>Best for:</strong> Quest tracking with checkboxes.</p>
+            <p>Uses <span class="code">TrackOrUpdateObjective</span>, <span class="code">UpdateObjectiveTask</span>, <span class="code">UntrackObjective</span> packets. Asset-driven (requires localization keys). No high-level utility class — must construct packets manually.</p>
+
+            <h2>Thread Safety Summary</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>System</th>
+                        <th>Thread Safety</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EventTitleUtil (PlayerRef)</td>
+                        <td>Any thread</td>
+                    </tr>
+                    <tr>
+                        <td>NotificationUtil (PacketHandler)</td>
+                        <td>Any thread</td>
+                    </tr>
+                    <tr>
+                        <td>CustomUIHud</td>
+                        <td>World thread (Player component)</td>
+                    </tr>
+                    <tr>
+                        <td>HudManager</td>
+                        <td>World thread (Player component)</td>
+                    </tr>
+                    <tr>
+                        <td>Direct packets</td>
+                        <td>Any thread (PacketHandler)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

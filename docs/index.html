@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hytale Server Documentation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+        </div>
+        <nav>
+            <a href="index.html" class="active">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <div class="content">
+            <h1>Hytale Server Documentation</h1>
+            <p class="page-desc">Internal reference for the Hytale dedicated server architecture, systems, and plugin development.</p>
+
+            <h2>Architecture Overview</h2>
+            <p>The Hytale server is a <strong>Java 25</strong> application built on an <strong>Entity Component System (ECS)</strong> architecture. Unlike traditional object-oriented game servers, entities are not class instances you extend &mdash; they are collections of <em>components</em> stored in a typed <em>Store</em>.</p>
+
+            <h3>Core Hierarchy</h3>
+<div class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│                       Universe                          │
+│  Singleton: Universe.get()                              │
+│  Manages all worlds, players, and global state          │
+│                                                         │
+│  ┌─────────────────────┐  ┌─────────────────────┐      │
+│  │     World "lobby"   │  │  World "adventure"  │ ...  │
+│  │  (TickingThread)    │  │  (TickingThread)     │      │
+│  │                     │  │                      │      │
+│  │  ┌───────────────┐  │  │  ┌───────────────┐   │      │
+│  │  │  EntityStore   │  │  │  │  EntityStore   │   │      │
+│  │  │               │  │  │  │               │   │      │
+│  │  │  Entity A:    │  │  │  │  Entity X:    │   │      │
+│  │  │   Transform   │  │  │  │   Transform   │   │      │
+│  │  │   Model       │  │  │  │   Model       │   │      │
+│  │  │   PlayerRef   │  │  │  │   NPCEntity   │   │      │
+│  │  │   Nameplate   │  │  │  │   BoundingBox │   │      │
+│  │  │               │  │  │  │               │   │      │
+│  │  │  Entity B:    │  │  │  │  Entity Y:    │   │      │
+│  │  │   Transform   │  │  │  │   Transform   │   │      │
+│  │  │   Model       │  │  │  │   Model       │   │      │
+│  │  │   NetworkId   │  │  │  │   Nameplate   │   │      │
+│  │  └───────────────┘  │  │  └───────────────┘   │      │
+│  └─────────────────────┘  └─────────────────────┘      │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │                 PlayerStorage                    │   │
+│  │  universe/players/&lt;uuid&gt;.json                    │   │
+│  │  Global data: inventory, recipes, game mode      │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+</div>
+
+            <h3>Key Concepts</h3>
+            <ul>
+                <li><strong>Universe</strong> &mdash; The singleton root that owns all worlds and players</li>
+                <li><strong>World</strong> &mdash; Each world is a <code>TickingThread</code> with its own entity store and tick loop</li>
+                <li><strong>EntityStore</strong> &mdash; The ECS database for a world, storing all entities and their components</li>
+                <li><strong>Component</strong> &mdash; Pure data attached to entities (Transform, Model, PlayerRef, etc.)</li>
+                <li><strong>PlayerRef</strong> &mdash; Thread-safe handle to a player, usable from any thread</li>
+                <li><strong>Store / Ref / Holder</strong> &mdash; ECS primitives for querying, referencing, and constructing entities</li>
+            </ul>
+
+            <h2>Documentation</h2>
+
+            <h3>Architecture</h3>
+            <div class="cards">
+                <a href="ecs.html" class="card">
+                    <h3>ECS Architecture</h3>
+                    <p>Entity Component System: Stores, Holders, Refs, Components, and how entities are composed.</p>
+                </a>
+                <a href="threading.html" class="card">
+                    <h3>Threading Model</h3>
+                    <p>The Golden Rule, thread contexts, world scheduling, and thread-safe operations.</p>
+                </a>
+                <a href="worlds.html" class="card">
+                    <h3>Worlds &amp; Universe</h3>
+                    <p>World creation, the Universe singleton, cross-world operations, and instance worlds.</p>
+                </a>
+            </div>
+
+            <h3>Systems</h3>
+            <div class="cards">
+                <a href="players.html" class="card">
+                    <h3>Players &amp; Persistence</h3>
+                    <p>PlayerRef vs Player component, data storage, inventory persistence, and connect lifecycle.</p>
+                </a>
+                <a href="events.html" class="card">
+                    <h3>Event System</h3>
+                    <p>IBaseEvent vs EcsEvent, registration patterns, common events, and critical gotchas.</p>
+                </a>
+                <a href="commands.html" class="card">
+                    <h3>Command System</h3>
+                    <p>CommandBase, arguments, permissions, thread context, and registration.</p>
+                </a>
+                <a href="teleportation.html" class="card">
+                    <h3>Teleportation</h3>
+                    <p>Teleport component, same-world and cross-world transfer, safety mechanisms.</p>
+                </a>
+            </div>
+
+            <h3>Client-Facing</h3>
+            <div class="cards">
+                <a href="ui.html" class="card">
+                    <h3>UI &amp; HUD</h3>
+                    <p>Titles, notifications, custom HUDs, HUD component visibility control.</p>
+                </a>
+                <a href="sound.html" class="card">
+                    <h3>Sound &amp; Audio</h3>
+                    <p>3D/2D sounds, entity audio, sound categories, custom sounds via data mods.</p>
+                </a>
+            </div>
+
+            <h3>Entities &amp; Permissions</h3>
+            <div class="cards">
+                <a href="entities.html" class="card">
+                    <h3>Entities &amp; NPCs</h3>
+                    <p>Spawning entities, NPC API, death detection, damage sources, LOD culling.</p>
+                </a>
+                <a href="permissions.html" class="card">
+                    <h3>Permissions</h3>
+                    <p>Group-based permissions, op management, custom permissions, permission events.</p>
+                </a>
+            </div>
+
+            <h3>Development</h3>
+            <div class="cards">
+                <a href="plugins.html" class="card">
+                    <h3>Plugin Development</h3>
+                    <p>JavaPlugin entry point, project setup, configuration, data mods, deployment.</p>
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

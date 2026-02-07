@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worlds &amp; Universe - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+        </div>
+        <nav>
+            <a href="index.html">Overview</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html" class="active">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="content">
+            <h1>Worlds &amp; Universe</h1>
+            <p class="page-desc">How the Hytale server organizes worlds, the Universe singleton, and cross-world operations.</p>
+
+            <h2>The Universe Singleton</h2>
+            <p><span class="type">Universe</span> is the global entry point for accessing worlds, players, and server state. Every server has exactly one Universe instance, accessible via <span class="fn">Universe.get()</span>.</p>
+
+            <h3>Key Methods</h3>
+            <div class="code-block">
+<pre><span class="type">Universe</span> universe = <span class="type">Universe</span>.<span class="fn">get</span>();
+
+<span class="comment">// Access all online players</span>
+<span class="type">List</span>&lt;<span class="type">PlayerRef</span>&gt; players = universe.<span class="fn">getPlayers</span>();
+
+<span class="comment">// Get a specific player by UUID</span>
+<span class="type">PlayerRef</span> player = universe.<span class="fn">getPlayer</span>(uuid);
+
+<span class="comment">// Access all worlds</span>
+<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">World</span>&gt; worlds = universe.<span class="fn">getWorlds</span>();
+
+<span class="comment">// Get a world by name</span>
+<span class="type">World</span> world = universe.<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="comment">// Get a world by UUID</span>
+<span class="type">World</span> world = universe.<span class="fn">getWorld</span>(worldUuid);
+
+<span class="comment">// Broadcast a message to all players</span>
+universe.<span class="fn">sendMessage</span>(message);</pre>
+            </div>
+
+            <div class="info-box note">
+                <div class="label">Thread Safety</div>
+                <p>Universe methods are thread-safe. You can call <span class="fn">getPlayers()</span>, <span class="fn">getPlayer(UUID)</span>, <span class="fn">getWorlds()</span>, and <span class="fn">getWorld()</span> from any thread. However, to perform operations on worlds or their entities, you must use <span class="fn">world.execute(Runnable)</span> to queue work on the world's tick thread.</p>
+            </div>
+
+            <h2>World as TickingThread</h2>
+            <p>Each <span class="type">World</span> is a <span class="type">TickingThread</span> — a self-contained execution context with its own thread and tick loop. This design ensures that all entity operations within a world are serialized and occur on the same thread.</p>
+
+            <h3>Core Concepts</h3>
+            <ul>
+                <li><strong>World extends TickingThread:</strong> Each world has its own dedicated thread that advances the tick loop. All entity updates happen on this thread.</li>
+                <li><strong>Isolated EntityStore:</strong> Each world has its own <span class="type">EntityStore</span> containing all entities in that world. Entities in one world are completely separate from entities in another world.</li>
+                <li><strong>Executor pattern:</strong> <span class="type">World</span> extends <span class="type">Executor</span>, allowing you to queue work via <span class="fn">execute(Runnable)</span>.</li>
+            </ul>
+
+            <h3>Queuing Work on a World Thread</h3>
+            <div class="code-block">
+<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="comment">// Queue a runnable on the world's tick thread</span>
+world.<span class="fn">execute</span>(() -> {
+    <span class="comment">// This code runs on the world thread, safe to access EntityStore</span>
+    <span class="type">EntityStore</span> store = world.<span class="fn">getEntityStore</span>();
+    <span class="comment">// ... do entity operations ...</span>
+});
+
+<span class="comment">// Check if you're already on the world thread</span>
+<span class="kw">if</span> (world.<span class="fn">isInThread</span>()) {
+    <span class="comment">// You're safe to access world entities directly</span>
+}</pre>
+            </div>
+
+            <div class="info-box warning">
+                <div class="label">Critical Threading Rule</div>
+                <p>Never access one world's <span class="type">EntityStore</span> from another world's thread or from a background thread. Always use <span class="fn">world.execute()</span> to schedule work on the correct world thread. Violating this can cause race conditions and data corruption.</p>
+            </div>
+
+            <h2>Accessing the EntityStore</h2>
+            <p>The <span class="type">EntityStore</span> holds all entities in a world, organized as components in an ECS system.</p>
+
+            <div class="code-block">
+<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+world.<span class="fn">execute</span>(() -> {
+    <span class="comment">// Get the EntityStore</span>
+    <span class="type">EntityStore</span> entityStore = world.<span class="fn">getEntityStore</span>();
+
+    <span class="comment">// Get the underlying Store&lt;EntityStore&gt; for component access</span>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = entityStore.<span class="fn">getStore</span>();
+
+    <span class="comment">// Iterate all entities in the world</span>
+    entityStore.<span class="fn">forEach</span>(ref -> {
+        <span class="type">PlayerRef</span> playerRef = store.<span class="fn">getComponent</span>(ref, <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
+    });
+});</pre>
+            </div>
+
+            <h2>World Configuration</h2>
+            <p>Each world has configuration settings accessed via <span class="fn">getWorldConfig()</span>.</p>
+
+            <div class="code-block">
+<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="comment">// Get the world config</span>
+<span class="type">WorldConfig</span> config = world.<span class="fn">getWorldConfig</span>();
+
+<span class="comment">// Get the spawn point provider</span>
+<span class="type">SpawnProvider</span> spawnProvider = config.<span class="fn">getSpawnProvider</span>();
+
+<span class="comment">// Get the spawn position for a player</span>
+<span class="type">Vector3d</span> spawnPos = spawnProvider.<span class="fn">getSpawnPoint</span>(world, playerUuid);
+
+<span class="comment">// Get world name</span>
+<span class="type">String</span> worldName = world.<span class="fn">getName</span>();</pre>
+            </div>
+
+            <h2>Cross-World Operations</h2>
+            <p>Moving a player between worlds requires careful coordination. Since each world has its own thread and <span class="type">EntityStore</span>, you cannot simply move a player reference from one world to another. Use the proper transfer methods.</p>
+
+            <div class="info-box warning">
+                <div class="label">Cross-World Thread Safety</div>
+                <p>Each world has its own thread. You cannot directly access one world's <span class="type">EntityStore</span> from another world's thread. Always queue operations on the target world's thread using <span class="fn">world.execute()</span>.</p>
+            </div>
+
+            <h3>Method 1: addPlayer (Recommended)</h3>
+            <p>The safest way to transfer a player to another world is using <span class="fn">World.addPlayer()</span>, which returns a <span class="type">CompletableFuture&lt;PlayerRef&gt;</span> that completes when the transfer is done.</p>
+
+            <div class="code-block">
+<pre><span class="type">World</span> targetWorld = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
+<span class="type">Transform</span> spawnPoint = targetWorld.<span class="fn">getWorldConfig</span>()
+    .<span class="fn">getSpawnProvider</span>()
+    .<span class="fn">getSpawnPoint</span>(targetWorld, playerUuid);
+
+<span class="comment">// Transfer player to target world</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">PlayerRef</span>&gt; future = targetWorld.<span class="fn">addPlayer</span>(playerRef, spawnPoint);
+
+<span class="comment">// Handle completion</span>
+future.<span class="fn">thenAccept</span>(newPlayerRef -> {
+    <span class="comment">// Player has been transferred and is now in the target world</span>
+});</pre>
+            </div>
+
+            <h3>Method 2: Teleport Component</h3>
+            <p>For loaded worlds, you can also use the <span class="type">Teleport</span> component to transfer players. This is less safe than <span class="fn">addPlayer()</span> but works for quick transfers.</p>
+
+            <div class="code-block">
+<pre>world.<span class="fn">execute</span>(() -> {
+    <span class="type">World</span> targetWorld = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"dungeon"</span>);
+    <span class="type">Transform</span> destination = <span class="type">Transform</span>.<span class="fn">create</span>(x, y, z, yaw, pitch);
+
+    <span class="comment">// Create teleport component</span>
+    <span class="type">Teleport</span> teleport = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(targetWorld, destination);
+
+    <span class="comment">// Add to player entity</span>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    store.<span class="fn">addComponent</span>(playerRef, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), teleport);
+});</pre>
+            </div>
+
+            <h2>Instance Worlds</h2>
+            <p>Teleporter blocks create temporary instance worlds that are isolated from the main world. Players enter the instance, complete the challenge, and return to their original location.</p>
+
+            <h3>Instance World Naming</h3>
+            <p>Instance worlds follow the naming pattern: <span class="code">instance-&lt;TemplateName&gt;-&lt;uuid&gt;</span></p>
+            <p>Examples:</p>
+            <ul>
+                <li><span class="code">instance-Forgotten_Temple-a1b2c3d4</span></li>
+                <li><span class="code">instance-Ancient_Tomb-f7e8d9c0</span></li>
+            </ul>
+
+            <h3>Instance Lifecycle</h3>
+            <ol>
+                <li><strong>Creation:</strong> When a player interacts with a teleporter, an instance world is created from the template.</li>
+                <li><strong>Populated:</strong> The player is added to the instance world and spawned at the designated entry point.</li>
+                <li><strong>Isolated:</strong> The instance is completely separate from the main world. Other players cannot enter the same instance.</li>
+                <li><strong>Cleanup:</strong> When the player exits (via teleporter or leaving the instance), the instance world may be cleaned up.</li>
+            </ol>
+
+            <div class="info-box note">
+                <div class="label">Instance State</div>
+                <p>Instance worlds are created on demand and destroyed when empty. Each instance is independent — progress in one instance does not affect other instances of the same template.</p>
+            </div>
+
+            <h2>Player Storage</h2>
+            <p>Player data is stored globally across all worlds in the player storage system, not per-world.</p>
+
+            <div class="code-block">
+<pre><span class="comment">// Get the player storage system</span>
+<span class="type">PlayerStorage</span> storage = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayerStorage</span>();
+
+<span class="comment">// Load player data from disk</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; holder = storage.<span class="fn">load</span>(playerUuid);
+
+<span class="comment">// Save player data to disk</span>
+storage.<span class="fn">save</span>(playerUuid, holder);
+
+<span class="comment">// Check if player exists</span>
+<span class="kw">boolean</span> exists = storage.<span class="fn">exists</span>(playerUuid);</pre>
+            </div>
+
+            <h3>Player Data Location</h3>
+            <p>Player data is stored in: <span class="code">universe/players/&lt;uuid&gt;.json</span></p>
+            <p>This path is relative to the server's data directory and contains all persistent data for the player, regardless of which world they're in.</p>
+
+            <div class="info-box note">
+                <div class="label">Persistence Timing</div>
+                <p>Player data is typically loaded on login and saved on logout. Some plugins may save data periodically or on demand. Always call <span class="fn">save()</span> explicitly if you modify player components and need to persist changes immediately.</p>
+            </div>
+
+            <h2>Summary</h2>
+            <p>The Universe and World systems provide a clean abstraction for managing multiple worlds and players:</p>
+            <ul>
+                <li><strong>Universe:</strong> Global singleton for accessing all worlds and players.</li>
+                <li><strong>World:</strong> Self-contained execution context with its own thread and entities.</li>
+                <li><strong>EntityStore:</strong> Component store for all entities in a world.</li>
+                <li><strong>Cross-world transfer:</strong> Use <span class="fn">addPlayer()</span> or the Teleport component.</li>
+                <li><strong>Player storage:</strong> Persists globally, not per-world.</li>
+            </ul>
+        </div>
+    </main>
+</body>
+</html>
