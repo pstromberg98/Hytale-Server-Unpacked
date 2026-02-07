@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Packs &amp; Resources - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <a href="data-packs.html" class="active">Data Packs</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <nav class="page-toc"></nav>
+        <div class="content">
+            <h1>Data Packs &amp; Resources</h1>
+            <p class="page-desc">How asset packs are discovered, loaded, validated, hot-reloaded, and synchronized to clients &mdash; and how they drive every gameplay system.</p>
+
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Almost every piece of game content in Hytale &mdash; block types, items, sounds, particles, crafting recipes, world generation rules, NPC behaviors &mdash; is defined as a <strong>JSON asset</strong> inside a <strong>data pack</strong>. The server discovers packs at startup, parses them through a codec-driven pipeline, stores the results in typed <span class="type">AssetStore</span> registries, and synchronizes them to clients via generated packets.</p>
+
+<div class="diagram">Pack Discovery &rarr; Pre-load Built-ins &rarr; Dependency Sort &rarr; Load &amp; Parse JSON
+        &rarr; Validate &rarr; Generate Packets &rarr; Dispatch Events &rarr; Ready</div>
+
+                <p>This data-driven architecture means plugins and mods can add, replace, or remove content without touching Java code &mdash; just drop JSON files into a pack directory.</p>
+            </section>
+
+            <section id="asset-packs">
+                <h2>Asset Packs</h2>
+                <p>An <span class="type">AssetPack</span> is a directory (or ZIP/JAR) containing a <code>manifest.json</code> and a <code>Server/</code> subdirectory with asset JSON files. The manifest declares the pack name, version, and optional plugin metadata.</p>
+
+                <h3>Directory Layout</h3>
+<pre><code><span class="comment">// Typical asset pack structure</span>
+MyPack/
+  manifest.json
+  Server/
+    BlockType/
+      granite.json
+      marble.json
+    Item/
+      iron_sword.json
+    SoundEvent/
+      hit_stone.json
+    CraftingRecipe/
+      iron_sword_recipe.json</code></pre>
+
+                <h3>Pack Sources</h3>
+                <div class="table-wrapper"><table class="api-table">
+                    <thead><tr><th>Source</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>Asset directories</td><td>Configured paths scanned for pack folders</td></tr>
+                        <tr><td>Mods path</td><td>User-installed mod packs</td></tr>
+                        <tr><td>Plugin packs</td><td>Bundled inside plugin JARs &mdash; extracted automatically</td></tr>
+                        <tr><td>ZIP/JAR archives</td><td>Immutable packs (no hot-reload support)</td></tr>
+                    </tbody>
+                </table></div>
+
+                <div class="info-box note"><strong>Immutable packs:</strong> ZIP and JAR packs are read-only. The <span class="type">AssetMonitor</span> file watcher skips them, so changes require a server restart.</div>
+            </section>
+
+            <section id="asset-store">
+                <h2>AssetStore&lt;K, T, M&gt;</h2>
+                <p>Each asset type gets its own <span class="type">AssetStore</span> &mdash; a typed registry that maps string IDs to parsed asset objects. The server extension <span class="type">HytaleAssetStore</span> adds network packet generation and hot-reload notifications.</p>
+
+                <h3>Type Parameters</h3>
+                <div class="table-wrapper"><table class="api-table">
+                    <thead><tr><th>Parameter</th><th>Role</th><th>Example</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="type">K</span></td><td>Key type (usually <span class="type">String</span>)</td><td><code>"Hytale:Granite"</code></td></tr>
+                        <tr><td><span class="type">T</span></td><td>Asset value type</td><td><span class="type">BlockType</span>, <span class="type">Item</span></td></tr>
+                        <tr><td><span class="type">M</span></td><td>Backing map implementation</td><td><span class="type">IndexedAssetMap</span></td></tr>
+                    </tbody>
+                </table></div>
+
+                <h3>Key API</h3>
+<pre><code><span class="comment">// Retrieve an asset by namespaced ID</span>
+<span class="type">BlockType</span> granite = <span class="type">BlockType</span>.STORE.<span class="fn">getAsset</span>(<span class="str">"Hytale:Granite"</span>);
+
+<span class="comment">// Iterate all assets of a type</span>
+<span class="type">Item</span>.STORE.<span class="fn">forEach</span>((id, item) -> {
+    logger.<span class="fn">info</span>(<span class="str">"Loaded item: {}"</span>, id);
+});
+
+<span class="comment">// Check existence</span>
+<span class="kw">boolean</span> exists = <span class="type">SoundEvent</span>.STORE.<span class="fn">containsAsset</span>(<span class="str">"MyMod:CustomSound"</span>);</code></pre>
+
+                <div class="info-box tip"><strong>O(1) lookups:</strong> <span class="type">IndexedAssetMap</span> assigns each asset a numeric index, enabling both string-keyed and integer-indexed access. Network packets use the integer form for efficiency.</div>
+            </section>
+
+            <section id="asset-registry">
+                <h2>AssetRegistry &amp; Registration</h2>
+                <p><span class="type">AssetRegistry</span> is the global singleton that tracks all <span class="type">AssetStore</span> instances. It uses read/write locks for thread-safe access and provides ordered iteration via dependency constraints.</p>
+
+                <p>The <span class="type">AssetRegistryLoader</span> (843 lines) registers <strong>80+ asset stores</strong> at startup, organized into categories:</p>
+
+                <div class="table-wrapper"><table class="api-table">
+                    <thead><tr><th>Category</th><th>Asset Types</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Blocks</strong></td><td><span class="type">BlockType</span>, <span class="type">Fluid</span>, <span class="type">BlockSet</span>, <span class="type">BlockGroup</span></td></tr>
+                        <tr><td><strong>Items</strong></td><td><span class="type">Item</span>, <span class="type">CraftingRecipe</span>, <span class="type">ItemCategory</span></td></tr>
+                        <tr><td><strong>Audio</strong></td><td><span class="type">SoundEvent</span>, <span class="type">SoundSet</span>, <span class="type">BlockSoundSet</span>, <span class="type">ItemSoundSet</span>, <span class="type">AudioCategory</span>, <span class="type">ReverbEffect</span>, <span class="type">EqualizerEffect</span>, <span class="type">AmbienceFX</span></td></tr>
+                        <tr><td><strong>Visuals</strong></td><td><span class="type">ParticleSystem</span>, <span class="type">ParticleSpawner</span>, <span class="type">ModelAsset</span>, <span class="type">ModelVFX</span>, <span class="type">Trail</span>, <span class="type">EntityEffect</span>, <span class="type">Weather</span>, <span class="type">Environment</span></td></tr>
+                        <tr><td><strong>Gameplay</strong></td><td><span class="type">GameplayConfig</span>, <span class="type">Projectile</span>, <span class="type">DamageCause</span>, <span class="type">GameModeType</span>, <span class="type">TagPattern</span></td></tr>
+                        <tr><td><strong>World Gen</strong></td><td><span class="type">DensityAsset</span>, <span class="type">BiomeAsset</span>, <span class="type">WorldStructureAsset</span>, <span class="type">MaterialProviderAsset</span>, <span class="type">EnvironmentProviderAsset</span></td></tr>
+                    </tbody>
+                </table></div>
+            </section>
+
+            <section id="loading-pipeline">
+                <h2>Loading Pipeline</h2>
+                <p>Asset loading follows a strict four-phase pipeline managed by <span class="type">AssetModule</span>:</p>
+
+                <h3>Phase 1: Pack Discovery</h3>
+                <p><span class="type">AssetModule</span>.<span class="fn">setup</span>() scans configured asset directories and mods folders, reads each pack's <code>manifest.json</code>, and registers packs based on enabled/disabled configuration.</p>
+
+                <h3>Phase 2: Pre-load Built-ins</h3>
+                <p><span class="type">AssetRegistryLoader</span>.<span class="fn">preLoadAssets</span>() initializes sentinel values that must exist before any JSON is parsed:</p>
+<pre><code><span class="comment">// Built-in sentinels registered before pack loading</span>
+<span class="type">BlockType</span>.EMPTY   <span class="comment">// ID 0 &mdash; air/void</span>
+<span class="type">BlockType</span>.UNKNOWN <span class="comment">// fallback for missing references</span>
+<span class="type">Item</span>.UNKNOWN      <span class="comment">// fallback for missing item refs</span></code></pre>
+
+                <h3>Phase 3: Dependency-Ordered Loading</h3>
+                <p><span class="type">AssetStoreIterator</span> topologically sorts stores using <code>loadsAfter</code> / <code>loadsBefore</code> constraints, then for each store:</p>
+                <ol>
+                    <li>Scan <code>&lt;pack&gt;/Server/&lt;assetPath&gt;/*.json</code> across all enabled packs</li>
+                    <li>Parse JSON through the store's <strong>Codec</strong> (schema-driven deserialization)</li>
+                    <li>Validate references (e.g., a recipe referencing a non-existent item)</li>
+                    <li>Generate client-sync packets via <span class="type">AssetPacketGenerator</span></li>
+                </ol>
+
+                <h3>Phase 4: Event Dispatch</h3>
+                <p>Once all stores are loaded, the system fires events so plugins can react:</p>
+<pre><code><span class="comment">// Fired once when all assets finish loading</span>
+eventBus.<span class="fn">dispatch</span>(<span class="kw">new</span> <span class="type">LoadAssetEvent</span>());
+
+<span class="comment">// Fired per asset type for targeted hooks</span>
+eventBus.<span class="fn">dispatch</span>(<span class="kw">new</span> <span class="type">LoadedAssetsEvent</span>&lt;<span class="type">BlockType</span>&gt;(blockTypeStore));</code></pre>
+
+                <div class="info-box warning"><strong>Load order matters:</strong> Assets load BEFORE plugins initialize. If your plugin needs to reference assets, use <span class="type">LoadedAssetsEvent</span> or access stores in <code>onEnable()</code>, not in the constructor.</div>
+            </section>
+
+            <section id="codec-system">
+                <h2>Codec Serialization</h2>
+                <p>Every asset type defines a <strong>Codec</strong> that maps JSON fields to Java object fields. Codecs are composable, support optional fields with defaults, and handle nested types automatically.</p>
+
+<pre><code><span class="comment">// Simplified codec pattern for an asset type</span>
+<span class="kw">public static final</span> <span class="type">Codec</span>&lt;<span class="type">MyAsset</span>&gt; CODEC = <span class="type">RecordCodecBuilder</span>.<span class="fn">create</span>(i -> i.<span class="fn">group</span>(
+    <span class="type">Codec</span>.STRING.<span class="fn">fieldOf</span>(<span class="str">"name"</span>).<span class="fn">forGetter</span>(<span class="type">MyAsset</span>::name),
+    <span class="type">Codec</span>.INT.<span class="fn">optionalFieldOf</span>(<span class="str">"maxStack"</span>, <span class="num">64</span>).<span class="fn">forGetter</span>(<span class="type">MyAsset</span>::maxStack),
+    <span class="type">BlockType</span>.CODEC.<span class="fn">fieldOf</span>(<span class="str">"blockType"</span>).<span class="fn">forGetter</span>(<span class="type">MyAsset</span>::blockType)
+).<span class="fn">apply</span>(i, <span class="type">MyAsset</span>::<span class="kw">new</span>));</code></pre>
+
+                <p>The codec system also handles <strong>persistence</strong> &mdash; entities, player data, and chunk data use the same codec infrastructure to serialize to BSON/JSON for storage.</p>
+            </section>
+
+            <section id="network-sync">
+                <h2>Client Synchronization</h2>
+                <p>When a player joins, the server sends the full asset registry so the client can render blocks, play sounds, and display items correctly.</p>
+
+                <h3>Packet Flow</h3>
+<div class="diagram">Player Joins &rarr; AssetPacketGenerator creates init packets
+    &rarr; sendAssets(packetHandler) &rarr; Client receives full registry
+    &rarr; Client renders world with correct assets</div>
+
+                <h3>Packet Caching</h3>
+                <p><span class="type">HytaleAssetStore</span> caches generated packets using <span class="type">SoftReference</span>&lt;<span class="type">Packet</span>[]&gt;. Packets are only regenerated when assets change, avoiding redundant serialization for each connecting player.</p>
+
+                <p>For <span class="type">IndexedAssetMap</span>-backed stores, numeric IDs are used in packets instead of string keys, significantly reducing bandwidth.</p>
+            </section>
+
+            <section id="hot-reload">
+                <h2>Hot Reload</h2>
+                <p>The <span class="type">AssetMonitor</span> watches pack directories using Java's <span class="type">WatchService</span> API. When files change at runtime:</p>
+
+                <div class="table-wrapper"><table class="api-table">
+                    <thead><tr><th>File Event</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>CREATE</code> / <code>MODIFY</code></td><td>Re-parse JSON, update store, broadcast update packets to all clients</td></tr>
+                        <tr><td><code>DELETE</code></td><td>Remove asset from store, send removal packets</td></tr>
+                    </tbody>
+                </table></div>
+
+<pre><code><span class="comment">// Hot reload flow (internal)</span>
+<span class="type">AssetMonitor</span> detects file change
+  &rarr; <span class="type">AssetStore</span>.<span class="fn">reloadAsset</span>(path)
+    &rarr; re-parse with Codec
+    &rarr; invalidate cached packets
+    &rarr; <span class="type">AssetPacketGenerator</span>.<span class="fn">generateUpdatePacket</span>()
+      &rarr; broadcast to all connected players</code></pre>
+
+                <div class="info-box tip"><strong>Live iteration:</strong> You can edit block types, item properties, sound events, and crafting recipes while the server is running. Changes are reflected immediately without a restart (directory packs only).</div>
+            </section>
+
+            <section id="ecs-integration">
+                <h2>ECS Integration</h2>
+                <p>Assets are the bridge between data and gameplay. ECS components reference assets by ID, and systems read asset properties to drive behavior:</p>
+
+<pre><code><span class="comment">// A block placement reads the BlockType asset for properties</span>
+<span class="type">BlockType</span> type = <span class="type">BlockType</span>.STORE.<span class="fn">getAsset</span>(blockId);
+<span class="kw">boolean</span> solid = type.<span class="fn">isSolid</span>();
+<span class="kw">float</span> hardness = type.<span class="fn">getHardness</span>();
+<span class="type">BlockSoundSet</span> sounds = type.<span class="fn">getSoundSet</span>();
+
+<span class="comment">// An item component references its asset</span>
+<span class="type">Item</span> item = <span class="type">Item</span>.STORE.<span class="fn">getAsset</span>(itemStack.<span class="fn">getItemId</span>());
+<span class="kw">int</span> maxDurability = item.<span class="fn">getMaxDurability</span>();
+
+<span class="comment">// Sound systems look up SoundEvent assets</span>
+<span class="type">SoundEvent</span> evt = <span class="type">SoundEvent</span>.STORE.<span class="fn">getAsset</span>(<span class="str">"Hytale:HitStone"</span>);
+<span class="type">SoundUtil</span>.<span class="fn">playSound3D</span>(world, evt, position);</code></pre>
+
+                <p>Missing asset references fall back to sentinel values (<span class="type">BlockType</span>.UNKNOWN, <span class="type">Item</span>.UNKNOWN) rather than crashing, ensuring server stability when packs are misconfigured.</p>
+            </section>
+
+            <section id="creating-data-packs">
+                <h2>Creating a Data Pack</h2>
+                <p>To add custom content, create a pack directory with the correct structure:</p>
+
+                <h3>1. Create manifest.json</h3>
+<pre><code>{
+    <span class="str">"name"</span>: <span class="str">"MyContentPack"</span>,
+    <span class="str">"version"</span>: <span class="str">"1.0.0"</span>,
+    <span class="str">"description"</span>: <span class="str">"Custom blocks, items, and sounds"</span>
+}</code></pre>
+
+                <h3>2. Add Asset JSON Files</h3>
+<pre><code><span class="comment">// Server/BlockType/ruby_ore.json</span>
+{
+    <span class="str">"name"</span>: <span class="str">"MyPack:RubyOre"</span>,
+    <span class="str">"hardness"</span>: <span class="num">4.5</span>,
+    <span class="str">"solid"</span>: <span class="kw">true</span>,
+    <span class="str">"soundSet"</span>: <span class="str">"Hytale:Stone"</span>
+}
+
+<span class="comment">// Server/Item/ruby.json</span>
+{
+    <span class="str">"name"</span>: <span class="str">"MyPack:Ruby"</span>,
+    <span class="str">"maxStack"</span>: <span class="num">64</span>,
+    <span class="str">"category"</span>: <span class="str">"Materials"</span>
+}
+
+<span class="comment">// Server/CraftingRecipe/ruby_pickaxe.json</span>
+{
+    <span class="str">"name"</span>: <span class="str">"MyPack:RubyPickaxe"</span>,
+    <span class="str">"result"</span>: <span class="str">"MyPack:RubyPickaxe"</span>,
+    <span class="str">"ingredients"</span>: [<span class="str">"MyPack:Ruby"</span>, <span class="str">"Hytale:Stick"</span>]
+}</code></pre>
+
+                <h3>3. Place in Asset Directory</h3>
+                <p>Drop the pack folder into the server's configured asset directory. For directory packs, changes are hot-reloaded automatically.</p>
+            </section>
+
+            <section id="plugin-assets">
+                <h2>Plugin-Bundled Assets</h2>
+                <p>Plugins can bundle asset packs inside their JAR files. The server extracts and loads them alongside standalone packs:</p>
+
+<pre><code><span class="comment">// Plugin registers assets via LoadedAssetsEvent</span>
+<span class="anno">@Override</span>
+<span class="kw">public void</span> <span class="fn">onEnable</span>() {
+    <span class="fn">getEventRegistry</span>().<span class="fn">register</span>(<span class="type">LoadedAssetsEvent</span>.<span class="kw">class</span>, event -> {
+        <span class="comment">// React to specific asset types finishing load</span>
+        <span class="kw">if</span> (event.<span class="fn">getStoreType</span>() == <span class="type">BlockType</span>.<span class="kw">class</span>) {
+            logger.<span class="fn">info</span>(<span class="str">"All block types loaded: {}"</span>, event.<span class="fn">getCount</span>());
+        }
+    });
+}</code></pre>
+
+                <div class="info-box note"><strong>Task registration:</strong> Plugins should register any <span class="type">CompletableFuture</span> tasks related to asset loading via the task registry, so they are properly cleaned up on plugin shutdown.</div>
+            </section>
+
+            <section id="key-classes">
+                <h2>Key Classes</h2>
+                <div class="table-wrapper"><table class="api-table">
+                    <thead><tr><th>Class</th><th>Package</th><th>Role</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="type">AssetStore</span></td><td>com.hypixel.hytale.assetstore</td><td>Base typed asset registry</td></tr>
+                        <tr><td><span class="type">HytaleAssetStore</span></td><td>c.h.h.server.core.asset</td><td>Server extension with packets &amp; reload</td></tr>
+                        <tr><td><span class="type">AssetRegistry</span></td><td>com.hypixel.hytale.assetstore</td><td>Global store-of-stores singleton</td></tr>
+                        <tr><td><span class="type">AssetRegistryLoader</span></td><td>c.h.h.server.core.asset</td><td>Registers 80+ stores at startup</td></tr>
+                        <tr><td><span class="type">AssetModule</span></td><td>c.h.h.server.core.asset</td><td>Pack discovery &amp; lifecycle management</td></tr>
+                        <tr><td><span class="type">AssetPack</span></td><td>com.hypixel.hytale.assetstore</td><td>Single data pack (dir or ZIP)</td></tr>
+                        <tr><td><span class="type">AssetMonitor</span></td><td>c.h.h.server.core.asset</td><td>File watcher for hot reload</td></tr>
+                        <tr><td><span class="type">AssetPacketGenerator</span></td><td>c.h.h.server.core.asset</td><td>Creates client-sync packets</td></tr>
+                        <tr><td><span class="type">AssetMap</span></td><td>com.hypixel.hytale.assetstore</td><td>Backing storage (Default, Indexed, BlockType)</td></tr>
+                        <tr><td><span class="type">AssetStoreIterator</span></td><td>com.hypixel.hytale.assetstore</td><td>Dependency-ordered store iteration</td></tr>
+                    </tbody>
+                </table></div>
+            </section>
+
+        </div>
+    </main>
+
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search documentation...">
+            <div class="search-results" id="searchResults"></div>
+            <div class="search-footer">
+                <span>&#8593;&#8595; Navigate</span>
+                <span>&#9166; Open</span>
+                <span>Esc Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

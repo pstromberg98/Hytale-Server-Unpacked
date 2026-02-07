@@ -24,6 +24,7 @@ const searchIndex = [
     { title: "Damage & Combat", url: "combat.html", keywords: "damage health death respawn knockback armor effect stat modifier damagecause" },
     { title: "Plugin Development", url: "plugins.html", keywords: "plugin javaplugin manifest gradle setup lifecycle registry event command" },
     { title: "Configuration", url: "configuration.html", keywords: "config server port auth backup transport maxplayers settings" },
+    { title: "Data Packs", url: "data-packs.html", keywords: "data pack resource asset assetstore codec json hot reload mod content block item sound" },
     { title: "ECS Catalog", url: "reference.html", keywords: "reference catalog component list type all tracker physics projectile nameplate" },
 ];
 
