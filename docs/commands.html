@@ -3,194 +3,883 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command System - Hytale Server Docs</title>
+    <title>Command System - Hytale Server Documentation</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html" class="active">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>Command System</h1>
-            <p class="page-desc">Creating commands, argument handling, permissions, and thread context.</p>
+            <p class="page-desc">Comprehensive guide to the Hytale command architecture: creating commands, argument handling, tokenization, permissions, thread context, and the full built-in command catalog.</p>
 
-            <h2>Creating a Command</h2>
-            <p>Extend <code>CommandBase</code> to create a new command:</p>
-            <pre><code class="language-java">public class MyCommand extends CommandBase {
-    private final OptionalArg&lt;String&gt; nameArg;
-    private final RequiredArg&lt;Integer&gt; countArg;
+            <!-- ============================================================ -->
+            <!-- COMMAND ARCHITECTURE -->
+            <!-- ============================================================ -->
+            <section id="architecture">
+                <h2>Command Architecture</h2>
+                <p>The Hytale command system is a sophisticated framework built around a singleton <span class="type">CommandManager</span>, an <span class="type">AbstractCommand</span> base class, a rich type-safe argument system, and a custom tokenizer with support for quoted strings and list syntax.</p>
 
-    public MyCommand() {
-        super("mycommand", "Description of the command");
-        this.nameArg = withOptionalArg("name", "Player name", ArgTypes.STRING);
-        this.countArg = withRequiredArg("count", "Number of items", ArgTypes.INT);
+                <h3>Class Hierarchy</h3>
+<div class="diagram">AbstractCommand                          <span class="comment">&larr; Base class: name, aliases, args, subcommands, permissions</span>
+ ├&mdash; CommandBase                           <span class="comment">&larr; Synchronous: executeSync(CommandContext)</span>
+ │    ├&mdash; AbstractPlayerCommand            <span class="comment">&larr; Resolves player entity on world thread</span>
+ │    └&mdash; (your plugin commands)
+ ├&mdash; AbstractAsyncCommand                  <span class="comment">&larr; Async: executeAsync(CommandContext) &rarr; CompletableFuture</span>
+ │    └&mdash; AbstractCommandCollection        <span class="comment">&larr; Subcommand-only parent (no direct execution)</span>
+ └&mdash; (variant commands via addUsageVariant)</div>
+
+                <h3>CommandManager Singleton</h3>
+                <p><span class="type">CommandManager</span> is the central registry and dispatcher. It holds a map of all registered commands and their aliases. When a player or the console sends a command string, it is routed through <code>CommandManager.get().handleCommand(sender, commandString)</code>.</p>
+                <p>Key responsibilities:</p>
+                <ul>
+                    <li><strong>Registration</strong> &mdash; <code>register(AbstractCommand)</code> adds a command to the global map and processes all aliases</li>
+                    <li><strong>Dispatching</strong> &mdash; Tokenizes the input, resolves command name (including aliases), checks permissions, and calls the command's <code>acceptCall()</code></li>
+                    <li><strong>Thread management</strong> &mdash; Wraps all command execution in <code>ForkJoinPool.commonPool()</code></li>
+                    <li><strong>Error handling</strong> &mdash; Catches <span class="type">CommandException</span> subtypes and sends localized error messages</li>
+                    <li><strong>Permission groups</strong> &mdash; Generates virtual permission group mappings from all registered commands</li>
+                </ul>
+
+                <h3>Command Registration Flow</h3>
+<div class="diagram">1. Plugin calls getCommandRegistry().registerCommand(new MyCommand())
+2. CommandRegistry sets the command's owner to the plugin
+3. CommandManager.register() stores command by name
+4. completeRegistration() validates all args, variants, and abbreviation maps
+5. All aliases are added to the global alias map
+6. Permission node is auto-generated if not explicitly set</div>
+
+                <h3>AbstractCommand Fields</h3>
+                <p>Every command carries the following internal state, set during construction and registration:</p>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>name</code></td><td><span class="type">String</span></td><td>Command name (lowercase). <code>null</code> for variant commands.</td></tr>
+                        <tr><td><code>aliases</code></td><td><span class="type">Set&lt;String&gt;</span></td><td>Alternative names that resolve to this command</td></tr>
+                        <tr><td><code>description</code></td><td><span class="type">String</span></td><td>i18n translation key for the command description</td></tr>
+                        <tr><td><code>requiredArguments</code></td><td><span class="type">List&lt;RequiredArg&gt;</span></td><td>Positional arguments that must be provided</td></tr>
+                        <tr><td><code>optionalArguments</code></td><td><span class="type">Map&lt;String, AbstractOptionalArg&gt;</span></td><td>Named optional args (prefixed with <code>--</code>)</td></tr>
+                        <tr><td><code>subCommands</code></td><td><span class="type">Map&lt;String, AbstractCommand&gt;</span></td><td>Named sub-commands forming a hierarchy</td></tr>
+                        <tr><td><code>variantCommands</code></td><td><span class="type">Int2ObjectMap&lt;AbstractCommand&gt;</span></td><td>Overloaded variants keyed by required arg count</td></tr>
+                        <tr><td><code>permission</code></td><td><span class="type">String</span></td><td>Required permission node</td></tr>
+                        <tr><td><code>requiresConfirmation</code></td><td><span class="type">boolean</span></td><td>If true, user must pass <code>--confirm</code> flag</td></tr>
+                        <tr><td><code>owner</code></td><td><span class="type">CommandOwner</span></td><td>Plugin or CommandManager that owns this command</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- CREATING COMMANDS -->
+            <!-- ============================================================ -->
+            <section id="creating-commands">
+                <h2>Creating Commands</h2>
+                <p>To create a command, extend <span class="type">AbstractCommand</span> (or one of its convenience subclasses like <span class="type">CommandBase</span> for synchronous commands). The constructor pattern sets up the name, description, and arguments. The execution logic goes in the <code>executeSync()</code> or <code>executeAsync()</code> override.</p>
+
+                <h3>Synchronous Commands (CommandBase)</h3>
+                <p>For commands that do not need to return a <span class="type">CompletableFuture</span>, extend <span class="type">CommandBase</span>:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">GreetCommand</span> <span class="kw">extends</span> <span class="type">CommandBase</span> {
+
+    <span class="anno">@Nonnull</span>
+    <span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">playerArg</span> =
+        withRequiredArg(<span class="str">"player"</span>, <span class="str">"Target player"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">PLAYER_REF</span>);
+
+    <span class="anno">@Nonnull</span>
+    <span class="kw">private final</span> <span class="type">OptionalArg</span>&lt;<span class="type">String</span>&gt; <span class="field">messageArg</span> =
+        withOptionalArg(<span class="str">"message"</span>, <span class="str">"Custom greeting"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">STRING</span>);
+
+    <span class="kw">public</span> <span class="fn">GreetCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"greet"</span>, <span class="str">"Send a greeting to a player"</span>, <span class="kw">false</span>);
+        addAliases(<span class="kw">new</span> <span class="type">String</span>[] { <span class="str">"hello"</span>, <span class="str">"hi"</span> });
+        requirePermission(<span class="str">"myplugin.command.greet"</span>);
     }
 
-    @Override
-    public boolean hasPermission(CommandSender sender) {
-        return sender.hasPermission("myplugin.mycommand");
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+        <span class="type">PlayerRef</span> target = (<span class="type">PlayerRef</span>) <span class="kw">this</span>.<span class="field">playerArg</span>.get(ctx);
+
+        <span class="type">String</span> greeting = <span class="str">"Hello!"</span>;
+        <span class="kw">if</span> (ctx.provided(<span class="kw">this</span>.<span class="field">messageArg</span>)) {
+            greeting = (<span class="type">String</span>) <span class="kw">this</span>.<span class="field">messageArg</span>.get(ctx);
+        }
+
+        target.sendMessage(<span class="type">Message</span>.raw(greeting));
+        ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Greeting sent to "</span> + target.getUsername()));
+    }
+}</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> The three-argument constructor <code>super("name", "description", false)</code> sets the <code>requiresConfirmation</code> flag. Pass <code>true</code> for destructive commands that need the user to append <code>--confirm</code>.
+                </div>
+
+                <h3>Constructor Patterns</h3>
+                <p><span class="type">AbstractCommand</span> provides three constructors:</p>
+                <table>
+                    <thead>
+                        <tr><th>Constructor</th><th>Usage</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>super(name, description, requiresConfirmation)</code></td><td>Full constructor with confirmation flag</td></tr>
+                        <tr><td><code>super(name, description)</code></td><td>Standard named command (no confirmation)</td></tr>
+                        <tr><td><code>super(description)</code></td><td>Variant command (no name &mdash; used with <code>addUsageVariant</code>)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Async Commands (AbstractAsyncCommand)</h3>
+                <p>For commands that need to coordinate across threads or perform I/O, extend <span class="type">AbstractAsyncCommand</span>:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">LookupCommand</span> <span class="kw">extends</span> <span class="type">AbstractAsyncCommand</span> {
+
+    <span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">String</span>&gt; <span class="field">nameArg</span> =
+        withRequiredArg(<span class="str">"name"</span>, <span class="str">"Player name to look up"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">STRING</span>);
+
+    <span class="kw">public</span> <span class="fn">LookupCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"lookup"</span>, <span class="str">"Look up player information"</span>);
     }
 
-    @Override
-    public void executeSync(CommandContext ctx) {
-        int count = ctx.get(countArg);
-        if (ctx.provided(nameArg)) {
-            String name = ctx.get(nameArg);
-            ctx.sendMessage(Message.raw("Hello " + name + ", count: " + count));
+    <span class="anno">@Override</span> <span class="anno">@Nonnull</span>
+    <span class="kw">protected</span> <span class="type">CompletableFuture</span>&lt;<span class="type">Void</span>&gt; <span class="fn">executeAsync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+        <span class="type">String</span> name = (<span class="type">String</span>) <span class="kw">this</span>.<span class="field">nameArg</span>.get(ctx);
+        <span class="kw">return</span> <span class="type">CompletableFuture</span>.runAsync(() -&gt; {
+            <span class="comment">// Perform async database lookup...</span>
+            ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Found data for "</span> + name));
+        });
+    }
+}</code></pre>
+
+                <h3>Command Collections (Subcommand Groups)</h3>
+                <p>Use <span class="type">AbstractCommandCollection</span> for commands that serve only as a parent for subcommands (like <code>/server stats</code>, <code>/server gc</code>). When invoked without a subcommand, it prints its usage list.</p>
+                <pre><code><span class="kw">public class</span> <span class="type">AdminCommand</span> <span class="kw">extends</span> <span class="type">AbstractCommandCollection</span> {
+
+    <span class="kw">public</span> <span class="fn">AdminCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"admin"</span>, <span class="str">"Server administration commands"</span>);
+        addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">AdminReloadCommand</span>());
+        addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">AdminResetCommand</span>());
+    }
+}</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- ARGUMENT TYPES -->
+            <!-- ============================================================ -->
+            <section id="argument-types">
+                <h2>Argument Types</h2>
+                <p>Arguments are defined using the builder methods on <span class="type">AbstractCommand</span>. Each argument wraps an <span class="type">ArgumentType&lt;T&gt;</span> that handles parsing from string tokens to the target Java type.</p>
+
+                <h3>Argument Builder Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="fn">withRequiredArg</span>(name, desc, type)</code></td><td><span class="type">RequiredArg&lt;D&gt;</span></td><td>Positional, must be provided. Shown as <code>&lt;name:type&gt;</code> in usage.</td></tr>
+                        <tr><td><code><span class="fn">withOptionalArg</span>(name, desc, type)</code></td><td><span class="type">OptionalArg&lt;D&gt;</span></td><td>Named with <code>--name value</code> syntax. Shown as <code>[--name=?]</code>.</td></tr>
+                        <tr><td><code><span class="fn">withDefaultArg</span>(name, desc, type, default, defaultDesc)</code></td><td><span class="type">DefaultArg&lt;D&gt;</span></td><td>Optional with a fallback value. Shown as <code>[--name=default]</code>.</td></tr>
+                        <tr><td><code><span class="fn">withFlagArg</span>(name, desc)</code></td><td><span class="type">FlagArg</span></td><td>Boolean toggle, no value needed. <code>--name</code> sets to true. Shown as <code>[--name]</code>.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>ArgTypes Reference</h3>
+                <p>The <span class="type">ArgTypes</span> class provides all built-in argument type constants:</p>
+                <table>
+                    <thead>
+                        <tr><th>ArgType Constant</th><th>Java Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">STRING</span></code></td><td><span class="type">String</span></td><td>Raw text string. Supports quoted strings for spaces.</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">INT</span></code></td><td><span class="type">Integer</span></td><td>Integer number with validation</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">FLOAT</span></code></td><td><span class="type">Float</span></td><td>Single-precision floating point</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">DOUBLE</span></code></td><td><span class="type">Double</span></td><td>Double-precision floating point</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">BOOLEAN</span></code></td><td><span class="type">Boolean</span></td><td>Parses <code>true</code> / <code>false</code></td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">UUID</span></code></td><td><span class="type">UUID</span></td><td>Standard UUID format</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">PLAYER_REF</span></code></td><td><span class="type">PlayerRef</span></td><td>Resolves online player by username. Thread-safe handle.</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">WORLD</span></code></td><td><span class="type">World</span></td><td>Resolves loaded world by name</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">GAME_MODE</span></code></td><td><span class="type">GameMode</span></td><td>Adventure, Creative, etc.</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">ASSET</span></code></td><td><span class="type">Asset</span></td><td>Any asset by identifier string</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">ITEM</span></code></td><td><span class="type">ItemType</span></td><td>Item type from the asset registry</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">BLOCK_TYPE</span></code></td><td><span class="type">BlockType</span></td><td>Block type from the asset registry</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">ENTITY_TYPE</span></code></td><td><span class="type">EntityType</span></td><td>Entity archetype from the asset registry</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">RELATIVE_DOUBLE_POSITION</span></code></td><td><span class="type">RelativeDoublePosition</span></td><td>Three coordinates, supports <code>~</code> relative syntax (3 params)</td></tr>
+                        <tr><td><code><span class="type">ArgTypes</span>.<span class="field">RELATIVE_INT_POSITION</span></code></td><td><span class="type">RelativeIntPosition</span></td><td>Integer coordinates with <code>~</code> relative syntax (3 params)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>ListArgumentType</h3>
+                <p>For accepting multiple values of the same type, wrap any <span class="type">ArgumentType</span> with <span class="type">ListArgumentType</span>. Users pass lists using bracket syntax: <code>[item1, item2, item3]</code>.</p>
+                <pre><code><span class="comment">// Accept a list of player names</span>
+<span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; <span class="field">namesArg</span> =
+    withRequiredArg(<span class="str">"names"</span>, <span class="str">"Player names"</span>,
+        <span class="kw">new</span> <span class="type">ListArgumentType</span>&lt;&gt;(<span class="type">ArgTypes</span>.<span class="field">STRING</span>));</code></pre>
+
+                <h3>EnumArgumentType</h3>
+                <p>For enum-based arguments, use <span class="type">EnumArgumentType</span> which auto-generates suggestions from enum constants:</p>
+                <pre><code><span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">MyEnum</span>&gt; <span class="field">modeArg</span> =
+    withRequiredArg(<span class="str">"mode"</span>, <span class="str">"Operating mode"</span>,
+        <span class="kw">new</span> <span class="type">EnumArgumentType</span>&lt;&gt;(<span class="type">MyEnum</span>.<span class="kw">class</span>));</code></pre>
+
+                <h3>Validators</h3>
+                <p>Arguments can have validators chained onto them before registration completes. Validators run after parsing and reject values that fail validation:</p>
+                <pre><code><span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">Integer</span>&gt; <span class="field">countArg</span> =
+    withRequiredArg(<span class="str">"count"</span>, <span class="str">"Number of items"</span>, (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">INT</span>)
+        .addValidator((value, results) -&gt; {
+            <span class="kw">if</span> (value &lt; <span class="num">1</span> || value &gt; <span class="num">64</span>) {
+                results.error(<span class="str">"Count must be between 1 and 64"</span>);
+            }
+        });</code></pre>
+
+                <div class="info-box warning">
+                    <strong>Warning:</strong> Validators and suggestion providers can only be added before <code>completeRegistration()</code> is called. Adding them after registration throws <code>IllegalStateException</code>.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TOKENIZER & PARSING -->
+            <!-- ============================================================ -->
+            <section id="tokenizer">
+                <h2>Tokenizer &amp; Parsing</h2>
+                <p>Before a command reaches your execution method, the raw input string passes through the <span class="type">Tokenizer</span> and <span class="type">ParserContext</span> pipeline.</p>
+
+                <h3>Tokenization Steps</h3>
+                <ol>
+                    <li>The input string is split on the first space to separate the command name from arguments</li>
+                    <li>The argument portion is scanned character-by-character</li>
+                    <li>Spaces delimit tokens (unless inside quotes)</li>
+                    <li>Double quotes (<code>"</code>) and single quotes (<code>'</code>) create quoted string tokens that preserve internal spaces</li>
+                    <li>Backslash (<code>\</code>) escapes special characters: <code>\"</code>, <code>\'</code>, <code>\\</code>, <code>\,</code>, <code>\[</code>, <code>\]</code></li>
+                    <li>Square brackets (<code>[</code> and <code>]</code>) delimit list arguments; commas (<code>,</code>) separate list items</li>
+                    <li>The <code>--</code> prefix identifies optional/flag arguments</li>
+                </ol>
+
+                <h3>Examples</h3>
+                <table>
+                    <thead>
+                        <tr><th>Input</th><th>Tokens</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>give Steve diamond_sword</code></td><td><code>["give", "Steve", "diamond_sword"]</code></td></tr>
+                        <tr><td><code>greet "Parker S" --message "Hello world"</code></td><td><code>["greet", "\"Parker S\"", "--message", "\"Hello world\""]</code></td></tr>
+                        <tr><td><code>notify [Steve, Alex, Parker] --sound alert</code></td><td><code>["notify", "[", "Steve", ",", "Alex", ",", "Parker", "]", "--sound", "alert"]</code></td></tr>
+                    </tbody>
+                </table>
+
+                <h3>ParserContext</h3>
+                <p>After tokenization, a <span class="type">ParserContext</span> is created from the token list. It separates tokens into:</p>
+                <ul>
+                    <li><strong>Pre-optional tokens</strong> &mdash; Everything before the first <code>--</code> flag. These are matched to required arguments by position.</li>
+                    <li><strong>Optional tokens</strong> &mdash; Key-value pairs identified by <code>--name value</code> syntax</li>
+                    <li><strong>Help flag</strong> &mdash; If <code>--help</code> or <code>-h</code> is present, usage text is printed instead of executing</li>
+                    <li><strong>Confirm flag</strong> &mdash; If <code>--confirm</code> is present, dangerous commands proceed</li>
+                </ul>
+
+                <h3>ParseResult</h3>
+                <p><span class="type">ParseResult</span> accumulates success/failure state and error messages throughout the pipeline. If <code>parseResult.failed()</code> returns true at any point, execution halts and all accumulated error messages are sent to the command sender.</p>
+
+                <div class="info-box note">
+                    <strong>Note:</strong> The tokenizer rejects unbalanced quotes, nested list brackets (<code>[[a, b]]</code>), and invalid escape sequences. Each error produces a localized translation-key message.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- COMMAND CONTEXT -->
+            <!-- ============================================================ -->
+            <section id="command-context">
+                <h2>CommandContext</h2>
+                <p>The <span class="type">CommandContext</span> object is passed to every command's execution method. It holds the parsed argument values and the command sender reference.</p>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>ctx.<span class="fn">get</span>(arg)</code></td><td><code>&lt;DataType&gt;</code></td><td>Get the parsed value for a required or optional argument</td></tr>
+                        <tr><td><code>ctx.<span class="fn">provided</span>(arg)</code></td><td><code><span class="kw">boolean</span></code></td><td>Check if an optional argument was explicitly provided</td></tr>
+                        <tr><td><code>ctx.<span class="fn">sender</span>()</code></td><td><span class="type">CommandSender</span></td><td>The sender (Player component or ConsoleSender)</td></tr>
+                        <tr><td><code>ctx.<span class="fn">senderAs</span>(Class)</code></td><td><code>&lt;T&gt;</code></td><td>Cast sender to specific type; throws <span class="type">SenderTypeException</span> on mismatch</td></tr>
+                        <tr><td><code>ctx.<span class="fn">senderAsPlayerRef</span>()</code></td><td><span class="type">Ref&lt;EntityStore&gt;</span></td><td>Get the sender's entity reference (player only)</td></tr>
+                        <tr><td><code>ctx.<span class="fn">isPlayer</span>()</code></td><td><code><span class="kw">boolean</span></code></td><td>Whether the sender is a Player (vs. console)</td></tr>
+                        <tr><td><code>ctx.<span class="fn">sendMessage</span>(Message)</code></td><td><code><span class="kw">void</span></code></td><td>Send a message to the command sender</td></tr>
+                        <tr><td><code>ctx.<span class="fn">getInputString</span>()</code></td><td><span class="type">String</span></td><td>The original full command string</td></tr>
+                        <tr><td><code>ctx.<span class="fn">getCalledCommand</span>()</code></td><td><span class="type">AbstractCommand</span></td><td>The resolved command instance that is executing</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <strong>Warning:</strong> <code>CommandContext</code> does NOT have a <code>getPlayer()</code> method. Use <code>ctx.sender().getUuid()</code> or <code>ctx.senderAsPlayerRef()</code> to get the player's identity. The <code>senderAsPlayerRef()</code> call returns a <span class="type">Ref&lt;EntityStore&gt;</span> which requires world-thread access for Store operations.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- REGISTERING COMMANDS -->
+            <!-- ============================================================ -->
+            <section id="registering-commands">
+                <h2>Registering Commands</h2>
+                <p>Commands are registered during plugin setup using the <span class="type">CommandRegistry</span> obtained from your plugin:</p>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// Register a simple command</span>
+    getCommandRegistry().registerCommand(<span class="kw">new</span> <span class="type">GreetCommand</span>());
+
+    <span class="comment">// Register a command collection with subcommands</span>
+    getCommandRegistry().registerCommand(<span class="kw">new</span> <span class="type">AdminCommand</span>());
+}</code></pre>
+
+                <h3>Aliases</h3>
+                <p>Add aliases in the command constructor. All aliases are registered globally and lowercased:</p>
+                <pre><code><span class="kw">public</span> <span class="fn">GreetCommand</span>() {
+    <span class="kw">super</span>(<span class="str">"greet"</span>, <span class="str">"Send a greeting"</span>);
+    addAliases(<span class="kw">new</span> <span class="type">String</span>[] { <span class="str">"hello"</span>, <span class="str">"hi"</span>, <span class="str">"wave"</span> });
+}</code></pre>
+
+                <h3>Auto-Generated Permission Nodes</h3>
+                <p>If you do not call <code>requirePermission()</code>, the system auto-generates a permission node based on the command owner and name:</p>
+                <table>
+                    <thead>
+                        <tr><th>Owner Type</th><th>Generated Permission Pattern</th><th>Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Plugin</td><td><code>&lt;plugin.basePermission&gt;.command.&lt;name&gt;</code></td><td><code>myplugin.command.greet</code></td></tr>
+                        <tr><td>System (CommandManager)</td><td><code>hytale.system.command.&lt;name&gt;</code></td><td><code>hytale.system.command.gamemode</code></td></tr>
+                        <tr><td>Subcommand</td><td><code>&lt;parent.permission&gt;.&lt;name&gt;</code></td><td><code>hytale.system.command.server.stats</code></td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> For fine-grained control, always call <code>requirePermission("your.custom.node")</code> in your constructor. Built-in commands use <code>HytalePermissions.fromCommand("gamemode.self")</code> to generate standard permission strings.
+                </div>
+
+                <h3>SubCommands</h3>
+                <p>Add named subcommands using <code>addSubCommand()</code>. Subcommands form a tree and are resolved before the parent attempts to parse arguments:</p>
+                <pre><code><span class="kw">public</span> <span class="fn">ServerCommand</span>() {
+    <span class="kw">super</span>(<span class="str">"server"</span>, <span class="str">"Server management"</span>);
+    addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">ServerStatsCommand</span>());
+    addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">ServerGCCommand</span>());
+    addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">ServerDumpCommand</span>());
+}</code></pre>
+
+                <h3>Usage Variants</h3>
+                <p>Variants allow the same command name to accept different numbers of required arguments. Variants use the description-only constructor (no name) and are matched by counting required parameters:</p>
+                <pre><code><span class="kw">public</span> <span class="fn">GameModeCommand</span>() {
+    <span class="kw">super</span>(<span class="str">"gamemode"</span>, <span class="str">"Set your game mode"</span>);
+    addAliases(<span class="kw">new</span> <span class="type">String</span>[] { <span class="str">"gm"</span> });
+    <span class="comment">// This command takes 1 required arg (gamemode)</span>
+    <span class="comment">// The variant below takes 2 required args (gamemode + player)</span>
+    addUsageVariant((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">GameModeOtherCommand</span>());
+}</code></pre>
+                <p>The variant command must have a <em>different</em> number of required parameters than the parent. The system dispatches to the variant that matches the number of provided positional arguments.</p>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- THREAD CONTEXT -->
+            <!-- ============================================================ -->
+            <section id="thread-context">
+                <h2>Thread Context</h2>
+
+                <div class="info-box danger">
+                    <strong>Critical:</strong> Commands execute on <code>ForkJoinPool.commonPool()</code>, NOT the world thread. You CANNOT directly access the <span class="type">EntityStore</span> or modify ECS components from <code>executeSync()</code> or <code>executeAsync()</code>.
+                </div>
+
+                <p>The <span class="type">CommandManager</span>'s <code>handleCommand()</code> method wraps all command execution in:</p>
+                <pre><code><span class="type">ForkJoinPool</span>.commonPool().execute(() -&gt; {
+    <span class="comment">// Your command's executeSync() or executeAsync() runs here</span>
+    <span class="comment">// This is NOT the world thread!</span>
+});</code></pre>
+
+                <h3>Safe Operations (from command thread)</h3>
+                <ul>
+                    <li>Reading player data via <span class="type">PlayerRef</span> (thread-safe handle): <code>playerRef.getUsername()</code>, <code>playerRef.getTransform().getPosition()</code></li>
+                    <li>Sending messages: <code>ctx.sendMessage()</code>, <code>playerRef.sendMessage()</code></li>
+                    <li>Looking up players: <code>Universe.get().getPlayer(uuid)</code></li>
+                    <li>Looking up worlds: <code>Universe.get().getWorld("name")</code></li>
+                </ul>
+
+                <h3>Scheduling World-Thread Operations</h3>
+                <p>For Store or component access, schedule work on the world thread:</p>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+    <span class="comment">// Safe: thread-safe PlayerRef operations</span>
+    <span class="type">UUID</span> uuid = ctx.sender().getUuid();
+    <span class="type">PlayerRef</span> player = <span class="type">Universe</span>.get().getPlayer(uuid);
+    <span class="type">String</span> name = player.getUsername();
+
+    <span class="comment">// Need world thread for Store operations</span>
+    <span class="type">World</span> world = player.getWorld();
+    world.execute(() -&gt; {
+        <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = player.getReference();
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = ref.getStore();
+        <span class="type">Player</span> playerComponent = (<span class="type">Player</span>) store.getComponent(
+            ref, <span class="type">Player</span>.getComponentType());
+        <span class="comment">// Now safe to read/write ECS components</span>
+    });
+}</code></pre>
+
+                <h3>CompletableFuture Result Handling</h3>
+                <p>The <span class="type">CommandManager</span> captures the <span class="type">CompletableFuture</span> returned by async commands and handles completion/failure. On exception, it sends a localized error message to the sender and logs the stack trace.</p>
+                <pre><code>commandFuture.whenComplete((aVoid, throwable) -&gt; {
+    <span class="kw">if</span> (throwable != <span class="kw">null</span>) {
+        <span class="comment">// CommandException subtypes send their own translated message</span>
+        <span class="comment">// Other exceptions get a generic error message</span>
+        sender.sendMessage(<span class="type">Message</span>.translation(<span class="str">"server.modules.command.error"</span>));
+    }
+});</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- ERROR HANDLING -->
+            <!-- ============================================================ -->
+            <section id="error-handling">
+                <h2>Error Handling</h2>
+                <p>The command system uses a hierarchy of <span class="type">CommandException</span> subtypes for structured error reporting. All exceptions in this hierarchy extend <code>RuntimeException</code> and provide a <code>sendTranslatedMessage(sender)</code> method that sends a localized, red-colored error to the command sender.</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Exception</th><th>When Thrown</th><th>Message</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">CommandException</span></code></td>
+                            <td>Abstract base class</td>
+                            <td>Defines <code>sendTranslatedMessage()</code> contract</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">NoPermissionException</span></code></td>
+                            <td>Sender lacks the required permission node</td>
+                            <td><code>server.commands.errors.permission</code> with the missing permission name</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">GeneralCommandException</span></code></td>
+                            <td>Generic command error with a custom message</td>
+                            <td>Any <span class="type">Message</span> object, colored red</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">SenderTypeException</span></code></td>
+                            <td>Command requires a specific sender type (e.g., Player vs. Console)</td>
+                            <td><code>server.commands.errors.sender</code> with expected type name</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Confirmation Flag</h3>
+                <p>Dangerous commands (server stop, data reset, etc.) set <code>requiresConfirmation = true</code> in the constructor. This automatically registers a <code>--confirm</code> flag. If the user does not include <code>--confirm</code>, the command is rejected with the message <code>server.commands.parsing.error.attemptedUnsafe</code>.</p>
+                <pre><code><span class="kw">public</span> <span class="fn">ResetDataCommand</span>() {
+    <span class="kw">super</span>(<span class="str">"resetdata"</span>, <span class="str">"Delete all player data"</span>, <span class="kw">true</span>); <span class="comment">// requiresConfirmation = true</span>
+}
+<span class="comment">// Usage: /resetdata --confirm</span></code></pre>
+
+                <h3>Throwing Errors in Commands</h3>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+    <span class="type">PlayerRef</span> target = (<span class="type">PlayerRef</span>) <span class="kw">this</span>.<span class="field">playerArg</span>.get(ctx);
+    <span class="kw">if</span> (target == <span class="kw">null</span>) {
+        <span class="kw">throw new</span> <span class="type">GeneralCommandException</span>(
+            <span class="type">Message</span>.raw(<span class="str">"Player not found"</span>));
+    }
+}</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- BUILT-IN COMMANDS -->
+            <!-- ============================================================ -->
+            <section id="built-in-commands">
+                <h2>Built-in Commands</h2>
+                <p>The server registers the following commands through <code>CommandManager.registerCommands()</code>. These are grouped by category for reference.</p>
+
+                <h3>Debug Commands</h3>
+                <table>
+                    <thead>
+                        <tr><th>Command</th><th>Class</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/chunk</code></td><td><span class="type">ChunkCommand</span></td><td>Chunk loading and debug information</td></tr>
+                        <tr><td><code>/log</code></td><td><span class="type">LogCommand</span></td><td>Runtime log level configuration</td></tr>
+                        <tr><td><code>/pidcheck</code></td><td><span class="type">PIDCheckCommand</span></td><td>Process ID diagnostic check</td></tr>
+                        <tr><td><code>/ping</code></td><td><span class="type">PingCommand</span></td><td>Latency measurement (subcommands: clear, graph)</td></tr>
+                        <tr><td><code>/worldgen</code></td><td><span class="type">WorldGenCommand</span></td><td>World generation debug tools</td></tr>
+                        <tr><td><code>/hitdetection</code></td><td><span class="type">HitDetectionCommand</span></td><td>Toggle hit detection debug visualization</td></tr>
+                        <tr><td><code>/packetstats</code></td><td><span class="type">PacketStatsCommand</span></td><td>Network packet statistics</td></tr>
+                        <tr><td><code>/assets</code></td><td><span class="type">AssetsCommand</span></td><td>Asset registry inspection (subcommand: longest name)</td></tr>
+                        <tr><td><code>/packs</code></td><td><span class="type">PacksCommand</span></td><td>Data pack listing and debug (subcommand: list)</td></tr>
+                        <tr><td><code>/server</code></td><td><span class="type">ServerCommand</span></td><td>Server management (subcommands: stats, gc, dump, cpu, memory)</td></tr>
+                        <tr><td><code>/stresstest</code></td><td><span class="type">StressTestCommand</span></td><td>Bot stress testing (subcommands: start, stop)</td></tr>
+                        <tr><td><code>/hitboxcollision</code></td><td><span class="type">HitboxCollisionCommand</span></td><td>Hitbox collision debug (add/remove for self/entity)</td></tr>
+                        <tr><td><code>/repulsion</code></td><td><span class="type">RepulsionCommand</span></td><td>Repulsion component debug (add/remove)</td></tr>
+                        <tr><td><code>/version</code></td><td><span class="type">VersionCommand</span></td><td>Display server version information</td></tr>
+                        <tr><td><code>/particle</code></td><td><span class="type">ParticleCommand</span></td><td>Particle effect spawning and testing</td></tr>
+                        <tr><td><code>/tagpattern</code></td><td><span class="type">TagPatternCommand</span></td><td>Asset tag pattern testing</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Player Commands</h3>
+                <table>
+                    <thead>
+                        <tr><th>Command</th><th>Aliases</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/gamemode</code></td><td><code>gm</code></td><td>Change game mode (self or other player variant)</td></tr>
+                        <tr><td><code>/hide</code></td><td>&mdash;</td><td>Player visibility control (hide/show player, hide/show all)</td></tr>
+                        <tr><td><code>/kill</code></td><td>&mdash;</td><td>Kill self or another player</td></tr>
+                        <tr><td><code>/damage</code></td><td>&mdash;</td><td>Apply damage to self or another player</td></tr>
+                        <tr><td><code>/sudo</code></td><td>&mdash;</td><td>Execute a command as another player</td></tr>
+                        <tr><td><code>/whereami</code></td><td>&mdash;</td><td>Show current position and world (self or other)</td></tr>
+                        <tr><td><code>/whoami</code></td><td>&mdash;</td><td>Show identity information (self or other)</td></tr>
+                        <tr><td><code>/give</code></td><td>&mdash;</td><td>Give items to a player</td></tr>
+                        <tr><td><code>/inventory</code></td><td>&mdash;</td><td>Inventory management commands</td></tr>
+                        <tr><td><code>/player</code></td><td>&mdash;</td><td>Player management (subcommands: reset, respawn, zone, stats, effect, camera, viewradius)</td></tr>
+                        <tr><td><code>/refer</code></td><td>&mdash;</td><td>Player reference debugging</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Server Commands</h3>
+                <table>
+                    <thead>
+                        <tr><th>Command</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/auth</code></td><td>Authentication management (login, device, browser, persistence, select)</td></tr>
+                        <tr><td><code>/kick</code></td><td>Kick a player from the server</td></tr>
+                        <tr><td><code>/maxplayers</code></td><td>Set the maximum player count</td></tr>
+                        <tr><td><code>/stop</code></td><td>Shut down the server (requires confirmation)</td></tr>
+                        <tr><td><code>/who</code></td><td>List online players</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Utility Commands</h3>
+                <table>
+                    <thead>
+                        <tr><th>Command</th><th>Aliases</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/backup</code></td><td>&mdash;</td><td>Create a world backup</td></tr>
+                        <tr><td><code>/help</code></td><td><code>?</code></td><td>Display command help (opens UI page for players)</td></tr>
+                        <tr><td><code>/notify</code></td><td>&mdash;</td><td>Send a notification to players</td></tr>
+                        <tr><td><code>/sound</code></td><td>&mdash;</td><td>Sound playback tools (subcommands: play2d, play3d)</td></tr>
+                        <tr><td><code>/git</code></td><td>&mdash;</td><td>Git integration (update assets, prefabs, pull)</td></tr>
+                        <tr><td><code>/lighting</code></td><td>&mdash;</td><td>Lighting debug and send commands</td></tr>
+                        <tr><td><code>/sleep</code></td><td>&mdash;</td><td>Thread sleep utility for testing</td></tr>
+                        <tr><td><code>/network</code></td><td>&mdash;</td><td>Network management (latency simulation)</td></tr>
+                        <tr><td><code>/commands</code></td><td>&mdash;</td><td>Dump all registered commands</td></tr>
+                        <tr><td><code>/worldmap</code></td><td>&mdash;</td><td>World map view radius control</td></tr>
+                        <tr><td><code>/entity</code></td><td>&mdash;</td><td>Entity management (lod, nameplate, stats, snapshot)</td></tr>
+                        <tr><td><code>/spawnblock</code></td><td>&mdash;</td><td>Spawn a block entity</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Plugin-Registered Commands</h3>
+                <p>In addition to the system commands above, each built-in plugin registers its own commands during setup. Some notable examples:</p>
+                <table>
+                    <thead>
+                        <tr><th>Plugin</th><th>Commands</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Teleport</td><td><code>/tp</code>, <code>/spawn</code>, <code>/warp</code></td></tr>
+                        <tr><td>NPC</td><td><code>/npc</code> (spawn, path, role, debug, blackboard, attack, give)</td></tr>
+                        <tr><td>Spawning</td><td><code>/spawn</code> (markers, suppression, beacons)</td></tr>
+                        <tr><td>BuilderTools</td><td><code>/pos1</code>, <code>/pos2</code>, <code>/copy</code>, <code>/paste</code>, <code>/set</code>, <code>/fill</code>, <code>/replace</code>, <code>/undo</code>, <code>/redo</code>, <code>/stack</code>, <code>/rotate</code>, <code>/flip</code>, <code>/prefab</code>, etc.</td></tr>
+                        <tr><td>Weather</td><td><code>/weather</code></td></tr>
+                        <tr><td>Time</td><td><code>/time</code> (set)</td></tr>
+                        <tr><td>Permissions</td><td><code>/op</code>, <code>/perm</code> (user, group)</td></tr>
+                        <tr><td>Crafting</td><td><code>/recipe</code> (learn, forget, list)</td></tr>
+                        <tr><td>Mounts</td><td><code>/mount</code>, <code>/dismount</code></td></tr>
+                        <tr><td>Adventure</td><td><code>/objective</code>, <code>/reputation</code>, <code>/memories</code>, <code>/cameraeffect</code></td></tr>
+                        <tr><td>Instances</td><td><code>/instances</code> (edit, exit, spawn, migrate)</td></tr>
+                        <tr><td>Ambience</td><td><code>/ambience</code> (clear, emitter, music)</td></tr>
+                        <tr><td>Fluid</td><td><code>/fluid</code></td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- COMPLETE EXAMPLES -->
+            <!-- ============================================================ -->
+            <section id="examples">
+                <h2>Complete Working Examples</h2>
+
+                <h3>Example 1: Simple Greeting Command</h3>
+                <p>A minimal command that sends a greeting message to a target player.</p>
+                <pre><code><span class="kw">package</span> com.example.myplugin.commands;
+
+<span class="kw">import</span> com.hypixel.hytale.server.core.Message;
+<span class="kw">import</span> com.hypixel.hytale.server.core.command.system.CommandContext;
+<span class="kw">import</span> com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+<span class="kw">import</span> com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+<span class="kw">import</span> com.hypixel.hytale.server.core.command.system.arguments.types.ArgumentType;
+<span class="kw">import</span> com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+<span class="kw">import</span> com.hypixel.hytale.server.core.universe.PlayerRef;
+<span class="kw">import</span> javax.annotation.Nonnull;
+
+<span class="kw">public class</span> <span class="type">WelcomeCommand</span> <span class="kw">extends</span> <span class="type">CommandBase</span> {
+
+    <span class="anno">@Nonnull</span>
+    <span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">playerArg</span> =
+        withRequiredArg(<span class="str">"player"</span>, <span class="str">"Player to welcome"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">PLAYER_REF</span>);
+
+    <span class="kw">public</span> <span class="fn">WelcomeCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"welcome"</span>, <span class="str">"Welcome a player to the server"</span>, <span class="kw">false</span>);
+        addAliases(<span class="kw">new</span> <span class="type">String</span>[] { <span class="str">"wb"</span> });
+        requirePermission(<span class="str">"myplugin.command.welcome"</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+        <span class="type">PlayerRef</span> target = (<span class="type">PlayerRef</span>) <span class="kw">this</span>.<span class="field">playerArg</span>.get(ctx);
+        <span class="type">String</span> targetName = target.getUsername();
+
+        <span class="comment">// Send welcome to the target player</span>
+        target.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Welcome to the server, "</span> + targetName + <span class="str">"!"</span>));
+
+        <span class="comment">// Confirm to the command sender</span>
+        ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Welcomed "</span> + targetName));
+    }
+}</code></pre>
+
+                <h3>Example 2: Command with SubCommands</h3>
+                <p>A parent command that delegates to named subcommands. Running <code>/team</code> alone shows usage; <code>/team create</code> and <code>/team disband</code> execute specific actions.</p>
+                <pre><code><span class="kw">public class</span> <span class="type">TeamCommand</span> <span class="kw">extends</span> <span class="type">AbstractCommandCollection</span> {
+
+    <span class="kw">public</span> <span class="fn">TeamCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"team"</span>, <span class="str">"Team management commands"</span>);
+        addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">TeamCreateCommand</span>());
+        addSubCommand((<span class="type">AbstractCommand</span>) <span class="kw">new</span> <span class="type">TeamDisbandCommand</span>());
+    }
+
+    <span class="comment">// Subcommand: /team create &lt;name&gt;</span>
+    <span class="kw">private static class</span> <span class="type">TeamCreateCommand</span> <span class="kw">extends</span> <span class="type">CommandBase</span> {
+        <span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">String</span>&gt; <span class="field">nameArg</span> =
+            withRequiredArg(<span class="str">"name"</span>, <span class="str">"Team name"</span>,
+                (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">STRING</span>);
+
+        <span class="fn">TeamCreateCommand</span>() {
+            <span class="kw">super</span>(<span class="str">"create"</span>, <span class="str">"Create a new team"</span>);
+        }
+
+        <span class="anno">@Override</span>
+        <span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+            <span class="type">String</span> teamName = (<span class="type">String</span>) <span class="kw">this</span>.<span class="field">nameArg</span>.get(ctx);
+            <span class="comment">// Create team logic...</span>
+            ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Team '"</span> + teamName + <span class="str">"' created!"</span>));
+        }
+    }
+
+    <span class="comment">// Subcommand: /team disband --confirm</span>
+    <span class="kw">private static class</span> <span class="type">TeamDisbandCommand</span> <span class="kw">extends</span> <span class="type">CommandBase</span> {
+        <span class="fn">TeamDisbandCommand</span>() {
+            <span class="kw">super</span>(<span class="str">"disband"</span>, <span class="str">"Disband your team"</span>, <span class="kw">true</span>); <span class="comment">// requires --confirm</span>
+        }
+
+        <span class="anno">@Override</span>
+        <span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+            <span class="comment">// Disband team logic...</span>
+            ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Team disbanded."</span>));
         }
     }
 }</code></pre>
 
-            <h2>Registering Commands</h2>
-            <p>Register your commands in the plugin's <code>setup()</code> method:</p>
-            <pre><code class="language-java">@Override
-protected void setup() {
-    getCommandRegistry().register(new MyCommand());
+                <h3>Example 3: Player-Targeting Command with World Thread Access</h3>
+                <p>A command that modifies ECS components on the target player's entity. Note how world-thread scheduling is required for Store access.</p>
+                <pre><code><span class="kw">public class</span> <span class="type">HealCommand</span> <span class="kw">extends</span> <span class="type">CommandBase</span> {
+
+    <span class="kw">private final</span> <span class="type">RequiredArg</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">playerArg</span> =
+        withRequiredArg(<span class="str">"player"</span>, <span class="str">"Player to heal"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">PLAYER_REF</span>);
+
+    <span class="kw">private final</span> <span class="type">DefaultArg</span>&lt;<span class="type">Integer</span>&gt; <span class="field">amountArg</span> =
+        withDefaultArg(<span class="str">"amount"</span>, <span class="str">"Heal amount"</span>,
+            (<span class="type">ArgumentType</span>) <span class="type">ArgTypes</span>.<span class="field">INT</span>, <span class="num">20</span>, <span class="str">"full health"</span>);
+
+    <span class="kw">public</span> <span class="fn">HealCommand</span>() {
+        <span class="kw">super</span>(<span class="str">"heal"</span>, <span class="str">"Heal a player"</span>);
+        requirePermission(<span class="str">"myplugin.command.heal"</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">executeSync</span>(<span class="anno">@Nonnull</span> <span class="type">CommandContext</span> ctx) {
+        <span class="type">PlayerRef</span> targetRef = (<span class="type">PlayerRef</span>) <span class="kw">this</span>.<span class="field">playerArg</span>.get(ctx);
+        <span class="kw">int</span> amount = (<span class="type">Integer</span>) <span class="kw">this</span>.<span class="field">amountArg</span>.get(ctx);
+
+        <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = targetRef.getReference();
+        <span class="kw">if</span> (ref == <span class="kw">null</span> || !ref.isValid()) {
+            ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Player is not in a world"</span>));
+            <span class="kw">return</span>;
+        }
+
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = ref.getStore();
+        <span class="type">World</span> world = ((<span class="type">EntityStore</span>) store.getExternalData()).getWorld();
+
+        <span class="comment">// Schedule on world thread for safe ECS access</span>
+        world.execute(() -&gt; {
+            <span class="comment">// Safe to access Store components here</span>
+            <span class="comment">// Apply healing to the player's Health component...</span>
+            ctx.sendMessage(<span class="type">Message</span>.raw(
+                <span class="str">"Healed "</span> + targetRef.getUsername() + <span class="str">" for "</span> + amount + <span class="str">" HP"</span>));
+        });
+    }
 }</code></pre>
+            </section>
 
-            <h2>Argument Types</h2>
-            <p>The following argument types are available:</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ArgType</th>
-                        <th>Java Type</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>ArgTypes.STRING</code></td>
-                        <td><code>String</code></td>
-                        <td>Text string</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.INT</code></td>
-                        <td><code>Integer</code></td>
-                        <td>Integer number</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.FLOAT</code></td>
-                        <td><code>Float</code></td>
-                        <td>Decimal number</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.DOUBLE</code></td>
-                        <td><code>Double</code></td>
-                        <td>Double precision</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.BOOLEAN</code></td>
-                        <td><code>Boolean</code></td>
-                        <td>true/false</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.PLAYER</code></td>
-                        <td><code>PlayerRef</code></td>
-                        <td>Online player</td>
-                    </tr>
-                    <tr>
-                        <td><code>ArgTypes.WORLD</code></td>
-                        <td><code>World</code></td>
-                        <td>Loaded world</td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- ============================================================ -->
+            <!-- INTERNAL DISPATCH FLOW -->
+            <!-- ============================================================ -->
+            <section id="dispatch-flow">
+                <h2>Internal Dispatch Flow</h2>
+                <p>Understanding the full lifecycle of a command from input to execution:</p>
 
-            <h2>CommandContext</h2>
-            <div class="info-box warning">
-                <strong>Warning:</strong> <code>CommandContext</code> does NOT have a <code>getPlayer()</code> method. Use <code>ctx.sender().getUuid()</code> to get the player's UUID.
-            </div>
+<div class="diagram">Player types: /gamemode creative Steve
+         |
+         v
+CommandManager.handleCommand(sender, "gamemode creative Steve")
+         |
+         v
+ForkJoinPool.commonPool().execute(() -&gt; {
+  1. Split "gamemode" from "creative Steve"
+  2. Look up "gamemode" in commandRegistration map
+  3. If not found, check aliases map
+  4. Tokenizer.parseArguments("gamemode creative Steve", parseResult)
+     &rarr; ["gamemode", "creative", "Steve"]
+  5. ParserContext.of(tokens, parseResult)
+     &rarr; Separates pre-optional tokens from --optional tokens
+  6. command.acceptCall(sender, parserContext, parseResult)
+     a. Check for subcommands matching first token
+     b. Check hasPermission(sender)
+     c. Check --help flag
+     d. Check --confirm for unsafe commands
+     e. Match variant by required parameter count
+     f. Build CommandContext, parse arguments into typed values
+     g. Call execute(context) &rarr; executeSync() / executeAsync()
+  7. Handle CompletableFuture result / errors
+})</div>
+            </section>
 
-            <p>Key methods available on <code>CommandContext</code>:</p>
-            <ul>
-                <li><code>ctx.sender()</code> — returns <code>CommandSender</code> (has <code>getUuid()</code>, <code>hasPermission()</code>)</li>
-                <li><code>ctx.get(arg)</code> — get argument value</li>
-                <li><code>ctx.provided(arg)</code> — check if optional arg was provided</li>
-                <li><code>ctx.sendMessage(Message)</code> — send response to command sender</li>
-                <li><code>ctx.senderAsPlayerRef()</code> — returns <code>Ref&lt;EntityStore&gt;</code> (requires world thread for Store access!)</li>
-            </ul>
+            <!-- ============================================================ -->
+            <!-- MESSAGES -->
+            <!-- ============================================================ -->
+            <section id="messages">
+                <h2>Messages &amp; Response Formatting</h2>
+                <p>Commands communicate with players through the <span class="type">Message</span> class, which supports raw text, translation keys with parameters, color, and text formatting.</p>
+                <pre><code><span class="comment">// Raw text</span>
+ctx.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Hello world"</span>));
 
-            <h2>Thread Context</h2>
-            <div class="info-box warning">
-                <strong>Warning:</strong> Commands run on ForkJoinPool, NOT the world thread. You CANNOT access the EntityStore directly from <code>executeSync()</code>.
-            </div>
-
-            <p>Use thread-safe APIs from the main thread, and schedule world-thread operations when needed:</p>
-            <pre><code class="language-java">@Override
-public void executeSync(CommandContext ctx) {
-    // Thread-safe operations (main thread):
-    UUID uuid = ctx.sender().getUuid();
-    PlayerRef player = Universe.get().getPlayer(uuid);
-    String name = player.getUsername();        // safe
-    Vector3d pos = player.getTransform().getPosition();  // safe
-
-    // For Store operations, schedule on world thread:
-    World world = player.getWorld();
-    world.execute(() -> {
-        Store&lt;EntityStore&gt; store = world.getEntityStore().getStore();
-        // Store operations safe here
-    });
-}</code></pre>
-
-            <h2>Permission Checking</h2>
-            <p>Override <code>hasPermission()</code> to control command access:</p>
-            <pre><code class="language-java">@Override
-public boolean hasPermission(CommandSender sender) {
-    return sender.hasPermission("myplugin.admin");
-}</code></pre>
-
-            <p>The <code>hasPermission()</code> method checks:</p>
-            <ol>
-                <li>Direct player permissions</li>
-                <li>Group permissions (including wildcards)</li>
-                <li>OP group has <code>"*"</code> wildcard (grants all permissions)</li>
-            </ol>
-
-            <h2>Messages</h2>
-            <p>Send messages to command senders and players:</p>
-            <pre><code class="language-java">// Simple text
-ctx.sendMessage(Message.raw("Hello world"));
-
-// Colored text
-Message msg = Message.raw("Success!").color(Color.GREEN).bold(true);
+<span class="comment">// Colored and formatted</span>
+<span class="type">Message</span> msg = <span class="type">Message</span>.raw(<span class="str">"Success!"</span>).color(<span class="type">Color</span>.<span class="field">GREEN</span>).bold(<span class="kw">true</span>);
 ctx.sendMessage(msg);
 
-// Send to specific player
-playerRef.sendMessage(Message.raw("Private message"));
+<span class="comment">// Translated with parameters</span>
+ctx.sendMessage(<span class="type">Message</span>.translation(<span class="str">"server.commands.gamemode.success.self"</span>)
+    .param(<span class="str">"mode"</span>, gameModeMessage));
 
-// Broadcast to all players
-Universe.get().sendMessage(Message.raw("Server announcement"));</code></pre>
+<span class="comment">// Message chaining with .insert()</span>
+<span class="type">Message</span> usage = <span class="type">Message</span>.raw(<span class="str">"Usage: "</span>)
+    .insert(<span class="str">"/greet &lt;player&gt;"</span>)
+    .insert(<span class="str">"\n"</span>)
+    .insert(<span class="str">"Aliases: hello, hi"</span>);
 
-            <div class="info-box info">
-                <strong>Message Formatting:</strong> Messages support color, bold, italic, and other formatting. Check the <code>Message</code> and <code>Color</code> classes for available options.
-            </div>
+<span class="comment">// Send to a specific player</span>
+playerRef.sendMessage(<span class="type">Message</span>.raw(<span class="str">"Private message"</span>));
+
+<span class="comment">// Broadcast to all players</span>
+<span class="type">Universe</span>.get().sendMessage(<span class="type">Message</span>.raw(<span class="str">"Server announcement"</span>));</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- QUICK REFERENCE -->
+            <!-- ============================================================ -->
+            <section id="quick-reference">
+                <h2>Quick Reference</h2>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Code</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Register a command</td><td><code>getCommandRegistry().registerCommand(<span class="kw">new</span> MyCommand())</code></td></tr>
+                        <tr><td>Add required arg</td><td><code>withRequiredArg(<span class="str">"name"</span>, <span class="str">"desc"</span>, ArgTypes.STRING)</code></td></tr>
+                        <tr><td>Add optional arg</td><td><code>withOptionalArg(<span class="str">"name"</span>, <span class="str">"desc"</span>, ArgTypes.INT)</code></td></tr>
+                        <tr><td>Add flag arg</td><td><code>withFlagArg(<span class="str">"verbose"</span>, <span class="str">"Enable verbose output"</span>)</code></td></tr>
+                        <tr><td>Add default arg</td><td><code>withDefaultArg(<span class="str">"count"</span>, <span class="str">"desc"</span>, ArgTypes.INT, 1, <span class="str">"one"</span>)</code></td></tr>
+                        <tr><td>Get arg value</td><td><code>ctx.get(myArg)</code> or <code>myArg.get(ctx)</code></td></tr>
+                        <tr><td>Check if optional provided</td><td><code>ctx.provided(myOptionalArg)</code></td></tr>
+                        <tr><td>Add aliases</td><td><code>addAliases(<span class="kw">new</span> String[] { <span class="str">"alias1"</span>, <span class="str">"alias2"</span> })</code></td></tr>
+                        <tr><td>Add subcommand</td><td><code>addSubCommand((AbstractCommand) <span class="kw">new</span> SubCmd())</code></td></tr>
+                        <tr><td>Add variant</td><td><code>addUsageVariant((AbstractCommand) <span class="kw">new</span> Variant())</code></td></tr>
+                        <tr><td>Set permission</td><td><code>requirePermission(<span class="str">"my.perm.node"</span>)</code></td></tr>
+                        <tr><td>Require confirmation</td><td><code><span class="kw">super</span>(<span class="str">"name"</span>, <span class="str">"desc"</span>, <span class="kw">true</span>)</code></td></tr>
+                        <tr><td>Send message to sender</td><td><code>ctx.sendMessage(Message.raw(<span class="str">"text"</span>))</code></td></tr>
+                        <tr><td>Get sender UUID</td><td><code>ctx.sender().getUuid()</code></td></tr>
+                        <tr><td>Check if sender is player</td><td><code>ctx.isPlayer()</code></td></tr>
+                        <tr><td>Get player Ref</td><td><code>ctx.senderAsPlayerRef()</code></td></tr>
+                        <tr><td>Schedule on world thread</td><td><code>world.execute(() -&gt; { <span class="comment">/* safe ECS access */</span> })</code></td></tr>
+                        <tr><td>Throw command error</td><td><code><span class="kw">throw new</span> GeneralCommandException(Message.raw(<span class="str">"error"</span>))</code></td></tr>
+                    </tbody>
+                </table>
+            </section>
+
         </div>
     </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

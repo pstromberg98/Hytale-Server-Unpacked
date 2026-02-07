@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Damage &amp; Combat - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html" class="active">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-toc"></div>
+        <div class="content">
+            <h1>Damage &amp; Combat</h1>
+            <p class="page-desc">Damage pipeline, health management, death and respawn flow, armor reduction, knockback physics, status effects, stat modifiers, and DamageCause types.</p>
+
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>The Hytale combat system is built entirely on the <strong>Entity Component System</strong>. Damage is represented as a <span class="type">CancellableEcsEvent</span> that flows through a pipeline of ordered systems. Each system in the pipeline can inspect, modify, or cancel the damage before it is ultimately applied to the target entity.</p>
+                <p>The pipeline architecture means that armor reduction, knockback calculation, stamina drain, sound effects, and death handling are all separate, composable systems rather than a single monolithic function. This makes the combat system highly extensible through plugins.</p>
+
+<div class="diagram">Damage Event Flow
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  Damage Source  &#9474; ──▶ &#9474;  Damage Event   &#9474; ──▶ &#9474;   Filtering     &#9474;
+&#9474;  (Entity, Proj, &#9474;     &#9474;  (amount, cause &#9474;     &#9474;  (world config, &#9474;
+&#9474;   Env, Command) &#9474;     &#9474;   source, meta) &#9474;     &#9474;   unkillable)   &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;     &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;     &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                                                          │
+          ┌───────────────────────────────────────────────┘
+          ▼
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  Armor &amp; Block  &#9474; ──▶ &#9474; Stamina &amp; Fall  &#9474; ──▶ &#9474;  Apply Damage   &#9474;
+&#9474;  Reduction      &#9474;     &#9474; Damage          &#9474;     &#9474;  + Effects      &#9474;
+&#9474;  + Tool Damage  &#9474;     &#9474;                 &#9474;     &#9474;  + Indicators   &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;     &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;     &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                                                          │
+          ┌───────────────────────────────────────────────┘
+          ▼
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  Death System   &#9474; ──▶ &#9474; Respawn System  &#9474;
+&#9474;  (if health     &#9474;     &#9474; (invulnerable   &#9474;
+&#9474;   &lt;= 0)         &#9474;     &#9474;  + stat reset)  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;     &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+            </section>
+
+            <section id="damage-event">
+                <h2>Damage Event</h2>
+                <p>The <span class="type">Damage</span> class extends <span class="type">CancellableEcsEvent</span> and is the core event that flows through the entire damage pipeline. It carries the damage amount, the cause, the source, and a metadata map for pipeline systems to communicate.</p>
+
+                <h3>Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>initialAmount</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Original damage value before any modifications</td>
+                        </tr>
+                        <tr>
+                            <td><code>amount</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Current damage value (mutable by pipeline systems)</td>
+                        </tr>
+                        <tr>
+                            <td><code>damageCauseIndex</code></td>
+                            <td><span class="kw">int</span></td>
+                            <td>Index into the DamageCause asset map</td>
+                        </tr>
+                        <tr>
+                            <td><code>source</code></td>
+                            <td><span class="type">Source</span></td>
+                            <td>The origin of the damage (entity, projectile, environment, command)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Constructor</h3>
+                <pre><code><span class="type">Damage</span> <span class="field">damage</span> = <span class="kw">new</span> <span class="type">Damage</span>(
+    <span class="field">source</span>,       <span class="comment">// Damage.Source implementation</span>
+    <span class="field">damageCause</span>,  <span class="comment">// DamageCause asset reference</span>
+    <span class="num">10.0f</span>         <span class="comment">// damage amount</span>
+);</code></pre>
+
+                <h3>Meta Keys</h3>
+                <p>The <span class="type">Damage</span> event carries metadata via typed keys. Pipeline systems read and write these keys to pass information along the chain.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Meta Key</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>HIT_LOCATION</code></td>
+                            <td><span class="type">Vector4d</span></td>
+                            <td>World-space hit position with W component for radius</td>
+                        </tr>
+                        <tr>
+                            <td><code>HIT_ANGLE</code></td>
+                            <td><span class="type">Float</span></td>
+                            <td>Angle of impact relative to victim facing direction</td>
+                        </tr>
+                        <tr>
+                            <td><code>IMPACT_PARTICLES</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Particle effect to spawn at the hit location</td>
+                        </tr>
+                        <tr>
+                            <td><code>IMPACT_SOUND_EFFECT</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Sound effect to play on impact</td>
+                        </tr>
+                        <tr>
+                            <td><code>PLAYER_IMPACT_SOUND_EFFECT</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Sound effect played only for the impacted player</td>
+                        </tr>
+                        <tr>
+                            <td><code>CAMERA_EFFECT</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Camera shake or flash effect applied on hit</td>
+                        </tr>
+                        <tr>
+                            <td><code>DEATH_ICON</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Icon displayed in the kill feed UI</td>
+                        </tr>
+                        <tr>
+                            <td><code>BLOCKED</code></td>
+                            <td><span class="type">Boolean</span></td>
+                            <td>Set to <code>true</code> if the damage was blocked by a shield or weapon</td>
+                        </tr>
+                        <tr>
+                            <td><code>STAMINA_DRAIN_MULTIPLIER</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Multiplier applied to stamina drain from this damage</td>
+                        </tr>
+                        <tr>
+                            <td><code>CAN_BE_PREDICTED</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Whether client-side prediction is allowed for this damage</td>
+                        </tr>
+                        <tr>
+                            <td><code>KNOCKBACK_COMPONENT</code></td>
+                            <td><span class="type">Object</span></td>
+                            <td>Knockback parameters attached by the knockback system</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="damage-sources">
+                <h2>Damage Sources</h2>
+                <p>Damage sources form an interface hierarchy that identifies where the damage originated. The base <span class="type">Source</span> is a marker interface, with concrete implementations for each origin type.</p>
+
+<div class="diagram">Source (marker interface)
+ ├── EntitySource
+ │    └── ProjectileSource
+ ├── EnvironmentSource
+ └── CommandSource
+</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Source Type</th>
+                            <th>Description</th>
+                            <th>Key Fields</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">Damage.Source</span></td>
+                            <td>Marker interface &mdash; all sources implement this</td>
+                            <td>&mdash;</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Damage.EntitySource</span></td>
+                            <td>Damage dealt by an entity (melee attack)</td>
+                            <td><code>Ref&lt;EntityStore&gt; attacker</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Damage.ProjectileSource</span></td>
+                            <td>Damage dealt by a projectile (arrow, spell)</td>
+                            <td><code>Ref&lt;EntityStore&gt; projectile</code>, <code>Ref&lt;EntityStore&gt; attacker</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Damage.EnvironmentSource</span></td>
+                            <td>Damage from the environment (fall, fire, drowning)</td>
+                            <td><code>String environmentName</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Damage.CommandSource</span></td>
+                            <td>Damage applied via a command</td>
+                            <td><code>CommandSender sender</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Identifying the Attacker</h3>
+                <pre><code><span class="type">Damage</span> <span class="field">damage</span> = event.getDamage();
+<span class="type">Damage</span>.<span class="type">Source</span> <span class="field">source</span> = <span class="field">damage</span>.<span class="fn">getSource</span>();
+
+<span class="kw">if</span> (<span class="field">source</span> <span class="kw">instanceof</span> <span class="type">Damage</span>.<span class="type">ProjectileSource</span> <span class="field">projectileSource</span>) {
+    <span class="comment">// Projectile damage — get both the projectile and the shooter</span>
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">projectile</span> = <span class="field">projectileSource</span>.<span class="fn">getProjectile</span>();
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">shooter</span> = <span class="field">projectileSource</span>.<span class="fn">getRef</span>();
+} <span class="kw">else if</span> (<span class="field">source</span> <span class="kw">instanceof</span> <span class="type">Damage</span>.<span class="type">EntitySource</span> <span class="field">entitySource</span>) {
+    <span class="comment">// Melee damage — get the attacker</span>
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">attacker</span> = <span class="field">entitySource</span>.<span class="fn">getRef</span>();
+    <span class="type">PlayerRef</span> <span class="field">killer</span> = accessor.<span class="fn">getComponent</span>(<span class="field">attacker</span>, <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
+} <span class="kw">else if</span> (<span class="field">source</span> <span class="kw">instanceof</span> <span class="type">Damage</span>.<span class="type">EnvironmentSource</span> <span class="field">envSource</span>) {
+    <span class="type">String</span> <span class="field">cause</span> = <span class="field">envSource</span>.<span class="fn">getEnvironmentName</span>();
+    <span class="comment">// e.g. "fall", "fire", "drowning"</span>
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p><span class="type">ProjectileSource</span> extends <span class="type">EntitySource</span>. Always check for <span class="type">ProjectileSource</span> first with <code>instanceof</code>, otherwise projectile damage will match the <span class="type">EntitySource</span> branch.</p>
+                </div>
+            </section>
+
+            <section id="damage-cause">
+                <h2>DamageCause Asset</h2>
+                <p>A <span class="type">DamageCause</span> is an asset definition that categorizes the type of damage and configures its behavior. It determines visual effects, animations, and whether the damage bypasses certain defenses.</p>
+
+                <h3>Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Unique identifier for this damage cause</td>
+                        </tr>
+                        <tr>
+                            <td><code>inherits</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Parent cause to inherit properties from</td>
+                        </tr>
+                        <tr>
+                            <td><code>durabilityLoss</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Durability deducted from armor when this cause hits</td>
+                        </tr>
+                        <tr>
+                            <td><code>staminaLoss</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Stamina drained from the victim</td>
+                        </tr>
+                        <tr>
+                            <td><code>bypassResistances</code></td>
+                            <td><span class="kw">boolean</span></td>
+                            <td>If <code>true</code>, armor and wield reduction are skipped</td>
+                        </tr>
+                        <tr>
+                            <td><code>damageTextColor</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Color of the floating damage number in the HUD</td>
+                        </tr>
+                        <tr>
+                            <td><code>animationId</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Hit animation played on the victim</td>
+                        </tr>
+                        <tr>
+                            <td><code>deathAnimationId</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Death animation played when this cause kills</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Built-in Damage Causes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cause</th>
+                            <th>Bypasses Resistances</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PHYSICAL</code></td>
+                            <td>No</td>
+                            <td>Standard melee damage from entities</td>
+                        </tr>
+                        <tr>
+                            <td><code>PROJECTILE</code></td>
+                            <td>No</td>
+                            <td>Ranged damage from arrows, thrown items</td>
+                        </tr>
+                        <tr>
+                            <td><code>DROWNING</code></td>
+                            <td>Yes</td>
+                            <td>Damage from being submerged without air</td>
+                        </tr>
+                        <tr>
+                            <td><code>ENVIRONMENT</code></td>
+                            <td>Yes</td>
+                            <td>Generic environmental hazards</td>
+                        </tr>
+                        <tr>
+                            <td><code>FALL</code></td>
+                            <td>Yes</td>
+                            <td>Fall damage from height</td>
+                        </tr>
+                        <tr>
+                            <td><code>COMMAND</code></td>
+                            <td>Yes</td>
+                            <td>Damage applied via server commands</td>
+                        </tr>
+                        <tr>
+                            <td><code>SUFFOCATION</code></td>
+                            <td>Yes</td>
+                            <td>Damage from being inside a solid block</td>
+                        </tr>
+                        <tr>
+                            <td><code>OUT_OF_WORLD</code></td>
+                            <td>Yes</td>
+                            <td>Void damage from falling below the world</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="damage-pipeline">
+                <h2>Damage Pipeline</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.systems.damage</code></p>
+                <p>The damage pipeline is defined in <span class="type">DamageSystems</span> as an ordered chain of ECS systems. Each system receives the <span class="type">Damage</span> event and can read or modify it. If any system cancels the event, the remaining systems are skipped.</p>
+
+                <h3>Pipeline Execution Order</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>System</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="3"><strong>Filtering</strong></td>
+                            <td><code>FilterPlayerWorldConfig</code></td>
+                            <td>Cancels damage if world config disables PvP or player damage</td>
+                        </tr>
+                        <tr>
+                            <td><code>FilterNPCWorldConfig</code></td>
+                            <td>Cancels damage if world config disables NPC damage</td>
+                        </tr>
+                        <tr>
+                            <td><code>FilterUnkillable</code></td>
+                            <td>Cancels damage if the target has the unkillable flag</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="6"><strong>Reduction</strong></td>
+                            <td><code>ArmorDamageReduction</code></td>
+                            <td>Reduces damage based on equipped armor stats</td>
+                        </tr>
+                        <tr>
+                            <td><code>ArmorKnockbackReduction</code></td>
+                            <td>Reduces knockback based on armor weight</td>
+                        </tr>
+                        <tr>
+                            <td><code>ArmorDamage</code></td>
+                            <td>Applies durability loss to armor pieces</td>
+                        </tr>
+                        <tr>
+                            <td><code>WieldingDamageReduction</code></td>
+                            <td>Reduces damage if the victim is blocking with a weapon/shield</td>
+                        </tr>
+                        <tr>
+                            <td><code>WieldingKnockbackReduction</code></td>
+                            <td>Reduces knockback when blocking</td>
+                        </tr>
+                        <tr>
+                            <td><code>DamageAttackerTool</code></td>
+                            <td>Applies durability loss to the attacker's weapon</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="4"><strong>Special</strong></td>
+                            <td><code>DamageStamina</code></td>
+                            <td>Drains stamina from the victim based on damage cause</td>
+                        </tr>
+                        <tr>
+                            <td><code>FallDamagePlayers</code></td>
+                            <td>Calculates fall damage for player entities</td>
+                        </tr>
+                        <tr>
+                            <td><code>FallDamageNPCs</code></td>
+                            <td>Calculates fall damage for NPC entities</td>
+                        </tr>
+                        <tr>
+                            <td><code>CanBreathe</code></td>
+                            <td>Handles drowning damage based on breath meter</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="6"><strong>Application</strong></td>
+                            <td><code>ApplyDamage</code></td>
+                            <td>Subtracts the final amount from the entity's health</td>
+                        </tr>
+                        <tr>
+                            <td><code>ApplyParticles</code></td>
+                            <td>Spawns impact particle effects at the hit location</td>
+                        </tr>
+                        <tr>
+                            <td><code>ApplySoundEffects</code></td>
+                            <td>Plays impact and player-specific sound effects</td>
+                        </tr>
+                        <tr>
+                            <td><code>HitAnimation</code></td>
+                            <td>Triggers the hit reaction animation on the victim</td>
+                        </tr>
+                        <tr>
+                            <td><code>PlayerHitIndicators</code></td>
+                            <td>Sends directional damage indicators to the player HUD</td>
+                        </tr>
+                        <tr>
+                            <td><code>RecordLastCombat</code> / <code>TrackLastDamage</code></td>
+                            <td>Records combat timestamp and last damage for kill attribution</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Threading</div>
+                    <p>All damage pipeline systems execute on the <strong>world tick thread</strong>. Damage events dispatched from other threads must be queued via <code>world.execute()</code>.</p>
+                </div>
+
+                <h3>Listening to Damage Events</h3>
+                <pre><code><span class="comment">// Register a system to intercept damage before it is applied</span>
+plugin.<span class="fn">getEventRegistry</span>().<span class="fn">registerSystem</span>(
+    <span class="type">Damage</span>.class,
+    (victimRef, damage, accessor) -&gt; {
+        <span class="comment">// Read damage details</span>
+        <span class="kw">float</span> <span class="field">amount</span> = damage.<span class="fn">getAmount</span>();
+        <span class="type">Damage</span>.<span class="type">Source</span> <span class="field">source</span> = damage.<span class="fn">getSource</span>();
+
+        <span class="comment">// Modify damage</span>
+        damage.<span class="fn">setAmount</span>(<span class="field">amount</span> * <span class="num">0.5f</span>); <span class="comment">// halve all damage</span>
+
+        <span class="comment">// Or cancel it entirely</span>
+        <span class="kw">if</span> (shouldProtect(victimRef)) {
+            damage.<span class="fn">setCancelled</span>(<span class="kw">true</span>);
+        }
+    }
+);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Important</div>
+                    <p><span class="type">Damage</span> is an <strong>EcsEvent</strong>. You must use <code>registerSystem()</code> to listen for it. Using <code>registerGlobal()</code> will compile but silently fail to receive events.</p>
+                </div>
+            </section>
+
+            <section id="damage-calculation">
+                <h2>Damage Calculation</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.systems.damage</code></p>
+                <p>The <span class="type">DamageCalculatorSystems</span> use a <span class="type">Sequence</span>-based modifier system to compute final damage values. This allows multiple systems to stack additive, multiplicative, and override modifications in a deterministic order.</p>
+
+                <h3>Sequence</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>modifications</code></td>
+                            <td><span class="type">SequenceModifier[]</span></td>
+                            <td>Ordered array of modifications to apply</td>
+                        </tr>
+                        <tr>
+                            <td><code>baseAmount</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Starting damage value before modifications</td>
+                        </tr>
+                        <tr>
+                            <td><code>currentAmount</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>Running total after each modification is applied</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>SequenceModifier</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>type</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Identifier for the source of this modification</td>
+                        </tr>
+                        <tr>
+                            <td><code>amount</code></td>
+                            <td><span class="kw">float</span></td>
+                            <td>The value to use in the operation</td>
+                        </tr>
+                        <tr>
+                            <td><code>operation</code></td>
+                            <td><span class="type">Operation</span></td>
+                            <td>How the amount is applied to the current value</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Operations</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Formula</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>add</code></td>
+                            <td><code>current + amount</code></td>
+                            <td>Base 10 + add 5 = 15</td>
+                        </tr>
+                        <tr>
+                            <td><code>multiply</code></td>
+                            <td><code>current * amount</code></td>
+                            <td>Current 15 * 0.8 = 12</td>
+                        </tr>
+                        <tr>
+                            <td><code>override</code></td>
+                            <td><code>amount</code></td>
+                            <td>Override to 25 = 25</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Example: How armor reduction modifies damage</span>
+<span class="comment">// Sequence: baseAmount = 20.0</span>
+<span class="comment">//   [0] type="armor",   operation=multiply, amount=0.7  → 20 * 0.7 = 14</span>
+<span class="comment">//   [1] type="blocking", operation=multiply, amount=0.5  → 14 * 0.5 = 7</span>
+<span class="comment">//   [2] type="effect",  operation=add,      amount=-2.0 →  7 + (-2) = 5</span>
+<span class="comment">// Final currentAmount = 5.0</span></code></pre>
+            </section>
+
+            <section id="death-system">
+                <h2>Death System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.systems.death</code></p>
+                <p>When an entity's health reaches zero or below, the <span class="type">DeathSystems</span> pipeline activates. Like the damage pipeline, death handling is a chain of ordered systems.</p>
+
+                <h3>Death Pipeline</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>OnDeathSystem</code></td>
+                            <td>Fires death events and notifies listeners</td>
+                        </tr>
+                        <tr>
+                            <td><code>DeathAnimation</code></td>
+                            <td>Plays the death animation (from DamageCause or entity default)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ItemDropping</code></td>
+                            <td>Drops items from the entity's inventory based on <span class="type">DeathItemLoss</span> config</td>
+                        </tr>
+                        <tr>
+                            <td><code>CorpseRemoval</code></td>
+                            <td>Schedules entity removal after the death animation completes</td>
+                        </tr>
+                        <tr>
+                            <td><code>KillFeed UI</code></td>
+                            <td>Broadcasts the kill to all players via the kill feed overlay</td>
+                        </tr>
+                        <tr>
+                            <td><code>PlayerDeathScreen</code></td>
+                            <td>Shows the respawn screen to the dead player</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Detecting Deaths</h3>
+                <p>Use <span class="type">KillFeedEvent.Display</span> to detect entity deaths. This is an <strong>EcsEvent</strong> &mdash; you must use <code>registerSystem()</code>.</p>
+
+                <pre><code>plugin.<span class="fn">getEventRegistry</span>().<span class="fn">registerSystem</span>(
+    <span class="type">KillFeedEvent</span>.<span class="type">Display</span>.class,
+    (victimRef, event, accessor) -&gt; {
+        <span class="comment">// victimRef IS the entity that died</span>
+
+        <span class="comment">// Check if victim is an NPC</span>
+        <span class="type">NPCEntity</span> <span class="field">npc</span> = accessor.<span class="fn">getComponent</span>(victimRef, <span class="type">NPCEntity</span>.<span class="fn">getComponentType</span>());
+
+        <span class="comment">// Get victim UUID</span>
+        <span class="type">UUIDComponent</span> <span class="field">uuid</span> = accessor.<span class="fn">getComponent</span>(victimRef, <span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>());
+
+        <span class="comment">// Get the damage that killed them</span>
+        <span class="type">Damage</span> <span class="field">damage</span> = event.<span class="fn">getDamage</span>();
+        <span class="type">Damage</span>.<span class="type">Source</span> <span class="field">source</span> = <span class="field">damage</span>.<span class="fn">getSource</span>();
+
+        <span class="comment">// Identify the killer (if entity source)</span>
+        <span class="kw">if</span> (<span class="field">source</span> <span class="kw">instanceof</span> <span class="type">Damage</span>.<span class="type">EntitySource</span> <span class="field">entitySource</span>) {
+            <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">killerRef</span> = <span class="field">entitySource</span>.<span class="fn">getRef</span>();
+            <span class="type">PlayerRef</span> <span class="field">killer</span> = accessor.<span class="fn">getComponent</span>(
+                <span class="field">killerRef</span>, <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
+        }
+    }
+);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Important</div>
+                    <p><span class="type">KillFeedEvent.Display</span> is an <strong>EcsEvent</strong>. Using <code>registerGlobal()</code> will compile but <strong>silently fail</strong>. Always use <code>registerSystem()</code>.</p>
+                </div>
+            </section>
+
+            <section id="respawn-system">
+                <h2>Respawn System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.systems.respawn</code></p>
+                <p>After a player dies and clicks the respawn button, the <span class="type">RespawnSystems</span> pipeline executes to restore the player to a playable state.</p>
+
+                <h3>Respawn Pipeline</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>RespawnControllerRespawnSystem</code></td>
+                            <td>Determines the respawn location (bed, checkpoint, world spawn)</td>
+                        </tr>
+                        <tr>
+                            <td><code>OnRespawnSystem</code></td>
+                            <td>Fires respawn events for plugin listeners</td>
+                        </tr>
+                        <tr>
+                            <td><code>ResetStatsRespawnSystem</code></td>
+                            <td>Restores health, stamina, and breath to full</td>
+                        </tr>
+                        <tr>
+                            <td><code>ResetPlayerRespawnSystem</code></td>
+                            <td>Resets player-specific state (camera, movement flags)</td>
+                        </tr>
+                        <tr>
+                            <td><code>CheckBrokenItemsRespawnSystem</code></td>
+                            <td>Re-evaluates broken item penalties after respawn</td>
+                        </tr>
+                        <tr>
+                            <td><code>ClearEntityEffectsRespawnSystem</code></td>
+                            <td>Removes all active status effects (buffs and debuffs)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ClearInteractionsRespawnSystem</code></td>
+                            <td>Cancels any in-progress block or entity interactions</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Spawn Protection</h3>
+                <p>Freshly respawned players receive temporary invulnerability to prevent spawn camping:</p>
+
+                <ul>
+                    <li><strong>Default duration:</strong> 3 seconds of invulnerability after respawn</li>
+                    <li><strong>Configuration:</strong> Controlled by <code>RESPAWN_INVULNERABILITY_TIME_NANOS</code> constant</li>
+                    <li>Invulnerability is cleared early if the player attacks or moves beyond a threshold</li>
+                </ul>
+
+                <pre><code><span class="comment">// The respawn invulnerability constant (in nanoseconds)</span>
+<span class="kw">static final long</span> <span class="field">RESPAWN_INVULNERABILITY_TIME_NANOS</span> = <span class="num">3_000_000_000L</span>; <span class="comment">// 3 seconds</span></code></pre>
+            </section>
+
+            <section id="entity-effects">
+                <h2>Entity Effects</h2>
+                <p>Active effects (buffs and debuffs) are managed through the <span class="type">ActiveEntityEffect</span> component and the <span class="type">EffectControllerComponent</span>.</p>
+
+                <h3>ActiveEntityEffect Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>entityEffectId</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Asset ID of the effect (e.g. <code>"Poison"</code>, <code>"Speed"</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code>remainingDuration</code></td>
+                            <td><span class="kw">long</span></td>
+                            <td>Time remaining in nanoseconds</td>
+                        </tr>
+                        <tr>
+                            <td><code>infinite</code></td>
+                            <td><span class="kw">boolean</span></td>
+                            <td>If <code>true</code>, the effect never expires</td>
+                        </tr>
+                        <tr>
+                            <td><code>debuff</code></td>
+                            <td><span class="kw">boolean</span></td>
+                            <td>Whether this is a negative effect (cleared on respawn)</td>
+                        </tr>
+                        <tr>
+                            <td><code>invulnerable</code></td>
+                            <td><span class="kw">boolean</span></td>
+                            <td>If <code>true</code>, the entity cannot take damage while this effect is active</td>
+                        </tr>
+                        <tr>
+                            <td><code>statusEffectIcon</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Icon asset ID displayed in the player HUD</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>EffectControllerComponent</h3>
+                <p>The <span class="type">EffectControllerComponent</span> is an ECS component attached to entities that manages the list of active effects. It handles adding, removing, ticking, and expiring effects.</p>
+
+                <pre><code><span class="comment">// Get the effect controller from an entity</span>
+<span class="type">EffectControllerComponent</span> <span class="field">effects</span> = accessor.<span class="fn">getComponent</span>(
+    entityRef, <span class="type">EffectControllerComponent</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Check if entity has a specific effect</span>
+<span class="kw">boolean</span> <span class="field">isPoisoned</span> = <span class="field">effects</span>.<span class="fn">hasEffect</span>(<span class="str">"Poison"</span>);
+
+<span class="comment">// Check if entity is invulnerable (any effect granting invulnerability)</span>
+<span class="kw">boolean</span> <span class="field">isInvulnerable</span> = <span class="field">effects</span>.<span class="fn">isInvulnerable</span>();</code></pre>
+            </section>
+
+            <section id="stat-modifiers">
+                <h2>Stat Modifiers</h2>
+                <p>The <span class="type">StatModifiersManager</span> controls how an entity's base stats (damage, speed, health, etc.) are modified by equipment, effects, and penalties. Modifiers are applied in a fixed order to produce deterministic results.</p>
+
+                <h3>Application Order</h3>
+                <p>When stat modifiers are recalculated, they are applied in the following sequence:</p>
+
+                <ol>
+                    <li><strong>Entity Effects</strong> &mdash; Buffs and debuffs from <span class="type">ActiveEntityEffect</span> instances</li>
+                    <li><strong>Armor</strong> &mdash; Stat bonuses from equipped armor pieces</li>
+                    <li><strong>Broken Penalties</strong> &mdash; Negative modifiers from items at zero durability</li>
+                    <li><strong>Weapon</strong> &mdash; Stat bonuses from the currently held weapon</li>
+                    <li><strong>Utility</strong> &mdash; Stat bonuses from utility slot items (rings, charms)</li>
+                </ol>
+
+<div class="diagram">Stat Modifier Application Order
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;    Effects    &#9474; ─▶ &#9474;    Armor      &#9474; ─▶ &#9474;   Broken     &#9474; ─▶ &#9474;    Weapon    &#9474; ─▶ &#9474;   Utility    &#9474;
+&#9474;  (buffs/      &#9474;   &#9474;  (equipped    &#9474;   &#9474;  Penalties   &#9474;   &#9474;  (held item  &#9474;   &#9474;  (rings,     &#9474;
+&#9474;   debuffs)    &#9474;   &#9474;   pieces)     &#9474;   &#9474;  (0 dura)    &#9474;   &#9474;   bonuses)   &#9474;   &#9474;   charms)    &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Recalculation Triggers</h3>
+                <p>Stat modifiers are automatically recalculated when any of the following change:</p>
+                <ul>
+                    <li>An entity effect is added, removed, or expires</li>
+                    <li>An armor piece is equipped or unequipped</li>
+                    <li>An item's durability reaches zero or is repaired</li>
+                    <li>The held weapon changes (hotbar selection)</li>
+                    <li>A utility slot item is changed</li>
+                </ul>
+            </section>
+
+            <section id="knockback">
+                <h2>Knockback</h2>
+                <p>Knockback is handled separately from damage through the <span class="type">KnockbackComponent</span> and <span class="type">KnockbackSystems</span>. The knockback vector is calculated based on the attacker's position relative to the victim and then modified by the pipeline.</p>
+
+                <h3>KnockbackSystems</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>ApplyKnockback</code></td>
+                            <td>Calculates and applies the base knockback velocity to NPCs and generic entities</td>
+                        </tr>
+                        <tr>
+                            <td><code>ApplyPlayerKnockback</code></td>
+                            <td>Applies knockback to player entities with client prediction considerations</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>The knockback vector is attached to the damage event via the <code>KNOCKBACK_COMPONENT</code> meta key. This allows armor and blocking systems in the damage pipeline to reduce the knockback before it is applied.</p>
+
+                <h3>Knockback Reduction Flow</h3>
+                <ol>
+                    <li><strong>Base knockback</strong> is calculated from the attacker's direction and weapon stats</li>
+                    <li><code>ArmorKnockbackReduction</code> reduces knockback based on equipped armor weight</li>
+                    <li><code>WieldingKnockbackReduction</code> further reduces knockback if the victim is blocking</li>
+                    <li><code>ApplyKnockback</code> or <code>ApplyPlayerKnockback</code> applies the final velocity</li>
+                </ol>
+
+                <pre><code><span class="comment">// Knockback is stored in the damage event metadata</span>
+<span class="type">KnockbackComponent</span> <span class="field">kb</span> = damage.<span class="fn">getMeta</span>(<span class="type">Damage</span>.KNOCKBACK_COMPONENT);
+
+<span class="comment">// The component contains the velocity vector to apply</span>
+<span class="comment">// After armor and blocking reductions, the final velocity</span>
+<span class="comment">// is applied to the victim's Velocity component</span></code></pre>
+            </section>
+
+            <section id="putting-it-together">
+                <h2>Putting It Together</h2>
+                <p>Here is a complete example of dealing custom damage to an entity from a plugin:</p>
+
+                <pre><code><span class="comment">// Deal 15 physical damage from a command</span>
+<span class="kw">int</span> <span class="field">causeIndex</span> = <span class="type">DamageCause</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"COMMAND"</span>);
+
+<span class="type">Damage</span>.<span class="type">CommandSource</span> <span class="field">source</span> = <span class="kw">new</span> <span class="type">Damage</span>.<span class="type">CommandSource</span>(ctx.<span class="fn">sender</span>());
+<span class="type">Damage</span> <span class="field">damage</span> = <span class="kw">new</span> <span class="type">Damage</span>(<span class="field">source</span>, <span class="field">causeIndex</span>, <span class="num">15.0f</span>);
+
+<span class="comment">// Dispatch the damage event to the target entity</span>
+<span class="comment">// This triggers the full pipeline: filtering → reduction → application</span>
+accessor.<span class="fn">dispatchEvent</span>(targetRef, <span class="field">damage</span>);</code></pre>
+
+                <pre><code><span class="comment">// Deal entity-sourced melee damage</span>
+<span class="kw">int</span> <span class="field">physicalCause</span> = <span class="type">DamageCause</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"PHYSICAL"</span>);
+
+<span class="type">Damage</span>.<span class="type">EntitySource</span> <span class="field">source</span> = <span class="kw">new</span> <span class="type">Damage</span>.<span class="type">EntitySource</span>(attackerRef);
+<span class="type">Damage</span> <span class="field">damage</span> = <span class="kw">new</span> <span class="type">Damage</span>(<span class="field">source</span>, <span class="field">physicalCause</span>, <span class="num">8.0f</span>);
+
+<span class="comment">// Set optional metadata</span>
+<span class="field">damage</span>.<span class="fn">setMeta</span>(<span class="type">Damage</span>.HIT_LOCATION, <span class="kw">new</span> <span class="type">Vector4d</span>(x, y, z, <span class="num">0.5</span>));
+
+accessor.<span class="fn">dispatchEvent</span>(victimRef, <span class="field">damage</span>);</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Threading</div>
+                    <p>Damage events must be dispatched on the world tick thread. If you need to deal damage from a command handler or async callback, wrap the call in <code>world.execute(() -&gt; { ... })</code>.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

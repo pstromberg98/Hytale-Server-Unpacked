@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Hytale Server Documentation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch ? openSearch() : null">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Search docs
+                    <kbd>&lceil;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()"></button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html" class="active">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="players.html">Players &amp; Persistence</a>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="permissions.html">Permissions</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation...">
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- On-page Table of Contents -->
+    <div class="page-toc"></div>
+
+    <main class="main">
+        <div class="content has-toc">
+            <h1>Getting Started</h1>
+            <p class="page-desc">Everything you need to create your first Hytale server plugin, from project setup to deployment.</p>
+
+            <!-- Prerequisites -->
+            <section id="prerequisites">
+                <h2 id="prerequisites-heading">Prerequisites</h2>
+                <p>Before you begin developing Hytale server plugins, make sure you have the following installed and configured:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Minimum Version</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Java Development Kit (JDK)</strong></td>
+                            <td>21+</td>
+                            <td>The server is compiled with Java 21. Use <a href="https://adoptium.net/">Eclipse Adoptium</a> or Oracle JDK.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gradle</strong></td>
+                            <td>8.x</td>
+                            <td>Build tool for compiling and packaging plugins. Use the Gradle wrapper (<code>gradlew</code>) included in the project.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Java Knowledge</strong></td>
+                            <td>&mdash;</td>
+                            <td>Familiarity with Java classes, interfaces, generics, and lambda expressions.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IDE (recommended)</strong></td>
+                            <td>&mdash;</td>
+                            <td>IntelliJ IDEA or Eclipse with Gradle integration for autocompletion and debugging.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Verify your Java installation by running:</p>
+                <pre><code>java -version
+<span class="comment"># Expected output: openjdk version "21.x.x" or higher</span></code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Java 21 is the minimum required version. Plugins compiled with a higher JDK version may not load on servers running JDK 21. Set your Gradle toolchain to target Java 21 to ensure compatibility.</p>
+                </div>
+            </section>
+
+            <!-- Project Setup -->
+            <section id="project-setup">
+                <h2 id="project-setup-heading">Project Setup</h2>
+                <p>Hytale server plugins are standard Java projects built with Gradle. The server JAR is added as a <code>compileOnly</code> dependency so your plugin can reference server APIs without bundling them.</p>
+
+                <h3 id="buildgradle">build.gradle.kts</h3>
+                <p>Create a <code>build.gradle.kts</code> file in your plugin project root:</p>
+
+                <pre><code><span class="fn">plugins</span> { <span class="fn">java</span> }
+
+<span class="field">group</span> = <span class="str">"com.example.myplugin"</span>
+<span class="field">version</span> = <span class="str">"1.0.0"</span>
+
+<span class="fn">repositories</span> {
+    <span class="fn">mavenCentral</span>()
+    <span class="fn">maven</span> { <span class="field">url</span> = <span class="fn">uri</span>(<span class="str">"https://maven.hytale.com/release"</span>) }
+}
+
+<span class="fn">dependencies</span> {
+    <span class="comment">// Server API - compileOnly so it is NOT bundled into your JAR</span>
+    <span class="fn">compileOnly</span>(<span class="str">"com.hypixel.hytale:Server:2026.01.24-6e2d4fc36"</span>)
+
+    <span class="comment">// Optional: shared core library if your project has one</span>
+    <span class="fn">implementation</span>(<span class="fn">project</span>(<span class="str">":libraries:core"</span>))
+}
+
+<span class="fn">java</span> {
+    <span class="fn">toolchain</span> {
+        <span class="field">languageVersion</span> = <span class="type">JavaLanguageVersion</span>.<span class="fn">of</span>(<span class="num">21</span>)
+    }
+}
+
+<span class="field">tasks</span>.<span class="fn">jar</span> {
+    <span class="field">archiveBaseName</span>.<span class="fn">set</span>(<span class="str">"MyPlugin"</span>)
+    <span class="field">archiveVersion</span>.<span class="fn">set</span>(<span class="str">""</span>)
+    <span class="fn">from</span>(<span class="field">configurations</span>.<span class="field">runtimeClasspath</span>.<span class="fn">get</span>().<span class="fn">map</span> {
+        <span class="kw">if</span> (<span class="field">it</span>.<span class="fn">isDirectory</span>) <span class="field">it</span> <span class="kw">else</span> <span class="fn">zipTree</span>(<span class="field">it</span>)
+    })
+    <span class="field">duplicatesStrategy</span> = <span class="type">DuplicatesStrategy</span>.EXCLUDE
+}</code></pre>
+
+                <h3 id="directory-structure">Directory Structure</h3>
+                <p>A minimal plugin project follows the standard Gradle/Java directory layout:</p>
+
+<div class="diagram">my-plugin/
+ ├── build.gradle.kts
+ ├── settings.gradle.kts
+ └── src/
+     └── main/
+         ├── java/
+         │    └── com/example/myplugin/
+         │         └── MyPlugin.java
+         └── resources/
+              └── manifest.json
+</div>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>If your plugin is part of a multi-module Gradle project, add <code>include("plugins:myplugin")</code> to the root <code>settings.gradle.kts</code>.</p>
+                </div>
+            </section>
+
+            <!-- Your First Plugin -->
+            <section id="first-plugin">
+                <h2 id="first-plugin-heading">Your First Plugin</h2>
+                <p>Here is a complete "Hello World" plugin that logs a message on startup and greets players when they connect:</p>
+
+                <pre><code><span class="kw">package</span> com.example.myplugin;
+
+<span class="kw">import</span> com.hypixel.hytale.server.core.plugin.JavaPlugin;
+<span class="kw">import</span> com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+<span class="kw">import</span> com.hypixel.hytale.server.core.event.events.PlayerConnectEvent;
+<span class="kw">import</span> com.hypixel.hytale.server.core.universe.player.PlayerRef;
+<span class="kw">import</span> com.hypixel.hytale.server.core.chat.Message;
+<span class="kw">import</span> javax.annotation.Nonnull;
+
+<span class="kw">public class</span> <span class="type">MyPlugin</span> <span class="kw">extends</span> <span class="type">JavaPlugin</span> {
+
+    <span class="kw">public</span> <span class="fn">MyPlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(<span class="field">init</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">setup</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"MyPlugin is setting up!"</span>);
+
+        <span class="comment">// Register a global event listener for player connections</span>
+        <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+            <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>,
+            <span class="kw">this</span>::<span class="fn">onPlayerConnect</span>
+        );
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">start</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"MyPlugin is now enabled!"</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">shutdown</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"MyPlugin is shutting down."</span>);
+    }
+
+    <span class="kw">private void</span> <span class="fn">onPlayerConnect</span>(<span class="type">PlayerConnectEvent</span> <span class="field">event</span>) {
+        <span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+        <span class="field">player</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome to the server!"</span>));
+    }
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>Every plugin <strong>must</strong> extend <code>JavaPlugin</code> and provide a constructor that takes a <code>JavaPluginInit</code> parameter and passes it to <code>super()</code>. The server instantiates your plugin via this constructor.</p>
+                </div>
+            </section>
+
+            <!-- Plugin Manifest -->
+            <section id="plugin-manifest">
+                <h2 id="plugin-manifest-heading">Plugin Manifest</h2>
+                <p>Every plugin JAR must contain a <code>manifest.json</code> file at <code>src/main/resources/manifest.json</code>. This file tells the server how to identify and load your plugin.</p>
+
+                <pre><code>{
+  <span class="str">"Group"</span>: <span class="str">"com.example"</span>,
+  <span class="str">"Name"</span>: <span class="str">"MyPlugin"</span>,
+  <span class="str">"Version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="str">"Main"</span>: <span class="str">"com.example.myplugin.MyPlugin"</span>,
+  <span class="str">"Dependencies"</span>: []
+}</code></pre>
+
+                <h3 id="manifest-fields">Manifest Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Group</code></td>
+                            <td>String</td>
+                            <td><span class="badge required">Required</span></td>
+                            <td>The group/organization identifier, typically a reversed domain name (e.g. <code>"com.example"</code>). Combined with <code>Name</code> to form the unique plugin identifier.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Name</code></td>
+                            <td>String</td>
+                            <td><span class="badge required">Required</span></td>
+                            <td>The plugin name. Must be unique within the server. Used for logging and identification.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Version</code></td>
+                            <td>String</td>
+                            <td><span class="badge required">Required</span></td>
+                            <td>Semantic version string (e.g. <code>"1.0.0"</code>). Displayed in server logs on load.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Main</code></td>
+                            <td>String</td>
+                            <td><span class="badge required">Required</span></td>
+                            <td>The fully-qualified class name of your main plugin class that extends <code>JavaPlugin</code>. The server uses this to instantiate your plugin.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Dependencies</code></td>
+                            <td>Array</td>
+                            <td>Optional</td>
+                            <td>List of plugin identifiers (<code>"group:name"</code>) that must be loaded before this plugin. The server resolves load order from this field.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>The <code>Main</code> class must have a public constructor accepting a single <code>JavaPluginInit</code> parameter. If the constructor is missing or has the wrong signature, the server will fail to load the plugin with a reflection error.</p>
+                </div>
+            </section>
+
+            <!-- Plugin Lifecycle -->
+            <section id="plugin-lifecycle">
+                <h2 id="plugin-lifecycle-heading">Plugin Lifecycle</h2>
+                <p>The server manages plugin state through a defined lifecycle. Your plugin class can override three hooks that are called in order:</p>
+
+                <div class="flow">
+                    <div class="flow-step">Constructor</div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="flow-step">setup()</div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="flow-step">start()</div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="flow-step">Running</div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="flow-step">shutdown()</div>
+                </div>
+
+                <h3 id="setup-hook">setup()</h3>
+                <p>Called after the constructor, during the <code>SETUP</code> phase. This is where you should register all event handlers, commands, configs, and other registries. The server is not yet fully started at this point.</p>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// Register events</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(<span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>, <span class="kw">this</span>::<span class="fn">onConnect</span>);
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerSystem</span>(<span class="type">KillFeedEvent</span>.Display.<span class="kw">class</span>, <span class="kw">this</span>::<span class="fn">onDeath</span>);
+
+    <span class="comment">// Register commands</span>
+    <span class="fn">getCommandRegistry</span>().<span class="fn">register</span>(<span class="kw">new</span> <span class="type">SpawnCommand</span>());
+
+    <span class="comment">// Register configs (must be done before setup completes)</span>
+    <span class="fn">withConfig</span>(<span class="type">MyConfig</span>.CODEC);
+}</code></pre>
+
+                <h3 id="start-hook">start()</h3>
+                <p>Called after <code>setup()</code> completes and the plugin transitions to the <code>START</code> phase. At this point all registries are active and the server is running. Use this for initialization logic that depends on other plugins or server state being available.</p>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">start</span>() {
+    <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Plugin enabled with "</span> +
+        <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorlds</span>().<span class="fn">size</span>() + <span class="str">" worlds loaded"</span>);
+}</code></pre>
+
+                <h3 id="shutdown-hook">shutdown()</h3>
+                <p>Called when the server is stopping or the plugin is being disabled. Use this for cleanup: save data, close connections, cancel tasks. After this method returns, all registries (events, commands, tasks) are automatically cleaned up by the server.</p>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">shutdown</span>() {
+    <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Saving data and cleaning up..."</span>);
+    <span class="comment">// Save any persistent data here</span>
+}</code></pre>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>You do not need to manually unregister events or commands in <code>shutdown()</code>. The server automatically cleans up all registrations made through <code>getEventRegistry()</code>, <code>getCommandRegistry()</code>, and other plugin registries when the plugin is disabled.</p>
+                </div>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>If <code>setup()</code> throws an exception, the plugin state is set to <code>DISABLED</code> and <code>start()</code> will never be called. Always wrap risky initialization in try-catch blocks and log failures clearly.</p>
+                </div>
+            </section>
+
+            <!-- Core APIs Quick Reference -->
+            <section id="core-apis">
+                <h2 id="core-apis-heading">Core APIs Quick Reference</h2>
+                <p>This table shows the most common operations you will need when developing plugins. Each entry links to the relevant documentation page for full details.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Code</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Get Universe</td>
+                            <td><code><span class="type">Universe</span>.<span class="fn">get</span>()</code></td>
+                            <td>Singleton root &mdash; access worlds, players, and global state. <a href="worlds.html">Worlds &amp; Universe</a></td>
+                        </tr>
+                        <tr>
+                            <td>Get World</td>
+                            <td><code><span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorlds</span>().<span class="fn">get</span>(<span class="str">"name"</span>)</code></td>
+                            <td>Returns a <code>World</code> by its string key. Returns <code>null</code> if not found. <a href="worlds.html">Worlds &amp; Universe</a></td>
+                        </tr>
+                        <tr>
+                            <td>Register Event</td>
+                            <td><code><span class="field">eventRegistry</span>.<span class="fn">register</span>(<span class="type">EventClass</span>.<span class="kw">class</span>, <span class="field">handler</span>)</code></td>
+                            <td>Use <code>registerGlobal()</code> for IBaseEvent, <code>registerSystem()</code> for EcsEvent. <a href="events.html">Event System</a></td>
+                        </tr>
+                        <tr>
+                            <td>Register Command</td>
+                            <td><code><span class="field">commandRegistry</span>.<span class="fn">register</span>(<span class="field">cmd</span>)</code></td>
+                            <td>Register a <code>CommandBase</code> subclass. <a href="commands.html">Command System</a></td>
+                        </tr>
+                        <tr>
+                            <td>Send Message</td>
+                            <td><code><span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"text"</span>))</code></td>
+                            <td>Send chat message to a specific player. Thread-safe. <a href="players.html">Players</a></td>
+                        </tr>
+                        <tr>
+                            <td>Schedule on World Thread</td>
+                            <td><code><span class="field">world</span>.<span class="fn">execute</span>(() -&gt; { <span class="comment">...</span> })</code></td>
+                            <td>Required for EntityStore operations from non-world threads. <a href="threading.html">Threading Model</a></td>
+                        </tr>
+                        <tr>
+                            <td>Get Player Component</td>
+                            <td><code><span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>())</code></td>
+                            <td>Access full Player component from entity ref. Must be on world thread. <a href="ecs.html">ECS Architecture</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Most <code>Store</code> operations (getting components, adding entities) must be called from the world thread. Use <code>world.execute(() -&gt; { ... })</code> to schedule work on the correct thread from commands or async contexts. See the <a href="threading.html">Threading Model</a> documentation for full details.</p>
+                </div>
+            </section>
+
+            <!-- Project Structure -->
+            <section id="project-structure">
+                <h2 id="project-structure-heading">Project Structure</h2>
+                <p>A well-organized plugin project follows this standard layout. Larger plugins should separate concerns into subpackages:</p>
+
+<div class="diagram">my-plugin/
+ ├── build.gradle.kts                    <span class="comment"># Gradle build config</span>
+ ├── settings.gradle.kts                 <span class="comment"># Gradle settings (multi-module)</span>
+ └── src/
+     └── main/
+         ├── java/
+         │    └── com/example/myplugin/
+         │         ├── MyPlugin.java      <span class="comment"># Main entry point (extends JavaPlugin)</span>
+         │         ├── commands/
+         │         │    ├── SpawnCommand.java
+         │         │    └── TeleportCommand.java
+         │         ├── events/
+         │         │    ├── JoinListener.java
+         │         │    └── DeathListener.java
+         │         └── util/
+         │              └── MessageUtil.java
+         ├── resources/
+         │    └── manifest.json           <span class="comment"># Plugin manifest (REQUIRED)</span>
+         └── assets/                      <span class="comment"># Data mod assets (optional)</span>
+              ├── manifest.json           <span class="comment"># Data mod manifest (separate from plugin manifest)</span>
+              └── Server/
+                   ├── Item/Items/...
+                   ├── SoundEvent/...
+                   └── Audio/...
+</div>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>The <code>src/main/assets/</code> directory is only needed if your plugin includes a data mod (custom items, sounds, etc.). The data mod manifest inside <code>assets/manifest.json</code> is separate from the plugin manifest in <code>resources/manifest.json</code>. See <a href="plugins.html">Plugin Development</a> for data mod details.</p>
+                </div>
+            </section>
+
+            <!-- Building and Deploying -->
+            <section id="building-deploying">
+                <h2 id="building-deploying-heading">Building &amp; Deploying</h2>
+
+                <h3 id="building">Building</h3>
+                <p>Use Gradle to compile and package your plugin into a JAR:</p>
+
+                <pre><code><span class="comment"># Build all plugins in the project</span>
+./gradlew build
+
+<span class="comment"># Build a specific plugin module</span>
+./gradlew plugins:myplugin:jar</code></pre>
+
+                <p>The compiled JAR will be placed in:</p>
+                <pre><code>plugins/myplugin/build/libs/MyPlugin.jar</code></pre>
+
+                <h3 id="deploying">Deploying</h3>
+                <p>To install your plugin on a Hytale server, copy the compiled JAR into the server's <code>mods/</code> directory:</p>
+
+                <pre><code><span class="comment"># Copy the JAR to the server's mods folder</span>
+cp plugins/myplugin/build/libs/MyPlugin.jar /path/to/server/mods/
+
+<span class="comment"># Restart the server to load the plugin</span>
+<span class="comment"># The server scans /mods on startup for plugin JARs</span></code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Plugins are loaded once at server startup. Hot-reloading of plugins is not supported. You must restart the server after adding, removing, or updating a plugin JAR.</p>
+                </div>
+
+                <h3 id="deploy-scripts">Automated Deployment</h3>
+                <p>If your project includes deployment scripts, you can use them for remote deployment:</p>
+                <pre><code><span class="comment"># Deploy to a remote server</span>
+./scripts/remote-deploy.sh user@server.local
+
+<span class="comment"># Deploy without restarting the server</span>
+./scripts/remote-deploy.sh user@server.local --no-restart</code></pre>
+
+                <h3 id="verify-loading">Verifying Plugin Load</h3>
+                <p>After starting the server, check the console logs to verify your plugin loaded correctly:</p>
+                <pre><code><span class="comment"># Look for these messages in the server log:</span>
+[INFO] [com.example:MyPlugin] MyPlugin is setting up!
+[INFO] [com.example:MyPlugin] MyPlugin is now enabled!</code></pre>
+
+                <p>If your plugin fails to load, the server will log the error with a stack trace. Common issues include:</p>
+                <ul>
+                    <li>Missing or malformed <code>manifest.json</code></li>
+                    <li>Wrong <code>Main</code> class path in the manifest</li>
+                    <li>Missing public constructor with <code>JavaPluginInit</code> parameter</li>
+                    <li>Compile-time dependency not available at runtime</li>
+                </ul>
+            </section>
+
+            <!-- Next Steps -->
+            <section id="next-steps">
+                <h2 id="next-steps-heading">Next Steps</h2>
+                <p>Now that you have a working plugin, explore these topics to build more sophisticated server modifications:</p>
+
+                <div class="cards">
+                    <a href="ecs.html" class="card">
+                        <div class="card-tag">Architecture</div>
+                        <h3>ECS Architecture</h3>
+                        <p>Understand Stores, Holders, Refs, Components, and how all game entities are composed.</p>
+                    </a>
+                    <a href="threading.html" class="card">
+                        <div class="card-tag">Architecture</div>
+                        <h3>Threading Model</h3>
+                        <p>Learn the Golden Rule, thread contexts, and when to use <code>world.execute()</code>.</p>
+                    </a>
+                    <a href="events.html" class="card">
+                        <div class="card-tag">Systems</div>
+                        <h3>Event System</h3>
+                        <p>IBaseEvent vs EcsEvent, the critical registerGlobal vs registerSystem distinction, and common events.</p>
+                    </a>
+                    <a href="commands.html" class="card">
+                        <div class="card-tag">Systems</div>
+                        <h3>Command System</h3>
+                        <p>Create commands with typed arguments, permissions, and thread-safe execution.</p>
+                    </a>
+                    <a href="players.html" class="card">
+                        <div class="card-tag">Systems</div>
+                        <h3>Players &amp; Persistence</h3>
+                        <p>PlayerRef vs Player component, inventory access, data storage, and the connect lifecycle.</p>
+                    </a>
+                    <a href="plugins.html" class="card">
+                        <div class="card-tag">Development</div>
+                        <h3>Plugin Development</h3>
+                        <p>Advanced plugin topics: configuration system, data mods, asset packs, and deployment patterns.</p>
+                    </a>
+                    <a href="worlds.html" class="card">
+                        <div class="card-tag">Architecture</div>
+                        <h3>Worlds &amp; Universe</h3>
+                        <p>World creation, the Universe singleton, cross-world operations, and instance worlds.</p>
+                    </a>
+                    <a href="reference.html" class="card">
+                        <div class="card-tag">Reference</div>
+                        <h3>ECS Catalog</h3>
+                        <p>Complete catalog of all Components, Entity classes, and Systems available in the server.</p>
+                    </a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

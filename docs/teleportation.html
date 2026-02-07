@@ -7,204 +7,1089 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html" class="active">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <header class="page-header">
                 <h1>Teleportation &amp; World Transfer</h1>
-                <p class="page-desc">Same-world teleporting, cross-world transfer, safety mechanisms, and the Teleport component.</p>
+                <p class="page-desc">The Teleport ECS component, factory methods, same-world and cross-world transfers, velocity control, history tracking, and the systems that process teleportation requests.</p>
             </header>
 
-            <section>
-                <h2>How Teleportation Works</h2>
-                <p>Teleportation uses the ECS — you add a <span class="code">Teleport</span> component to an entity, and the server's systems process it on the next tick.</p>
-                <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.modules.entity.teleport.Teleport</span></p>
-            </section>
+            <!-- ============================================================ -->
+            <!-- OVERVIEW -->
+            <!-- ============================================================ -->
+            <section id="overview">
+                <h2 id="overview">Overview</h2>
+                <p>Teleportation in the Hytale server is driven entirely by the Entity Component System. To teleport an entity you add a <code>Teleport</code> component to its holder. On the next tick the server's <code>TeleportSystems</code> detects and processes the component, updates the entity's <code>TransformComponent</code>, and removes the <code>Teleport</code> component once complete.</p>
+                <p><strong>Package:</strong> <code>com.hypixel.hytale.server.core.modules.entity.teleport</code></p>
 
-            <section>
-                <h2>Teleport Component Fields</h2>
-                <ul>
-                    <li><span class="code">World world</span> — target world (null = same world)</li>
-                    <li><span class="code">Vector3d position</span> — target position</li>
-                    <li><span class="code">Vector3f rotation</span> — body rotation</li>
-                    <li><span class="code">Vector3f headRotation</span> — head rotation (nullable)</li>
-                    <li><span class="code">boolean resetVelocity</span> — reset velocity on arrival (default: true)</li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>Factory Methods</h2>
-
-                <h3>For Players (handles head vs body rotation correctly)</h3>
-                <pre><code class="language-java">Teleport.createForPlayer(World world, Transform transform)
-Teleport.createForPlayer(World world, Vector3d position, Vector3f rotation)
-Teleport.createForPlayer(Vector3d position, Vector3f rotation)  // same world
-Teleport.createForPlayer(Transform transform)                    // same world</code></pre>
-
-                <h3>For Entities (exact control)</h3>
-                <pre><code class="language-java">Teleport.createExact(Vector3d position, Vector3f bodyRotation, Vector3f headRotation)
-Teleport.createExact(Vector3d position, Vector3f bodyRotation)</code></pre>
-
-                <h3>Builder Methods</h3>
-                <pre><code class="language-java">teleport.setHeadRotation(new Vector3f(pitch, yaw, roll));  // chaining
-teleport.withoutVelocityReset();                            // keep velocity</code></pre>
-
-                <div class="info-box tip">
-                    <strong>Tip:</strong> Always use <span class="code">createForPlayer()</span> for players — it correctly separates head and body rotation.
-                </div>
-            </section>
-
-            <section>
-                <h2>Same-World Teleportation</h2>
-                <pre><code class="language-java">// Create teleport (same world — no world parameter)
-Teleport teleport = Teleport.createForPlayer(
-    new Vector3d(100, 70, 200),
-    new Vector3f(0, 90, 0)  // yaw = 90 degrees
-);
-
-// Add component to trigger teleport
-store.addComponent(playerRef, Teleport.getComponentType(), teleport);</code></pre>
-            </section>
-
-            <section>
-                <h2>Cross-World Teleportation</h2>
-
-                <h3>Method 1: Teleport component (for loaded worlds)</h3>
-                <pre><code class="language-java">World targetWorld = Universe.get().getWorld("adventure");
-Transform spawnPoint = targetWorld.getWorldConfig()
-    .getSpawnProvider()
-    .getSpawnPoint(targetWorld, playerUuid);
-
-Teleport teleport = Teleport.createForPlayer(targetWorld, spawnPoint);
-store.addComponent(ref, Teleport.getComponentType(), teleport);</code></pre>
-
-                <h3>Method 2: World.addPlayer() (for potentially unloaded worlds)</h3>
-                <pre><code class="language-java">// Returns CompletableFuture&lt;PlayerRef&gt;
-targetWorld.addPlayer(playerRef, spawnPoint);</code></pre>
+<div class="diagram">Plugin / Command
+        |
+        v
+ +-----------------+     next tick     +------------------+
+ | Teleport        | ---------------&gt; | TeleportSystems   |
+ | (ECS Component) |                  |  PlayerMoveSystem |
+ +-----------------+                  |  MoveSystem       |
+        |                             +--------+---------+
+        |  cross-world?                        |
+        +------- yes ----&gt; World.addPlayer()   |
+        |                                      v
+        +------- no  ----&gt; update Transform    |
+                           reset velocity      |
+                           remove component    |
+                                               v
+                                        TeleportRecord
+                                        (history entry)
+</div>
 
                 <div class="info-box note">
-                    <strong>Note:</strong> <span class="code">World.addPlayer()</span> can accept null spawn points — the server will use a default spawn mechanism.
+                    <div class="label">Note</div>
+                    <p>Teleportation is a <strong>one-shot</strong> operation. The <code>Teleport</code> component is consumed and removed after processing. It is not a persistent component.</p>
                 </div>
             </section>
 
-            <section>
-                <h2>Safety Mechanisms</h2>
+            <!-- ============================================================ -->
+            <!-- TELEPORT COMPONENT -->
+            <!-- ============================================================ -->
+            <section id="teleport-component">
+                <h2 id="teleport-component">Teleport Component</h2>
+                <p>The <code>Teleport</code> class implements <code>Component&lt;EntityStore&gt;</code> and represents a single teleportation request. It is a data-only component that carries the destination and configuration for the teleport.</p>
 
-                <h3>1. Prevent Double-Teleporting</h3>
-                <p>Check if entity already has Teleport or PendingTeleport:</p>
-                <pre><code class="language-java">Archetype&lt;EntityStore&gt; archetype = store.getArchetype(ref);
-if (archetype.contains(Teleport.getComponentType()) ||
-    archetype.contains(PendingTeleport.getComponentType())) {
-    return; // Already teleporting
+                <h3>Class Definition</h3>
+                <pre><code><span class="kw">public class</span> <span class="type">Teleport</span> <span class="kw">implements</span> <span class="type">Component</span>&lt;<span class="type">EntityStore</span>&gt; {
+
+    <span class="comment">// Target world (null = same world)</span>
+    <span class="anno">@Nullable</span>
+    <span class="kw">private final</span> <span class="type">World</span> <span class="field">world</span>;
+
+    <span class="comment">// Target position (x, y, z as doubles)</span>
+    <span class="anno">@Nonnull</span>
+    <span class="kw">private final</span> <span class="type">Vector3d</span> <span class="field">position</span> = <span class="kw">new</span> <span class="type">Vector3d</span>();
+
+    <span class="comment">// Body rotation (yaw, pitch, roll as floats)</span>
+    <span class="anno">@Nonnull</span>
+    <span class="kw">private final</span> <span class="type">Vector3f</span> <span class="field">rotation</span> = <span class="kw">new</span> <span class="type">Vector3f</span>();
+
+    <span class="comment">// Head rotation (nullable, separate from body)</span>
+    <span class="anno">@Nullable</span>
+    <span class="kw">private</span> <span class="type">Vector3f</span> <span class="field">headRotation</span>;
+
+    <span class="comment">// Whether to zero-out entity velocity on arrival</span>
+    <span class="kw">private boolean</span> <span class="field">resetVelocity</span> = <span class="kw">true</span>;
 }</code></pre>
 
-                <h3>2. Wait for Client Ready</h3>
-                <pre><code class="language-java">Player player = store.getComponent(ref, Player.getComponentType());
-if (player != null && player.isWaitingForClientReady()) {
-    return; // Client not ready
-}</code></pre>
+                <h3>Fields</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="field">world</span></code></td>
+                            <td><span class="type">World</span></td>
+                            <td><code>null</code></td>
+                            <td>Target world. When <code>null</code>, the entity stays in its current world.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="field">position</span></code></td>
+                            <td><span class="type">Vector3d</span></td>
+                            <td>&mdash;</td>
+                            <td>Target position as three <code>double</code> values (x, y, z).</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="field">rotation</span></code></td>
+                            <td><span class="type">Vector3f</span></td>
+                            <td>&mdash;</td>
+                            <td>Body rotation as three <code>float</code> values (yaw, pitch, roll).</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="field">headRotation</span></code></td>
+                            <td><span class="type">Vector3f</span></td>
+                            <td><code>null</code></td>
+                            <td>Head rotation, separate from body. When <code>null</code>, head rotation is not modified.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="field">resetVelocity</span></code></td>
+                            <td><code>boolean</code></td>
+                            <td><code>true</code></td>
+                            <td>When <code>true</code>, velocity is zeroed on arrival. Set to <code>false</code> to preserve momentum.</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h3>3. Cooldowns</h3>
-                <p>Use <span class="code">TeleportRecord</span>:</p>
-                <pre><code class="language-java">TeleportRecord record = store.getComponent(ref, TeleportRecord.getComponentType());
-if (record != null && !record.hasElapsedSinceLastTeleport(cooldown)) {
-    return; // On cooldown
-}</code></pre>
+                <h3>Constructors</h3>
+                <pre><code><span class="comment">// Constructor with target world (cross-world teleport)</span>
+<span class="kw">public</span> <span class="fn">Teleport</span>(<span class="anno">@Nullable</span> <span class="type">World</span> <span class="field">world</span>,
+               <span class="anno">@Nonnull</span> <span class="type">Vector3d</span> <span class="field">position</span>,
+               <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> <span class="field">rotation</span>)
+
+<span class="comment">// Constructor without world (same-world teleport)</span>
+<span class="kw">public</span> <span class="fn">Teleport</span>(<span class="anno">@Nonnull</span> <span class="type">Vector3d</span> <span class="field">position</span>,
+               <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> <span class="field">rotation</span>)</code></pre>
+
+                <p>Both constructors copy the position and rotation values via <code>assign()</code>, so subsequent changes to the source vectors do not affect the teleport.</p>
+
+                <h3>ComponentType Accessor</h3>
+                <pre><code><span class="comment">// Retrieve the registered ComponentType for Teleport</span>
+<span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">Teleport</span>&gt; <span class="field">type</span> = <span class="type">Teleport</span>.<span class="fn">getComponentType</span>();
+
+<span class="comment">// Internally delegates to:</span>
+<span class="comment">// EntityModule.get().getTeleportComponentType()</span></code></pre>
             </section>
 
-            <section>
-                <h2>Native Teleporter Behavior</h2>
-                <ul>
-                    <li>Teleporter blocks create temporary instance worlds: <span class="code">instance-&lt;TemplateName&gt;-&lt;uuid&gt;</span></li>
-                    <li>Player is removed from current world → added to instance → returned to original world after</li>
-                    <li><span class="code">PlayerInteractEvent</span> does NOT fire for teleporter interactions</li>
-                    <li><span class="code">DrainPlayerFromWorldEvent</span> does NOT fire for teleporter-triggered transfers</li>
-                </ul>
+            <!-- ============================================================ -->
+            <!-- FACTORY METHODS -->
+            <!-- ============================================================ -->
+            <section id="factory-methods">
+                <h2 id="factory-methods">Factory Methods</h2>
+                <p>The <code>Teleport</code> class provides static factory methods that correctly configure rotation for different entity types. <strong>Always prefer factory methods over raw constructors</strong> to ensure head and body rotation are handled correctly.</p>
+
+                <h3>createForPlayer &mdash; With World and Transform</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createForPlayer</span>(<span class="anno">@Nullable</span> <span class="type">World</span> world, <span class="anno">@Nonnull</span> <span class="type">Transform</span> transform)</div>
+                <p>Extracts position and rotation from a <code>Transform</code>. Automatically separates the yaw component for body rotation (pitch = 0, roll = 0) and uses the full rotation vector for head rotation.</p>
+                <pre><code><span class="comment">// Teleport a player to a world's spawn point</span>
+<span class="type">World</span> <span class="field">targetWorld</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
+<span class="type">Transform</span> <span class="field">spawn</span> = <span class="field">targetWorld</span>.<span class="fn">getWorldConfig</span>()
+    .<span class="fn">getSpawnProvider</span>()
+    .<span class="fn">getSpawnPoint</span>(<span class="field">targetWorld</span>, <span class="field">playerUuid</span>);
+
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">targetWorld</span>, <span class="field">spawn</span>);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);</code></pre>
+
+                <h3>createForPlayer &mdash; With World, Position, and Rotation</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createForPlayer</span>(<span class="anno">@Nullable</span> <span class="type">World</span> world, <span class="anno">@Nonnull</span> <span class="type">Vector3d</span> position, <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> rotation)</div>
+                <p>Clones the rotation vector, extracts yaw for body rotation, and sets the full rotation as head rotation. Use when you have a specific target world and explicit coordinates.</p>
+                <pre><code><span class="comment">// Cross-world teleport with explicit coordinates</span>
+<span class="type">World</span> <span class="field">hub</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"hub"</span>);
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="field">hub</span>,
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">0</span>, <span class="num">65</span>, <span class="num">0</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">180f</span>, <span class="num">0f</span>)   <span class="comment">// facing south</span>
+);</code></pre>
+
+                <h3>createForPlayer &mdash; Current World with Position and Rotation</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createForPlayer</span>(<span class="anno">@Nonnull</span> <span class="type">Vector3d</span> position, <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> rotation)</div>
+                <p>Same-world variant. Internally delegates to <code>createForPlayer(null, position, rotation)</code>.</p>
+                <pre><code><span class="comment">// Same-world teleport to coordinates</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">200</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">90f</span>, <span class="num">0f</span>)   <span class="comment">// facing east</span>
+);</code></pre>
+
+                <h3>createForPlayer &mdash; Current World from Transform</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createForPlayer</span>(<span class="anno">@Nonnull</span> <span class="type">Transform</span> transform)</div>
+                <p>Same-world variant using a <code>Transform</code>. Delegates to <code>createForPlayer((World) null, transform)</code>.</p>
+                <pre><code><span class="comment">// Teleport player to another entity's position</span>
+<span class="type">TransformComponent</span> <span class="field">targetTransform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">targetRef</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+);
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">targetTransform</span>.<span class="fn">getTransform</span>());</code></pre>
+
+                <h3>createExact &mdash; Full Rotation Control</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createExact</span>(<span class="anno">@Nonnull</span> <span class="type">Vector3d</span> position, <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> bodyRotation, <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> headRotation)</div>
+                <p>Sets body and head rotation independently. Use for entities (not players) or when you need precise control over both rotations.</p>
+                <pre><code><span class="comment">// Exact control over body and head rotation</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createExact</span>(
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">50</span>, <span class="num">64</span>, <span class="num">50</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">90f</span>, <span class="num">0f</span>),     <span class="comment">// body: facing east</span>
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">-30f</span>, <span class="num">90f</span>, <span class="num">0f</span>)   <span class="comment">// head: looking slightly up</span>
+);</code></pre>
+
+                <h3>createExact &mdash; Body Rotation Only</h3>
+                <div class="method-sig"><span class="kw">public static</span> <span class="type">Teleport</span> <span class="fn">createExact</span>(<span class="anno">@Nonnull</span> <span class="type">Vector3d</span> position, <span class="anno">@Nonnull</span> <span class="type">Vector3f</span> bodyRotation)</div>
+                <p>Sets body rotation only, leaving head rotation as <code>null</code> (unchanged).</p>
+                <pre><code><span class="comment">// Teleport an NPC entity to a patrol point</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createExact</span>(
+    <span class="field">patrolPoint</span>,
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">0f</span>, <span class="num">0f</span>)   <span class="comment">// facing north</span>
+);</code></pre>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>Always use <code>createForPlayer()</code> when teleporting players. It correctly separates the yaw into body rotation (yaw only, pitch and roll zeroed) and preserves the full rotation vector for head rotation. Using <code>createExact()</code> or raw constructors for players will cause the body and head to rotate together unnaturally.</p>
+                </div>
+
+                <h3>Factory Methods Summary</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>World</th>
+                            <th>Head Rotation</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">createForPlayer</span>(World, Transform)</code></td>
+                            <td>Specified</td>
+                            <td>Auto-separated</td>
+                            <td>Cross-world player teleport from a spawn point</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">createForPlayer</span>(World, Vector3d, Vector3f)</code></td>
+                            <td>Specified</td>
+                            <td>Auto-separated</td>
+                            <td>Cross-world player teleport to coordinates</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">createForPlayer</span>(Vector3d, Vector3f)</code></td>
+                            <td>Current</td>
+                            <td>Auto-separated</td>
+                            <td>Same-world player teleport</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">createForPlayer</span>(Transform)</code></td>
+                            <td>Current</td>
+                            <td>Auto-separated</td>
+                            <td>Same-world player teleport from Transform</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">createExact</span>(Vector3d, Vector3f, Vector3f)</code></td>
+                            <td>Current</td>
+                            <td>Explicit</td>
+                            <td>Entity teleport with independent body/head</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">createExact</span>(Vector3d, Vector3f)</code></td>
+                            <td>Current</td>
+                            <td>Not set</td>
+                            <td>Entity teleport, head rotation unchanged</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- FLUENT MODIFIERS -->
+            <!-- ============================================================ -->
+            <section id="fluent-modifiers">
+                <h2 id="fluent-modifiers">Fluent Modifiers</h2>
+                <p>After constructing a <code>Teleport</code> instance (via constructor or factory), you can chain additional configuration methods:</p>
+
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Returns</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">setHeadRotation</span>(<span class="type">Vector3f</span>)</code></td>
+                            <td><code><span class="type">Teleport</span></code></td>
+                            <td>Sets the head rotation (clones the vector). Fluent &mdash; returns <code>this</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">withoutVelocityReset</span>()</code></td>
+                            <td><code><span class="type">Teleport</span></code></td>
+                            <td>Sets <code>resetVelocity</code> to <code>false</code>. Fluent &mdash; returns <code>this</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">setPosition</span>(<span class="type">Vector3d</span>)</code></td>
+                            <td><code>void</code></td>
+                            <td>Overrides the target position.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">setRotation</span>(<span class="type">Vector3f</span>)</code></td>
+                            <td><code>void</code></td>
+                            <td>Overrides the body rotation.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Chaining fluent modifiers</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">200</span>),
+        <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">90f</span>, <span class="num">0f</span>)
+    )
+    .<span class="fn">withoutVelocityReset</span>();                     <span class="comment">// keep current velocity</span>
+
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- SAME-WORLD TELEPORTATION -->
+            <!-- ============================================================ -->
+            <section id="same-world">
+                <h2 id="same-world">Same-World Teleportation</h2>
+                <p>To teleport an entity within its current world, create a <code>Teleport</code> component <strong>without</strong> a <code>World</code> parameter (or pass <code>null</code>) and add it to the entity's holder via the <code>EntityStore</code>.</p>
+
+                <pre><code><span class="comment">// Teleport a player to specific coordinates in the same world</span>
+<span class="type">Vector3d</span> <span class="field">destination</span> = <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100.0</span>, <span class="num">70.0</span>, <span class="num">200.0</span>);
+<span class="type">Vector3f</span> <span class="field">facing</span> = <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">90f</span>, <span class="num">0f</span>);  <span class="comment">// yaw 90 = facing east</span>
+
+<span class="type">Teleport</span> <span class="field">teleport</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">destination</span>, <span class="field">facing</span>);
+
+<span class="comment">// Add the component to trigger the teleport on next tick</span>
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">teleport</span>);</code></pre>
+
+                <p>The teleport is processed during the next tick cycle:</p>
+                <ol class="flow-list">
+                    <li><code>TeleportSystems</code> detects the <code>Teleport</code> component on the entity</li>
+                    <li>For players: <code>PlayerMoveSystem</code> updates the <code>TransformComponent</code> with new position and rotation</li>
+                    <li>If <code>resetVelocity</code> is <code>true</code>, the entity's <code>Velocity</code> component is zeroed</li>
+                    <li><code>PlayerMoveCompleteSystem</code> finalizes the teleport and removes the <code>Teleport</code> component</li>
+                    <li>A <code>TeleportRecord.Entry</code> is created for cooldown and history tracking</li>
+                </ol>
 
                 <div class="info-box warning">
-                    <strong>Important:</strong> Native teleporters bypass event systems. If you need to track teleportation, use the Teleport component directly.
+                    <div class="label">Threading</div>
+                    <p>The <code>addComponent</code> call must be made from the <strong>world's tick thread</strong>. If calling from an async context, use <code>world.execute(() -&gt; { ... })</code> to schedule the operation on the correct thread.</p>
                 </div>
             </section>
 
-            <section>
-                <h2>Processing Flow</h2>
-                <ol>
-                    <li>Plugin adds <span class="code">Teleport</span> component to entity</li>
-                    <li>Server ECS detects the component on next tick</li>
-                    <li>Same-world: updates <span class="code">TransformComponent</span> directly</li>
-                    <li>Cross-world: moves entity between world stores</li>
-                    <li><span class="code">Teleport</span> component is removed after processing</li>
-                    <li><span class="code">PendingTeleport</span> may be used for multi-stage teleports</li>
-                </ol>
+            <!-- ============================================================ -->
+            <!-- CROSS-WORLD TELEPORTATION -->
+            <!-- ============================================================ -->
+            <section id="cross-world">
+                <h2 id="cross-world">Cross-World Teleportation</h2>
+                <p>To move an entity to a different world, specify the target <code>World</code> in the <code>Teleport</code> constructor or factory method. The entity is removed from its current world's <code>EntityStore</code> and added to the target world's store.</p>
+
+                <h3>Method 1: Teleport Component (for loaded worlds)</h3>
+                <pre><code><span class="comment">// Get the target world from the Universe</span>
+<span class="type">World</span> <span class="field">targetWorld</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
+
+<span class="comment">// Resolve the spawn point for this player</span>
+<span class="type">Transform</span> <span class="field">spawnPoint</span> = <span class="field">targetWorld</span>.<span class="fn">getWorldConfig</span>()
+    .<span class="fn">getSpawnProvider</span>()
+    .<span class="fn">getSpawnPoint</span>(<span class="field">targetWorld</span>, <span class="field">playerUuid</span>);
+
+<span class="comment">// Create cross-world teleport</span>
+<span class="type">Teleport</span> <span class="field">teleport</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">targetWorld</span>, <span class="field">spawnPoint</span>);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">teleport</span>);</code></pre>
+
+                <h3>Method 2: World.addPlayer() (for potentially unloaded worlds)</h3>
+                <pre><code><span class="comment">// Returns CompletableFuture&lt;PlayerRef&gt;</span>
+<span class="comment">// Handles world loading, chunk loading, and spawn resolution</span>
+<span class="field">targetWorld</span>.<span class="fn">addPlayer</span>(<span class="field">playerRef</span>, <span class="field">spawnPoint</span>);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p><code>World.addPlayer()</code> can accept a <code>null</code> spawn point &mdash; the server will use the world's default spawn mechanism. This method also handles chunk preparation and client readiness, making it the safer option for cross-world transfers.</p>
+                </div>
+
+                <h3>Cross-World Processing Flow</h3>
+<div class="diagram">Source World (tick thread)
+    |
+    v
+  Entity has Teleport component with world != null
+    |
+    v
+  Entity removed from source EntityStore
+    |
+    v
+  Entity holder cloned to target world's EntityStore
+    |
+    v
+Target World (tick thread)
+    |
+    v
+  TransformComponent updated with new position/rotation
+    |
+    v
+  Velocity reset (if resetVelocity == true)
+    |
+    v
+  Teleport component removed
+    |
+    v
+  Client receives world transition packets
+</div>
             </section>
 
-            <section>
-                <h2>Related Components</h2>
+            <!-- ============================================================ -->
+            <!-- POSITION & ROTATION HANDLING -->
+            <!-- ============================================================ -->
+            <section id="position-rotation">
+                <h2 id="position-rotation">Position &amp; Rotation Handling</h2>
+
+                <h3>Position: Vector3d</h3>
+                <p>Position is represented as a <code>Vector3d</code> with three <code>double</code> components for sub-block precision:</p>
                 <table class="api-table">
                     <thead>
                         <tr>
                             <th>Component</th>
+                            <th>Axis</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>x</code></td><td>East/West</td><td>Positive = East</td></tr>
+                        <tr><td><code>y</code></td><td>Up/Down</td><td>Positive = Up (0 = bedrock level)</td></tr>
+                        <tr><td><code>z</code></td><td>North/South</td><td>Positive = South</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Rotation: Vector3f</h3>
+                <p>Rotation is represented as a <code>Vector3f</code> with three <code>float</code> components in degrees:</p>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Name</th>
+                            <th>Range</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>x</code></td><td>Pitch</td><td>-90 to 90</td><td>Vertical aim. Negative = looking up, Positive = looking down.</td></tr>
+                        <tr><td><code>y</code></td><td>Yaw</td><td>0 to 360</td><td>Horizontal facing. 0 = North, 90 = East, 180 = South, 270 = West.</td></tr>
+                        <tr><td><code>z</code></td><td>Roll</td><td>0 to 360</td><td>Tilt. Typically 0 for entities.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Head vs Body Rotation</h3>
+                <p>Players have separate body and head rotations. The body only rotates on the yaw axis (the character model faces a direction), while the head can pitch up and down independently.</p>
+
+                <pre><code><span class="comment">// How createForPlayer() separates rotations internally:</span>
+<span class="type">Vector3f</span> <span class="field">headRotation</span> = <span class="field">transform</span>.<span class="fn">getRotation</span>();             <span class="comment">// full rotation</span>
+<span class="type">Vector3f</span> <span class="field">bodyRotation</span> = <span class="kw">new</span> <span class="type">Vector3f</span>(
+    <span class="num">0.0f</span>,                      <span class="comment">// pitch = 0 (body doesn't pitch)</span>
+    <span class="field">headRotation</span>.<span class="fn">getYaw</span>(),      <span class="comment">// yaw = same as head</span>
+    <span class="num">0.0f</span>                       <span class="comment">// roll = 0 (body doesn't roll)</span>
+);
+<span class="comment">// Body only rotates horizontally; head handles vertical look</span></code></pre>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>If you only care about where the player is looking horizontally and want to leave their vertical aim alone, use <code>createForPlayer()</code> and it will handle the separation automatically.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- VELOCITY CONTROL -->
+            <!-- ============================================================ -->
+            <section id="velocity-control">
+                <h2 id="velocity-control">Velocity Control</h2>
+                <p>By default, teleportation resets the entity's velocity to zero. This prevents the entity from continuing to move in its previous direction after arriving at the destination. You can override this behavior with <code>withoutVelocityReset()</code>.</p>
+
+                <h3>Default Behavior: Velocity Reset</h3>
+                <pre><code><span class="comment">// Velocity is zeroed on arrival (default)</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">200</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">0f</span>, <span class="num">0f</span>)
+);
+<span class="comment">// tp.isResetVelocity() == true</span>
+<span class="comment">// Player stops dead at destination</span></code></pre>
+
+                <h3>Preserving Momentum</h3>
+                <pre><code><span class="comment">// Keep velocity after teleport (e.g. momentum-based puzzles)</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">200</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">0f</span>, <span class="num">0f</span>)
+).<span class="fn">withoutVelocityReset</span>();
+<span class="comment">// tp.isResetVelocity() == false</span>
+<span class="comment">// Player maintains speed and direction</span></code></pre>
+
+                <h3>Use Cases</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Reset Velocity?</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Command-based teleport (<code>/tp</code>)</td>
+                            <td>Yes (default)</td>
+                            <td>Player expects to arrive stationary</td>
+                        </tr>
+                        <tr>
+                            <td>Portal / teleporter block</td>
+                            <td>Yes (default)</td>
+                            <td>Clean arrival at new location</td>
+                        </tr>
+                        <tr>
+                            <td>Momentum launch pad</td>
+                            <td>No</td>
+                            <td>Player should continue flying through the air</td>
+                        </tr>
+                        <tr>
+                            <td>Seamless zone transition</td>
+                            <td>No</td>
+                            <td>Walking speed should be preserved across boundary</td>
+                        </tr>
+                        <tr>
+                            <td>Respawn after death</td>
+                            <td>Yes (default)</td>
+                            <td>Player should not respawn moving</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TELEPORT SYSTEMS -->
+            <!-- ============================================================ -->
+            <section id="teleport-systems">
+                <h2 id="teleport-systems">Teleport Systems (ECS Processing)</h2>
+                <p>The <code>TeleportSystems</code> class contains the ECS systems that process <code>Teleport</code> components. These systems run each tick and handle the actual position updates.</p>
+                <p><strong>Package:</strong> <code>com.hypixel.hytale.server.core.modules.entity.teleport.TeleportSystems</code></p>
+
+                <h3>System Pipeline</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Targets</th>
+                            <th>Responsibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">PlayerMoveSystem</span></code></td>
+                            <td>Entities with both <code>Teleport</code> and <code>Player</code></td>
+                            <td>Handles player-specific teleportation: updates <code>TransformComponent</code>, notifies client, handles head/body rotation separation</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">PlayerMoveCompleteSystem</span></code></td>
+                            <td>Entities with both <code>Teleport</code> and <code>Player</code></td>
+                            <td>Finalizes player teleport: waits for client acknowledgement, removes <code>Teleport</code> component, records history</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">MoveSystem</span></code></td>
+                            <td>Entities with <code>Teleport</code> but <em>without</em> <code>Player</code></td>
+                            <td>Handles non-player entity teleportation: direct <code>TransformComponent</code> update, immediate component removal</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">ECS Pattern</div>
+                    <p>These systems follow the standard ECS query pattern: they query for all entities matching a specific archetype (e.g. having <code>Teleport</code> + <code>Player</code> components) and process them each tick. The <code>Teleport</code> component acts as a "tag" that signals the system to act.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- PENDING TELEPORT -->
+            <!-- ============================================================ -->
+            <section id="pending-teleport">
+                <h2 id="pending-teleport">PendingTeleport</h2>
+                <p>The <code>PendingTeleport</code> component represents a teleportation that has been initiated but not yet completed. It is used for multi-stage teleports where the server must wait for conditions to be met (e.g. chunks to load, client readiness).</p>
+                <p><strong>Package:</strong> <code>com.hypixel.hytale.server.core.modules.entity.teleport.PendingTeleport</code></p>
+
+                <h3>PendingTeleport.Result</h3>
+                <p>The <code>PendingTeleport.Result</code> enum indicates the outcome of a pending teleport resolution:</p>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Result</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>SUCCESS</code></td>
+                            <td>Teleportation completed successfully</td>
+                        </tr>
+                        <tr>
+                            <td><code>PENDING</code></td>
+                            <td>Still waiting for conditions (chunks, client ready)</td>
+                        </tr>
+                        <tr>
+                            <td><code>FAILED</code></td>
+                            <td>Teleportation could not be completed</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Safety: Prevent Double-Teleporting</h3>
+                <p>Before adding a <code>Teleport</code> component, check whether the entity is already teleporting or has a pending teleport:</p>
+                <pre><code><span class="comment">// Check for existing teleport or pending teleport</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">archetype</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">ref</span>);
+<span class="kw">if</span> (<span class="field">archetype</span>.<span class="fn">contains</span>(<span class="type">Teleport</span>.<span class="fn">getComponentType</span>()) ||
+    <span class="field">archetype</span>.<span class="fn">contains</span>(<span class="type">PendingTeleport</span>.<span class="fn">getComponentType</span>())) {
+    <span class="kw">return</span>; <span class="comment">// Entity is already teleporting</span>
+}
+
+<span class="comment">// Check if the client is still loading from a previous teleport</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="kw">if</span> (<span class="field">player</span> != <span class="kw">null</span> &amp;&amp; <span class="field">player</span>.<span class="fn">isWaitingForClientReady</span>()) {
+    <span class="kw">return</span>; <span class="comment">// Client not ready for another teleport</span>
+}</code></pre>
+
+                <div class="info-box danger">
+                    <div class="label">Danger</div>
+                    <p>Adding a <code>Teleport</code> component to an entity that already has one will overwrite the existing teleport. Always check the archetype first to avoid race conditions and undefined behavior during cross-world transfers.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TELEPORT RECORD -->
+            <!-- ============================================================ -->
+            <section id="teleport-record">
+                <h2 id="teleport-record">TeleportRecord</h2>
+                <p>The <code>TeleportRecord</code> component implements <code>Component&lt;EntityStore&gt;</code> and tracks teleportation history for cooldown enforcement. It stores the most recent teleport as an <code>Entry</code> record.</p>
+                <p><strong>Package:</strong> <code>com.hypixel.hytale.server.core.modules.entity.teleport.TeleportRecord</code></p>
+
+                <h3>TeleportRecord Methods</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Entry</span> <span class="fn">getLastTeleport</span>()</code></td>
+                            <td>Returns the most recent teleport entry, or <code>null</code> if never teleported.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setLastTeleport</span>(<span class="type">Entry</span>)</code></td>
+                            <td>Records a new teleport entry.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">hasElapsedSinceLastTeleport</span>(<span class="type">Duration</span>)</code></td>
+                            <td>Returns <code>true</code> if the specified duration has passed since the last teleport. Uses <code>System.nanoTime()</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">hasElapsedSinceLastTeleport</span>(<span class="kw">long</span>, <span class="type">Duration</span>)</code></td>
+                            <td>Same as above but accepts a pre-computed <code>nanoTime</code> for batch checking.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>TeleportRecord.Entry</h3>
+                <p>A Java <code>Record</code> (Java 21) representing a single teleport event:</p>
+                <pre><code><span class="kw">public static final class</span> <span class="type">Entry</span> <span class="kw">extends</span> <span class="type">Record</span> {
+    <span class="kw">private final</span> <span class="type">Location</span> <span class="field">origin</span>;        <span class="comment">// where the entity was before</span>
+    <span class="kw">private final</span> <span class="type">Location</span> <span class="field">destination</span>;   <span class="comment">// where it teleported to</span>
+    <span class="kw">private final</span> <span class="kw">long</span> <span class="field">timestampNanos</span>;    <span class="comment">// System.nanoTime() at teleport</span>
+}</code></pre>
+
+                <h3>Implementing Cooldowns</h3>
+                <pre><code><span class="comment">// Enforce a 5-second teleport cooldown</span>
+<span class="type">Duration</span> <span class="field">cooldown</span> = <span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">5</span>);
+
+<span class="type">TeleportRecord</span> <span class="field">record</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">TeleportRecord</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="kw">if</span> (<span class="field">record</span> != <span class="kw">null</span> &amp;&amp; !<span class="field">record</span>.<span class="fn">hasElapsedSinceLastTeleport</span>(<span class="field">cooldown</span>)) {
+    <span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Teleport on cooldown!"</span>));
+    <span class="kw">return</span>;
+}
+
+<span class="comment">// Proceed with teleport...</span>
+<span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">destination</span>, <span class="field">facing</span>);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TELEPORT HISTORY -->
+            <!-- ============================================================ -->
+            <section id="teleport-history">
+                <h2 id="teleport-history">Teleport History</h2>
+                <p>The <code>TeleportHistory</code> component (from the builtin teleport plugin) provides browser-style back/forward navigation through a player's teleport history. It implements <code>Component&lt;EntityStore&gt;</code> and uses two <code>Deque&lt;Waypoint&gt;</code> stacks.</p>
+                <p><strong>Package:</strong> <code>com.hypixel.hytale.builtin.teleport.components.TeleportHistory</code></p>
+
+                <h3>History Structure</h3>
+<div class="diagram">                  back stack                          forward stack
+            (most recent on top)                  (most recent on top)
+
+             +------------------+                +------------------+
+             |  Waypoint N      |  &lt;-- pop       |  Waypoint A      |
+             |  Waypoint N-1    |                |  Waypoint B      |
+             |  ...             |                |  ...             |
+             |  Waypoint 1      |                |  Waypoint Z      |
+             +------------------+                +------------------+
+                   MAX_SIZE = 100
+
+    /back  : pop from back, push to forward, teleport to popped
+    /forward : pop from forward, push to back, teleport to popped
+    new teleport : push current position to back, clear forward
+</div>
+
+                <h3>TeleportHistory Methods</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">back</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;, <span class="kw">int</span> count)</code></td>
+                            <td>Teleports the player back <code>count</code> entries in history.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">forward</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;, <span class="kw">int</span> count)</code></td>
+                            <td>Teleports the player forward <code>count</code> entries in history.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">append</span>(<span class="type">World</span>, <span class="type">Vector3d</span>, <span class="type">Vector3f</span>, <span class="type">String</span>)</code></td>
+                            <td>Records a new waypoint. Clears the forward stack. Trims to 100 entries.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getBackSize</span>()</code></td>
+                            <td>Number of entries in the back stack.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getForwardSize</span>()</code></td>
+                            <td>Number of entries in the forward stack.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>TeleportHistory.Waypoint</h3>
+                <p>Each waypoint stores the world name (as a <code>String</code>, not a <code>World</code> reference), position, rotation, and an optional message/label:</p>
+                <pre><code><span class="kw">public static class</span> <span class="type">Waypoint</span> {
+    <span class="kw">private final</span> <span class="type">String</span> <span class="field">world</span>;        <span class="comment">// world name (resolved via Universe.get().getWorld())</span>
+    <span class="kw">private final</span> <span class="type">Vector3d</span> <span class="field">position</span>;   <span class="comment">// saved position</span>
+    <span class="kw">private final</span> <span class="type">Vector3f</span> <span class="field">rotation</span>;   <span class="comment">// saved rotation</span>
+    <span class="kw">private final</span> <span class="type">String</span> <span class="field">message</span>;     <span class="comment">// label (e.g. warp name, empty for raw coords)</span>
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>The <code>Waypoint</code> stores the world <em>name</em> as a string rather than a <code>World</code> reference. When navigating history, the world is resolved via <code>Universe.get().getWorld(name)</code>. If the world has been unloaded, the player receives a "world not loaded" message and the teleport is skipped.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- THREAD SAFETY -->
+            <!-- ============================================================ -->
+            <section id="thread-safety">
+                <h2 id="thread-safety">Thread Safety</h2>
+                <p>Teleportation must respect the Hytale server's threading model. The golden rule applies: <strong>ECS mutations must happen on the owning world's tick thread.</strong></p>
+
+                <h3>Same-World Rules</h3>
+                <ul>
+                    <li>Adding a <code>Teleport</code> component must be done on the world's tick thread</li>
+                    <li>Event handlers already run on the world thread, so teleports from event handlers are safe</li>
+                    <li>From async contexts, use <code>world.execute(() -&gt; { ... })</code></li>
+                </ul>
+
+                <h3>Cross-World Rules</h3>
+                <ul>
+                    <li>The <code>Teleport</code> component is added on the <em>source</em> world's tick thread</li>
+                    <li><code>TeleportSystems</code> handles the cross-thread transfer to the target world internally</li>
+                    <li>You do <strong>not</strong> need to manually coordinate between world threads</li>
+                </ul>
+
+                <pre><code><span class="comment">// SAFE: From event handler (already on world thread)</span>
+<span class="kw">private void</span> <span class="fn">onPlayerInteract</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                               <span class="type">UseBlockEvent.Pre</span> <span class="field">event</span>,
+                               <span class="type">ComponentAccessor</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">accessor</span>) {
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">destination</span>, <span class="field">facing</span>);
+    <span class="field">accessor</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}
+
+<span class="comment">// SAFE: From async context using world.execute()</span>
+<span class="field">world</span>.<span class="fn">execute</span>(() -&gt; {
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">destination</span>, <span class="field">facing</span>);
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+});
+
+<span class="comment">// UNSAFE: Direct store mutation from wrong thread</span>
+<span class="comment">// CompletableFuture.runAsync(() -&gt; {</span>
+<span class="comment">//     store.addComponent(ref, ...);  // WRONG THREAD!</span>
+<span class="comment">// });</span></code></pre>
+
+                <div class="info-box danger">
+                    <div class="label">Danger</div>
+                    <p>Mutating the <code>EntityStore</code> from the wrong thread can cause data corruption, CMEs (ConcurrentModificationExceptions), or silent state inconsistencies. Always verify you are on the correct world thread before adding components.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- NATIVE TELEPORTER BEHAVIOR -->
+            <!-- ============================================================ -->
+            <section id="native-teleporters">
+                <h2 id="native-teleporters">Native Teleporter Behavior</h2>
+                <p>Hytale includes built-in teleporter blocks that create temporary instance worlds. These bypass the normal event system:</p>
+
+                <ul>
+                    <li>Teleporter blocks create temporary instance worlds named <code>instance-&lt;TemplateName&gt;-&lt;uuid&gt;</code></li>
+                    <li>Player is removed from current world, added to instance, then returned to original world after completion</li>
+                    <li><code>PlayerInteractEvent</code> does <strong>NOT</strong> fire for teleporter block interactions</li>
+                    <li><code>DrainPlayerFromWorldEvent</code> does <strong>NOT</strong> fire for teleporter-triggered transfers</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Native teleporters bypass the event system entirely. If you need to intercept or track all teleportation activity, you must use the <code>Teleport</code> component directly rather than relying on events. There is no global "entity teleported" event.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- COMPLETE CODE EXAMPLES -->
+            <!-- ============================================================ -->
+            <section id="examples">
+                <h2 id="examples">Complete Code Examples</h2>
+
+                <h3>Example 1: Basic Teleport to Coordinates</h3>
+                <pre><code><span class="comment">// Teleport a player to specific coordinates in their current world</span>
+<span class="kw">public void</span> <span class="fn">teleportToCoords</span>(<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                             <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">playerRef</span>,
+                             <span class="kw">double</span> <span class="field">x</span>, <span class="kw">double</span> <span class="field">y</span>, <span class="kw">double</span> <span class="field">z</span>) {
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>),
+        <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">0f</span>, <span class="num">0f</span>)  <span class="comment">// facing north</span>
+    );
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}</code></pre>
+
+                <h3>Example 2: Teleport with Specific Rotation</h3>
+                <pre><code><span class="comment">// Teleport with the player looking south-east and slightly down</span>
+<span class="kw">public void</span> <span class="fn">teleportWithRotation</span>(<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                                 <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">playerRef</span>) {
+    <span class="type">Vector3d</span> <span class="field">pos</span> = <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">256.5</span>, <span class="num">72.0</span>, <span class="num">-100.5</span>);
+    <span class="type">Vector3f</span> <span class="field">rot</span> = <span class="kw">new</span> <span class="type">Vector3f</span>(
+        <span class="num">15f</span>,    <span class="comment">// pitch: looking slightly down</span>
+        <span class="num">135f</span>,   <span class="comment">// yaw: facing south-east</span>
+        <span class="num">0f</span>      <span class="comment">// roll: no tilt</span>
+    );
+
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">pos</span>, <span class="field">rot</span>);
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}</code></pre>
+
+                <h3>Example 3: Cross-World Teleport</h3>
+                <pre><code><span class="comment">// Transfer a player from any world to the "minigames" world</span>
+<span class="kw">public void</span> <span class="fn">sendToMinigames</span>(<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                            <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">playerRef</span>,
+                            <span class="type">UUID</span> <span class="field">playerUuid</span>) {
+    <span class="type">World</span> <span class="field">minigames</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"minigames"</span>);
+    <span class="kw">if</span> (<span class="field">minigames</span> == <span class="kw">null</span>) {
+        <span class="comment">// World not loaded</span>
+        <span class="kw">return</span>;
+    }
+
+    <span class="comment">// Resolve the spawn for this player in the target world</span>
+    <span class="type">Transform</span> <span class="field">spawn</span> = <span class="field">minigames</span>.<span class="fn">getWorldConfig</span>()
+        .<span class="fn">getSpawnProvider</span>()
+        .<span class="fn">getSpawnPoint</span>(<span class="field">minigames</span>, <span class="field">playerUuid</span>);
+
+    <span class="comment">// Check not already teleporting</span>
+    <span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">arch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">playerRef</span>);
+    <span class="kw">if</span> (<span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">Teleport</span>.<span class="fn">getComponentType</span>())) <span class="kw">return</span>;
+
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">minigames</span>, <span class="field">spawn</span>);
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}</code></pre>
+
+                <h3>Example 4: Teleport Preserving Velocity</h3>
+                <pre><code><span class="comment">// Launch pad: teleport player up but keep their horizontal momentum</span>
+<span class="kw">public void</span> <span class="fn">launchPad</span>(<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                       <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">playerRef</span>) {
+    <span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">playerRef</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="type">Vector3d</span> <span class="field">currentPos</span> = <span class="field">transform</span>.<span class="fn">getPosition</span>();
+
+    <span class="comment">// Teleport 50 blocks up, keep velocity</span>
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">currentPos</span>.<span class="fn">getX</span>(), <span class="field">currentPos</span>.<span class="fn">getY</span>() + <span class="num">50</span>, <span class="field">currentPos</span>.<span class="fn">getZ</span>()),
+        <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0f</span>, <span class="num">0f</span>, <span class="num">0f</span>)
+    ).<span class="fn">withoutVelocityReset</span>();
+
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}</code></pre>
+
+                <h3>Example 5: Teleport with Cooldown and History</h3>
+                <pre><code><span class="comment">// Full teleport with safety checks, cooldown, and history tracking</span>
+<span class="kw">public void</span> <span class="fn">safeTeleport</span>(<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                         <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                         <span class="type">World</span> <span class="field">targetWorld</span>,
+                         <span class="type">Vector3d</span> <span class="field">destination</span>,
+                         <span class="type">Vector3f</span> <span class="field">rotation</span>,
+                         <span class="type">String</span> <span class="field">label</span>) {
+
+    <span class="comment">// 1. Check not already teleporting</span>
+    <span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">arch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">ref</span>);
+    <span class="kw">if</span> (<span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">Teleport</span>.<span class="fn">getComponentType</span>()) ||
+        <span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">PendingTeleport</span>.<span class="fn">getComponentType</span>())) {
+        <span class="kw">return</span>;
+    }
+
+    <span class="comment">// 2. Check cooldown</span>
+    <span class="type">TeleportRecord</span> <span class="field">record</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">ref</span>, <span class="type">TeleportRecord</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="kw">if</span> (<span class="field">record</span> != <span class="kw">null</span> &amp;&amp;
+        !<span class="field">record</span>.<span class="fn">hasElapsedSinceLastTeleport</span>(<span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">3</span>))) {
+        <span class="kw">return</span>;
+    }
+
+    <span class="comment">// 3. Record current position in history</span>
+    <span class="type">TransformComponent</span> <span class="field">tc</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">ref</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="type">TeleportHistory</span> <span class="field">history</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">ref</span>, <span class="type">TeleportHistory</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="kw">if</span> (<span class="field">history</span> != <span class="kw">null</span> &amp;&amp; <span class="field">tc</span> != <span class="kw">null</span>) {
+        <span class="field">history</span>.<span class="fn">append</span>(
+            <span class="field">tc</span>.<span class="fn">getWorld</span>(),
+            <span class="field">tc</span>.<span class="fn">getPosition</span>(),
+            <span class="field">tc</span>.<span class="fn">getRotation</span>(),
+            <span class="field">label</span>
+        );
+    }
+
+    <span class="comment">// 4. Execute teleport</span>
+    <span class="type">Teleport</span> <span class="field">tp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+        <span class="field">targetWorld</span>, <span class="field">destination</span>, <span class="field">rotation</span>
+    );
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">tp</span>);
+}</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- RELATED COMPONENTS -->
+            <!-- ============================================================ -->
+            <section id="related-components">
+                <h2 id="related-components">Related Components</h2>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Store</th>
                             <th>Purpose</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><span class="code">Teleport</span></td>
-                            <td>Request a teleport operation</td>
+                            <td><code><span class="type">Teleport</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>One-shot teleportation request component</td>
                         </tr>
                         <tr>
-                            <td><span class="code">PendingTeleport</span></td>
-                            <td>Teleport in progress (multi-stage)</td>
+                            <td><code><span class="type">PendingTeleport</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Multi-stage teleport in progress (waiting for chunks/client)</td>
                         </tr>
                         <tr>
-                            <td><span class="code">TeleportRecord</span></td>
-                            <td>Tracks teleport history and cooldowns</td>
+                            <td><code><span class="type">TeleportRecord</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Tracks most recent teleport for cooldown enforcement</td>
                         </tr>
                         <tr>
-                            <td><span class="code">TransformComponent</span></td>
-                            <td>Entity's actual position/rotation</td>
+                            <td><code><span class="type">TeleportHistory</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Back/forward navigation stacks (builtin plugin, max 100 entries)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">TransformComponent</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Entity's actual position and rotation (updated by teleport systems)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Velocity</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Entity's movement velocity (reset or preserved by teleport)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Player</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Player-specific data (client ready state checked before teleport)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">PlayerRef</span></code></td>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Stable player reference used for messaging and world transfers</td>
                         </tr>
                     </tbody>
                 </table>
             </section>
+
+            <!-- ============================================================ -->
+            <!-- PROCESSING FLOW -->
+            <!-- ============================================================ -->
+            <section id="processing-flow">
+                <h2 id="processing-flow">Processing Flow</h2>
+                <p>Complete lifecycle of a teleport request, from plugin to completion:</p>
+
+                <ol class="flow-list">
+                    <li>Plugin creates a <code>Teleport</code> component with destination, rotation, and optional world target</li>
+                    <li>Plugin adds the component to the entity via <code>store.addComponent(ref, Teleport.getComponentType(), teleport)</code></li>
+                    <li>On the next tick, <code>TeleportSystems</code> queries for entities with the <code>Teleport</code> component</li>
+                    <li>For players: <code>PlayerMoveSystem</code> runs first, updating position and notifying the client</li>
+                    <li>For cross-world: entity is transferred between <code>EntityStore</code> instances across world threads</li>
+                    <li>If <code>resetVelocity == true</code>, the <code>Velocity</code> component is zeroed</li>
+                    <li>A <code>TeleportRecord.Entry</code> is created with origin, destination, and timestamp</li>
+                    <li>The <code>Teleport</code> component is removed from the entity</li>
+                    <li>For players: <code>PlayerMoveCompleteSystem</code> waits for client acknowledgement (<code>TeleportAck</code> packet)</li>
+                </ol>
+            </section>
+
         </div>
     </main>
 
-    <script>
-        // Auto-close sidebar on link click (mobile)
-        document.querySelectorAll('.sidebar a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    document.querySelector('.sidebar').classList.remove('open');
-                }
-            });
-        });
-    </script>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

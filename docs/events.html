@@ -3,210 +3,1149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event System - Hytale Server Documentation</title>
+    <title>Event System - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html" class="active">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>Event System</h1>
-            <p class="page-desc">Two distinct event types, registration patterns, and critical gotchas.</p>
+            <p class="page-desc">Architecture, registration, dispatch, and handling of synchronous and asynchronous events across the Hytale server.</p>
 
-            <section>
-                <h2>Two Event Types</h2>
-                <div class="box danger">
-                    <strong>DANGER:</strong> Hytale has TWO completely different event systems. Using the wrong registration method will silently fail with no errors.
-                </div>
+            <!-- ============================================================ -->
+            <section id="event-architecture">
+                <h2>Event Architecture</h2>
+                <p>The Hytale server uses a centralized <span class="type">EventBus</span> as its dispatch hub for all game events. The event system is built around two parallel hierarchies &mdash; synchronous events (<span class="type">IEvent</span>) and asynchronous events (<span class="type">IAsyncEvent</span>) &mdash; both rooted in the <span class="type">IBaseEvent</span> interface. Events are parameterized by a <code>KeyType</code> that enables targeted dispatch to specific listeners.</p>
 
-                <p><strong>IBaseEvent</strong> — Traditional global events</p>
+                <p>Key design principles:</p>
                 <ul>
-                    <li>Registered with <code>plugin.getEventRegistry().registerGlobal()</code></li>
-                    <li>Examples: PlayerConnectEvent, PlayerDisconnectEvent, PlayerChatEvent, AddPlayerToWorldEvent</li>
+                    <li><strong>Type-safe dispatch</strong> &mdash; Events are registered and dispatched by their class type, ensuring compile-time safety.</li>
+                    <li><strong>Priority ordering</strong> &mdash; Handlers execute in priority order (lower values first), with registration order as tiebreaker.</li>
+                    <li><strong>Key-based routing</strong> &mdash; Events can be dispatched to all listeners (global) or only to listeners registered for a specific key.</li>
+                    <li><strong>Cancellation support</strong> &mdash; Events implementing <span class="type">ICancellable</span> can be stopped mid-chain by any handler.</li>
+                    <li><strong>Concurrent-safe internals</strong> &mdash; The registry uses <code>ConcurrentHashMap</code>, <code>CopyOnWriteArrayList</code>, and atomic operations throughout.</li>
                 </ul>
 
-                <p><strong>EcsEvent</strong> — Entity-specific events tied to the ECS</p>
+                <p>All core event types reside in <code>com.hypixel.hytale.event</code>, while game-specific events live under <code>com.hypixel.hytale.server.core.event.events</code>.</p>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="type-hierarchy">
+                <h2>Event Type Hierarchy</h2>
+                <p>The event system is organized into a clean interface hierarchy. Every event ultimately implements <span class="type">IBaseEvent&lt;KeyType&gt;</span>, which branches into sync and async variants:</p>
+
+                <pre><code><span class="type">IBaseEvent</span>&lt;<span class="type">KeyType</span>&gt;
+<span class="comment">|</span>
+<span class="comment">+--</span> <span class="type">IEvent</span>&lt;<span class="type">KeyType</span>&gt;            <span class="comment">// Synchronous events</span>
+<span class="comment">|     Dispatched inline, handlers called sequentially.</span>
+<span class="comment">|     Returns the event object directly.</span>
+<span class="comment">|</span>
+<span class="comment">+--</span> <span class="type">IAsyncEvent</span>&lt;<span class="type">KeyType</span>&gt;       <span class="comment">// Asynchronous events</span>
+<span class="comment">|     Dispatched via CompletableFuture chains.</span>
+<span class="comment">|     Returns CompletableFuture&lt;EventType&gt;.</span>
+<span class="comment">|</span>
+<span class="comment">+--</span> <span class="type">ICancellable</span>               <span class="comment">// Mix-in interface for cancellable events</span>
+<span class="comment">|     isCancelled() / setCancelled(boolean)</span>
+<span class="comment">|</span>
+<span class="comment">+--</span> <span class="type">IProcessedEvent</span>            <span class="comment">// Mix-in for post-processing callbacks</span>
+      <span class="comment">processEvent(String source)</span></code></pre>
+
+                <div class="info-box info">
+                    <strong>Note:</strong> <span class="type">ICancellable</span> and <span class="type">IProcessedEvent</span> are mix-in interfaces. An event can implement both <span class="type">IEvent</span> and <span class="type">ICancellable</span> simultaneously (e.g., <span class="type">PlayerChatEvent</span> implements <span class="type">IAsyncEvent&lt;String&gt;</span> and <span class="type">ICancellable</span>).
+                </div>
+
+                <p>The core interfaces are minimal by design:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Interface</th>
+                                <th>Package</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">IBaseEvent&lt;KeyType&gt;</span></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td>Root marker interface for all events. The <code>KeyType</code> parameter determines routing &mdash; use <code>Void</code> for global events.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">IEvent&lt;KeyType&gt;</span></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td>Synchronous event. Handlers are invoked inline via <code>Consumer&lt;EventType&gt;</code>. Extends <span class="type">IBaseEvent</span>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">IAsyncEvent&lt;KeyType&gt;</span></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td>Asynchronous event. Handlers receive and return <code>CompletableFuture&lt;EventType&gt;</code>. Extends <span class="type">IBaseEvent</span>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">ICancellable</span></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td>Mix-in providing <code>isCancelled()</code> and <code>setCancelled(boolean)</code>. Can be combined with either event type.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">IProcessedEvent</span></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td>Mix-in providing <code>processEvent(String)</code> for post-dispatch processing with a source identifier.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="eventbus-api">
+                <h2>EventBus API</h2>
+                <p>The <span class="type">EventBus</span> class (implementing <span class="type">IEventBus</span>) is the central hub for registering handlers and dispatching events. It maintains a <code>ConcurrentHashMap</code> of <span class="type">EventBusRegistry</span> instances, one per event class, automatically creating <span class="type">SyncEventBusRegistry</span> or <span class="type">AsyncEventBusRegistry</span> as needed based on the event type.</p>
+
+                <h3>Registration Methods</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>register(Class, Consumer)</code></td>
+                                <td>Register a sync handler for a <code>Void</code>-keyed event at default priority (0).</td>
+                            </tr>
+                            <tr>
+                                <td><code>register(short, Class, Consumer)</code></td>
+                                <td>Register a sync handler with explicit short priority.</td>
+                            </tr>
+                            <tr>
+                                <td><code>register(EventPriority, Class, Consumer)</code></td>
+                                <td>Register a sync handler using an <span class="type">EventPriority</span> enum constant.</td>
+                            </tr>
+                            <tr>
+                                <td><code>register(Class, KeyType, Consumer)</code></td>
+                                <td>Register a sync handler for a specific key at default priority.</td>
+                            </tr>
+                            <tr>
+                                <td><code>register(short, Class, KeyType, Consumer)</code></td>
+                                <td>Register a sync handler for a specific key with explicit priority. This is the most general sync overload.</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerGlobal(Class, Consumer)</code></td>
+                                <td>Register a global handler that fires for ALL keys on a keyed event.</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerUnhandled(Class, Consumer)</code></td>
+                                <td>Register a handler that fires only when no key-specific handlers matched.</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerAsync(Class, Function)</code></td>
+                                <td>Register an async handler using <code>Function&lt;CompletableFuture, CompletableFuture&gt;</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerAsyncGlobal(Class, Function)</code></td>
+                                <td>Register a global async handler for all keys.</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerAsyncUnhandled(Class, Function)</code></td>
+                                <td>Register an async handler that fires only when no key-specific async handlers matched.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Dispatch Methods</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Returns</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>dispatchFor(Class, KeyType)</code></td>
+                                <td><code>IEventDispatcher&lt;E, E&gt;</code></td>
+                                <td>Obtain a sync dispatcher for the given event class and key. Returns <code>NO_OP</code> if no registry exists.</td>
+                            </tr>
+                            <tr>
+                                <td><code>dispatchForAsync(Class, KeyType)</code></td>
+                                <td><code>IEventDispatcher&lt;E, CF&lt;E&gt;&gt;</code></td>
+                                <td>Obtain an async dispatcher. Returns a <code>CompletableFuture</code>-based dispatcher.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Example of obtaining a dispatcher and firing an event internally:</p>
+                <pre><code><span class="comment">// The EventBus returns a dispatcher, which is then called with the event instance</span>
+<span class="type">IEventDispatcher</span>&lt;<span class="type">BreakBlockEvent</span>, <span class="type">BreakBlockEvent</span>&gt; <span class="field">dispatcher</span> =
+    <span class="field">eventBus</span>.<span class="fn">dispatchFor</span>(<span class="type">BreakBlockEvent</span>.<span class="kw">class</span>, key);
+
+<span class="type">BreakBlockEvent</span> <span class="field">event</span> = <span class="kw">new</span> <span class="type">BreakBlockEvent</span>(itemInHand, targetBlock, blockType);
+<span class="type">BreakBlockEvent</span> <span class="field">result</span> = <span class="field">dispatcher</span>.<span class="fn">dispatch</span>(<span class="field">event</span>);</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="priority-system">
+                <h2>Priority System</h2>
+                <p>Handlers are ordered by a <code>short</code> priority value. Lower numeric values execute first. Within the same priority level, handlers execute in registration order (insertion order, maintained by <code>CopyOnWriteArrayList</code>).</p>
+
+                <pre><code><span class="comment">// Priority ordering: -100 runs before 0, which runs before 100</span>
+<span class="field">eventBus</span>.<span class="fn">register</span>((<span class="kw">short</span>) <span class="num">-100</span>, <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>, <span class="field">earlyHandler</span>);  <span class="comment">// runs first</span>
+<span class="field">eventBus</span>.<span class="fn">register</span>((<span class="kw">short</span>) <span class="num">0</span>,    <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>, <span class="field">normalHandler</span>); <span class="comment">// runs second</span>
+<span class="field">eventBus</span>.<span class="fn">register</span>((<span class="kw">short</span>) <span class="num">100</span>,  <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>, <span class="field">lateHandler</span>);   <span class="comment">// runs third</span></code></pre>
+
+                <p>The <span class="type">ShutdownEvent</span> class demonstrates how the server itself uses priority constants to enforce shutdown ordering:</p>
+
+                <pre><code><span class="kw">public class</span> <span class="type">ShutdownEvent</span> <span class="kw">implements</span> <span class="type">IEvent</span>&lt;<span class="type">Void</span>&gt; {
+    <span class="kw">public static final short</span> <span class="field">DISCONNECT_PLAYERS</span> = <span class="num">-48</span>;  <span class="comment">// first: kick players</span>
+    <span class="kw">public static final short</span> <span class="field">UNBIND_LISTENERS</span>   = <span class="num">-40</span>;  <span class="comment">// second: unbind network</span>
+    <span class="kw">public static final short</span> <span class="field">SHUTDOWN_WORLDS</span>    = <span class="num">-32</span>;  <span class="comment">// third: save &amp; close worlds</span>
+}</code></pre>
+
+                <h3>EventConsumer Internals</h3>
+                <p>The <span class="type">EventConsumerMap</span> uses a <code>Short2ObjectConcurrentHashMap</code> internally, providing O(1) lookup by priority. It maintains a sorted <code>short[]</code> array of active priorities via atomic compare-and-swap operations, ensuring lock-free iteration during dispatch.</p>
+
+                <p>Each <span class="type">EventConsumer</span> wraps:</p>
                 <ul>
-                    <li>Registered with <code>plugin.getEventRegistry().registerSystem()</code></li>
-                    <li>Examples: UseBlockEvent.Pre, KillFeedEvent.Display, CancellableEcsEvent subclasses</li>
-                    <li>Receives the entity ref, event, and ComponentAccessor</li>
+                    <li><code>priority</code> &mdash; the <code>short</code> priority value</li>
+                    <li><code>index</code> &mdash; a global monotonically increasing counter (via <code>AtomicInteger</code>) for stable ordering</li>
+                    <li><code>consumerString</code> &mdash; a debug label identifying the handler source</li>
+                    <li><code>timer</code> &mdash; a <span class="type">Metric</span> instance for performance tracking (active when <code>timeEvents</code> is enabled on the EventBus)</li>
                 </ul>
             </section>
 
-            <section>
-                <h2>IBaseEvent Registration</h2>
-                <p>Register a global event handler for traditional event types:</p>
-                <pre><code><span class="keyword">// Register a global event</span>
-<span class="keyword">plugin</span>.getEventRegistry().registerGlobal(
-    PlayerConnectEvent.<span class="keyword">class</span>,
-    <span class="keyword">this</span>::onPlayerConnect
+            <!-- ============================================================ -->
+            <section id="sync-vs-async">
+                <h2>Sync vs Async Registries</h2>
+                <p>The <span class="type">EventBus</span> automatically selects the correct registry implementation based on the event interface:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Registry</th>
+                                <th>Event Interface</th>
+                                <th>Handler Type</th>
+                                <th>Return Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">SyncEventBusRegistry</span></td>
+                                <td><span class="type">IEvent&lt;KeyType&gt;</span></td>
+                                <td><code>Consumer&lt;EventType&gt;</code></td>
+                                <td><code>EventType</code> (direct)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">AsyncEventBusRegistry</span></td>
+                                <td><span class="type">IAsyncEvent&lt;KeyType&gt;</span></td>
+                                <td><code>Function&lt;CF&lt;E&gt;, CF&lt;E&gt;&gt;</code></td>
+                                <td><code>CompletableFuture&lt;EventType&gt;</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>The selection happens automatically in <code>EventBus.getRegistry()</code>:</p>
+
+                <pre><code><span class="kw">if</span> (<span class="type">IAsyncEvent</span>.<span class="kw">class</span>.<span class="fn">isAssignableFrom</span>(eventClass)) {
+    <span class="kw">return</span> <span class="fn">getAsyncRegistry</span>(eventClass);  <span class="comment">// creates AsyncEventBusRegistry</span>
+}
+<span class="kw">return</span> <span class="fn">getSyncRegistry</span>(eventClass);      <span class="comment">// creates SyncEventBusRegistry</span></code></pre>
+
+                <p>Both registry types share the same base class <span class="type">EventBusRegistry</span>, which provides three handler scopes:</p>
+                <ul>
+                    <li><code>map</code> &mdash; key-specific handlers (<code>ConcurrentHashMap&lt;KeyType, ConsumerMap&gt;</code>)</li>
+                    <li><code>global</code> &mdash; handlers that fire for all keys, always invoked alongside key-specific handlers</li>
+                    <li><code>unhandled</code> &mdash; handlers that fire only when no key-specific match exists</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <strong>Important:</strong> Async handlers receive a <code>CompletableFuture</code> and must return a <code>CompletableFuture</code>. This enables chaining operations like database lookups or network calls without blocking the server thread. The most common async event is <span class="type">PlayerChatEvent</span>.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="registration-types">
+                <h2>Registration Scopes</h2>
+                <p>The EventBus supports three registration scopes, controlling when a handler fires relative to key-based dispatch:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Scope</th>
+                                <th>Method</th>
+                                <th>When It Fires</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Key-specific</strong></td>
+                                <td><code>register(Class, key, handler)</code></td>
+                                <td>Only when the event is dispatched with a matching key.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Global</strong></td>
+                                <td><code>registerGlobal(Class, handler)</code></td>
+                                <td>Fires for <em>every</em> dispatch of this event class, regardless of key.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Unhandled</strong></td>
+                                <td><code>registerUnhandled(Class, handler)</code></td>
+                                <td>Fires only when no key-specific handlers matched the dispatched key.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>For <code>Void</code>-keyed events (the most common type in plugin development), the distinction between key-specific and global is irrelevant &mdash; both behave the same way. Use <code>registerGlobal()</code> as the standard approach for <code>Void</code>-keyed events.</p>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="registering-listeners">
+                <h2>Registering Event Listeners</h2>
+                <p>In plugins, the primary way to register events is through the <span class="type">EventRegistry</span> provided by <code>JavaPlugin.getEventRegistry()</code>. This is a scoped wrapper around the underlying <span class="type">IEventRegistry</span> that automatically ties handler lifetimes to the plugin lifecycle.</p>
+
+                <h3>Basic Registration</h3>
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// Register a global handler for PlayerConnectEvent</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+        <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onPlayerConnect</span>
+    );
+
+    <span class="comment">// Register with explicit priority</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+        (<span class="kw">short</span>) <span class="num">-10</span>,
+        <span class="type">PlayerDisconnectEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onPlayerDisconnect</span>
+    );
+
+    <span class="comment">// Register for a Void-keyed event (equivalent to registerGlobal for Void keys)</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+        <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onBreakBlock</span>
+    );
+}</code></pre>
+
+                <h3>EventRegistration Handle</h3>
+                <p>Every <code>register</code> call returns an <span class="type">EventRegistration</span> object, which extends <span class="type">Registration</span>. This handle supports:</p>
+                <ul>
+                    <li><code>isEnabled()</code> &mdash; checks whether the registration is still active (via a <code>BooleanSupplier</code>)</li>
+                    <li><code>unregister()</code> &mdash; removes the handler from the EventBus, freeing resources</li>
+                    <li><code>getEventClass()</code> &mdash; returns the event class this registration is bound to</li>
+                    <li><code>EventRegistration.combine()</code> &mdash; chains multiple registrations so they enable/disable together</li>
+                </ul>
+
+                <pre><code><span class="comment">// Store the registration to unregister later</span>
+<span class="type">EventRegistration</span>&lt;<span class="type">Void</span>, <span class="type">BreakBlockEvent</span>&gt; <span class="field">reg</span> =
+    <span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+        <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onBreakBlock</span>
+    );
+
+<span class="comment">// Later, to disable this specific handler:</span>
+<span class="field">reg</span>.<span class="fn">unregister</span>();</code></pre>
+
+                <div class="info-box info">
+                    <strong>Plugin Lifecycle:</strong> When a plugin is disabled, its <span class="type">EventRegistry</span> automatically disables all registrations created through it. You do not need to manually unregister handlers in most cases.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="common-events">
+                <h2>Common Game Events</h2>
+                <p>The following tables catalog the most frequently used events, organized by category.</p>
+
+                <h3>ECS Events</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events.ecs</code></p>
+                <p>These events extend <span class="type">CancellableEcsEvent</span> and are dispatched through the ECS system when entity-level actions occur.</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Cancellable</th>
+                                <th>Key Fields</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">BreakBlockEvent</span></td>
+                                <td>Yes</td>
+                                <td><code>itemInHand</code>, <code>targetBlock</code>, <code>blockType</code></td>
+                                <td>Fired when an entity breaks a block. The target block position can be modified via <code>setTargetBlock()</code>. The <code>blockType</code> provides the <span class="type">BlockType</span> asset reference.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlaceBlockEvent</span></td>
+                                <td>Yes</td>
+                                <td><code>itemInHand</code>, <code>targetBlock</code>, <code>rotation</code></td>
+                                <td>Fired when an entity places a block. Both target position and rotation (<span class="type">RotationTuple</span>) are mutable.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">DamageBlockEvent</span></td>
+                                <td>Yes</td>
+                                <td>Block damage data</td>
+                                <td>Fired during block damage accumulation (before the block actually breaks).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">UseBlockEvent.Pre</span></td>
+                                <td>Yes</td>
+                                <td>Block interaction data</td>
+                                <td>Fired before a block interaction (e.g., opening a chest, pressing a button).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">UseBlockEvent.Post</span></td>
+                                <td>Yes</td>
+                                <td>Block interaction data</td>
+                                <td>Fired after a block interaction completes successfully.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">DropItemEvent.PlayerRequest</span></td>
+                                <td>Yes</td>
+                                <td><code>inventorySectionId</code>, <code>slotId</code></td>
+                                <td>Fired when a player requests to drop an item from a specific inventory slot.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">DropItemEvent.Drop</span></td>
+                                <td>Yes</td>
+                                <td><code>itemStack</code>, <code>throwSpeed</code></td>
+                                <td>Fired when an item entity is actually spawned in the world. Both <code>throwSpeed</code> and <code>itemStack</code> are mutable.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">CraftRecipeEvent.Pre</span></td>
+                                <td>Yes</td>
+                                <td><code>craftedRecipe</code>, <code>quantity</code></td>
+                                <td>Fired before a crafting recipe is executed. Cancel to prevent crafting.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">CraftRecipeEvent.Post</span></td>
+                                <td>Yes</td>
+                                <td><code>craftedRecipe</code>, <code>quantity</code></td>
+                                <td>Fired after a crafting recipe has been executed successfully.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">ChangeGameModeEvent</span></td>
+                                <td>Yes</td>
+                                <td>Game mode data</td>
+                                <td>Fired when an entity's game mode is changed.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">DiscoverZoneEvent</span></td>
+                                <td>Yes</td>
+                                <td>Zone data</td>
+                                <td>Fired when an entity discovers a new zone. Has a <code>Display</code> inner class for UI notification.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">SwitchActiveSlotEvent</span></td>
+                                <td>Yes</td>
+                                <td>Slot data</td>
+                                <td>Fired when a player switches their active hotbar slot.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">InteractivelyPickupItemEvent</span></td>
+                                <td>Yes</td>
+                                <td>Item data</td>
+                                <td>Fired when a player picks up an item entity from the world.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Lifecycle Events</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events</code></p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">BootEvent</span></td>
+                                <td><code>IEvent&lt;Void&gt;</code></td>
+                                <td>Fired after the server has fully started and is ready to accept connections.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">ShutdownEvent</span></td>
+                                <td><code>IEvent&lt;Void&gt;</code></td>
+                                <td>Fired when the server is shutting down. Uses priority constants: <code>DISCONNECT_PLAYERS</code> (-48), <code>UNBIND_LISTENERS</code> (-40), <code>SHUTDOWN_WORLDS</code> (-32).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PrepareUniverseEvent</span></td>
+                                <td><code>IEvent&lt;Void&gt;</code></td>
+                                <td>Fired during universe initialization. Provides access to <code>WorldConfigProvider</code> for overriding world configuration. <strong>Deprecated</strong> &mdash; use plugin setup instead.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Player Events</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events.player</code></p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Key Fields</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PlayerConnectEvent</span></td>
+                                <td><code>IEvent&lt;Void&gt;</code></td>
+                                <td><code>holder</code>, <code>playerRef</code>, <code>world</code></td>
+                                <td>Fired when a player connects. Provides the entity <span class="type">Holder</span> (before it is added to the Store) and a <span class="type">PlayerRef</span>. The spawn world can be overridden via <code>setWorld()</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerDisconnectEvent</span></td>
+                                <td><code>IEvent&lt;Void&gt;</code></td>
+                                <td><code>playerRef</code>, <code>disconnectReason</code></td>
+                                <td>Fired when a player disconnects. Extends <span class="type">PlayerRefEvent</span>. Provides disconnect reason via <code>getDisconnectReason()</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerReadyEvent</span></td>
+                                <td><code>IEvent&lt;String&gt;</code></td>
+                                <td><code>ref</code>, <code>player</code>, <code>readyId</code></td>
+                                <td>Fired when a player's client signals readiness (e.g., finished loading). Note: keyed by <code>String</code>, not <code>Void</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerChatEvent</span></td>
+                                <td><code>IAsyncEvent&lt;String&gt;</code> + <code>ICancellable</code></td>
+                                <td><code>sender</code>, <code>targets</code>, <code>content</code>, <code>formatter</code></td>
+                                <td>Fired when a player sends a chat message. <strong>Async and cancellable.</strong> The formatter, content, sender, and target list are all mutable.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInteractEvent</span></td>
+                                <td>Sync</td>
+                                <td>Interaction data</td>
+                                <td>Fired when a player interacts with the world (left/right click).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerCraftEvent</span></td>
+                                <td>Sync</td>
+                                <td>Craft data</td>
+                                <td>Fired when a player crafts an item.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerMouseButtonEvent</span></td>
+                                <td>Sync</td>
+                                <td>Mouse button data</td>
+                                <td>Fired when the server receives a mouse button input from the player.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerMouseMotionEvent</span></td>
+                                <td>Sync</td>
+                                <td>Mouse motion data</td>
+                                <td>Fired when the server receives mouse motion input from the player.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">AddPlayerToWorldEvent</span></td>
+                                <td>Sync</td>
+                                <td>Player/world data</td>
+                                <td>Fired when a player entity is added to a world's entity store.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">DrainPlayerFromWorldEvent</span></td>
+                                <td>Sync</td>
+                                <td>Player/world data</td>
+                                <td>Fired when a player entity is removed from a world (e.g., before teleporting to another world).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Entity Events</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events.entity</code></p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">EntityRemoveEvent</span></td>
+                                <td>Fired when any entity is removed from the Store.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">LivingEntityInventoryChangeEvent</span></td>
+                                <td>Fired when a living entity's inventory contents change.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">LivingEntityUseBlockEvent</span></td>
+                                <td>Fired when a living entity interacts with a block.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">KillFeedEvent.Display</span></td>
+                                <td>Fired when a kill feed message should be displayed. Has <code>DecedentMessage</code> and <code>KillerMessage</code> sub-events for formatting.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Permission Events</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events.permissions</code></p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PlayerPermissionChangeEvent</span></td>
+                                <td>Base class with inner types: <code>PermissionsAdded</code>, <code>PermissionsRemoved</code>, <code>GroupAdded</code>, <code>GroupRemoved</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">GroupPermissionChangeEvent</span></td>
+                                <td>Fired when a permission group's permissions change. Inner types: <code>Added</code>, <code>Removed</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerGroupEvent</span></td>
+                                <td>Fired when a player is added to or removed from a permission group. Inner types: <code>Added</code>, <code>Removed</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="cancellable-events">
+                <h2>Cancellable Events</h2>
+                <p>The event system supports two parallel cancellation mechanisms, one for each event layer:</p>
+
+                <h3>EventBus-Level: ICancellable</h3>
+                <p>Events dispatched through the <span class="type">EventBus</span> can implement <span class="type">ICancellable</span> from <code>com.hypixel.hytale.event</code>:</p>
+
+                <pre><code><span class="kw">public interface</span> <span class="type">ICancellable</span> {
+    <span class="kw">boolean</span> <span class="fn">isCancelled</span>();
+    <span class="kw">void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span> <span class="field">cancelled</span>);
+}</code></pre>
+
+                <p>For example, <span class="type">PlayerChatEvent</span> implements both <span class="type">IAsyncEvent&lt;String&gt;</span> and <span class="type">ICancellable</span>, allowing chat messages to be suppressed by any handler in the chain.</p>
+
+                <h3>ECS-Level: ICancellableEcsEvent</h3>
+                <p>Events dispatched through the ECS layer use a separate but identical interface, <span class="type">ICancellableEcsEvent</span> from <code>com.hypixel.hytale.component.system</code>. The abstract class <span class="type">CancellableEcsEvent</span> provides the standard implementation:</p>
+
+                <pre><code><span class="kw">public abstract class</span> <span class="type">CancellableEcsEvent</span> <span class="kw">extends</span> <span class="type">EcsEvent</span>
+    <span class="kw">implements</span> <span class="type">ICancellableEcsEvent</span> {
+
+    <span class="kw">private boolean</span> <span class="field">cancelled</span> = <span class="kw">false</span>;
+
+    <span class="kw">public final boolean</span> <span class="fn">isCancelled</span>() {
+        <span class="kw">return this</span>.<span class="field">cancelled</span>;
+    }
+
+    <span class="kw">public final void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span> <span class="field">cancelled</span>) {
+        <span class="kw">this</span>.<span class="field">cancelled</span> = cancelled;
+    }
+}</code></pre>
+
+                <p>All ECS block/item events (<span class="type">BreakBlockEvent</span>, <span class="type">PlaceBlockEvent</span>, <span class="type">DropItemEvent</span>, <span class="type">CraftRecipeEvent</span>, etc.) extend <span class="type">CancellableEcsEvent</span>.</p>
+
+                <div class="info-box warning">
+                    <strong>Cancellation Behavior:</strong> When an event is cancelled, it is up to the dispatching system to check <code>isCancelled()</code> after all handlers have run and to abort the action accordingly. Cancelling does <strong>not</strong> automatically prevent subsequent handlers from executing &mdash; later handlers in the chain will still be called unless the dispatcher explicitly short-circuits.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="ecs-events-vs-game-events">
+                <h2>ECS Events vs Game Events</h2>
+                <p>The Hytale server has two event dispatch mechanisms that serve different purposes:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>EventBus Events</th>
+                                <th>ECS Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Package</strong></td>
+                                <td><code>com.hypixel.hytale.event</code></td>
+                                <td><code>com.hypixel.hytale.component.event</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Base class</strong></td>
+                                <td><span class="type">IBaseEvent&lt;KeyType&gt;</span></td>
+                                <td><span class="type">EcsEvent</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dispatch hub</strong></td>
+                                <td><span class="type">EventBus</span></td>
+                                <td><span class="type">EventSystem</span> / <span class="type">EntityEventSystem</span> / <span class="type">WorldEventSystem</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Type descriptors</strong></td>
+                                <td>Java <code>Class&lt;?&gt;</code> tokens</td>
+                                <td><span class="type">EntityEventType</span> / <span class="type">WorldEventType</span> / <span class="type">EventSystemType</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scope</strong></td>
+                                <td>Global server events, player events, lifecycle</td>
+                                <td>Per-entity and per-world component-level events</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Plugin registration</strong></td>
+                                <td><code>getEventRegistry().registerGlobal()</code></td>
+                                <td><code>getEventRegistry().registerSystem()</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p><strong>EcsEvent subclasses do NOT implement IBaseEvent.</strong> If you use <code>registerGlobal()</code> with an <span class="type">EcsEvent</span> subclass, the code compiles but the handler will NEVER fire. No error, no warning &mdash; it silently does nothing. Use <code>registerSystem()</code> for ECS events.</p>
+                </div>
+
+                <p>The ECS event types act as type descriptors registered with the <span class="type">ComponentRegistry</span>:</p>
+
+                <pre><code><span class="comment">// EntityEventType: dispatched per-entity, handler receives entity Ref</span>
+<span class="kw">public class</span> <span class="type">EntityEventType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span> <span class="kw">extends</span> <span class="type">EcsEvent</span>&gt;
+    <span class="kw">extends</span> <span class="type">EventSystemType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span>, <span class="type">EntityEventSystem</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span>&gt;&gt;
+
+<span class="comment">// WorldEventType: dispatched per-world, handler has access to world state</span>
+<span class="kw">public class</span> <span class="type">WorldEventType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span> <span class="kw">extends</span> <span class="type">EcsEvent</span>&gt;
+    <span class="kw">extends</span> <span class="type">EventSystemType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span>, <span class="type">WorldEventSystem</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">Event</span>&gt;&gt;</code></pre>
+
+                <p>In practice, many ECS events (like <span class="type">BreakBlockEvent</span>) are also bridged to the <span class="type">EventBus</span> so that plugins can listen to them through the standard <code>getEventRegistry()</code> API. However, some events (like <span class="type">KillFeedEvent.Display</span>) are ECS-only and require <code>registerSystem()</code>.</p>
+
+                <div class="info-box info">
+                    <strong>Rule of thumb:</strong> If the event extends <span class="type">EcsEvent</span>, use <code>registerSystem()</code>. If it implements <span class="type">IEvent</span> or <span class="type">IAsyncEvent</span>, use <code>register()</code> or <code>registerGlobal()</code>. When in doubt, check the event's class hierarchy.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="code-examples">
+                <h2>Complete Code Examples</h2>
+
+                <h3>Listening to BreakBlockEvent and Cancelling</h3>
+                <p>Prevent players from breaking blocks of a specific type:</p>
+
+                <pre><code><span class="kw">package</span> com.example.blockprotect;
+
+<span class="kw">import</span> com.hypixel.hytale.plugin.JavaPlugin;
+<span class="kw">import</span> com.hypixel.hytale.plugin.JavaPluginInit;
+<span class="kw">import</span> com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
+<span class="kw">import</span> javax.annotation.Nonnull;
+
+<span class="kw">public class</span> <span class="type">BlockProtectPlugin</span> <span class="kw">extends</span> <span class="type">JavaPlugin</span> {
+
+    <span class="kw">public</span> <span class="fn">BlockProtectPlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(init);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">setup</span>() {
+        <span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+            <span class="type">BreakBlockEvent</span>.<span class="kw">class</span>,
+            <span class="kw">this</span>::<span class="fn">onBreakBlock</span>
+        );
+    }
+
+    <span class="kw">private void</span> <span class="fn">onBreakBlock</span>(<span class="type">BreakBlockEvent</span> <span class="field">event</span>) {
+        <span class="comment">// Get the block type being broken</span>
+        <span class="type">String</span> <span class="field">blockName</span> = <span class="field">event</span>.<span class="fn">getBlockType</span>().<span class="fn">toString</span>();
+
+        <span class="comment">// Prevent breaking bedrock</span>
+        <span class="kw">if</span> (<span class="field">blockName</span>.<span class="fn">contains</span>(<span class="str">"bedrock"</span>)) {
+            <span class="field">event</span>.<span class="fn">setCancelled</span>(<span class="kw">true</span>);
+            <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Blocked bedrock break at "</span> +
+                <span class="field">event</span>.<span class="fn">getTargetBlock</span>());
+        }
+
+        <span class="comment">// Log what tool was used</span>
+        <span class="kw">if</span> (<span class="field">event</span>.<span class="fn">getItemInHand</span>() != <span class="kw">null</span>) {
+            <span class="fn">getLogger</span>().<span class="fn">debug</span>(<span class="str">"Tool: "</span> +
+                <span class="field">event</span>.<span class="fn">getItemInHand</span>().<span class="fn">toString</span>());
+        }
+    }
+}</code></pre>
+
+                <h3>Listening to Player Connect and Disconnect</h3>
+                <p>Track online players and send welcome messages:</p>
+
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+        <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onConnect</span>
+    );
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+        <span class="type">PlayerDisconnectEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onDisconnect</span>
+    );
+}
+
+<span class="kw">private void</span> <span class="fn">onConnect</span>(<span class="type">PlayerConnectEvent</span> <span class="field">event</span>) {
+    <span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+    <span class="type">String</span> <span class="field">name</span> = <span class="field">player</span>.<span class="fn">getUsername</span>();
+
+    <span class="comment">// Send welcome message to joining player</span>
+    <span class="field">player</span>.<span class="fn">sendMessage</span>(
+        <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome to the server, "</span> + <span class="field">name</span> + <span class="str">"!"</span>)
+            .<span class="fn">color</span>(<span class="type">Color</span>.GREEN)
+    );
+
+    <span class="comment">// Broadcast to all players</span>
+    <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">sendMessage</span>(
+        <span class="type">Message</span>.<span class="fn">raw</span>(<span class="field">name</span> + <span class="str">" has joined the server"</span>)
+    );
+
+    <span class="comment">// Optionally override the spawn world</span>
+    <span class="type">World</span> <span class="field">lobby</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"lobby"</span>);
+    <span class="kw">if</span> (<span class="field">lobby</span> != <span class="kw">null</span>) {
+        <span class="field">event</span>.<span class="fn">setWorld</span>(<span class="field">lobby</span>);
+    }
+}
+
+<span class="kw">private void</span> <span class="fn">onDisconnect</span>(<span class="type">PlayerDisconnectEvent</span> <span class="field">event</span>) {
+    <span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+    <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="field">player</span>.<span class="fn">getUsername</span>() +
+        <span class="str">" disconnected: "</span> + <span class="field">event</span>.<span class="fn">getDisconnectReason</span>());
+}</code></pre>
+
+                <h3>ECS Event: KillFeedEvent via registerSystem</h3>
+                <p>Listen to entity deaths using the ECS event system:</p>
+
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// This is an EcsEvent, so we MUST use registerSystem</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerSystem</span>(
+        <span class="type">KillFeedEvent</span>.<span class="type">Display</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onEntityDeath</span>
+    );
+}
+
+<span class="comment">// ECS event handlers receive: entity ref, event, and component accessor</span>
+<span class="kw">private void</span> <span class="fn">onEntityDeath</span>(
+        <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">victimRef</span>,
+        <span class="type">KillFeedEvent</span>.<span class="type">Display</span> <span class="field">event</span>,
+        <span class="type">ComponentAccessor</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">accessor</span>) {
+    <span class="comment">// victimRef IS the entity that died</span>
+    <span class="type">UUIDComponent</span> <span class="field">uuid</span> = <span class="field">accessor</span>.<span class="fn">getComponent</span>(
+        <span class="field">victimRef</span>, <span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="type">Damage</span> <span class="field">damage</span> = <span class="field">event</span>.<span class="fn">getDamage</span>();
+    <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Entity died: "</span> + <span class="field">uuid</span>);
+}</code></pre>
+
+                <h3>Handling Shutdown with Priority</h3>
+                <p>Clean up resources during server shutdown in the correct order:</p>
+
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// Register between DISCONNECT_PLAYERS (-48) and SHUTDOWN_WORLDS (-32)</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+        (<span class="kw">short</span>) <span class="num">-44</span>,
+        <span class="type">ShutdownEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onShutdown</span>
+    );
+}
+
+<span class="kw">private void</span> <span class="fn">onShutdown</span>(<span class="type">ShutdownEvent</span> <span class="field">event</span>) {
+    <span class="comment">// At priority -44:</span>
+    <span class="comment">// - Players are already disconnected (priority -48)</span>
+    <span class="comment">// - Network listeners are still bound (priority -40)</span>
+    <span class="comment">// - Worlds are still loaded (priority -32)</span>
+    <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Saving plugin data before world shutdown..."</span>);
+    <span class="fn">saveAllData</span>();
+}</code></pre>
+
+                <h3>Async Event: Chat Filtering</h3>
+                <p>Modify or cancel chat messages asynchronously using <span class="type">PlayerChatEvent</span>:</p>
+
+                <pre><code><span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="comment">// PlayerChatEvent is IAsyncEvent&lt;String&gt; + ICancellable</span>
+    <span class="fn">getEventRegistry</span>().<span class="fn">registerAsyncGlobal</span>(
+        <span class="type">PlayerChatEvent</span>.<span class="kw">class</span>,
+        <span class="kw">this</span>::<span class="fn">onChat</span>
+    );
+}
+
+<span class="kw">private</span> <span class="type">CompletableFuture</span>&lt;<span class="type">PlayerChatEvent</span>&gt; <span class="fn">onChat</span>(
+        <span class="type">CompletableFuture</span>&lt;<span class="type">PlayerChatEvent</span>&gt; <span class="field">future</span>) {
+    <span class="kw">return</span> <span class="field">future</span>.<span class="fn">thenApply</span>(<span class="field">event</span> -> {
+        <span class="type">String</span> <span class="field">content</span> = <span class="field">event</span>.<span class="fn">getContent</span>();
+
+        <span class="comment">// Check for banned words</span>
+        <span class="kw">if</span> (<span class="fn">containsBannedWord</span>(<span class="field">content</span>)) {
+            <span class="field">event</span>.<span class="fn">setCancelled</span>(<span class="kw">true</span>);
+            <span class="field">event</span>.<span class="fn">getSender</span>().<span class="fn">sendMessage</span>(
+                <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Message blocked by filter."</span>)
+                    .<span class="fn">color</span>(<span class="type">Color</span>.RED)
+            );
+            <span class="kw">return</span> <span class="field">event</span>;
+        }
+
+        <span class="comment">// Override the chat formatter</span>
+        <span class="field">event</span>.<span class="fn">setFormatter</span>((<span class="field">playerRef</span>, <span class="field">msg</span>) ->
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"&lt;"</span> + <span class="field">playerRef</span>.<span class="fn">getUsername</span>() + <span class="str">"&gt; "</span> + <span class="field">msg</span>)
+        );
+
+        <span class="kw">return</span> <span class="field">event</span>;
+    });
+}</code></pre>
+
+                <h3>Crafting Event: Restrict Recipes</h3>
+                <p>Prevent certain items from being crafted in excessive quantities:</p>
+
+                <pre><code><span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+    <span class="type">CraftRecipeEvent</span>.<span class="type">Pre</span>.<span class="kw">class</span>,
+    <span class="field">event</span> -> {
+        <span class="type">CraftingRecipe</span> <span class="field">recipe</span> = <span class="field">event</span>.<span class="fn">getCraftedRecipe</span>();
+        <span class="kw">int</span> <span class="field">quantity</span> = <span class="field">event</span>.<span class="fn">getQuantity</span>();
+
+        <span class="comment">// Block mass crafting (more than 64 at once)</span>
+        <span class="kw">if</span> (<span class="field">quantity</span> > <span class="num">64</span>) {
+            <span class="field">event</span>.<span class="fn">setCancelled</span>(<span class="kw">true</span>);
+        }
+    }
+);</code></pre>
+
+                <h3>Combining Multiple Registrations</h3>
+                <p>Use <code>EventRegistration.combine()</code> to manage related handlers as a unit:</p>
+
+                <pre><code><span class="type">EventRegistration</span> <span class="field">reg1</span> = <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>, <span class="kw">this</span>::<span class="fn">onConnect</span>
+);
+<span class="type">EventRegistration</span> <span class="field">reg2</span> = <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">PlayerDisconnectEvent</span>.<span class="kw">class</span>, <span class="kw">this</span>::<span class="fn">onDisconnect</span>
 );
 
-<span class="keyword">// Handler</span>
-<span class="keyword">private void</span> onPlayerConnect(PlayerConnectEvent event) {
-    PlayerRef player = event.getPlayerRef();
-    player.sendMessage(Message.raw(<span class="string">"Welcome!"</span>));
+<span class="comment">// Combine: disabling 'combined' disables both handlers</span>
+<span class="type">EventRegistration</span> <span class="field">combined</span> = <span class="type">EventRegistration</span>.<span class="fn">combine</span>(
+    <span class="field">reg1</span>, <span class="field">reg2</span>
+);
+
+<span class="comment">// Later: unregister both at once</span>
+<span class="field">combined</span>.<span class="fn">unregister</span>();</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="threading-considerations">
+                <h2>Threading Considerations</h2>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>Event handlers execute on the <strong>thread that dispatches</strong> the event. ECS events fire on the world thread. Lifecycle events may fire on the main thread. You must understand which thread your handler runs on before accessing thread-sensitive APIs like the Entity Store.</p>
+                </div>
+
+                <p>General rules:</p>
+                <ul>
+                    <li><strong>ECS events</strong> (<span class="type">BreakBlockEvent</span>, <span class="type">PlaceBlockEvent</span>, <span class="type">KillFeedEvent</span>, etc.) &mdash; fire on the <strong>world thread</strong>. Store access is safe.</li>
+                    <li><strong>Player events</strong> (<span class="type">PlayerConnectEvent</span>, <span class="type">PlayerDisconnectEvent</span>) &mdash; typically fire on the <strong>main thread</strong> or networking thread. Use <code>world.execute()</code> for Store access.</li>
+                    <li><strong>Lifecycle events</strong> (<span class="type">BootEvent</span>, <span class="type">ShutdownEvent</span>) &mdash; fire on the <strong>main thread</strong>.</li>
+                    <li><strong>Async events</strong> (<span class="type">PlayerChatEvent</span>) &mdash; handler functions operate on <code>CompletableFuture</code> chains, which may resolve on ForkJoinPool threads.</li>
+                </ul>
+
+                <p>If you need to perform entity operations from a non-world-thread event handler, schedule the work:</p>
+
+                <pre><code><span class="kw">private void</span> <span class="fn">onPlayerConnect</span>(<span class="type">PlayerConnectEvent</span> <span class="field">event</span>) {
+    <span class="type">World</span> <span class="field">world</span> = <span class="field">event</span>.<span class="fn">getWorld</span>();
+    <span class="kw">if</span> (<span class="field">world</span> != <span class="kw">null</span>) {
+        <span class="field">world</span>.<span class="fn">execute</span>(() -> {
+            <span class="comment">// Safe to access Store here</span>
+            <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> =
+                <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+            <span class="comment">// ... entity operations ...</span>
+        });
+    }
 }</code></pre>
             </section>
 
-            <section>
-                <h2>EcsEvent Registration</h2>
-                <p>Register an ECS event system for entity-specific events:</p>
-                <pre><code><span class="keyword">// Register an ECS event system</span>
-<span class="keyword">plugin</span>.getEventRegistry().registerSystem(
-    KillFeedEvent.Display.<span class="keyword">class</span>,
-    <span class="keyword">this</span>::onEntityDeath
-);
-
-<span class="keyword">// Handler — receives entity ref, event, and accessor</span>
-<span class="keyword">private void</span> onEntityDeath(
-    Ref&lt;EntityStore&gt; victimRef,
-    KillFeedEvent.Display event,
-    ComponentAccessor&lt;EntityStore&gt; accessor
-) {
-    <span class="keyword">// victimRef IS the entity that died</span>
-    UUIDComponent uuid = accessor.getComponent(victimRef, UUIDComponent.getComponentType());
-    Damage damage = event.getDamage();
-}</code></pre>
-            </section>
-
-            <section>
-                <h2>Critical Gotcha</h2>
-                <div class="box danger">
-                    <strong>SILENT FAILURE:</strong> EcsEvent subclasses do NOT implement IBaseEvent. If you use registerGlobal() with an EcsEvent, the code compiles but the handler NEVER fires. No error, no warning — it just silently does nothing.
-                </div>
-
-                <p><strong>Wrong:</strong></p>
-                <pre><code><span class="keyword">// COMPILES but NEVER FIRES!</span>
-<span class="keyword">plugin</span>.getEventRegistry().registerGlobal(
-    KillFeedEvent.Display.<span class="keyword">class</span>,  <span class="keyword">// This is an EcsEvent!</span>
-    <span class="keyword">this</span>::onDeath
-);</code></pre>
-
-                <p><strong>Right:</strong></p>
-                <pre><code><span class="keyword">// Correct — use registerSystem for EcsEvent</span>
-<span class="keyword">plugin</span>.getEventRegistry().registerSystem(
-    KillFeedEvent.Display.<span class="keyword">class</span>,
-    <span class="keyword">this</span>::onDeath
-);</code></pre>
-            </section>
-
-            <section>
-                <h2>Common Events Reference</h2>
-
-                <h3>IBaseEvent (use registerGlobal)</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>PlayerConnectEvent</td>
-                            <td>Player joins server</td>
-                        </tr>
-                        <tr>
-                            <td>PlayerDisconnectEvent</td>
-                            <td>Player leaves server</td>
-                        </tr>
-                        <tr>
-                            <td>PlayerChatEvent</td>
-                            <td>Player sends chat message</td>
-                        </tr>
-                        <tr>
-                            <td>AddPlayerToWorldEvent</td>
-                            <td>Player added to a world (fires on world transfer too)</td>
-                        </tr>
-                        <tr>
-                            <td>PlayerInteractEvent</td>
-                            <td>Player interacts with something</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="box note">
-                    <strong>Note:</strong> AddPlayerToWorldEvent is read-only — you cannot change which world the player is added to.
-                </div>
-
-                <h3>EcsEvent (use registerSystem)</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>UseBlockEvent.Pre</td>
-                            <td>Before block interaction</td>
-                        </tr>
-                        <tr>
-                            <td>UseBlockEvent.Post</td>
-                            <td>After block interaction</td>
-                        </tr>
-                        <tr>
-                            <td>KillFeedEvent.Display</td>
-                            <td>Entity death with kill feed</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section>
-                <h2>Event Threading</h2>
-                <p>All event handlers run on the world thread. Store operations are safe inside event handlers.</p>
-                <div class="box tip">
-                    <strong>Tip:</strong> Since events run on the world thread, you can access the EntityStore directly without needing world.execute().
-                </div>
-            </section>
-
-            <section>
-                <h2>Events That DON'T Fire</h2>
-                <div class="box warning">
-                    <strong>Warning:</strong> Some events you might expect to fire, don't:
+            <!-- ============================================================ -->
+            <section id="events-that-dont-fire">
+                <h2>Events That Don't Fire</h2>
+                <div class="info-box warning">
+                    <strong>Warning:</strong> Some events you might expect to fire, don't fire in all circumstances:
                     <ul>
-                        <li>PlayerInteractEvent does NOT fire for teleporter/portal block interactions</li>
-                        <li>DrainPlayerFromWorldEvent does NOT fire for teleporter-triggered world transfers</li>
+                        <li><span class="type">PlayerInteractEvent</span> does NOT fire for teleporter/portal block interactions</li>
+                        <li><span class="type">DrainPlayerFromWorldEvent</span> does NOT fire for teleporter-triggered world transfers</li>
                         <li>There are NO events for builder tool selection changes</li>
                     </ul>
                 </div>
+                <p>Always test your event handlers thoroughly. If a handler is not being called, verify that you are using the correct registration method (<code>registerGlobal()</code> vs <code>registerSystem()</code>) and that the event actually fires in the scenario you are testing.</p>
             </section>
+
+            <!-- ============================================================ -->
+            <section id="performance-timing">
+                <h2>Performance &amp; Timing</h2>
+                <p>The <span class="type">EventBus</span> has built-in performance monitoring. When constructed with <code>timeEvents = true</code>, each <span class="type">EventConsumer</span> tracks execution time via its <span class="type">Metric</span> timer.</p>
+
+                <p>Key performance characteristics:</p>
+                <ul>
+                    <li><strong>Priority lookup</strong> &mdash; O(1) via <code>Short2ObjectConcurrentHashMap</code>.</li>
+                    <li><strong>Priority iteration</strong> &mdash; Linear over the sorted <code>short[]</code> priority array (typically very small).</li>
+                    <li><strong>Handler iteration</strong> &mdash; Linear via <code>CopyOnWriteArrayList</code> (lock-free reads, copies on write).</li>
+                    <li><strong>Registry lookup</strong> &mdash; O(1) via <code>ConcurrentHashMap</code> keyed by event class.</li>
+                    <li><strong>No-op dispatch</strong> &mdash; If no handlers are registered for an event class, <code>dispatchFor()</code> returns <code>NO_OP</code>, avoiding any allocation or iteration.</li>
+                </ul>
+
+                <div class="info-box info">
+                    <strong>Best Practice:</strong> Keep event handlers lightweight. If a handler needs to perform expensive work (database calls, file I/O, complex computation), consider dispatching to an async executor or scheduling on a separate thread pool. Never block the world thread in a synchronous event handler.
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <section id="api-quick-reference">
+                <h2>Quick Reference</h2>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Code</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Register global sync handler</td>
+                                <td><code>getEventRegistry().registerGlobal(EventClass.class, handler)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Register with priority</td>
+                                <td><code>getEventRegistry().register((short) -10, EventClass.class, handler)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Register async handler</td>
+                                <td><code>getEventRegistry().registerAsyncGlobal(AsyncEvent.class, futureHandler)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Register ECS event handler</td>
+                                <td><code>getEventRegistry().registerSystem(EcsEvent.class, handler)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Cancel an event</td>
+                                <td><code>event.setCancelled(true)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Check if cancelled</td>
+                                <td><code>event.isCancelled()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Unregister a handler</td>
+                                <td><code>registration.unregister()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Combine registrations</td>
+                                <td><code>EventRegistration.combine(reg1, reg2)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Listen to shutdown (early)</td>
+                                <td><code>register(ShutdownEvent.DISCONNECT_PLAYERS, ShutdownEvent.class, handler)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Override spawn world</td>
+                                <td><code>playerConnectEvent.setWorld(world)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Get block type on break</td>
+                                <td><code>breakBlockEvent.getBlockType()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Get disconnect reason</td>
+                                <td><code>playerDisconnectEvent.getDisconnectReason()</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
         </div>
     </main>
-
-    <style>
-        /* Syntax highlighting spans */
-        .keyword { color: #0077aa; font-weight: bold; }
-        .string { color: #669900; }
-    </style>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

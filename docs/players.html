@@ -3,219 +3,1180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Players & Persistence - Hytale Server Docs</title>
+    <title>Players - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html" class="active">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html" class="active">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
-            <h1>Players & Persistence</h1>
-            <p class="page-desc">PlayerRef vs Player component, data storage architecture, and inventory persistence.</p>
+            <h1>Player System</h1>
+            <p class="page-desc">Complete reference for the Player class hierarchy, PlayerRef vs Player component, data persistence, inventory, hotbar management, input handling, connect/disconnect lifecycle, game modes, network synchronization, and ECS player systems.</p>
 
-            <h2>PlayerRef vs Player</h2>
-            <p>Understanding the difference between PlayerRef and the Player component is essential for working with player data in the Hytale server.</p>
+            <!-- ============================================ -->
+            <!-- Player Class Hierarchy                       -->
+            <!-- ============================================ -->
+            <section id="class-hierarchy">
+                <h2>Player Class Hierarchy</h2>
+                <p>The <span class="type">Player</span> class is the largest single class in the entire Hytale server codebase at over <strong>51,000 lines</strong>. It extends a deep inheritance chain and implements multiple interfaces that grant it command execution, permission checking, and metric reporting capabilities.</p>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Aspect</th>
-                        <th>PlayerRef</th>
-                        <th>Player</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>What</td>
-                        <td>Thread-safe handle</td>
-                        <td>ECS entity component</td>
-                    </tr>
-                    <tr>
-                        <td>Package</td>
-                        <td><code>...universe.player.PlayerRef</code></td>
-                        <td><code>...entity.entities.Player</code></td>
-                    </tr>
-                    <tr>
-                        <td>Thread safety</td>
-                        <td>Any thread</td>
-                        <td>World thread only</td>
-                    </tr>
-                    <tr>
-                        <td>Access</td>
-                        <td><code>Universe.get().getPlayer(uuid)</code></td>
-                        <td><code>store.getComponent(ref, Player.getComponentType())</code></td>
-                    </tr>
-                    <tr>
-                        <td>Key methods</td>
-                        <td>getTransform(), getUsername(), getUuid(), sendMessage(), getPacketHandler()</td>
-                        <td>getInventory(), getHudManager(), getPlayerConfigData(), hasPermission()</td>
-                    </tr>
-                </tbody>
-            </table>
+                <pre><code><span class="type">Player</span> <span class="kw">extends</span> <span class="type">LivingEntity</span> <span class="kw">extends</span> <span class="type">Entity</span>
+    <span class="kw">implements</span> <span class="type">CommandSender</span>, <span class="type">PermissionHolder</span>, <span class="type">MetricProvider</span></code></pre>
 
-            <div class="info-box note">
-                <strong>Note:</strong> Use PlayerRef when possible — it's thread-safe and available from any context. Only access the Player component when you need inventory, HUD, or permission data.
-            </div>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Class / Interface</th>
+                                <th>Package</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">Entity</span></td>
+                                <td><code>...entity.entities.Entity</code></td>
+                                <td>Base class for all entities. Provides UUID, transform, world reference, and basic lifecycle hooks.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">LivingEntity</span></td>
+                                <td><code>...entity.entities.LivingEntity</code></td>
+                                <td>Adds health, damage handling, status effects, death mechanics, and the base inventory CODEC.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">Player</span></td>
+                                <td><code>...entity.entities.Player</code></td>
+                                <td>Full player entity with inventory, game mode, HUD, camera, movement, chunk tracking, hotbar, window, and page managers.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">CommandSender</span></td>
+                                <td><code>...command.CommandSender</code></td>
+                                <td>Allows the player to execute commands and receive command output via <code>sendMessage()</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PermissionHolder</span></td>
+                                <td><code>...permission.PermissionHolder</code></td>
+                                <td>Provides <code>hasPermission(String)</code> for group-based and wildcard permission checks.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">MetricProvider</span></td>
+                                <td><code>...metrics.MetricProvider</code></td>
+                                <td>Exposes performance metrics and telemetry data for server monitoring.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <h2>Getting PlayerRef from ECS</h2>
-            <p>There are several ways to obtain a PlayerRef depending on your context:</p>
+                <div class="info-box warning">
+                    <strong>Warning:</strong> At 51K+ lines, the Player class is enormous. Do not attempt to read it end-to-end. Instead, search for the specific method or field you need. Key subsystems are delegated to manager objects (HotbarManager, MovementManager, etc.) which are easier to navigate independently.
+                </div>
+            </section>
 
-            <pre><code class="language-java"><span class="comment">// From Holder (e.g., AddPlayerToWorldEvent):</span>
-<span class="keyword">PlayerRef</span> playerRef = holder.getComponent(<span class="keyword">PlayerRef</span>.getComponentType());
+            <!-- ============================================ -->
+            <!-- PlayerRef vs Player Component                -->
+            <!-- ============================================ -->
+            <section id="playerref-vs-player">
+                <h2>PlayerRef vs Player Component</h2>
+                <p>This is the single most important distinction when working with players. The server has two separate representations of a player, and using the wrong one in the wrong context will cause thread-safety violations or silent failures.</p>
 
-<span class="comment">// From Ref (e.g., ECS event handler):</span>
-<span class="keyword">PlayerRef</span> playerRef = entityRef.getStore().getComponent(entityRef, <span class="keyword">PlayerRef</span>.getComponentType());
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>PlayerRef</th>
+                                <th>Player (Component)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>What it is</strong></td>
+                                <td>Thread-safe handle / proxy</td>
+                                <td>Full ECS entity component with all player data</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Package</strong></td>
+                                <td><code>...universe.player.PlayerRef</code></td>
+                                <td><code>...entity.entities.Player</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Thread safety</strong></td>
+                                <td>Usable from <strong>ANY</strong> thread</td>
+                                <td><strong>World thread ONLY</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>How to obtain</strong></td>
+                                <td><code>Universe.get().getPlayer(uuid)</code></td>
+                                <td><code>store.getComponent(ref, Player.getComponentType())</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Available data</strong></td>
+                                <td>Username, UUID, transform, world, packet handler, sendMessage()</td>
+                                <td>Inventory, game mode, HUD, camera, movement, permissions, config data</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ECS type</strong></td>
+                                <td><code>ComponentType&lt;EntityStore, PlayerRef&gt;</code></td>
+                                <td><code>ComponentType&lt;EntityStore, Player&gt;</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Use when</strong></td>
+                                <td>Sending messages, getting position, cross-thread references</td>
+                                <td>Modifying inventory, checking permissions, changing game mode</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-<span class="comment">// From UUID (any thread):</span>
-<span class="keyword">PlayerRef</span> playerRef = <span class="keyword">Universe</span>.get().getPlayer(uuid);
+                <h3>When to Use PlayerRef</h3>
+                <p>Use <span class="type">PlayerRef</span> whenever you are working outside the world thread, or when you only need basic player information. It is the safe default choice.</p>
 
-<span class="comment">// From CommandContext:</span>
-<span class="type">UUID</span> uuid = ctx.sender().getUuid();
-<span class="keyword">PlayerRef</span> playerRef = <span class="keyword">Universe</span>.get().getPlayer(uuid);</code></pre>
+                <pre><code><span class="comment">// From any thread -- safe</span>
+<span class="type">PlayerRef</span> <span class="field">playerRef</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">uuid</span>);
+<span class="type">String</span> <span class="field">name</span> = <span class="field">playerRef</span>.<span class="fn">getUsername</span>();
+<span class="type">Vector3d</span> <span class="field">pos</span> = <span class="field">playerRef</span>.<span class="fn">getTransform</span>().<span class="fn">getPosition</span>();
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Hello!"</span>));</code></pre>
 
-            <h2>Player Data Storage</h2>
-            <p>Player data is persisted to disk in a structured format:</p>
+                <h3>When to Use Player Component</h3>
+                <p>Use the <span class="type">Player</span> component when you need access to inventory, game mode, HUD management, or any data that lives on the full entity. This <strong>requires</strong> being on the world thread.</p>
 
-            <div class="info-box warning">
-                <strong>Warning:</strong> Player data is stored GLOBALLY, not per-world. Inventories persist across all worlds.
-            </div>
+                <pre><code><span class="comment">// MUST be on world thread!</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">entityRef</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
 
-            <p>The serialization hierarchy is as follows:</p>
-            <ol>
-                <li><code>EntityStore.REGISTRY.serialize(holder)</code> — saves entire entity</li>
-                <li><code>Player.CODEC</code> → inherits from <code>LivingEntity.CODEC</code> → adds PlayerConfigData</li>
-                <li><code>LivingEntity.CODEC</code> → contains <code>Inventory</code> field</li>
-                <li><code>Inventory.CODEC</code> → serializes all inventory slots</li>
-            </ol>
+<span class="comment">// Now you can access full player data</span>
+<span class="type">Inventory</span> <span class="field">inv</span> = <span class="field">player</span>.<span class="fn">getInventory</span>();
+<span class="type">GameMode</span> <span class="field">mode</span> = <span class="field">player</span>.<span class="fn">getGameMode</span>();
+<span class="type">HudManager</span> <span class="field">hud</span> = <span class="field">player</span>.<span class="fn">getHudManager</span>();</code></pre>
 
-            <p>Player data files are located at: <code>universe/players/&lt;uuid&gt;.json</code></p>
+                <h3>Obtaining PlayerRef from Different Contexts</h3>
+                <pre><code><span class="comment">// From UUID (any thread)</span>
+<span class="type">PlayerRef</span> <span class="field">ref</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">uuid</span>);
 
-            <h2>Global vs World-Specific Data</h2>
+<span class="comment">// From ECS Holder (e.g., AddPlayerToWorldEvent)</span>
+<span class="type">PlayerRef</span> <span class="field">ref</span> = <span class="field">holder</span>.<span class="fn">getComponent</span>(<span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
 
-            <h3>Global data (shared across worlds)</h3>
-            <p>The following data persists globally and is shared across all worlds:</p>
+<span class="comment">// From ECS Ref (world thread)</span>
+<span class="type">PlayerRef</span> <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">entityRef</span>, <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Inventory</td>
-                        <td>All slots — hotbar, storage, armor, crafting</td>
-                    </tr>
-                    <tr>
-                        <td>knownRecipes</td>
-                        <td>Unlocked crafting recipes</td>
-                    </tr>
-                    <tr>
-                        <td>discoveredZones</td>
-                        <td>Visited zone IDs</td>
-                    </tr>
-                    <tr>
-                        <td>discoveredInstances</td>
-                        <td>Visited instance UUIDs</td>
-                    </tr>
-                    <tr>
-                        <td>reputationData</td>
-                        <td>NPC faction reputation scores</td>
-                    </tr>
-                    <tr>
-                        <td>activeObjectiveUUIDs</td>
-                        <td>Active quest/objective IDs</td>
-                    </tr>
-                    <tr>
-                        <td>gameMode</td>
-                        <td>Last known game mode</td>
-                    </tr>
-                </tbody>
-            </table>
+<span class="comment">// From CommandContext</span>
+<span class="type">UUID</span> <span class="field">uuid</span> = <span class="field">ctx</span>.<span class="fn">sender</span>().<span class="fn">getUuid</span>();
+<span class="type">PlayerRef</span> <span class="field">ref</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">uuid</span>);
 
-            <h3>World-specific data (in PlayerConfigData.perWorldData)</h3>
-            <p>Some data is tracked separately for each world:</p>
+<span class="comment">// ECS query using ComponentType</span>
+<span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">PlayerRef</span>&gt; <span class="field">type</span> = <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>();</code></pre>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Respawn points</td>
-                        <td>Bed/checkpoint locations per world</td>
-                    </tr>
-                    <tr>
-                        <td>Movement states</td>
-                        <td>Flying, swimming state per world</td>
-                    </tr>
-                    <tr>
-                        <td>Last position</td>
-                        <td>Spawn point when returning to world</td>
-                    </tr>
-                </tbody>
-            </table>
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>Accessing the <span class="type">Player</span> component from outside the world thread will cause <strong>undefined behavior</strong>. The ECS store is not thread-safe. Always use <span class="type">PlayerRef</span> for cross-thread operations, or schedule work onto the world thread via <code>world.execute(() -&gt; { ... })</code>.</p>
+                </div>
+            </section>
 
-            <h2>Inventory Persistence</h2>
+            <!-- ============================================ -->
+            <!-- Core Player Fields                           -->
+            <!-- ============================================ -->
+            <section id="core-fields">
+                <h2>Core Player Fields</h2>
+                <p>The <span class="type">Player</span> component contains a large number of fields that manage every aspect of the player's state. The following table lists the most important fields you will interact with when writing plugins.</p>
 
-            <div class="info-box danger">
-                <strong>Danger:</strong> Inventories are GLOBAL across all worlds. When a player changes worlds, their inventory travels with them. There is no built-in per-world inventory system.
-            </div>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="field">uuid</span></td>
+                                <td><span class="type">UUID</span></td>
+                                <td>&mdash;</td>
+                                <td>The player's unique identifier, assigned by the authentication system. Persists across sessions.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">gameMode</span></td>
+                                <td><span class="type">GameMode</span></td>
+                                <td>Survival</td>
+                                <td>Current game mode (Creative, Survival, Adventure). Controls block placement, flight, damage, and inventory behavior.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">clientViewRadius</span></td>
+                                <td><span class="type">int</span></td>
+                                <td><span class="num">6</span></td>
+                                <td>Number of chunks the client renders in each direction. Affects chunk tracker range: <code>clientViewRadius * 32</code> blocks.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">hotbarManager</span></td>
+                                <td><span class="type">HotbarManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Manages up to 10 saved hotbar configurations. Creative mode only.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">inventory</span></td>
+                                <td><span class="type">Inventory</span></td>
+                                <td>&mdash;</td>
+                                <td>The player's full inventory: main grid, hotbar, armor slots, and equipment.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">windowManager</span></td>
+                                <td><span class="type">WindowManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Manages open inventory windows (chests, crafting tables, etc.).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">pageManager</span></td>
+                                <td><span class="type">PageManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Controls client-side page navigation and UI screens.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">hudManager</span></td>
+                                <td><span class="type">HudManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Controls HUD elements, titles, notifications, toast messages, and objective panels.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">cameraManager</span></td>
+                                <td><span class="type">CameraManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Controls camera behavior: first-person, third-person, spectator camera, and transitions.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">movementManager</span></td>
+                                <td><span class="type">MovementManager</span></td>
+                                <td>&mdash;</td>
+                                <td>Handles physics integration, velocity, jump state, flying, swimming, and client movement reconciliation.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">chunkTracker</span></td>
+                                <td><span class="type">ChunkTracker</span></td>
+                                <td>&mdash;</td>
+                                <td>Tracks which chunks are loaded and visible to this player. Manages chunk send/unload queues.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">data</span></td>
+                                <td><span class="type">PlayerConfigData</span></td>
+                                <td>&mdash;</td>
+                                <td>Persistent configuration: respawn point, death position, saved config, game mode preference.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-            <p>If you need per-world inventories, you must implement manual swapping:</p>
+            <!-- ============================================ -->
+            <!-- Player Data Persistence                      -->
+            <!-- ============================================ -->
+            <section id="data-persistence">
+                <h2>Player Data Persistence</h2>
+                <p>Player data is serialized and persisted to disk using the server's CODEC system. Understanding this flow is essential if you need to extend or modify what gets saved.</p>
 
-            <pre><code class="language-java"><span class="comment">// On world change — swap inventories</span>
-<span class="annotation">@EventHandler</span>
-<span class="keyword">void</span> onWorldChange(<span class="keyword">AddPlayerToWorldEvent</span> event) {
-    <span class="comment">// Save current inventory to plugin storage</span>
-    saveInventory(uuid, previousWorld);
-    <span class="comment">// Load inventory for new world</span>
-    loadInventory(uuid, newWorld);
+                <h3>PlayerConfigData</h3>
+                <p><span class="type">PlayerConfigData</span> is the primary container for persistent player state that is not part of the entity component hierarchy. It stores data that must survive server restarts and world transitions.</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="field">respawnPoint</span></td>
+                                <td><span class="type">Vector3d</span></td>
+                                <td>The player's respawn location (set by beds, checkpoints, etc.).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">deathPosition</span></td>
+                                <td><span class="type">Vector3d</span></td>
+                                <td>Position where the player last died. Used for death screen and compass.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">savedConfig</span></td>
+                                <td><span class="type">BsonDocument</span></td>
+                                <td>Arbitrary BSON data for persisting custom plugin state per player.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">gameMode</span></td>
+                                <td><span class="type">GameMode</span></td>
+                                <td>The player's game mode preference, restored on reconnect.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">perWorldData</span></td>
+                                <td><span class="type">Map&lt;String, WorldData&gt;</span></td>
+                                <td>Per-world state including respawn points, movement states, and last position.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>CODEC Serialization Chain</h3>
+                <p>The <span class="type">Player</span> class uses a <span class="type">BuilderCodec</span> that extends the parent <span class="type">LivingEntity.CODEC</span>. This creates a serialization chain where each level adds its own fields:</p>
+
+                <pre><code><span class="comment">// Serialization hierarchy:</span>
+<span class="type">Player</span>.CODEC                      <span class="comment">// PlayerConfigData, gameMode, hotbars</span>
+  <span class="kw">extends</span> <span class="type">LivingEntity</span>.CODEC      <span class="comment">// Inventory, health, status effects</span>
+    <span class="kw">extends</span> <span class="type">Entity</span>.CODEC           <span class="comment">// UUID, transform, world reference</span></code></pre>
+
+                <h3>PlayerStorage System</h3>
+                <p>Player data files are stored at:</p>
+                <pre><code>universe/players/&lt;<span class="field">uuid</span>&gt;.json</code></pre>
+
+                <p>The <span class="type">PlayerStorage</span> system handles reading and writing these files. Each file contains the complete serialized state of the player entity, including all component data from the CODEC chain.</p>
+
+                <div class="info-box warning">
+                    <strong>Warning:</strong> Player data is stored <strong>globally</strong>, not per-world. Inventories, recipes, and game mode persist across all worlds. If you need per-world data isolation, you must implement it manually using plugin storage.
+                </div>
+
+                <h3>PlayerSavingSystems</h3>
+                <p>The server uses two ECS systems to manage persistence:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>System</th>
+                                <th>Trigger</th>
+                                <th>Behavior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Auto-save on interval</strong></td>
+                                <td>Periodic timer (configurable)</td>
+                                <td>Serializes all online players to their <code>universe/players/&lt;uuid&gt;.json</code> files at regular intervals to prevent data loss on crash.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Save on world remove</strong></td>
+                                <td>Player removed from world</td>
+                                <td>Serializes the player immediately when they leave a world (disconnect, world transfer, or kick). Ensures no data loss during transitions.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Inventory System                             -->
+            <!-- ============================================ -->
+            <section id="inventory-system">
+                <h2>Inventory System</h2>
+                <p>The <span class="type">Inventory</span> class manages all item storage for a player. It contains multiple <span class="type">ItemContainer</span> instances, each representing a different section of the player's inventory.</p>
+
+                <h3>Inventory Structure</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Container</th>
+                                <th>Slots</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Main inventory grid</td>
+                                <td>Variable</td>
+                                <td>The primary backpack storage grid, accessible via the inventory screen.</td>
+                            </tr>
+                            <tr>
+                                <td>Hotbar</td>
+                                <td>Up to 10</td>
+                                <td>Quick-access slots visible at the bottom of the HUD.</td>
+                            </tr>
+                            <tr>
+                                <td>Armor slots</td>
+                                <td>4</td>
+                                <td>Head, chest, legs, and feet armor equipment.</td>
+                            </tr>
+                            <tr>
+                                <td>Equipment</td>
+                                <td>Variable</td>
+                                <td>Additional equipment slots (accessories, shields, etc.).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>ItemStack</h3>
+                <p>Every item in an inventory is represented by an <span class="type">ItemStack</span>. This is the core data type for all item operations.</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="field">itemId</span></td>
+                                <td><span class="type">int</span></td>
+                                <td>Registry ID of the item type. Maps to the item asset registry.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">quantity</span></td>
+                                <td><span class="type">int</span></td>
+                                <td>Number of items in this stack. Clamped by the item's max stack size.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">durability</span></td>
+                                <td><span class="type">int</span></td>
+                                <td>Current durability remaining. Decremented on use for tools and weapons.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">maxDurability</span></td>
+                                <td><span class="type">int</span></td>
+                                <td>Maximum durability for this item type. Defined by the item asset.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="field">metadata</span></td>
+                                <td><span class="type">BsonDocument</span></td>
+                                <td>Arbitrary metadata attached to this specific item stack. Used for enchantments, custom data, lore, etc.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>ItemContainer</h3>
+                <p>The <span class="type">ItemContainer</span> class provides slot-based operations for managing items within a specific section of the inventory.</p>
+
+                <pre><code><span class="comment">// Get a player's inventory (world thread only)</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="type">Inventory</span> <span class="field">inventory</span> = <span class="field">player</span>.<span class="fn">getInventory</span>();
+
+<span class="comment">// Access a specific container</span>
+<span class="type">ItemContainer</span> <span class="field">hotbar</span> = <span class="field">inventory</span>.<span class="fn">getHotbar</span>();
+
+<span class="comment">// Get item in a slot</span>
+<span class="type">ItemStack</span> <span class="field">item</span> = <span class="field">hotbar</span>.<span class="fn">getItem</span>(<span class="num">0</span>);
+
+<span class="comment">// Set item in a slot</span>
+<span class="field">hotbar</span>.<span class="fn">setItem</span>(<span class="num">0</span>, <span class="kw">new</span> <span class="type">ItemStack</span>(<span class="field">itemId</span>, <span class="num">1</span>));</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> After modifying inventory contents programmatically, you must send an <code>UpdatePlayerInventory</code> packet to the client for the changes to be visible. Some high-level inventory methods handle this automatically.
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- HotbarManager                                -->
+            <!-- ============================================ -->
+            <section id="hotbar-manager">
+                <h2>HotbarManager</h2>
+                <p>The <span class="type">HotbarManager</span> allows players to save and load up to <strong>10 hotbar configurations</strong> (indexed 0 through 9). This is a <strong>creative mode only</strong> feature that lets players quickly switch between different item loadouts.</p>
+
+                <h3>Key Methods</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><span class="fn">saveHotbar</span>(<span class="type">PlayerRef</span> playerRef, <span class="kw">int</span> index, <span class="type">Accessor</span> accessor)</code></td>
+                                <td>Saves the player's current hotbar contents to the specified slot index (0-9).</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="fn">loadHotbar</span>(<span class="type">PlayerRef</span> playerRef, <span class="kw">int</span> index, <span class="type">Accessor</span> accessor)</code></td>
+                                <td>Loads a previously saved hotbar configuration from the specified slot index (0-9) into the active hotbar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <pre><code><span class="comment">// Save current hotbar to slot 3</span>
+<span class="field">player</span>.<span class="fn">getHotbarManager</span>().<span class="fn">saveHotbar</span>(<span class="field">playerRef</span>, <span class="num">3</span>, <span class="field">accessor</span>);
+
+<span class="comment">// Load hotbar from slot 3</span>
+<span class="field">player</span>.<span class="fn">getHotbarManager</span>().<span class="fn">loadHotbar</span>(<span class="field">playerRef</span>, <span class="num">3</span>, <span class="field">accessor</span>);</code></pre>
+
+                <div class="info-box warning">
+                    <strong>Warning:</strong> The hotbar index is validated to be in range 0-9. Passing an out-of-range index will throw an exception. The HotbarManager only functions when the player is in <strong>Creative mode</strong>; calls in Survival mode are silently ignored.
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Player Input System                          -->
+            <!-- ============================================ -->
+            <section id="input-system">
+                <h2>Player Input System</h2>
+                <p>Client input is transmitted to the server via a set of nested classes inside <span class="type">PlayerInput</span>. Each class represents a different type of input event that the server processes on each tick.</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Input Class</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PlayerInput.InputUpdate</span></td>
+                                <td>General input state update containing button presses, key states, and action flags.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.AbsoluteMovement</span></td>
+                                <td>Client-authoritative position update. Used for position reconciliation with the server.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.RelativeMovement</span></td>
+                                <td>Incremental movement delta from the client. Accumulated and applied by the server's physics system.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.WishMovement</span></td>
+                                <td>The player's desired movement direction and speed, before physics constraints are applied.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.SetHead</span></td>
+                                <td>Head rotation update (pitch and yaw). Separate from body rotation for look-around behavior.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.SetBody</span></td>
+                                <td>Body rotation update. Body rotation follows head rotation with configurable lag.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.SetMovementStates</span></td>
+                                <td>Movement state flags: sprinting, crouching, flying, swimming, climbing, etc.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.SetClientVelocity</span></td>
+                                <td>Client-reported velocity. Used for reconciliation when server and client disagree on player speed.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput.SetRiderMovementStates</span></td>
+                                <td>Movement states when the player is riding a mount or vehicle. Controls the mount's movement.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>The <span class="type">MovementManager</span> is responsible for integrating these inputs with the server's physics simulation. It validates client-reported positions, applies gravity, handles collision detection, and reconciles discrepancies between client and server state.</p>
+
+                <div class="info-box note">
+                    <strong>Note:</strong> The server is authoritative for physics. Client movement is treated as a <em>wish</em>, and the server validates all position changes against the physics simulation. If the server detects a discrepancy beyond a threshold, it will force-correct the client's position.
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Connect/Disconnect Lifecycle                 -->
+            <!-- ============================================ -->
+            <section id="lifecycle">
+                <h2>Connect/Disconnect Lifecycle</h2>
+                <p>The player connection and disconnection process involves multiple events and systems that fire in a specific order. Understanding this sequence is critical for plugins that need to initialize or clean up per-player state.</p>
+
+                <h3>Connection Sequence</h3>
+                <ol>
+                    <li><strong>Client connects</strong> &mdash; Network layer authenticates the connection and creates a packet handler.</li>
+                    <li><strong>PlayerConnectEvent</strong> fires &mdash; The player has been authenticated. <span class="type">PlayerRef</span> is now available via <code>Universe.get().getPlayer(uuid)</code>.</li>
+                    <li><strong>Player data loaded</strong> &mdash; <span class="type">PlayerStorage</span> reads <code>universe/players/&lt;uuid&gt;.json</code> and deserializes the player entity using <code>Player.CODEC</code>.</li>
+                    <li><strong>Player added to world</strong> &mdash; The player entity is inserted into their last world (or the default world for first-time players).</li>
+                    <li><strong>PlayerAddedSystem</strong> processes the new entity &mdash; Sets up the chunk tracker, sends initial packets (<code>SetClientId</code>, <code>SetGameMode</code>, <code>ViewRadius</code>, <code>JoinWorld</code>).</li>
+                    <li><strong>Client loads chunks</strong> &mdash; The chunk tracker begins sending chunks to the client. The server waits on <code>clientReadyForChunksFuture</code>.</li>
+                    <li><strong>PlayerReadyEvent</strong> fires &mdash; The client has finished loading and is ready for gameplay. Safe to send custom UI, teleport, or apply effects.</li>
+                </ol>
+
+                <h3>Disconnection Sequence</h3>
+                <ol>
+                    <li><strong>Connection lost or player kicked</strong> &mdash; The network layer detects the disconnection.</li>
+                    <li><strong>PlayerDisconnectEvent</strong> fires &mdash; Plugin cleanup should happen here. The <span class="type">PlayerRef</span> is still valid at this point.</li>
+                    <li><strong>PlayerRemovedSystem</strong> processes the entity &mdash; Chunk tracker is torn down, entity is removed from the world's <span class="type">EntityStore</span>.</li>
+                    <li><strong>Player data saved</strong> &mdash; <span class="type">PlayerSavingSystems</span> serializes the player to <code>universe/players/&lt;uuid&gt;.json</code>.</li>
+                    <li><strong>PlayerRef invalidated</strong> &mdash; The <span class="type">PlayerRef</span> is removed from the Universe and can no longer be obtained via <code>getPlayer(uuid)</code>.</li>
+                </ol>
+
+                <h3>Related ECS Systems</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>System</th>
+                                <th>Phase</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PlayerAddedSystem</span></td>
+                                <td>Connect</td>
+                                <td>Initializes chunk tracker, sends handshake packets, sets up client state.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerRemovedSystem</span></td>
+                                <td>Disconnect</td>
+                                <td>Tears down chunk tracker, cleans up entity references, triggers save.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerSpawnedSystem</span></td>
+                                <td>Spawn</td>
+                                <td>Handles initial spawn logic after world transfer or respawn. Sets position, sends inventory.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> If you need to send custom data or UI to a player on join, listen for <code>PlayerReadyEvent</code> rather than <code>PlayerConnectEvent</code>. The ready event guarantees the client has finished loading and can process your packets.
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Game Mode                                    -->
+            <!-- ============================================ -->
+            <section id="game-mode">
+                <h2>Game Mode</h2>
+                <p>The player's game mode determines a wide range of gameplay behaviors including flight, damage, block placement, and inventory access.</p>
+
+                <h3>Game Mode Differences</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Behavior</th>
+                                <th>Creative</th>
+                                <th>Survival</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Flight</td>
+                                <td>Enabled (double-tap jump)</td>
+                                <td>Disabled</td>
+                            </tr>
+                            <tr>
+                                <td>Damage</td>
+                                <td>Invulnerable</td>
+                                <td>Full damage model</td>
+                            </tr>
+                            <tr>
+                                <td>Block breaking</td>
+                                <td>Instant break</td>
+                                <td>Tool-dependent speed</td>
+                            </tr>
+                            <tr>
+                                <td>Block placement</td>
+                                <td>Unrestricted (see flag below)</td>
+                                <td>Must have item in hand</td>
+                            </tr>
+                            <tr>
+                                <td>Hotbar saving</td>
+                                <td>Enabled (HotbarManager)</td>
+                                <td>Disabled</td>
+                            </tr>
+                            <tr>
+                                <td>Item consumption</td>
+                                <td>No item consumed on place</td>
+                                <td>Items consumed from inventory</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Changing Game Mode</h3>
+                <pre><code><span class="comment">// Change a player's game mode (fires ChangeGameModeEvent)</span>
+<span class="field">player</span>.<span class="fn">setGameMode</span>(<span class="type">GameMode</span>.CREATIVE);
+
+<span class="comment">// Check current game mode</span>
+<span class="kw">if</span> (<span class="field">player</span>.<span class="fn">getGameMode</span>() == <span class="type">GameMode</span>.SURVIVAL) {
+    <span class="comment">// survival-specific logic</span>
 }</code></pre>
 
-            <h2>Player Connect/Disconnect Lifecycle</h2>
-            <p>The following sequence occurs during player connection and disconnection:</p>
+                <p>The <span class="type">ChangeGameModeEvent</span> is fired whenever a player's game mode changes. This event is cancellable, allowing plugins to prevent game mode switches.</p>
 
-            <ol>
-                <li>Player connects → <code>PlayerConnectEvent</code> fires</li>
-                <li><code>Universe.addPlayer()</code> loads player data from <code>universe/players/&lt;uuid&gt;.json</code></li>
-                <li>Player is added to their last world (or default world)</li>
-                <li><code>AddPlayerToWorldEvent</code> fires</li>
-                <li>On disconnect → <code>PlayerDisconnectEvent</code> fires</li>
-                <li>Player data is saved to disk</li>
-            </ol>
+                <h3>Block Placement Override</h3>
+                <p>The <span class="field">overrideBlockPlacementRestrictions</span> flag on the Player allows creative-mode players to place blocks in locations that would normally be restricted (e.g., overlapping entities or protected regions). This flag is <code>false</code> by default even in creative mode and must be explicitly enabled.</p>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Network Synchronization                      -->
+            <!-- ============================================ -->
+            <section id="network-sync">
+                <h2>Network Synchronization</h2>
+                <p>The player system relies on a carefully orchestrated set of network packets to keep client and server state synchronized. These packets are sent and received through the player's <span class="type">PacketHandler</span>.</p>
+
+                <h3>Server-to-Client Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>When Sent</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>SetClientId</code></td>
+                                <td>On connect</td>
+                                <td>Assigns the client's network entity ID so it knows which entity it controls.</td>
+                            </tr>
+                            <tr>
+                                <td><code>SetGameMode</code></td>
+                                <td>On connect / mode change</td>
+                                <td>Tells the client which game mode to render (affects UI, flight, etc.).</td>
+                            </tr>
+                            <tr>
+                                <td><code>UpdatePlayerInventory</code></td>
+                                <td>On inventory change</td>
+                                <td>Synchronizes inventory contents from server to client.</td>
+                            </tr>
+                            <tr>
+                                <td><code>ViewRadius</code></td>
+                                <td>On connect / config change</td>
+                                <td>Sets the client's chunk view distance.</td>
+                            </tr>
+                            <tr>
+                                <td><code>JoinWorld</code></td>
+                                <td>On world entry</td>
+                                <td>Tells the client it has joined a world, triggering loading screen and chunk requests.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Client-to-Server Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>When Sent</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ClientMovement</code></td>
+                                <td>Every tick</td>
+                                <td>Player position, rotation, and velocity updates from the client.</td>
+                            </tr>
+                            <tr>
+                                <td><code>ClientTeleport</code></td>
+                                <td>On client teleport ack</td>
+                                <td>Client acknowledges a server-initiated teleport, confirming position update.</td>
+                            </tr>
+                            <tr>
+                                <td><code>ClientPlaceBlock</code></td>
+                                <td>On block place</td>
+                                <td>Client requests to place a block at a specific position and face.</td>
+                            </tr>
+                            <tr>
+                                <td><code>MouseInteraction</code></td>
+                                <td>On click</td>
+                                <td>Left/right click interactions with entities or the world.</td>
+                            </tr>
+                            <tr>
+                                <td><code>ClientReady</code></td>
+                                <td>On loading complete</td>
+                                <td>Client signals it has finished loading. Resolves <code>clientReadyForChunksFuture</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>clientReadyForChunksFuture</h3>
+                <p>The <span class="field">clientReadyForChunksFuture</span> field is a <span class="type">CompletableFuture&lt;Void&gt;</span> that resolves when the client sends the <code>ClientReady</code> packet. This is used internally to gate operations that depend on the client being fully loaded (such as sending initial world state, teleporting, or showing UI).</p>
+
+                <pre><code><span class="comment">// Wait for client to be ready before sending custom data</span>
+<span class="field">player</span>.<span class="fn">getClientReadyForChunksFuture</span>().<span class="fn">thenRun</span>(() -&gt; {
+    <span class="comment">// Client is now ready -- safe to send custom packets</span>
+    <span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome to the server!"</span>));
+});</code></pre>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Player Communication                         -->
+            <!-- ============================================ -->
+            <section id="communication">
+                <h2>Player Communication</h2>
+                <p>The server provides a rich messaging API for sending text to players. All messages go through the <span class="type">Message</span> class, which supports plain text, translations, parameters, and formatting.</p>
+
+                <h3>Message Types</h3>
+                <pre><code><span class="comment">// Plain text message</span>
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Hello, world!"</span>));
+
+<span class="comment">// Localized message with translation key</span>
+<span class="type">Message</span> <span class="field">msg</span> = <span class="type">Message</span>.<span class="fn">translation</span>(<span class="str">"welcome.message"</span>)
+    .<span class="fn">param</span>(<span class="str">"player"</span>, <span class="field">playerRef</span>.<span class="fn">getUsername</span>())
+    .<span class="fn">param</span>(<span class="str">"server"</span>, <span class="str">"MyServer"</span>);
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="field">msg</span>);
+
+<span class="comment">// Broadcast to all online players</span>
+<span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Server announcement!"</span>));
+
+<span class="comment">// Formatted message with color and style</span>
+<span class="type">Message</span> <span class="field">styled</span> = <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Important!"</span>)
+    .<span class="fn">color</span>(<span class="type">Color</span>.RED)
+    .<span class="fn">bold</span>(<span class="kw">true</span>);
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="field">styled</span>);</code></pre>
+
+                <div class="info-box note">
+                    <strong>Note:</strong> The <code>sendMessage()</code> method on <span class="type">PlayerRef</span> is thread-safe and can be called from any thread. It internally queues the message for delivery on the network thread.
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Player Systems (ECS)                         -->
+            <!-- ============================================ -->
+            <section id="ecs-systems">
+                <h2>Player Systems (ECS)</h2>
+                <p>The server implements numerous ECS systems that run each tick to process player-related logic. These systems operate on entities that have specific component combinations.</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>System</th>
+                                <th>Required Components</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">NameplateRefSystem</span></td>
+                                <td>PlayerRef, Nameplate, Visible</td>
+                                <td>Updates the floating name display above the player. Synchronizes nameplate text with the player's username and any custom prefixes/suffixes.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">KillFeedKillerEventSystem</span></td>
+                                <td>PlayerRef, KillFeedEvent</td>
+                                <td>Processes death events involving players. Generates kill feed messages and logs death information for the kill feed UI.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">EnsureEffectControllerSystem</span></td>
+                                <td>Player, LivingEntity</td>
+                                <td>Guarantees that every player entity has an active status effect controller. Creates one if missing.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">EnsurePlayerInput</span></td>
+                                <td>PlayerRef</td>
+                                <td>Ensures every player entity has a <span class="type">PlayerInput</span> component for receiving client input. Creates the component if absent.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerChunkTrackerSystems</span></td>
+                                <td>PlayerRef, ChunkTracker, TransformComponent</td>
+                                <td>Updates the chunk tracker based on the player's current position. Determines which chunks to send, keep loaded, or unload for each player.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Code Examples                                -->
+            <!-- ============================================ -->
+            <section id="code-examples">
+                <h2>Code Examples</h2>
+                <p>The following examples demonstrate common player operations you will perform when writing plugins.</p>
+
+                <h3>Getting a Player by UUID</h3>
+                <pre><code><span class="comment">// Thread-safe -- works from any thread</span>
+<span class="type">UUID</span> <span class="field">targetUuid</span> = <span class="type">UUID</span>.<span class="fn">fromString</span>(<span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>);
+<span class="type">PlayerRef</span> <span class="field">playerRef</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">targetUuid</span>);
+
+<span class="kw">if</span> (<span class="field">playerRef</span> != <span class="kw">null</span>) {
+    <span class="type">String</span> <span class="field">name</span> = <span class="field">playerRef</span>.<span class="fn">getUsername</span>();
+    <span class="type">World</span> <span class="field">world</span> = <span class="field">playerRef</span>.<span class="fn">getWorld</span>();
+    <span class="type">Vector3d</span> <span class="field">position</span> = <span class="field">playerRef</span>.<span class="fn">getTransform</span>().<span class="fn">getPosition</span>();
+} <span class="kw">else</span> {
+    <span class="comment">// Player is not online</span>
+}</code></pre>
+
+                <h3>Sending a Message to a Player</h3>
+                <pre><code><span class="comment">// Simple text message</span>
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"You have been warned."</span>));
+
+<span class="comment">// Localized message with parameters</span>
+<span class="type">Message</span> <span class="field">welcome</span> = <span class="type">Message</span>.<span class="fn">translation</span>(<span class="str">"server.welcome"</span>)
+    .<span class="fn">param</span>(<span class="str">"name"</span>, <span class="field">playerRef</span>.<span class="fn">getUsername</span>())
+    .<span class="fn">param</span>(<span class="str">"online"</span>, <span class="type">String</span>.<span class="fn">valueOf</span>(<span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getOnlinePlayerCount</span>()));
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="field">welcome</span>);</code></pre>
+
+                <h3>Modifying Player Inventory</h3>
+                <pre><code><span class="comment">// MUST be on world thread!</span>
+<span class="field">world</span>.<span class="fn">execute</span>(() -&gt; {
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    <span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">entityRef</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+
+    <span class="kw">if</span> (<span class="field">player</span> != <span class="kw">null</span>) {
+        <span class="type">Inventory</span> <span class="field">inventory</span> = <span class="field">player</span>.<span class="fn">getInventory</span>();
+        <span class="type">ItemContainer</span> <span class="field">hotbar</span> = <span class="field">inventory</span>.<span class="fn">getHotbar</span>();
+
+        <span class="comment">// Place an item in hotbar slot 0</span>
+        <span class="field">hotbar</span>.<span class="fn">setItem</span>(<span class="num">0</span>, <span class="kw">new</span> <span class="type">ItemStack</span>(<span class="field">itemId</span>, <span class="num">64</span>));
+
+        <span class="comment">// Clear hotbar slot 1</span>
+        <span class="field">hotbar</span>.<span class="fn">setItem</span>(<span class="num">1</span>, <span class="kw">null</span>);
+    }
+});</code></pre>
+
+                <h3>Teleporting a Player</h3>
+                <pre><code><span class="comment">// Same-world teleport</span>
+<span class="type">Teleport</span> <span class="field">teleport</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">200</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">90</span>, <span class="num">0</span>)
+);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">entityRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">teleport</span>);
+
+<span class="comment">// Cross-world teleport</span>
+<span class="type">World</span> <span class="field">targetWorld</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
+<span class="type">Teleport</span> <span class="field">crossTp</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(
+    <span class="field">targetWorld</span>,
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">0</span>, <span class="num">80</span>, <span class="num">0</span>),
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)
+);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">entityRef</span>, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">crossTp</span>);</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Tip:</strong> Always use <code>Teleport.createForPlayer()</code> instead of <code>Teleport.createExact()</code> when teleporting players. The player variant correctly handles the separation between head rotation and body rotation.
+                </div>
+
+                <h3>Checking Player Game Mode</h3>
+                <pre><code><span class="comment">// On world thread, using the Player component</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">entityRef</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+
+<span class="kw">if</span> (<span class="field">player</span>.<span class="fn">getGameMode</span>() == <span class="type">GameMode</span>.CREATIVE) {
+    <span class="comment">// Allow creative-only action</span>
+    <span class="field">player</span>.<span class="fn">getHotbarManager</span>().<span class="fn">saveHotbar</span>(<span class="field">playerRef</span>, <span class="num">0</span>, <span class="field">accessor</span>);
+} <span class="kw">else if</span> (<span class="field">player</span>.<span class="fn">getGameMode</span>() == <span class="type">GameMode</span>.SURVIVAL) {
+    <span class="comment">// Apply survival mechanics</span>
+    <span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Survival mode active."</span>));
+}</code></pre>
+
+                <h3>Listening to Player Events</h3>
+                <pre><code><span class="comment">// In your plugin's setup() method</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(<span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>, <span class="field">event</span> -&gt; {
+    <span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+    <span class="field">player</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome, "</span> + <span class="field">player</span>.<span class="fn">getUsername</span>() + <span class="str">"!"</span>));
+});
+
+<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(<span class="type">PlayerDisconnectEvent</span>.<span class="kw">class</span>, <span class="field">event</span> -&gt; {
+    <span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+    <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">sendMessage</span>(
+        <span class="type">Message</span>.<span class="fn">raw</span>(<span class="field">player</span>.<span class="fn">getUsername</span>() + <span class="str">" has left the server."</span>)
+    );
+});
+
+<span class="comment">// Listen for game mode changes (cancellable)</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(<span class="type">ChangeGameModeEvent</span>.<span class="kw">class</span>, <span class="field">event</span> -&gt; {
+    <span class="kw">if</span> (!<span class="field">event</span>.<span class="fn">getPlayerRef</span>().<span class="fn">hasPermission</span>(<span class="str">"server.gamemode.change"</span>)) {
+        <span class="field">event</span>.<span class="fn">cancel</span>();
+    }
+});</code></pre>
+
+                <h3>Iterating Over All Online Players</h3>
+                <pre><code><span class="comment">// Thread-safe -- works from any thread</span>
+<span class="kw">for</span> (<span class="type">PlayerRef</span> <span class="field">player</span> : <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getOnlinePlayers</span>()) {
+    <span class="type">String</span> <span class="field">name</span> = <span class="field">player</span>.<span class="fn">getUsername</span>();
+    <span class="type">World</span> <span class="field">world</span> = <span class="field">player</span>.<span class="fn">getWorld</span>();
+    <span class="field">player</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Server restarting in 60 seconds."</span>));
+}</code></pre>
+            </section>
+
+            <!-- ============================================ -->
+            <!-- Quick Reference Summary                      -->
+            <!-- ============================================ -->
+            <section id="quick-reference">
+                <h2>Quick Reference</h2>
+
+                <h3>Thread Safety at a Glance</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Any Thread</th>
+                                <th>World Thread Only</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Get player username</td>
+                                <td><code>playerRef.getUsername()</code></td>
+                                <td>&mdash;</td>
+                            </tr>
+                            <tr>
+                                <td>Get player position</td>
+                                <td><code>playerRef.getTransform()</code></td>
+                                <td>&mdash;</td>
+                            </tr>
+                            <tr>
+                                <td>Send message</td>
+                                <td><code>playerRef.sendMessage(msg)</code></td>
+                                <td>&mdash;</td>
+                            </tr>
+                            <tr>
+                                <td>Get player UUID</td>
+                                <td><code>playerRef.getUuid()</code></td>
+                                <td>&mdash;</td>
+                            </tr>
+                            <tr>
+                                <td>Get inventory</td>
+                                <td>&mdash;</td>
+                                <td><code>player.getInventory()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Get game mode</td>
+                                <td>&mdash;</td>
+                                <td><code>player.getGameMode()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Modify HUD</td>
+                                <td>&mdash;</td>
+                                <td><code>player.getHudManager()</code></td>
+                            </tr>
+                            <tr>
+                                <td>Check permissions</td>
+                                <td>&mdash;</td>
+                                <td><code>player.hasPermission(perm)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Teleport player</td>
+                                <td>&mdash;</td>
+                                <td><code>store.addComponent(ref, Teleport...)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Change game mode</td>
+                                <td>&mdash;</td>
+                                <td><code>player.setGameMode(mode)</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Key Packages</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Package</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">Player</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.entities.Player</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerRef</span></td>
+                                <td><code>com.hypixel.hytale.server.universe.player.PlayerRef</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerConfigData</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.entities.PlayerConfigData</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerInput</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.component.PlayerInput</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">Inventory</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.inventory.Inventory</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">ItemStack</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.inventory.ItemStack</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">HotbarManager</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.entities.HotbarManager</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">MovementManager</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.entities.MovementManager</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerStorage</span></td>
+                                <td><code>com.hypixel.hytale.server.universe.player.PlayerStorage</code></td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">GameMode</span></td>
+                                <td><code>com.hypixel.hytale.server.entity.entities.GameMode</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
         </div>
     </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

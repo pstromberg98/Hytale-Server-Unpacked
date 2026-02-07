@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Networking &amp; Protocol - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html" class="active">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-toc"></div>
+        <div class="content">
+            <h1>Networking &amp; Protocol</h1>
+            <p class="page-desc">QUIC-based transport layer, 354 packet types, connection lifecycle, and the server networking stack built on Netty.</p>
+
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value">354</div>
+                    <div class="stat-label">Packet Types</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">737</div>
+                    <div class="stat-label">Protocol Files</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">I/O Classes</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">QUIC</div>
+                    <div class="stat-label">Default Transport</div>
+                </div>
+            </div>
+
+            <!-- Overview -->
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Hytale uses the <strong>QUIC protocol</strong> by default for all client-server communication, with a TCP fallback path. The entire networking stack is built on <strong>Netty</strong> and lives in the <code>com.hypixel.hytale.protocol</code> package hierarchy.</p>
+
+                <p>The protocol defines <strong>354 distinct packet types</strong> organized by functional category, along with <strong>371 supporting protocol classes</strong> (enums, data structures, serialization helpers) and <strong>12 core I/O classes</strong> managing connections, transport, and packet routing.</p>
+
+                <div class="info-box note">
+                    <div class="label">Why QUIC?</div>
+                    <p>QUIC provides several advantages over TCP for game networking: <strong>0-RTT connection resumption</strong> for faster reconnects, <strong>multiplexed streams</strong> that prevent head-of-line blocking, and <strong>UDP-based transport</strong> with built-in reliability and congestion control. These properties are critical for low-latency game state synchronization.</p>
+                </div>
+            </section>
+
+            <!-- Transport Layer -->
+            <section id="transport-layer">
+                <h2>Transport Layer</h2>
+                <p>The networking stack abstracts the transport protocol behind a <span class="type">Transport</span> interface, allowing the server to use different transport implementations without changing the packet handling logic.</p>
+
+                <h3>Transport Implementations</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Transport</th>
+                                <th>Protocol</th>
+                                <th>Characteristics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">QUICTransport</span></td>
+                                <td>QUIC (UDP)</td>
+                                <td>Default transport. 0-RTT resumption, multiplexed streams, built-in encryption</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">TCPTransport</span></td>
+                                <td>TCP</td>
+                                <td>Fallback transport for environments that block UDP</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>QUIC Transport Details</h3>
+                <p>The <span class="type">QUICTransport</span> implementation is the default and preferred transport:</p>
+                <ul>
+                    <li><strong>Dual-stack binding:</strong> Binds to both IPv4 and IPv6 addresses simultaneously</li>
+                    <li><strong>IPv6 fallback:</strong> Automatically falls back to IPv4-only if IPv6 is unavailable on the host</li>
+                    <li><strong>0-RTT resumption:</strong> Clients that have previously connected can resume sessions without a full handshake</li>
+                    <li><strong>Multiplexed streams:</strong> Multiple logical streams over a single connection, preventing head-of-line blocking between packet categories</li>
+                    <li><strong>UDP-based:</strong> Lower latency than TCP with built-in reliability guarantees</li>
+                </ul>
+
+                <pre><code><span class="comment">// Transport interface abstraction</span>
+<span class="kw">public interface</span> <span class="type">Transport</span> {
+    <span class="type">ChannelFuture</span> <span class="fn">bind</span>(<span class="type">InetSocketAddress</span> address);
+    <span class="kw">void</span> <span class="fn">shutdown</span>();
+    <span class="type">EventLoopGroup</span> <span class="fn">getEventLoopGroup</span>();
+}
+
+<span class="comment">// QUICTransport binds dual-stack by default</span>
+<span class="comment">// IPv4: 0.0.0.0:port</span>
+<span class="comment">// IPv6: [::]:port (if available)</span></code></pre>
+            </section>
+
+            <!-- ServerManager -->
+            <section id="server-manager">
+                <h2>ServerManager</h2>
+                <p>The <span class="type">ServerManager</span> is the network management singleton responsible for initializing, configuring, and managing all network connections. It lives in <code>com.hypixel.hytale.server.core.io</code>.</p>
+
+                <h3>Singleton Access</h3>
+                <pre><code><span class="type">ServerManager</span> <span class="field">manager</span> = <span class="type">ServerManager</span>.<span class="fn">get</span>();</code></pre>
+
+                <h3>Fields</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>listeners</code></td>
+                                <td><span class="type">List&lt;Channel&gt;</span></td>
+                                <td>Active listening channels (bound sockets)</td>
+                            </tr>
+                            <tr>
+                                <td><code>transport</code></td>
+                                <td><span class="type">Transport</span></td>
+                                <td>Current transport implementation (QUIC or TCP)</td>
+                            </tr>
+                            <tr>
+                                <td><code>registerFuture</code></td>
+                                <td><span class="type">CompletableFuture</span></td>
+                                <td>Future that completes when registration finishes</td>
+                            </tr>
+                            <tr>
+                                <td><code>bootFuture</code></td>
+                                <td><span class="type">CompletableFuture</span></td>
+                                <td>Future that completes when the server is fully booted</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Lifecycle Methods</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><span class="kw">void</span> <span class="fn">init</span>()</code></td>
+                                <td>Initialize the networking subsystem</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="kw">void</span> <span class="fn">setup</span>()</code></td>
+                                <td>Configure transport, codecs, and pipeline</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="kw">void</span> <span class="fn">start</span>()</code></td>
+                                <td>Begin accepting connections</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="kw">void</span> <span class="fn">shutdown</span>()</code></td>
+                                <td>Gracefully close all connections and release resources</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="type">ChannelFuture</span> <span class="fn">bind</span>(<span class="type">InetSocketAddress</span>)</code></td>
+                                <td>Bind a new listener to the specified address</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="kw">void</span> <span class="fn">unbind</span>(<span class="type">Channel</span>)</code></td>
+                                <td>Unbind and close a specific listener channel</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="type">List&lt;Channel&gt;</span> <span class="fn">getListeners</span>()</code></td>
+                                <td>Returns all currently active listener channels</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <pre><code><span class="comment">// ServerManager boot sequence (internal)</span>
+<span class="type">ServerManager</span> <span class="field">manager</span> = <span class="type">ServerManager</span>.<span class="fn">get</span>();
+<span class="field">manager</span>.<span class="fn">init</span>();       <span class="comment">// Initialize networking subsystem</span>
+<span class="field">manager</span>.<span class="fn">setup</span>();      <span class="comment">// Configure transport and pipeline</span>
+<span class="field">manager</span>.<span class="fn">start</span>();      <span class="comment">// Begin accepting connections</span>
+
+<span class="comment">// Bind to a specific address</span>
+<span class="type">InetSocketAddress</span> <span class="field">addr</span> = <span class="kw">new</span> <span class="type">InetSocketAddress</span>(<span class="str">"0.0.0.0"</span>, <span class="num">25565</span>);
+<span class="field">manager</span>.<span class="fn">bind</span>(<span class="field">addr</span>);
+
+<span class="comment">// Get active listeners</span>
+<span class="type">List</span>&lt;<span class="type">Channel</span>&gt; <span class="field">channels</span> = <span class="field">manager</span>.<span class="fn">getListeners</span>();
+
+<span class="comment">// Graceful shutdown</span>
+<span class="field">manager</span>.<span class="fn">shutdown</span>();</code></pre>
+            </section>
+
+            <!-- Connection Lifecycle -->
+            <section id="connection-lifecycle">
+                <h2>Connection Lifecycle</h2>
+                <p>When a client connects, the connection passes through a series of <span class="type">PacketHandler</span> states, each responsible for a specific phase of the connection setup. The handler state machine ensures that packets are processed in the correct order and context.</p>
+
+                <h3>Connection Flow</h3>
+<div class="diagram">Client Connect
+    &#9474;
+    &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  InitialPacketHandler   &#9474;  Protocol version check, transport negotiation
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+             &#9474;
+             &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;   LoginPacketHandler    &#9474;  Authentication, session validation
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+             &#9474;
+             &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;   SetupPacketHandler    &#9474;  World setup, asset loading, chunk streaming
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+             &#9474;
+             &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;    GamePacketHandler    &#9474;  Full gameplay: entities, blocks, chat, combat
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+             &#9474;
+             &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;       Disconnect        &#9474;  Cleanup, save player data, release resources
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Handler States</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>State</th>
+                                <th>Handler</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Initial</strong></td>
+                                <td><span class="type">InitialPacketHandler</span></td>
+                                <td>Protocol version negotiation, transport capability exchange</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Login</strong></td>
+                                <td><span class="type">LoginPacketHandler</span></td>
+                                <td>Player authentication via SessionServiceClient, UUID resolution</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Setup</strong></td>
+                                <td><span class="type">SetupPacketHandler</span></td>
+                                <td>World data transfer, asset pack synchronization, initial chunk streaming</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Game</strong></td>
+                                <td><span class="type">GamePacketHandler</span></td>
+                                <td>Full gameplay packet processing: entity updates, block changes, chat, combat</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PacketHandler -->
+            <section id="packet-handler">
+                <h2>PacketHandler</h2>
+                <p>The <span class="type">PacketHandler</span> is the base class for all connection handler states. Each connected client has a <span class="type">PacketHandler</span> instance that manages the Netty channel, queues outbound packets, tracks authentication state, and handles timeout and disconnection logic.</p>
+
+                <h3>Key Fields</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>channel</code></td>
+                                <td><span class="type">Channel</span></td>
+                                <td>The Netty channel for this connection</td>
+                            </tr>
+                            <tr>
+                                <td><code>protocolVersion</code></td>
+                                <td><span class="type">ProtocolVersion</span></td>
+                                <td>Negotiated protocol version for this connection</td>
+                            </tr>
+                            <tr>
+                                <td><code>auth</code></td>
+                                <td><span class="type">PlayerAuthentication</span></td>
+                                <td>Authentication state and player identity</td>
+                            </tr>
+                            <tr>
+                                <td><code>queuePackets</code></td>
+                                <td><span class="type">boolean</span></td>
+                                <td>Whether to queue outbound packets (during setup phases)</td>
+                            </tr>
+                            <tr>
+                                <td><code>pingInfo</code></td>
+                                <td><span class="type">PingInfo</span></td>
+                                <td>Latency tracking data</td>
+                            </tr>
+                            <tr>
+                                <td><code>registered</code></td>
+                                <td><span class="type">boolean</span></td>
+                                <td>Whether the player has been registered with the Universe</td>
+                            </tr>
+                            <tr>
+                                <td><code>timeoutTask</code></td>
+                                <td><span class="type">ScheduledFuture</span></td>
+                                <td>Timeout detection task for unresponsive connections</td>
+                            </tr>
+                            <tr>
+                                <td><code>clientReadyForChunksFuture</code></td>
+                                <td><span class="type">CompletableFuture</span></td>
+                                <td>Completes when the client signals readiness for chunk data</td>
+                            </tr>
+                            <tr>
+                                <td><code>disconnectReason</code></td>
+                                <td><span class="type">DisconnectType</span></td>
+                                <td>Reason for disconnection (if applicable)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Constants</h3>
+                <pre><code><span class="comment">// Maximum packet ID supported by the protocol</span>
+<span class="kw">static final int</span> MAX_PACKET_ID = <span class="num">512</span>;</code></pre>
+
+                <h3>Sending Packets</h3>
+                <pre><code><span class="comment">// Send a packet to the client (thread-safe)</span>
+<span class="field">packetHandler</span>.<span class="fn">writeNoCache</span>(<span class="field">packet</span>);
+
+<span class="comment">// Send a packet with flush</span>
+<span class="field">packetHandler</span>.<span class="fn">writeAndFlush</span>(<span class="field">packet</span>);
+
+<span class="comment">// Disconnect a player</span>
+<span class="field">packetHandler</span>.<span class="fn">disconnect</span>(<span class="type">DisconnectType</span>.KICKED, <span class="str">"Reason message"</span>);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Thread Safety</div>
+                    <p><code>PacketHandler.writeNoCache()</code> is thread-safe and can be called from any thread. Netty's channel pipeline handles the serialization and flushing on the I/O event loop thread.</p>
+                </div>
+            </section>
+
+            <!-- Packet Structure -->
+            <section id="packet-structure">
+                <h2>Packet Structure</h2>
+                <p>The protocol is defined across <strong>737 protocol files</strong> in the <code>com.hypixel.hytale.protocol</code> package:</p>
+
+                <ul>
+                    <li><strong>354 packet files</strong> in the <code>packets/</code> subdirectory &mdash; individual packet definitions organized by functional category</li>
+                    <li><strong>371 root protocol files</strong> &mdash; enums, data structures, serialization codecs, and shared types</li>
+                    <li><strong>12 I/O classes</strong> &mdash; transport, connection management, and packet routing</li>
+                </ul>
+
+                <h3>Packet Categories</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Files</th>
+                                <th>Description</th>
+                                <th>Examples</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>asseteditor/</code></td>
+                                <td>72</td>
+                                <td>Asset editor tool packets for live editing</td>
+                                <td>Asset creation, modification, preview updates</td>
+                            </tr>
+                            <tr>
+                                <td><code>buildertools/</code></td>
+                                <td>46</td>
+                                <td>Builder mode tool packets</td>
+                                <td>Selection, copy, paste, fill, undo/redo</td>
+                            </tr>
+                            <tr>
+                                <td><code>assets/</code></td>
+                                <td>46</td>
+                                <td>Asset loading and synchronization</td>
+                                <td>Asset pack downloads, cache validation</td>
+                            </tr>
+                            <tr>
+                                <td><code>interface_/</code></td>
+                                <td>41</td>
+                                <td>UI and HUD packets</td>
+                                <td>Menu state, inventory updates, HUD elements</td>
+                            </tr>
+                            <tr>
+                                <td><code>world/</code></td>
+                                <td>35</td>
+                                <td>World and chunk data packets</td>
+                                <td>Chunk load/unload, block updates, entity sync</td>
+                            </tr>
+                            <tr>
+                                <td><code>connection/</code></td>
+                                <td>~10</td>
+                                <td>Connection management packets</td>
+                                <td>Ping, Pong, Disconnect, handshake</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Key Packets -->
+            <section id="key-packets">
+                <h2>Key Packets</h2>
+                <p>These are the most commonly encountered packet types in server development:</p>
+
+                <h3>Connection Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>Direction</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">Ping</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Latency measurement request. Sent periodically to track connection quality.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">Pong</span></td>
+                                <td>Client &rarr; Server</td>
+                                <td>Latency measurement response. Contains <span class="type">PongType</span> categorization for different latency buckets.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">Disconnect</span></td>
+                                <td>Bidirectional</td>
+                                <td>Connection termination. Carries a <span class="type">DisconnectType</span> enum and a human-readable reason string.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>World Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>Direction</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">ChunkLoad</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Sends chunk data (block sections, entities) to the client for rendering</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">ChunkUnload</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Tells the client to discard chunk data that is no longer in view distance</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">BlockUpdate</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Delta update for individual block changes within loaded chunks</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Entity Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>Direction</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">EntitySpawn</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Notifies client of a new entity entering their view range</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">EntityDespawn</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Notifies client that an entity has left their view range or been removed</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">EntityUpdate</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Delta updates for entity position, rotation, animation, and component state</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Sound Packets</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Packet</th>
+                                <th>Direction</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PlaySoundEvent2D</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Plays a non-positional sound (UI, music, global effects)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlaySoundEvent3D</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Plays a positional sound at specific world coordinates</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlaySoundEventEntity</span></td>
+                                <td>Server &rarr; Client</td>
+                                <td>Plays a sound attached to a specific entity (follows entity movement)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Packet Adapters -->
+            <section id="packet-adapters">
+                <h2>Packet Adapters &amp; Monitoring</h2>
+                <p>The protocol layer provides extension points for packet interception, version compatibility, and monitoring.</p>
+
+                <h3>PacketAdapters</h3>
+                <p><span class="type">PacketAdapters</span> provide version compatibility between different client and server protocol versions. When a client connects with an older or newer protocol version, adapters translate packets between formats to maintain backward compatibility.</p>
+
+                <pre><code><span class="comment">// PacketAdapters handle version translation</span>
+<span class="comment">// Example: Client v1.2 connects to Server v1.3</span>
+<span class="comment">// Adapter translates new packet fields to/from the older format</span>
+<span class="type">PacketAdapters</span>.<span class="fn">register</span>(<span class="field">protocolVersion</span>, <span class="field">adapter</span>);</code></pre>
+
+                <h3>PacketWatcher &amp; PacketFilter</h3>
+                <p>For debugging and plugin development, the protocol provides observation and filtering mechanisms:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Purpose</th>
+                                <th>Behavior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">PacketWatcher</span></td>
+                                <td>Observation</td>
+                                <td>Passively observes packets flowing through the pipeline without modifying them. Useful for logging and debugging.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PacketFilter</span></td>
+                                <td>Interception</td>
+                                <td>Can inspect and modify or drop packets before they reach the handler. Useful for anti-cheat, rate limiting, and custom protocol extensions.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box warning">
+                    <div class="label">Performance Warning</div>
+                    <p>PacketWatchers and PacketFilters run on the Netty I/O thread for every matching packet. Keep processing minimal to avoid introducing latency. Heavy work should be dispatched to another thread.</p>
+                </div>
+            </section>
+
+            <!-- Packet Statistics -->
+            <section id="packet-statistics">
+                <h2>Packet Statistics</h2>
+                <p>The <span class="type">PacketStatsRecorder</span> provides detailed metrics about packet traffic, useful for profiling and optimization:</p>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Packet sizes</strong></td>
+                                <td>Byte size of each packet type (min, max, average)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Frequency</strong></td>
+                                <td>Number of packets sent/received per type per time interval</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Compression ratios</strong></td>
+                                <td>Before/after compression sizes for packets that use compression</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bandwidth</strong></td>
+                                <td>Total bytes in/out per connection and aggregate</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <pre><code><span class="comment">// Access packet statistics</span>
+<span class="type">PacketStatsRecorder</span> <span class="field">stats</span> = <span class="field">packetHandler</span>.<span class="fn">getStatsRecorder</span>();
+
+<span class="comment">// Query per-packet-type statistics</span>
+<span class="kw">long</span> <span class="field">totalBytesSent</span> = <span class="field">stats</span>.<span class="fn">getTotalBytesSent</span>();
+<span class="kw">long</span> <span class="field">packetCount</span> = <span class="field">stats</span>.<span class="fn">getPacketCount</span>(<span class="type">ChunkLoad</span>.<span class="kw">class</span>);
+<span class="kw">double</span> <span class="field">compressionRatio</span> = <span class="field">stats</span>.<span class="fn">getCompressionRatio</span>(<span class="type">ChunkLoad</span>.<span class="kw">class</span>);</code></pre>
+            </section>
+
+            <!-- Protocol Versioning -->
+            <section id="protocol-versioning">
+                <h2>Protocol Versioning</h2>
+                <p>The <span class="type">ProtocolVersion</span> class manages client-server compatibility. During the <span class="type">InitialPacketHandler</span> phase, the client and server exchange protocol version information to determine compatibility.</p>
+
+                <pre><code><span class="comment">// Protocol version is negotiated during initial handshake</span>
+<span class="type">ProtocolVersion</span> <span class="field">clientVersion</span> = <span class="field">packetHandler</span>.<span class="fn">getProtocolVersion</span>();
+
+<span class="comment">// Check if client version is compatible</span>
+<span class="kw">if</span> (!<span class="field">clientVersion</span>.<span class="fn">isCompatible</span>(<span class="type">ProtocolVersion</span>.CURRENT)) {
+    <span class="field">packetHandler</span>.<span class="fn">disconnect</span>(
+        <span class="type">DisconnectType</span>.INCOMPATIBLE_VERSION,
+        <span class="str">"Client version mismatch"</span>
+    );
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Version Negotiation</div>
+                    <p>When the client and server have different protocol versions, <span class="type">PacketAdapters</span> attempt to bridge the gap. If no adapter exists for the version difference, the connection is rejected with <code>DisconnectType.INCOMPATIBLE_VERSION</code>.</p>
+                </div>
+            </section>
+
+            <!-- Network Threading -->
+            <section id="network-threading">
+                <h2>Network Threading</h2>
+                <p>The networking layer uses Netty's <span class="type">EventLoop</span> threading model for all I/O operations. Understanding the thread boundaries is critical for safe packet handling.</p>
+
+                <h3>Thread Model</h3>
+<div class="diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                    Netty EventLoop (I/O Thread)              &#9474;
+&#9474;                                                               &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474; Decode Packets &#9474;  &#9474; Encode Packets &#9474;  &#9474;  Flush I/O  &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;           &#9474;                     &#9650;                             &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+            &#9474;                      &#9474;
+            &#9660;                      &#9474;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;            PacketHandler (dispatches)           &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                       &#9474;
+            &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+            &#9474;                          &#9474;
+            &#9660;                          &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474; World Thread (tick) &#9474;  &#9474; CompletableFuture  &#9474;
+&#9474;  world.execute()    &#9474;  &#9474;  (async callbacks)  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Thread Boundaries</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Thread</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Packet decoding/encoding</td>
+                                <td>Netty EventLoop</td>
+                                <td>Handled by Netty's channel pipeline automatically</td>
+                            </tr>
+                            <tr>
+                                <td><code>writeNoCache()</code></td>
+                                <td>Any thread</td>
+                                <td>Thread-safe, dispatches to EventLoop for actual write</td>
+                            </tr>
+                            <tr>
+                                <td>Packet handler callbacks</td>
+                                <td>Netty EventLoop</td>
+                                <td>Received packets are processed on I/O thread</td>
+                            </tr>
+                            <tr>
+                                <td>Entity/Store operations</td>
+                                <td>World thread</td>
+                                <td>Must use <code>world.execute()</code> to dispatch from I/O thread</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Async Pattern</h3>
+                <p>The networking layer extensively uses <span class="type">CompletableFuture</span> for asynchronous operations that span thread boundaries:</p>
+
+                <pre><code><span class="comment">// Example: Async operation crossing thread boundaries</span>
+<span class="field">packetHandler</span>.<span class="fn">getClientReadyForChunksFuture</span>()
+    .<span class="fn">thenAcceptAsync</span>(ready -> {
+        <span class="comment">// Runs when client signals chunk readiness</span>
+        <span class="comment">// Dispatch to world thread for entity operations</span>
+        <span class="field">world</span>.<span class="fn">execute</span>(() -> {
+            <span class="comment">// Safe to access EntityStore here</span>
+            <span class="type">EntityStore</span> <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+            <span class="comment">// Stream initial chunks and entities to client</span>
+        });
+    });</code></pre>
+            </section>
+
+            <!-- Authentication -->
+            <section id="authentication">
+                <h2>Authentication</h2>
+                <p>Player authentication is handled during the <span class="type">LoginPacketHandler</span> phase through three key classes:</p>
+
+                <h3>Authentication Classes</h3>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Responsibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="type">ServerAuthManager</span></td>
+                                <td>Server-side authentication coordinator. Manages the authentication flow, validates sessions, and coordinates with the session service.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">SessionServiceClient</span></td>
+                                <td>HTTP client for communicating with the Hytale session/authentication service. Validates player tokens and resolves UUIDs.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="type">PlayerAuthentication</span></td>
+                                <td>Per-connection authentication state. Stores the authenticated player UUID, username, and session token after successful validation.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Authentication Flow</h3>
+<div class="diagram">Client                    Server                  Session Service
+  &#9474;                          &#9474;                          &#9474;
+  &#9474;  Login Request (token)   &#9474;                          &#9474;
+  &#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9654;&#9474;                          &#9474;
+  &#9474;                          &#9474;  Validate Token          &#9474;
+  &#9474;                          &#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9654;&#9474;
+  &#9474;                          &#9474;                          &#9474;
+  &#9474;                          &#9474;  UUID + Profile           &#9474;
+  &#9474;                          &#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+  &#9474;                          &#9474;                          &#9474;
+  &#9474;  Login Success           &#9474;  PlayerAuthentication    &#9474;
+  &#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;  created &amp; attached      &#9474;
+  &#9474;                          &#9474;                          &#9474;
+  &#9474;  Transition to Setup     &#9474;                          &#9474;
+  &#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;                          &#9474;
+  &#9474;                          &#9474;                          &#9474;
+</div>
+
+                <pre><code><span class="comment">// Access authentication data from a PacketHandler</span>
+<span class="type">PlayerAuthentication</span> <span class="field">auth</span> = <span class="field">packetHandler</span>.<span class="fn">getAuth</span>();
+<span class="type">UUID</span> <span class="field">playerUuid</span> = <span class="field">auth</span>.<span class="fn">getUuid</span>();
+<span class="type">String</span> <span class="field">username</span> = <span class="field">auth</span>.<span class="fn">getUsername</span>();
+
+<span class="comment">// Check if connection is authenticated</span>
+<span class="kw">if</span> (<span class="field">packetHandler</span>.<span class="fn">isRegistered</span>()) {
+    <span class="comment">// Player is fully authenticated and registered with Universe</span>
+}</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Authentication Timing</div>
+                    <p>The <code>PlayerAuthentication</code> object is only available after the <span class="type">LoginPacketHandler</span> phase completes successfully. Accessing it during the <span class="type">InitialPacketHandler</span> phase will return <code>null</code>. Player registration with the <span class="type">Universe</span> happens after authentication and world setup are both complete.</p>
+                </div>
+            </section>
+
+            <!-- Summary -->
+            <section id="summary">
+                <h2>Summary</h2>
+                <p>The Hytale networking stack provides a modern, high-performance protocol layer:</p>
+                <ul>
+                    <li><strong>QUIC by default:</strong> 0-RTT resumption, multiplexed streams, UDP-based with TCP fallback</li>
+                    <li><strong>ServerManager singleton:</strong> Centralized network lifecycle management via <code>ServerManager.get()</code></li>
+                    <li><strong>State machine handlers:</strong> Connection progresses through Initial, Login, Setup, and Game phases</li>
+                    <li><strong>354 packet types:</strong> Organized into functional categories (world, assets, UI, builder tools, etc.)</li>
+                    <li><strong>Thread-safe writes:</strong> <code>writeNoCache()</code> is safe from any thread; store operations must dispatch to world thread</li>
+                    <li><strong>Version compatibility:</strong> <span class="type">PacketAdapters</span> bridge protocol version differences</li>
+                    <li><strong>Observable:</strong> <span class="type">PacketWatcher</span> and <span class="type">PacketFilter</span> for debugging and extension</li>
+                    <li><strong>Session-based auth:</strong> <span class="type">ServerAuthManager</span> + <span class="type">SessionServiceClient</span> for player validation</li>
+                </ul>
+            </section>
+
+        </div>
+    </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

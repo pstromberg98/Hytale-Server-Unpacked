@@ -3,274 +3,1368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UI & HUD Rendering - Hytale Server Docs</title>
+    <title>UI &amp; HUD - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html" class="active">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
-            <h1>UI &amp; HUD Rendering</h1>
-            <p class="page-desc">All methods for displaying text and UI elements on player screens.</p>
+            <h1>UI &amp; HUD Systems</h1>
+            <p class="page-desc">Complete reference for server-driven UI rendering: pages, HUD management, event titles, notifications, custom overlays, the positioning system, and the file browser framework.</p>
 
-            <h2>Overview</h2>
-            <p>The server provides four main systems for rendering UI to players. No actionbar/hotbar text system exists like Minecraft.</p>
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Hytale uses a <strong>server-authoritative UI model</strong>. The server controls what the client displays by sending packets that manipulate UI elements, open pages, show notifications, and toggle HUD components. There is no client-side scripting for UI &mdash; all logic runs on the server and the client renders declarative UI documents received over the network.</p>
+                <p>The UI system is organized into five major subsystems:</p>
 
-            <h2>1. Event Titles (Center Screen)</h2>
-            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.util.EventTitleUtil</span></p>
-            <p><strong>Best for:</strong> Large announcements, zone entry, countdowns, phase changes.</p>
+<div class="diagram">Server UI Architecture
+ &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+ &#9474;                      Player Component                      &#9474;
+ &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+ &#9474;  &#9474;  PageManager   &#9474;  &#9474;  HudManager    &#9474;  &#9474; WindowManager  &#9474;  &#9474;
+ &#9474;  &#9474;  (full-screen  &#9474;  &#9474;  (HUD overlay,  &#9474;  &#9474; (inventory     &#9474;  &#9474;
+ &#9474;  &#9474;   custom pages)&#9474;  &#9474;   custom HUD)  &#9474;  &#9474;  windows)       &#9474;  &#9474;
+ &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+ &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+           &#9474;                   &#9474;                   &#9474;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;         &#9474;           &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474; Utility Classes &#9474;         &#9474;           &#9474; UI Primitives    &#9474;
+   &#9474; EventTitleUtil  &#9474;   Packets via   &#9474; Anchor, Area,    &#9474;
+   &#9474; NotificationUtil&#9474;   PacketHandler  &#9474; PatchStyle,      &#9474;
+   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;         &#9474;           &#9474; Value, ItemGrid  &#9474;
+                                 &#9474;           &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                          &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+                          &#9474;  Client   &#9474;
+                          &#9474; Renderer &#9474;
+                          &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
 
-            <pre><code>// Show title to single player
-EventTitleUtil.showEventTitleToPlayer(
-    playerRef,
-    Message.raw("Round Starting"),        // primary title
-    Message.raw("Get Ready!"),            // subtitle
-    true,                                  // isMajor (larger appearance)
-    null,                                  // icon (nullable)
-    4.0f,                                  // duration (seconds)
-    1.5f,                                  // fade in (seconds)
-    1.5f                                   // fade out (seconds)
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subsystem</th>
+                            <th>Purpose</th>
+                            <th>Thread Safety</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">PageManager</span></td>
+                            <td>Full-screen pages (inventory, crafting, custom UI pages)</td>
+                            <td>World thread only</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HudManager</span></td>
+                            <td>HUD component visibility, custom HUD overlays</td>
+                            <td>World thread (Player component required)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">EventTitleUtil</span></td>
+                            <td>Center-screen titles with fade animations</td>
+                            <td>Any thread (uses PacketHandler)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">NotificationUtil</span></td>
+                            <td>Toast-style notifications with icons and styles</td>
+                            <td>Any thread (uses PacketHandler)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">UICommandBuilder</span></td>
+                            <td>Declarative UI element construction and manipulation</td>
+                            <td>Not thread-safe (create per use)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="event-titles">
+                <h2>Event Titles (Center Screen)</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.util.EventTitleUtil</code></p>
+                <p>Event titles are large text overlays displayed at the center of the player's screen, ideal for announcements, zone transitions, countdowns, and phase changes. They support a primary title, secondary subtitle, optional icon, major/minor sizing, and configurable fade animations.</p>
+
+                <h3>ShowEventTitle Packet</h3>
+                <p>Under the hood, <span class="type">EventTitleUtil</span> sends a <span class="type">ShowEventTitle</span> packet (ID 214) containing these fields:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>fadeInDuration</code></td><td><span class="kw">float</span></td><td>Seconds for the title to fade in</td></tr>
+                        <tr><td><code>fadeOutDuration</code></td><td><span class="kw">float</span></td><td>Seconds for the title to fade out</td></tr>
+                        <tr><td><code>duration</code></td><td><span class="kw">float</span></td><td>Seconds the title stays fully visible</td></tr>
+                        <tr><td><code>icon</code></td><td><span class="type">String</span></td><td>Optional icon asset path (nullable)</td></tr>
+                        <tr><td><code>isMajor</code></td><td><span class="kw">boolean</span></td><td>If true, uses larger display style</td></tr>
+                        <tr><td><code>primaryTitle</code></td><td><span class="type">FormattedMessage</span></td><td>Main title text (nullable)</td></tr>
+                        <tr><td><code>secondaryTitle</code></td><td><span class="type">FormattedMessage</span></td><td>Subtitle text (nullable)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Defaults</h3>
+                <ul>
+                    <li><code>DEFAULT_DURATION</code> = <strong>4.0 seconds</strong></li>
+                    <li><code>DEFAULT_FADE_DURATION</code> = <strong>1.5 seconds</strong> (both in and out)</li>
+                    <li><code>DEFAULT_ZONE</code> = <code>"Void"</code></li>
+                </ul>
+
+                <h3>API Methods</h3>
+                <pre><code><span class="comment">// Show title to a single player with full control</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">showEventTitleToPlayer</span>(
+    <span class="field">playerRef</span>,
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Round Starting"</span>),      <span class="comment">// primary title</span>
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Get Ready!"</span>),          <span class="comment">// subtitle</span>
+    <span class="kw">true</span>,                                <span class="comment">// isMajor (larger appearance)</span>
+    <span class="kw">null</span>,                                <span class="comment">// icon (nullable)</span>
+    <span class="num">4.0f</span>,                                <span class="comment">// duration (seconds)</span>
+    <span class="num">1.5f</span>,                                <span class="comment">// fade in (seconds)</span>
+    <span class="num">1.5f</span>                                 <span class="comment">// fade out (seconds)</span>
 );
 
-// Simplified version (4s duration, 1.5s fade)
-EventTitleUtil.showEventTitleToPlayer(playerRef, title, subtitle, true);
-
-// Hide title
-EventTitleUtil.hideEventTitleFromPlayer(playerRef, 0.5f);
-
-// Broadcast to all in world
-EventTitleUtil.showEventTitleToWorld(..., store);
-
-// Broadcast to universe
-EventTitleUtil.showEventTitleToUniverse(...);</code></pre>
-
-            <div class="info-box tip">
-                <strong>TIP:</strong> EventTitleUtil methods that take PlayerRef are thread-safe and can be called from commands.
-            </div>
-
-            <h2>2. Notifications (Toast-style)</h2>
-            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.util.NotificationUtil</span></p>
-            <p><strong>Best for:</strong> Short alerts, achievements, item pickups, errors.</p>
-
-            <pre><code>// Simple notification
-NotificationUtil.sendNotification(
-    playerRef.getPacketHandler(),
-    Message.raw("Flag captured!")
+<span class="comment">// Simplified version with default timing (4s duration, 1.5s fade)</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">showEventTitleToPlayer</span>(
+    <span class="field">playerRef</span>,
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Zone: Forest"</span>),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Beware of wolves"</span>),
+    <span class="kw">false</span>                                <span class="comment">// minor title (smaller)</span>
 );
 
-// Styled notification
-NotificationUtil.sendNotification(
-    playerRef.getPacketHandler(),
-    Message.raw("You died!"),
-    Message.raw("Killed by zombie"),     // secondary (nullable)
-    null,                                 // icon (nullable)
-    null,                                 // item icon (nullable)
-    NotificationStyle.Danger              // style
+<span class="comment">// Hide a currently displayed title with fade</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">hideEventTitleFromPlayer</span>(<span class="field">playerRef</span>, <span class="num">0.5f</span>);
+
+<span class="comment">// Broadcast to all players in a world</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">showEventTitleToWorld</span>(
+    <span class="field">title</span>, <span class="field">subtitle</span>, <span class="kw">true</span>, <span class="kw">null</span>,
+    <span class="num">4.0f</span>, <span class="num">1.5f</span>, <span class="num">1.5f</span>, <span class="field">store</span>
 );
 
-// Broadcast to universe
-NotificationUtil.sendNotificationToUniverse(message);</code></pre>
+<span class="comment">// Broadcast to ALL players across the entire universe</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">showEventTitleToUniverse</span>(
+    <span class="field">title</span>, <span class="field">subtitle</span>, <span class="kw">true</span>, <span class="kw">null</span>,
+    <span class="num">4.0f</span>, <span class="num">1.5f</span>, <span class="num">1.5f</span>
+);</code></pre>
 
-            <h3>Notification Styles</h3>
-            <p><span class="code">NotificationStyle</span> enum:</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Style</th>
-                        <th>Appearance</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Default</td>
-                        <td>Standard</td>
-                    </tr>
-                    <tr>
-                        <td>Danger</td>
-                        <td>Red/dangerous</td>
-                    </tr>
-                    <tr>
-                        <td>Warning</td>
-                        <td>Yellow/caution</td>
-                    </tr>
-                    <tr>
-                        <td>Success</td>
-                        <td>Green/positive</td>
-                    </tr>
-                </tbody>
-            </table>
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p><span class="type">EventTitleUtil</span> methods that take <span class="type">PlayerRef</span> are <strong>thread-safe</strong> and can be called from commands or any thread. The universe-wide broadcast iterates each world and schedules execution via <code>world.execute()</code>.</p>
+                </div>
 
-            <div class="info-box tip">
-                <strong>TIP:</strong> PacketHandler methods are thread-safe — you can send notifications from any thread.
-            </div>
+                <h3>Hiding Titles</h3>
+                <p>The <span class="type">HideEventTitle</span> packet (ID unknown) takes a single <code>fadeOutDuration</code> float. Use the utility method:</p>
+                <pre><code><span class="comment">// Hide from a single player</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">hideEventTitleFromPlayer</span>(<span class="field">playerRef</span>, <span class="num">0.5f</span>);
 
-            <h2>3. Custom HUD (Advanced Overlays)</h2>
-            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud</span></p>
-            <p><strong>Best for:</strong> Persistent scoreboards, stat displays, dynamic counters.</p>
+<span class="comment">// Hide from all players in a world</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">hideEventTitleFromWorld</span>(<span class="num">0.5f</span>, <span class="field">store</span>);</code></pre>
+            </section>
 
-            <pre><code>public class ScoreHud extends CustomUIHud {
-    private int score;
+            <section id="notifications">
+                <h2>Notifications (Toast-Style)</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.util.NotificationUtil</code></p>
+                <p>Notifications are small toast-style popups, ideal for short alerts, achievements, item pickups, and error messages. They appear in the notification area of the HUD (controlled by <span class="type">HudComponent.Notifications</span>).</p>
 
-    public ScoreHud(PlayerRef playerRef) {
-        super(playerRef);
-        this.score = 0;
+                <h3>Notification Packet</h3>
+                <p>The <span class="type">Notification</span> packet (ID 212) carries these fields:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>message</code></td><td><span class="type">FormattedMessage</span></td><td>Primary notification text</td></tr>
+                        <tr><td><code>secondaryMessage</code></td><td><span class="type">FormattedMessage</span></td><td>Secondary text line (nullable)</td></tr>
+                        <tr><td><code>icon</code></td><td><span class="type">String</span></td><td>Icon asset path (nullable)</td></tr>
+                        <tr><td><code>item</code></td><td><span class="type">ItemWithAllMetadata</span></td><td>Item to display as icon (nullable)</td></tr>
+                        <tr><td><code>style</code></td><td><span class="type">NotificationStyle</span></td><td>Visual style enum</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>NotificationStyle</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Style</th>
+                            <th>Appearance</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Default</code></td><td>Standard neutral style</td><td>General messages, info</td></tr>
+                        <tr><td><code>Danger</code></td><td>Red/dangerous</td><td>Deaths, critical errors</td></tr>
+                        <tr><td><code>Warning</code></td><td>Yellow/caution</td><td>Low health, approaching limits</td></tr>
+                        <tr><td><code>Success</code></td><td>Green/positive</td><td>Achievements, completions</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>API Methods</h3>
+                <p><span class="type">NotificationUtil</span> provides extensive overloads. All methods ultimately delegate to the core sender:</p>
+                <pre><code><span class="comment">// Core method &mdash; all overloads resolve here</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">packetHandler</span>,                      <span class="comment">// PacketHandler from PlayerRef</span>
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"You died!"</span>),          <span class="comment">// primary message</span>
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Killed by zombie"</span>),  <span class="comment">// secondary (nullable)</span>
+    <span class="kw">null</span>,                                <span class="comment">// icon path (nullable)</span>
+    <span class="kw">null</span>,                                <span class="comment">// item icon (nullable)</span>
+    <span class="type">NotificationStyle</span>.Danger            <span class="comment">// style</span>
+);
+
+<span class="comment">// Simple text notification</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>(),
+    <span class="str">"Flag captured!"</span>
+);
+
+<span class="comment">// Notification with icon and style</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>(),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Achievement unlocked"</span>),
+    <span class="str">"Icons/Achievement"</span>,
+    <span class="type">NotificationStyle</span>.Success
+);
+
+<span class="comment">// Notification with an item icon</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>(),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Item received"</span>),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Diamond Sword"</span>),
+    <span class="field">itemWithMetadata</span>
+);</code></pre>
+
+                <h3>Broadcasting</h3>
+                <pre><code><span class="comment">// Broadcast to all players in the universe</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotificationToUniverse</span>(<span class="str">"Server restarting in 5 minutes"</span>);
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotificationToUniverse</span>(
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Warning"</span>),
+    <span class="type">NotificationStyle</span>.Warning
+);
+
+<span class="comment">// Broadcast to all players in a specific world</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotificationToWorld</span>(
+    <span class="field">message</span>, <span class="field">secondaryMessage</span>, <span class="field">icon</span>, <span class="field">item</span>,
+    <span class="type">NotificationStyle</span>.Default, <span class="field">store</span>
+);</code></pre>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p><span class="type">PacketHandler</span> methods are <strong>thread-safe</strong> &mdash; you can send notifications from any thread without synchronization. The universe broadcast uses <code>world.execute()</code> internally to dispatch to each world's thread.</p>
+                </div>
+            </section>
+
+            <section id="hud-manager">
+                <h2>HudManager</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.hud.HudManager</code></p>
+                <p>The <span class="type">HudManager</span> controls which native HUD elements are visible on the player's screen and manages a custom HUD overlay slot. It uses a <span class="type">ConcurrentHashMap</span>-backed set for thread-safe visibility tracking and sends <span class="type">UpdateVisibleHudComponents</span> packets to the client.</p>
+
+                <h3>Getting the HudManager</h3>
+                <pre><code><span class="comment">// Must be on the world thread (requires Player component)</span>
+<span class="type">Player</span> <span class="field">player</span> = (<span class="type">Player</span>) <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="type">HudManager</span> <span class="field">hudManager</span> = <span class="field">player</span>.<span class="fn">getHudManager</span>();</code></pre>
+
+                <h3>Visibility Control</h3>
+                <pre><code><span class="comment">// Hide specific HUD components</span>
+<span class="field">hudManager</span>.<span class="fn">hideHudComponents</span>(<span class="field">playerRef</span>,
+    <span class="type">HudComponent</span>.Health,
+    <span class="type">HudComponent</span>.Hotbar
+);
+
+<span class="comment">// Show specific HUD components</span>
+<span class="field">hudManager</span>.<span class="fn">showHudComponents</span>(<span class="field">playerRef</span>,
+    <span class="type">HudComponent</span>.Chat,
+    <span class="type">HudComponent</span>.KillFeed
+);
+
+<span class="comment">// Set exact visible set (replaces all)</span>
+<span class="field">hudManager</span>.<span class="fn">setVisibleHudComponents</span>(<span class="field">playerRef</span>,
+    <span class="type">HudComponent</span>.Reticle,
+    <span class="type">HudComponent</span>.Chat
+);
+
+<span class="comment">// Hide ALL UI (cinematic mode &mdash; pass no arguments)</span>
+<span class="field">hudManager</span>.<span class="fn">setVisibleHudComponents</span>(<span class="field">playerRef</span>);
+
+<span class="comment">// Reset to default HUD components</span>
+<span class="field">hudManager</span>.<span class="fn">resetHud</span>(<span class="field">playerRef</span>);
+
+<span class="comment">// Full UI state reset (also resets pages, etc.)</span>
+<span class="field">hudManager</span>.<span class="fn">resetUserInterface</span>(<span class="field">playerRef</span>);</code></pre>
+
+                <h3>Available HudComponents</h3>
+                <p>The server defines <strong>24 total HUD components</strong>. The following 21 are enabled by default:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Hotbar</code></td><td>Bottom item bar</td><td>On</td></tr>
+                        <tr><td><code>StatusIcons</code></td><td>Status effect icons</td><td>On</td></tr>
+                        <tr><td><code>Reticle</code></td><td>Center crosshair</td><td>On</td></tr>
+                        <tr><td><code>Chat</code></td><td>Chat window</td><td>On</td></tr>
+                        <tr><td><code>Notifications</code></td><td>Toast notification area</td><td>On</td></tr>
+                        <tr><td><code>KillFeed</code></td><td>Kill/death messages</td><td>On</td></tr>
+                        <tr><td><code>InputBindings</code></td><td>Control hint overlays</td><td>On</td></tr>
+                        <tr><td><code>Compass</code></td><td>Direction compass</td><td>On</td></tr>
+                        <tr><td><code>ObjectivePanel</code></td><td>Quest/objective tracker</td><td>On</td></tr>
+                        <tr><td><code>PortalPanel</code></td><td>Portal loading indicator</td><td>On</td></tr>
+                        <tr><td><code>EventTitle</code></td><td>Center-screen title area</td><td>On</td></tr>
+                        <tr><td><code>Speedometer</code></td><td>Vehicle speed display</td><td>On</td></tr>
+                        <tr><td><code>UtilitySlotSelector</code></td><td>Utility item slot</td><td>On</td></tr>
+                        <tr><td><code>BlockVariantSelector</code></td><td>Block variant picker</td><td>On</td></tr>
+                        <tr><td><code>BuilderToolsLegend</code></td><td>Builder tool help panel</td><td>On</td></tr>
+                        <tr><td><code>BuilderToolsMaterialSlotSelector</code></td><td>Builder material selector</td><td>Off</td></tr>
+                        <tr><td><code>Stamina</code></td><td>Stamina bar</td><td>On</td></tr>
+                        <tr><td><code>AmmoIndicator</code></td><td>Ranged weapon ammo</td><td>On</td></tr>
+                        <tr><td><code>Health</code></td><td>Health bar</td><td>On</td></tr>
+                        <tr><td><code>Mana</code></td><td>Mana bar</td><td>On</td></tr>
+                        <tr><td><code>Oxygen</code></td><td>Underwater oxygen bar</td><td>On</td></tr>
+                        <tr><td><code>Sleep</code></td><td>Sleep indicator</td><td>On</td></tr>
+                        <tr><td><code>Requests</code></td><td>Friend/party requests</td><td>Off</td></tr>
+                        <tr><td><code>PlayerList</code></td><td>Tab player list</td><td>Off</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p><span class="type">HudManager</span> requires the <span class="type">Player</span> component and must be accessed from the <strong>world thread</strong>. Use <code>world.execute()</code> if calling from another thread.</p>
+                </div>
+            </section>
+
+            <section id="custom-hud">
+                <h2>Custom HUD Overlays</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud</code></p>
+                <p>The <span class="type">CustomUIHud</span> abstract class enables persistent, server-driven HUD overlays such as scoreboards, stat displays, dynamic counters, and game-mode-specific UI. Each player can have one active custom HUD at a time, managed through the <span class="type">HudManager</span>.</p>
+
+                <h3>How It Works</h3>
+                <ol>
+                    <li>Extend <span class="type">CustomUIHud</span> and implement the <code>build()</code> method to define UI commands.</li>
+                    <li>Call <code>HudManager.setCustomHud()</code> to attach it to a player.</li>
+                    <li>The <code>show()</code> method builds commands via <span class="type">UICommandBuilder</span> and sends a <span class="type">CustomHud</span> packet.</li>
+                    <li>Call <code>update()</code> to push incremental changes without rebuilding from scratch.</li>
+                </ol>
+
+                <h3>CustomUIHud Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">abstract void</span> <span class="fn">build</span>(<span class="type">UICommandBuilder</span> builder)</code></td>
+                            <td>Define the HUD layout by issuing UI commands</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">show</span>()</code></td>
+                            <td>Builds and sends the initial HUD state (calls build, then update with clear=true)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">update</span>(<span class="kw">boolean</span> clear, <span class="type">UICommandBuilder</span> builder)</code></td>
+                            <td>Sends a <span class="type">CustomHud</span> packet. If <code>clear</code> is true, resets all elements first.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">PlayerRef</span> <span class="fn">getPlayerRef</span>()</code></td>
+                            <td>Returns the associated player reference</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Example: Score HUD</h3>
+                <pre><code><span class="kw">public class</span> <span class="type">ScoreHud</span> <span class="kw">extends</span> <span class="type">CustomUIHud</span> {
+    <span class="kw">private int</span> <span class="field">score</span>;
+
+    <span class="kw">public</span> <span class="type">ScoreHud</span>(<span class="type">PlayerRef</span> <span class="field">playerRef</span>) {
+        <span class="kw">super</span>(<span class="field">playerRef</span>);
+        <span class="kw">this</span>.<span class="field">score</span> = <span class="num">0</span>;
     }
 
-    @Override
-    protected void build(UICommandBuilder builder) {
-        builder.set("score.text", Message.raw("Score: " + score));
-        builder.set("score.visible", true);
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">build</span>(<span class="type">UICommandBuilder</span> <span class="field">builder</span>) {
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"score.text"</span>, <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Score: "</span> + <span class="field">score</span>));
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"score.visible"</span>, <span class="kw">true</span>);
     }
 
-    public void updateScore(int newScore) {
-        this.score = newScore;
-        UICommandBuilder builder = new UICommandBuilder();
-        builder.set("score.text", Message.raw("Score: " + score));
-        update(false, builder);  // false = don't clear
+    <span class="kw">public void</span> <span class="fn">updateScore</span>(<span class="kw">int</span> <span class="field">newScore</span>) {
+        <span class="kw">this</span>.<span class="field">score</span> = <span class="field">newScore</span>;
+        <span class="type">UICommandBuilder</span> <span class="field">builder</span> = <span class="kw">new</span> <span class="type">UICommandBuilder</span>();
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"score.text"</span>, <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Score: "</span> + <span class="field">score</span>));
+        <span class="fn">update</span>(<span class="kw">false</span>, <span class="field">builder</span>);  <span class="comment">// false = incremental update, don't clear</span>
     }
 }
 
-// Usage (must be on world thread):
-Player player = store.getComponent(ref, Player.getComponentType());
-ScoreHud hud = new ScoreHud(playerRef);
-player.getHudManager().setCustomHud(playerRef, hud);
-hud.show();</code></pre>
+<span class="comment">// Usage (must be on world thread):</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="type">ScoreHud</span> <span class="field">hud</span> = <span class="kw">new</span> <span class="type">ScoreHud</span>(<span class="field">playerRef</span>);
+<span class="field">player</span>.<span class="fn">getHudManager</span>().<span class="fn">setCustomHud</span>(<span class="field">playerRef</span>, <span class="field">hud</span>);
 
-            <div class="info-box warning">
-                <strong>WARNING:</strong> Custom HUD requires knowledge of Hytale's internal UI element paths. There is no public documentation of available paths. For simple text, use EventTitle or Notification instead.
-            </div>
+<span class="comment">// Later, update the score:</span>
+<span class="field">hud</span>.<span class="fn">updateScore</span>(<span class="num">42</span>);
 
-            <h3>UICommandBuilder Methods</h3>
-            <ul>
-                <li><span class="code">builder.set(path, value)</span> — set text, boolean, number</li>
-                <li><span class="code">builder.clear(path)</span> — clear element</li>
-                <li><span class="code">builder.remove(path)</span> — remove element</li>
-                <li><span class="code">builder.append(path)</span> — append element</li>
-            </ul>
+<span class="comment">// Remove the custom HUD:</span>
+<span class="field">player</span>.<span class="fn">getHudManager</span>().<span class="fn">setCustomHud</span>(<span class="field">playerRef</span>, <span class="kw">null</span>);</code></pre>
 
-            <h2>4. HUD Component Visibility</h2>
-            <p><strong>Package:</strong> <span class="code">com.hypixel.hytale.server.core.entity.entities.player.hud.HudManager</span></p>
-            <p>Control which native UI elements are visible:</p>
-
-            <pre><code>// Get HudManager (world thread only)
-Player player = store.getComponent(ref, Player.getComponentType());
-HudManager hudManager = player.getHudManager();
-
-// Hide specific components
-hudManager.hideHudComponents(playerRef, HudComponent.Health, HudComponent.Hotbar);
-
-// Show specific components
-hudManager.showHudComponents(playerRef, HudComponent.Chat);
-
-// Hide ALL UI (cinematic mode)
-hudManager.setVisibleHudComponents(playerRef); // empty = hide all
-
-// Reset to defaults
-hudManager.resetHud(playerRef);</code></pre>
-
-            <h3>Available HudComponents</h3>
-            <p>24 total HUD components:</p>
-            <div class="component-grid">
-                <div class="component-column">
-                    <ul>
-                        <li>Hotbar</li>
-                        <li>StatusIcons</li>
-                        <li>Reticle</li>
-                        <li>Chat</li>
-                        <li>Requests</li>
-                        <li>Notifications</li>
-                        <li>KillFeed</li>
-                        <li>InputBindings</li>
-                        <li>PlayerList</li>
-                        <li>EventTitle</li>
-                        <li>Compass</li>
-                        <li>ObjectivePanel</li>
-                    </ul>
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>Setting a custom HUD to <code>null</code> sends a <span class="type">CustomHud</span> packet with <code>clear=true</code> and <code>commands=null</code>, which removes the overlay. Only one custom HUD can be active at a time per player.</p>
                 </div>
-                <div class="component-column">
-                    <ul>
-                        <li>PortalPanel</li>
-                        <li>BuilderToolsLegend</li>
-                        <li>Speedometer</li>
-                        <li>UtilitySlotSelector</li>
-                        <li>BlockVariantSelector</li>
-                        <li>BuilderToolsMaterialSlotSelector</li>
-                        <li>Stamina</li>
-                        <li>AmmoIndicator</li>
-                        <li>Health</li>
-                        <li>Mana</li>
-                        <li>Oxygen</li>
-                        <li>Sleep</li>
-                    </ul>
+            </section>
+
+            <section id="page-manager">
+                <h2>PageManager</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.pages.PageManager</code></p>
+                <p>The <span class="type">PageManager</span> controls full-screen UI pages &mdash; views that take over the entire client screen such as inventory, crafting, respawn, and custom server-defined pages. It coordinates between the <span class="type">WindowManager</span> (for inventory window slots) and the page display system.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>windowManager</code></td><td><span class="type">WindowManager</span></td><td>Manages inventory windows associated with pages</td></tr>
+                        <tr><td><code>playerRef</code></td><td><span class="type">PlayerRef</span></td><td>Reference to the owning player</td></tr>
+                        <tr><td><code>customPage</code></td><td><span class="type">CustomUIPage</span></td><td>Currently active custom page (nullable)</td></tr>
+                        <tr><td><code>customPageRequiredAcknowledgments</code></td><td><span class="type">AtomicInteger</span></td><td>Counter for pending client acknowledgments</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Opening Built-in Pages</h3>
+                <p>Built-in pages use the <span class="type">Page</span> enum and are opened via <code>setPage()</code>:</p>
+                <pre><code><span class="comment">// Open a built-in page (e.g., inventory)</span>
+<span class="type">PageManager</span> <span class="field">pageManager</span> = <span class="field">player</span>.<span class="fn">getPageManager</span>();
+<span class="field">pageManager</span>.<span class="fn">setPage</span>(<span class="field">ref</span>, <span class="field">store</span>, <span class="type">Page</span>.Inventory);
+
+<span class="comment">// Open a page that the player can close via interaction (e.g., pressing Escape)</span>
+<span class="field">pageManager</span>.<span class="fn">setPage</span>(<span class="field">ref</span>, <span class="field">store</span>, <span class="type">Page</span>.Inventory, <span class="kw">true</span>);
+
+<span class="comment">// Close the current page (return to game)</span>
+<span class="field">pageManager</span>.<span class="fn">setPage</span>(<span class="field">ref</span>, <span class="field">store</span>, <span class="type">Page</span>.None);</code></pre>
+
+                <h3>Opening Pages with Windows</h3>
+                <p>Pages that need inventory windows (chests, crafting tables) use the combined method:</p>
+                <pre><code><span class="comment">// Open a page with associated inventory windows</span>
+<span class="kw">boolean</span> <span class="field">success</span> = <span class="field">pageManager</span>.<span class="fn">setPageWithWindows</span>(
+    <span class="field">ref</span>, <span class="field">store</span>,
+    <span class="type">Page</span>.CraftingTable,
+    <span class="kw">true</span>,                    <span class="comment">// canCloseThroughInteraction</span>
+    <span class="field">craftingWindow</span>           <span class="comment">// Window... varargs</span>
+);
+<span class="comment">// Returns false if WindowManager is null or windows fail to open</span></code></pre>
+
+                <h3>Opening Custom Pages</h3>
+                <pre><code><span class="comment">// Open a custom UI page (details in the Custom Pages section)</span>
+<span class="field">pageManager</span>.<span class="fn">openCustomPage</span>(<span class="field">ref</span>, <span class="field">store</span>, <span class="field">myCustomPage</span>);
+
+<span class="comment">// Open a custom page with inventory windows</span>
+<span class="kw">boolean</span> <span class="field">success</span> = <span class="field">pageManager</span>.<span class="fn">openCustomPageWithWindows</span>(
+    <span class="field">ref</span>, <span class="field">store</span>, <span class="field">myCustomPage</span>,
+    <span class="field">playerInventoryWindow</span>, <span class="field">containerWindow</span>
+);</code></pre>
+
+                <h3>Client Acknowledgment Protocol</h3>
+                <p>When a custom page is sent, the <span class="type">PageManager</span> increments an acknowledgment counter. The client must send an <span class="type">Acknowledge</span> event back. Until all acknowledgments are received, incoming <span class="type">Data</span> events from the client are <strong>silently dropped</strong>. This prevents stale UI events from being processed during page transitions.</p>
+
+                <h3>Event Handling</h3>
+                <p>The <span class="type">PageManager</span> handles three types of <span class="type">CustomPageEvent</span>:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event Type</th>
+                            <th>Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Dismiss</code></td>
+                            <td>Calls <code>onDismiss()</code> on the current custom page and nulls it</td>
+                        </tr>
+                        <tr>
+                            <td><code>Data</code></td>
+                            <td>Forwards to <code>customPage.handleDataEvent()</code> (only if ack counter is 0)</td>
+                        </tr>
+                        <tr>
+                            <td><code>Acknowledge</code></td>
+                            <td>Decrements the acknowledgment counter; throws if already at 0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="custom-pages">
+                <h2>Custom UI Pages</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.pages</code></p>
+                <p>Custom UI pages provide a framework for building full-screen server-driven interfaces. The system uses a class hierarchy with three levels of abstraction:</p>
+
+<div class="diagram">CustomUIPage (abstract)
+ &#9500;&#9472;&#9472; BasicCustomUIPage (abstract)
+ &#9474;    &#9492;&#9472;&#9472; Simple pages that only need UICommandBuilder
+ &#9492;&#9472;&#9472; InteractiveCustomUIPage&lt;T&gt; (abstract, generic)
+      &#9492;&#9472;&#9472; Pages with typed event data from the client
+           &#9500;&#9472;&#9472; ChoiceBasePage
+           &#9474;    &#9500;&#9472;&#9472; ItemRepairPage
+           &#9474;    &#9492;&#9472;&#9472; (other choice-based pages)
+           &#9500;&#9472;&#9472; RespawnPage
+           &#9492;&#9472;&#9472; PlaySoundPage
+</div>
+
+                <h3>CustomUIPage &mdash; Base Class</h3>
+                <p>All custom pages extend <span class="type">CustomUIPage</span>. Key concepts:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="field">playerRef</span></code></td>
+                            <td>The owning player's <span class="type">PlayerRef</span></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="field">lifetime</span></code></td>
+                            <td><span class="type">CustomPageLifetime</span> &mdash; controls close behavior (e.g., <code>CantClose</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">build</span>(ref, commandBuilder, eventBuilder, store)</code></td>
+                            <td>Abstract &mdash; defines the page layout and event bindings</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">rebuild</span>()</code></td>
+                            <td>Re-sends the full page by calling <code>build()</code> again and updating via <span class="type">PageManager</span></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">sendUpdate</span>(commandBuilder, clear)</code></td>
+                            <td>Sends incremental UI changes without rebuilding the whole page</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">close</span>()</code></td>
+                            <td>Closes the page by setting <code>Page.None</code></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">onDismiss</span>(ref, store)</code></td>
+                            <td>Called when the page is dismissed (override for cleanup)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">handleDataEvent</span>(ref, store, rawData)</code></td>
+                            <td>Override to handle events from client interaction</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>CustomPage Packet</h3>
+                <p>When <code>openCustomPage()</code> is called, the <span class="type">PageManager</span> constructs a <span class="type">CustomPage</span> packet (ID 218) with:</p>
+                <ul>
+                    <li><strong>key</strong> &mdash; The Java class name of the page (used as identifier)</li>
+                    <li><strong>isInitial</strong> &mdash; True for the first send, false for updates</li>
+                    <li><strong>clear</strong> &mdash; Whether to clear existing elements before applying commands</li>
+                    <li><strong>lifetime</strong> &mdash; <span class="type">CustomPageLifetime</span> enum controlling close behavior</li>
+                    <li><strong>commands</strong> &mdash; Array of <span class="type">CustomUICommand</span> objects</li>
+                    <li><strong>eventBindings</strong> &mdash; Array of <span class="type">CustomUIEventBinding</span> objects</li>
+                </ul>
+
+                <h3>BasicCustomUIPage</h3>
+                <p>A simplified base class for pages that do not need event handling or access to the entity store during build. The <code>build()</code> method receives only a <span class="type">UICommandBuilder</span>:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">WelcomePage</span> <span class="kw">extends</span> <span class="type">BasicCustomUIPage</span> {
+
+    <span class="kw">public</span> <span class="type">WelcomePage</span>(<span class="type">PlayerRef</span> <span class="field">playerRef</span>) {
+        <span class="kw">super</span>(<span class="field">playerRef</span>, <span class="type">CustomPageLifetime</span>.CantClose);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">build</span>(<span class="type">UICommandBuilder</span> <span class="field">builder</span>) {
+        <span class="field">builder</span>.<span class="fn">append</span>(<span class="str">"Pages/WelcomePage.ui"</span>);
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#Title.Text"</span>, <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome!"</span>));
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#Body.Text"</span>, <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Press ESC to continue"</span>));
+    }
+}</code></pre>
+
+                <h3>InteractiveCustomUIPage&lt;T&gt;</h3>
+                <p>A generic base class for pages that receive typed event data from client interactions. Uses a <span class="type">BuilderCodec&lt;T&gt;</span> to deserialize incoming JSON event data into a typed object:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">MyInteractivePage</span>
+    <span class="kw">extends</span> <span class="type">InteractiveCustomUIPage</span>&lt;<span class="type">MyEventData</span>&gt; {
+
+    <span class="kw">public</span> <span class="type">MyInteractivePage</span>(<span class="type">PlayerRef</span> <span class="field">playerRef</span>) {
+        <span class="kw">super</span>(<span class="field">playerRef</span>,
+              <span class="type">CustomPageLifetime</span>.CantClose,
+              <span class="type">MyEventData</span>.CODEC);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">build</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                      <span class="type">UICommandBuilder</span> <span class="field">cmdBuilder</span>,
+                      <span class="type">UIEventBuilder</span> <span class="field">evtBuilder</span>,
+                      <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>) {
+        <span class="field">cmdBuilder</span>.<span class="fn">append</span>(<span class="str">"Pages/MyPage.ui"</span>);
+        <span class="field">evtBuilder</span>.<span class="fn">addEventBinding</span>(
+            <span class="type">CustomUIEventBindingType</span>.Click,
+            <span class="str">"#ConfirmButton"</span>
+        );
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">handleDataEvent</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                               <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                               <span class="type">MyEventData</span> <span class="field">data</span>) {
+        <span class="comment">// Handle the typed event data</span>
+        <span class="fn">close</span>();
+    }
+}</code></pre>
+                <p>The <span class="type">InteractiveCustomUIPage</span> overrides <code>handleDataEvent(String rawData)</code> to automatically deserialize the raw JSON string through the codec before calling the typed overload. It also provides an enhanced <code>sendUpdate()</code> that accepts both command and event builders, and schedules execution on the world thread via <code>world.execute()</code>.</p>
+            </section>
+
+            <section id="built-in-pages">
+                <h2>Built-in Pages</h2>
+                <p>Several concrete page implementations ship with the server:</p>
+
+                <h3>ChoiceBasePage</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.pages.choices</code></p>
+                <p>A framework for pages that present a list of selectable options. Each option is a <span class="type">ChoiceElement</span> with:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>displayNameKey</code></td><td><span class="type">String</span></td><td>Localization key for the display name</td></tr>
+                        <tr><td><code>descriptionKey</code></td><td><span class="type">String</span></td><td>Localization key for description text</td></tr>
+                        <tr><td><code>interactions</code></td><td><span class="type">ChoiceInteraction[]</span></td><td>Actions executed when the choice is selected</td></tr>
+                        <tr><td><code>requirements</code></td><td><span class="type">ChoiceRequirement[]</span></td><td>Conditions that must be met to select this choice</td></tr>
+                    </tbody>
+                </table>
+                <p>Both <span class="type">ChoiceInteraction</span> and <span class="type">ChoiceRequirement</span> use a <span class="type">CodecMapCodec</span> with a <code>"Type"</code> discriminator, enabling polymorphic serialization of different interaction and requirement types.</p>
+
+                <h3>ItemRepairPage</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.pages.itemrepair</code></p>
+                <p>Extends <span class="type">ChoiceBasePage</span> to present a list of damaged items for repair. Each <span class="type">ItemRepairElement</span> displays the item icon, name, and durability percentage. When selected, the <span class="type">RepairItemInteraction</span> deducts a repair item and restores durability with a configurable penalty:</p>
+                <pre><code><span class="comment">// Open the item repair page</span>
+<span class="type">ItemRepairPage</span> <span class="field">repairPage</span> = <span class="kw">new</span> <span class="type">ItemRepairPage</span>(
+    <span class="field">playerRef</span>,
+    <span class="field">playerInventory</span>,        <span class="comment">// ItemContainer to scan for damaged items</span>
+    <span class="num">0.1</span>,                      <span class="comment">// repairPenalty (10% max durability loss)</span>
+    <span class="field">heldItemContext</span>           <span class="comment">// the repair material being consumed</span>
+);
+<span class="field">pageManager</span>.<span class="fn">openCustomPage</span>(<span class="field">ref</span>, <span class="field">store</span>, <span class="field">repairPage</span>);</code></pre>
+                <p>The page uses <code>"Pages/ItemRepairPage.ui"</code> as its layout template and <code>"Pages/ItemRepairElement.ui"</code> for each list item. If no items need repair, it displays a <code>"%customUI.itemRepairPage.noItems"</code> localized label.</p>
+
+                <h3>RespawnPage</h3>
+                <p>Displayed when a player dies. Uses its own <span class="type">RespawnPageEventData</span> codec for handling client responses (respawn location choice).</p>
+
+                <h3>PlaySoundPage</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities.player.pages.audio</code></p>
+                <p>A specialized page for the sound picker UI, used in builder/editor mode. Handles <span class="type">PlaySoundPageEventData</span> for sound selection events.</p>
+            </section>
+
+            <section id="ui-command-builder">
+                <h2>UICommandBuilder</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui.builder.UICommandBuilder</code></p>
+                <p>The <span class="type">UICommandBuilder</span> is the primary tool for constructing UI element trees to send to the client. It produces an array of <span class="type">CustomUICommand</span> objects, each targeting a CSS-style selector in the client's UI document.</p>
+
+                <h3>Command Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Command Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">set</span>(<span class="field">selector</span>, <span class="field">value</span>)</code></td>
+                            <td><code>Set</code></td>
+                            <td>Set a property on the selected element. Supports <span class="type">String</span>, <span class="type">Message</span>, <span class="kw">boolean</span>, <span class="kw">int</span>, <span class="kw">float</span>, <span class="kw">double</span>, arrays, lists, and codec-mapped objects.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">setNull</span>(<span class="field">selector</span>)</code></td>
+                            <td><code>Set</code></td>
+                            <td>Set a property to null</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">setObject</span>(<span class="field">selector</span>, <span class="field">data</span>)</code></td>
+                            <td><code>Set</code></td>
+                            <td>Set a codec-serializable object (Area, PatchStyle, ItemGridSlot, etc.)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">clear</span>(<span class="field">selector</span>)</code></td>
+                            <td><code>Clear</code></td>
+                            <td>Clear all children of the selected element</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">remove</span>(<span class="field">selector</span>)</code></td>
+                            <td><code>Remove</code></td>
+                            <td>Remove the selected element entirely</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">append</span>(<span class="field">documentPath</span>)</code></td>
+                            <td><code>Append</code></td>
+                            <td>Append a UI document template from a file path</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">append</span>(<span class="field">selector</span>, <span class="field">documentPath</span>)</code></td>
+                            <td><code>Append</code></td>
+                            <td>Append a UI document template inside a specific element</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">appendInline</span>(<span class="field">selector</span>, <span class="field">document</span>)</code></td>
+                            <td><code>AppendInline</code></td>
+                            <td>Append inline UI markup directly (not from a file)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">insertBefore</span>(<span class="field">selector</span>, <span class="field">documentPath</span>)</code></td>
+                            <td><code>InsertBefore</code></td>
+                            <td>Insert a UI document before the selected element</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">insertBeforeInline</span>(<span class="field">selector</span>, <span class="field">document</span>)</code></td>
+                            <td><code>InsertBeforeInline</code></td>
+                            <td>Insert inline UI markup before the selected element</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Compatible Object Types</h3>
+                <p>The <code>setObject()</code> and array <code>set()</code> methods accept objects whose class is registered in the codec map:</p>
+                <ul>
+                    <li><span class="type">Area</span> &mdash; UI rectangle (x, y, width, height)</li>
+                    <li><span class="type">ItemGridSlot</span> &mdash; Inventory slot display</li>
+                    <li><span class="type">ItemStack</span> &mdash; Item stack data</li>
+                    <li><span class="type">LocalizableString</span> &mdash; Translatable text</li>
+                    <li><span class="type">PatchStyle</span> &mdash; Nine-patch background style</li>
+                    <li><span class="type">DropdownEntryInfo</span> &mdash; Dropdown menu entry</li>
+                    <li><span class="type">Anchor</span> &mdash; UI positioning anchor</li>
+                </ul>
+
+                <h3>Usage Examples</h3>
+                <pre><code><span class="type">UICommandBuilder</span> <span class="field">builder</span> = <span class="kw">new</span> <span class="type">UICommandBuilder</span>();
+
+<span class="comment">// Load a UI template</span>
+<span class="field">builder</span>.<span class="fn">append</span>(<span class="str">"Pages/MyCustomPage.ui"</span>);
+
+<span class="comment">// Set text properties</span>
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#Title.Text"</span>, <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Hello World"</span>));
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#Subtitle.Text"</span>, <span class="str">"Plain string value"</span>);
+
+<span class="comment">// Set numeric and boolean properties</span>
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#HealthBar.Value"</span>, <span class="num">0.75f</span>);
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#HealthBar.Visible"</span>, <span class="kw">true</span>);
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#ScoreLabel.Text"</span>, <span class="num">42</span>);
+
+<span class="comment">// Set an object (e.g., a PatchStyle for a background)</span>
+<span class="type">PatchStyle</span> <span class="field">bg</span> = <span class="kw">new</span> <span class="type">PatchStyle</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="str">"textures/ui/panel.png"</span>));
+<span class="field">bg</span>.<span class="fn">setBorder</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">4</span>));
+<span class="field">builder</span>.<span class="fn">setObject</span>(<span class="str">"#Panel.Background"</span>, <span class="field">bg</span>);
+
+<span class="comment">// Append inline markup</span>
+<span class="field">builder</span>.<span class="fn">appendInline</span>(<span class="str">"#ItemList"</span>,
+    <span class="str">"Label { Text: %customUI.noItems; Style: (Alignment: Center); }"</span>);
+
+<span class="comment">// Clear a container and rebuild its contents</span>
+<span class="field">builder</span>.<span class="fn">clear</span>(<span class="str">"#ItemList"</span>);
+<span class="field">builder</span>.<span class="fn">append</span>(<span class="str">"#ItemList"</span>, <span class="str">"Pages/ItemListEntry.ui"</span>);
+
+<span class="comment">// Remove an element entirely</span>
+<span class="field">builder</span>.<span class="fn">remove</span>(<span class="str">"#OldElement"</span>);</code></pre>
+            </section>
+
+            <section id="ui-event-builder">
+                <h2>UIEventBuilder</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui.builder.UIEventBuilder</code></p>
+                <p>The <span class="type">UIEventBuilder</span> binds client-side UI events (clicks, input changes, etc.) to server-side handlers. Each binding creates a <span class="type">CustomUIEventBinding</span> that is sent alongside the UI commands.</p>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">addEventBinding</span>(<span class="field">type</span>, <span class="field">selector</span>)</code></td>
+                            <td>Bind an event type to a UI element (locks interface by default)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">addEventBinding</span>(<span class="field">type</span>, <span class="field">selector</span>, <span class="field">locksInterface</span>)</code></td>
+                            <td>Bind with explicit interface locking control</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">addEventBinding</span>(<span class="field">type</span>, <span class="field">selector</span>, <span class="field">data</span>)</code></td>
+                            <td>Bind with additional <span class="type">EventData</span> payload</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">addEventBinding</span>(<span class="field">type</span>, <span class="field">selector</span>, <span class="field">data</span>, <span class="field">locksInterface</span>)</code></td>
+                            <td>Full control over binding parameters</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>EventData</h3>
+                <p>The <span class="type">EventData</span> record wraps a <code>Map&lt;String, String&gt;</code> and provides a fluent builder:</p>
+                <pre><code><span class="comment">// Create event data with key-value pairs</span>
+<span class="type">EventData</span> <span class="field">data</span> = <span class="type">EventData</span>.<span class="fn">of</span>(<span class="str">"action"</span>, <span class="str">"confirm"</span>)
+    .<span class="fn">append</span>(<span class="str">"itemId"</span>, <span class="str">"DiamondSword"</span>)
+    .<span class="fn">append</span>(<span class="str">"slot"</span>, <span class="str">"3"</span>);
+
+<span class="comment">// Or with enum values</span>
+<span class="type">EventData</span> <span class="field">data</span> = <span class="kw">new</span> <span class="type">EventData</span>()
+    .<span class="fn">append</span>(<span class="str">"type"</span>, <span class="type">MyActionType</span>.Purchase);</code></pre>
+
+                <h3>Interface Locking</h3>
+                <p>When <code>locksInterface</code> is <code>true</code> (the default), the client UI is locked after the event fires, preventing further interaction until the server responds. This prevents double-click issues and ensures the server processes the event before the client can fire another.</p>
+            </section>
+
+            <section id="anchor-area">
+                <h2>Anchor &amp; Area &mdash; Positioning System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui</code></p>
+
+                <h3>Anchor</h3>
+                <p>The <span class="type">Anchor</span> class defines how a UI element is positioned relative to its parent container. All properties use <span class="type">Value&lt;Integer&gt;</span> which can be either a direct value or a document reference.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>JSON Key</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>left</code></td><td><code>"Left"</code></td><td>Offset from the left edge</td></tr>
+                        <tr><td><code>right</code></td><td><code>"Right"</code></td><td>Offset from the right edge</td></tr>
+                        <tr><td><code>top</code></td><td><code>"Top"</code></td><td>Offset from the top edge</td></tr>
+                        <tr><td><code>bottom</code></td><td><code>"Bottom"</code></td><td>Offset from the bottom edge</td></tr>
+                        <tr><td><code>width</code></td><td><code>"Width"</code></td><td>Fixed width</td></tr>
+                        <tr><td><code>height</code></td><td><code>"Height"</code></td><td>Fixed height</td></tr>
+                        <tr><td><code>minWidth</code></td><td><code>"MinWidth"</code></td><td>Minimum width constraint</td></tr>
+                        <tr><td><code>maxWidth</code></td><td><code>"MaxWidth"</code></td><td>Maximum width constraint</td></tr>
+                        <tr><td><code>horizontal</code></td><td><code>"Horizontal"</code></td><td>Horizontal center offset</td></tr>
+                        <tr><td><code>vertical</code></td><td><code>"Vertical"</code></td><td>Vertical center offset</td></tr>
+                        <tr><td><code>full</code></td><td><code>"Full"</code></td><td>Full-size fill with padding</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Area</h3>
+                <p>The <span class="type">Area</span> class defines a simple rectangle with integer coordinates and dimensions, used for texture regions and UI bounds:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>JSON Key</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>x</code></td><td><code>"X"</code></td><td><span class="kw">int</span></td></tr>
+                        <tr><td><code>y</code></td><td><code>"Y"</code></td><td><span class="kw">int</span></td></tr>
+                        <tr><td><code>width</code></td><td><code>"Width"</code></td><td><span class="kw">int</span></td></tr>
+                        <tr><td><code>height</code></td><td><code>"Height"</code></td><td><span class="kw">int</span></td></tr>
+                    </tbody>
+                </table>
+                <p>Both classes implement fluent setters and are serialized via <span class="type">BuilderCodec</span> for network transmission.</p>
+
+                <h3>Value&lt;T&gt; &mdash; Direct Values and References</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui.Value</code></p>
+                <p>The <span class="type">Value&lt;T&gt;</span> wrapper enables UI properties to be either a direct value or a reference to a value defined in a UI document:</p>
+                <pre><code><span class="comment">// Direct value &mdash; literal integer</span>
+<span class="type">Value</span>&lt;<span class="type">Integer</span>&gt; <span class="field">width</span> = <span class="type">Value</span>.<span class="fn">of</span>(<span class="num">200</span>);
+
+<span class="comment">// Document reference &mdash; resolved at render time</span>
+<span class="type">Value</span>&lt;<span class="type">Integer</span>&gt; <span class="field">width</span> = <span class="type">Value</span>.<span class="fn">ref</span>(<span class="str">"Common/Sizes.ui"</span>, <span class="str">"PanelWidth"</span>);
+
+<span class="comment">// Use in an Anchor</span>
+<span class="type">Anchor</span> <span class="field">anchor</span> = <span class="kw">new</span> <span class="type">Anchor</span>();
+<span class="field">anchor</span>.<span class="fn">setLeft</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">10</span>));
+<span class="field">anchor</span>.<span class="fn">setTop</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">10</span>));
+<span class="field">anchor</span>.<span class="fn">setWidth</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">300</span>));
+<span class="field">anchor</span>.<span class="fn">setHeight</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">200</span>));</code></pre>
+            </section>
+
+            <section id="patch-style">
+                <h2>PatchStyle &mdash; UI Styling</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui.PatchStyle</code></p>
+                <p>The <span class="type">PatchStyle</span> class defines nine-patch (9-slice) background styling for UI elements. It controls the texture, border slicing, color tinting, and source area of the patch texture.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>JSON Key</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>texturePath</code></td><td><code>"TexturePath"</code></td><td><span class="type">Value&lt;String&gt;</span></td><td>Path to the texture asset</td></tr>
+                        <tr><td><code>border</code></td><td><code>"Border"</code></td><td><span class="type">Value&lt;Integer&gt;</span></td><td>Uniform border size for 9-patch slicing</td></tr>
+                        <tr><td><code>horizontalBorder</code></td><td><code>"HorizonzalBorder"</code></td><td><span class="type">Value&lt;Integer&gt;</span></td><td>Horizontal border override (note: typo in original)</td></tr>
+                        <tr><td><code>verticalBorder</code></td><td><code>"VerticalBorder"</code></td><td><span class="type">Value&lt;Integer&gt;</span></td><td>Vertical border override</td></tr>
+                        <tr><td><code>color</code></td><td><code>"Color"</code></td><td><span class="type">Value&lt;String&gt;</span></td><td>Color tint (hex string)</td></tr>
+                        <tr><td><code>area</code></td><td><code>"Area"</code></td><td><span class="type">Value&lt;Area&gt;</span></td><td>Source rectangle within the texture</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>The <code>"HorizonzalBorder"</code> JSON key contains a typo from the original source code. This must be used exactly as-is for serialization compatibility.</p>
                 </div>
-            </div>
 
-            <div class="info-box warning">
-                <strong>WARNING:</strong> HudManager requires the Player component — must be accessed from the world thread.
-            </div>
+                <h3>Usage Examples</h3>
+                <pre><code><span class="comment">// Simple background with uniform border</span>
+<span class="type">PatchStyle</span> <span class="field">panel</span> = <span class="kw">new</span> <span class="type">PatchStyle</span>(
+    <span class="type">Value</span>.<span class="fn">of</span>(<span class="str">"textures/ui/panel_bg.png"</span>),
+    <span class="type">Value</span>.<span class="fn">of</span>(<span class="num">8</span>)                           <span class="comment">// 8px border</span>
+);
 
-            <h2>5. Objective Panel</h2>
-            <p><strong>Best for:</strong> Quest tracking with checkboxes.</p>
-            <p>Uses <span class="code">TrackOrUpdateObjective</span>, <span class="code">UpdateObjectiveTask</span>, <span class="code">UntrackObjective</span> packets. Asset-driven (requires localization keys). No high-level utility class — must construct packets manually.</p>
+<span class="comment">// Background with color tint and custom area</span>
+<span class="type">PatchStyle</span> <span class="field">tinted</span> = <span class="kw">new</span> <span class="type">PatchStyle</span>()
+    .<span class="fn">setTexturePath</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="str">"textures/ui/button.png"</span>))
+    .<span class="fn">setBorder</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="num">4</span>))
+    .<span class="fn">setColor</span>(<span class="type">Value</span>.<span class="fn">of</span>(<span class="str">"#ff5555"</span>))
+    .<span class="fn">setArea</span>(<span class="type">Value</span>.<span class="fn">of</span>(
+        <span class="kw">new</span> <span class="type">Area</span>().<span class="fn">setX</span>(<span class="num">0</span>).<span class="fn">setY</span>(<span class="num">0</span>).<span class="fn">setWidth</span>(<span class="num">32</span>).<span class="fn">setHeight</span>(<span class="num">32</span>)
+    ));
 
-            <h2>Thread Safety Summary</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>System</th>
-                        <th>Thread Safety</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>EventTitleUtil (PlayerRef)</td>
-                        <td>Any thread</td>
-                    </tr>
-                    <tr>
-                        <td>NotificationUtil (PacketHandler)</td>
-                        <td>Any thread</td>
-                    </tr>
-                    <tr>
-                        <td>CustomUIHud</td>
-                        <td>World thread (Player component)</td>
-                    </tr>
-                    <tr>
-                        <td>HudManager</td>
-                        <td>World thread (Player component)</td>
-                    </tr>
-                    <tr>
-                        <td>Direct packets</td>
-                        <td>Any thread (PacketHandler)</td>
-                    </tr>
-                </tbody>
-            </table>
+<span class="comment">// Apply via UICommandBuilder</span>
+<span class="field">builder</span>.<span class="fn">setObject</span>(<span class="str">"#MyPanel.Background"</span>, <span class="field">panel</span>);</code></pre>
+            </section>
+
+            <section id="item-grid-slot">
+                <h2>ItemGridSlot &amp; DropdownEntryInfo</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui</code></p>
+
+                <h3>ItemGridSlot</h3>
+                <p>Represents a single slot in an item grid display (inventory, crafting, loot). Combines item data with visual styling:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>itemStack</code></td><td><span class="type">ItemStack</span></td><td>The item to display</td></tr>
+                        <tr><td><code>background</code></td><td><span class="type">Value&lt;PatchStyle&gt;</span></td><td>Slot background style</td></tr>
+                        <tr><td><code>overlay</code></td><td><span class="type">Value&lt;PatchStyle&gt;</span></td><td>Overlay drawn on top of the item</td></tr>
+                        <tr><td><code>icon</code></td><td><span class="type">Value&lt;PatchStyle&gt;</span></td><td>Icon style (alternative to item rendering)</td></tr>
+                        <tr><td><code>isItemIncompatible</code></td><td><span class="kw">boolean</span></td><td>Visual flag for incompatible items</td></tr>
+                        <tr><td><code>name</code></td><td><span class="type">String</span></td><td>Override display name</td></tr>
+                        <tr><td><code>description</code></td><td><span class="type">String</span></td><td>Override description text</td></tr>
+                        <tr><td><code>skipItemQualityBackground</code></td><td><span class="kw">boolean</span></td><td>Disable the quality-based color border</td></tr>
+                        <tr><td><code>isActivatable</code></td><td><span class="kw">boolean</span></td><td>Whether the slot can be activated</td></tr>
+                        <tr><td><code>isItemUncraftable</code></td><td><span class="kw">boolean</span></td><td>Visual flag for items that cannot be crafted</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Create an inventory slot display</span>
+<span class="type">ItemGridSlot</span> <span class="field">slot</span> = <span class="kw">new</span> <span class="type">ItemGridSlot</span>(<span class="field">itemStack</span>)
+    .<span class="fn">setName</span>(<span class="str">"Diamond Sword"</span>)
+    .<span class="fn">setActivatable</span>(<span class="kw">true</span>);
+
+<span class="comment">// Set via builder</span>
+<span class="field">builder</span>.<span class="fn">setObject</span>(<span class="str">"#Slot0"</span>, <span class="field">slot</span>);
+
+<span class="comment">// Set an array of slots</span>
+<span class="type">ItemGridSlot</span>[] <span class="field">slots</span> = <span class="kw">new</span> <span class="type">ItemGridSlot</span>[<span class="num">9</span>];
+<span class="comment">// ... populate slots ...</span>
+<span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"#InventoryGrid.Slots"</span>, <span class="field">slots</span>);</code></pre>
+
+                <h3>DropdownEntryInfo</h3>
+                <p>Represents an entry in a dropdown menu, pairing a <span class="type">LocalizableString</span> label with a string value:</p>
+                <pre><code><span class="comment">// Create dropdown entries</span>
+<span class="type">DropdownEntryInfo</span> <span class="field">entry</span> = <span class="kw">new</span> <span class="type">DropdownEntryInfo</span>(
+    <span class="type">LocalizableString</span>.<span class="fn">fromString</span>(<span class="str">"Easy Mode"</span>),
+    <span class="str">"easy"</span>
+);</code></pre>
+            </section>
+
+            <section id="file-browser">
+                <h2>File Browser</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.ui.browser</code></p>
+                <p>The server includes a full file browser UI framework used by builder/editor tools for browsing server-side files (textures, sounds, models, asset packs). It is built on the custom page system and provides search, directory navigation, root selection, and multi-select capabilities.</p>
+
+                <h3>FileBrowserConfig</h3>
+                <p>A <code>Record</code>-based configuration object built with a fluent builder pattern:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>listElementId</code></td><td><code>"#FileList"</code></td><td>CSS selector for the file list container</td></tr>
+                        <tr><td><code>rootSelectorId</code></td><td><code>"#RootSelector"</code></td><td>CSS selector for the root directory dropdown</td></tr>
+                        <tr><td><code>searchInputId</code></td><td><code>"#SearchInput"</code></td><td>CSS selector for the search input field</td></tr>
+                        <tr><td><code>currentPathId</code></td><td><code>null</code></td><td>CSS selector for the current path display</td></tr>
+                        <tr><td><code>roots</code></td><td><code>List.of()</code></td><td>List of <span class="type">RootEntry</span> objects (display name + path)</td></tr>
+                        <tr><td><code>allowedExtensions</code></td><td><code>Set.of()</code></td><td>File extensions to show (empty = all)</td></tr>
+                        <tr><td><code>enableRootSelector</code></td><td><code>true</code></td><td>Show the root directory chooser</td></tr>
+                        <tr><td><code>enableSearch</code></td><td><code>true</code></td><td>Enable the search input</td></tr>
+                        <tr><td><code>enableDirectoryNav</code></td><td><code>true</code></td><td>Allow navigating into subdirectories</td></tr>
+                        <tr><td><code>enableMultiSelect</code></td><td><code>false</code></td><td>Allow selecting multiple files</td></tr>
+                        <tr><td><code>maxResults</code></td><td><code>50</code></td><td>Maximum search results to display</td></tr>
+                        <tr><td><code>assetPackMode</code></td><td><code>false</code></td><td>Enable asset pack browsing mode</td></tr>
+                        <tr><td><code>customProvider</code></td><td><code>null</code></td><td>Custom <span class="type">FileListProvider</span> for virtual file systems</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Build a file browser configuration for texture selection</span>
+<span class="type">FileBrowserConfig</span> <span class="field">config</span> = <span class="type">FileBrowserConfig</span>.<span class="fn">builder</span>()
+    .<span class="fn">roots</span>(<span class="type">List</span>.<span class="fn">of</span>(
+        <span class="kw">new</span> <span class="type">FileBrowserConfig.RootEntry</span>(<span class="str">"Textures"</span>, <span class="type">Path</span>.<span class="fn">of</span>(<span class="str">"assets/textures"</span>)),
+        <span class="kw">new</span> <span class="type">FileBrowserConfig.RootEntry</span>(<span class="str">"Models"</span>, <span class="type">Path</span>.<span class="fn">of</span>(<span class="str">"assets/models"</span>))
+    ))
+    .<span class="fn">allowedExtensions</span>(<span class="str">".png"</span>, <span class="str">".jpg"</span>)
+    .<span class="fn">enableMultiSelect</span>(<span class="kw">false</span>)
+    .<span class="fn">maxResults</span>(<span class="num">100</span>)
+    .<span class="fn">build</span>();</code></pre>
+
+                <h3>FileBrowserEventData</h3>
+                <p>Events from the file browser are deserialized into <span class="type">FileBrowserEventData</span> with these keys:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Constant</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>"File"</code></td><td><code>KEY_FILE</code></td><td>Selected file path</td></tr>
+                        <tr><td><code>"@Root"</code></td><td><code>KEY_ROOT</code></td><td>Selected root directory</td></tr>
+                        <tr><td><code>"@SearchQuery"</code></td><td><code>KEY_SEARCH_QUERY</code></td><td>Current search query text</td></tr>
+                        <tr><td><code>"SearchResult"</code></td><td><code>KEY_SEARCH_RESULT</code></td><td>Selected search result</td></tr>
+                        <tr><td><code>"Browse"</code></td><td><code>KEY_BROWSE</code></td><td>Whether a browse/navigation was requested</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>FileListProvider</h3>
+                <p>A <code>@FunctionalInterface</code> for providing custom file lists. The <span class="type">FileEntry</span> record contains:</p>
+                <ul>
+                    <li><code>name</code> &mdash; File identifier</li>
+                    <li><code>displayName</code> &mdash; Human-readable name</li>
+                    <li><code>isDirectory</code> &mdash; Whether the entry is a directory</li>
+                    <li><code>isTerminal</code> &mdash; Whether navigation stops here (leaf directory)</li>
+                    <li><code>matchScore</code> &mdash; Relevance score for search results</li>
+                </ul>
+            </section>
+
+            <section id="kill-feed">
+                <h2>Kill Feed</h2>
+                <p>Package: <code>com.hypixel.hytale.protocol.packets.interface_.KillFeedMessage</code></p>
+                <p>The <span class="type">KillFeedMessage</span> packet (ID 213) displays entries in the kill feed HUD component. Each message contains an optional killer, decedent, and icon:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>killer</code></td><td><span class="type">FormattedMessage</span></td><td>Name/message of the killer (nullable)</td></tr>
+                        <tr><td><code>decedent</code></td><td><span class="type">FormattedMessage</span></td><td>Name/message of the player who died (nullable)</td></tr>
+                        <tr><td><code>icon</code></td><td><span class="type">String</span></td><td>Kill method icon asset path (nullable)</td></tr>
+                    </tbody>
+                </table>
+                <p>The kill feed is displayed when the <span class="type">HudComponent.KillFeed</span> component is visible.</p>
+            </section>
+
+            <section id="objective-panel">
+                <h2>Objective Panel</h2>
+                <p>The objective panel (<span class="type">HudComponent.ObjectivePanel</span>) displays quest/task tracking with checkboxes. It is driven by asset-defined packets:</p>
+                <ul>
+                    <li><span class="type">TrackOrUpdateObjective</span> &mdash; Adds or updates an objective on the tracker</li>
+                    <li><span class="type">UpdateObjectiveTask</span> &mdash; Updates the completion state of individual tasks</li>
+                    <li><span class="type">UntrackObjective</span> &mdash; Removes an objective from tracking</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>The objective panel requires asset-defined localization keys. There is no high-level utility class &mdash; you must construct the packets manually using the <span class="type">PacketHandler</span>.</p>
+                </div>
+            </section>
+
+            <section id="thread-safety">
+                <h2>Thread Safety Summary</h2>
+                <p>Different UI subsystems have different threading requirements. Using the wrong thread will cause silent failures or exceptions.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Thread Safety</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">EventTitleUtil</span></td>
+                            <td><strong>Any thread</strong></td>
+                            <td>Uses <span class="type">PacketHandler.writeNoCache()</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">NotificationUtil</span></td>
+                            <td><strong>Any thread</strong></td>
+                            <td>Uses <span class="type">PacketHandler.writeNoCache()</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HudManager</span></td>
+                            <td><strong>World thread only</strong></td>
+                            <td>Requires <span class="type">Player</span> component access</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CustomUIHud</span></td>
+                            <td><strong>World thread only</strong></td>
+                            <td>Attached via <span class="type">HudManager</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">PageManager</span></td>
+                            <td><strong>World thread only</strong></td>
+                            <td>Requires <span class="type">Player</span> component access</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">InteractiveCustomUIPage</span></td>
+                            <td><strong>World thread for sendUpdate</strong></td>
+                            <td>Schedules via <code>world.execute()</code> internally</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">UICommandBuilder</span></td>
+                            <td><strong>Not thread-safe</strong></td>
+                            <td>Create a new instance per use</td>
+                        </tr>
+                        <tr>
+                            <td>Direct packet sending</td>
+                            <td><strong>Any thread</strong></td>
+                            <td>Via <span class="type">PacketHandler.write()</span> / <span class="type">writeNoCache()</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Threading Rule</div>
+                    <p>Any operation that accesses the <span class="type">Player</span> component (through <code>store.getComponent()</code>) <strong>must</strong> run on the world thread. Use <code>world.execute(() -> { ... })</code> to queue UI operations from other threads. Direct packet writes via <span class="type">PacketHandler</span> are always safe from any thread.</p>
+                </div>
+            </section>
+
+            <section id="packet-reference">
+                <h2>UI Packet Reference</h2>
+                <p>All UI rendering is driven by these network packets in the <code>com.hypixel.hytale.protocol.packets.interface_</code> package:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Packet</th>
+                            <th>ID</th>
+                            <th>Direction</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">Notification</span></td><td>212</td><td>S&rarr;C</td><td>Toast-style notification popup</td></tr>
+                        <tr><td><span class="type">KillFeedMessage</span></td><td>213</td><td>S&rarr;C</td><td>Kill feed entry</td></tr>
+                        <tr><td><span class="type">ShowEventTitle</span></td><td>214</td><td>S&rarr;C</td><td>Center-screen title display</td></tr>
+                        <tr><td><span class="type">HideEventTitle</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Fade out current title</td></tr>
+                        <tr><td><span class="type">SetPage</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Switch to a built-in page</td></tr>
+                        <tr><td><span class="type">CustomPage</span></td><td>218</td><td>S&rarr;C</td><td>Custom page with UI commands and event bindings</td></tr>
+                        <tr><td><span class="type">CustomPageEvent</span></td><td>&mdash;</td><td>C&rarr;S</td><td>Client event (Dismiss, Data, Acknowledge)</td></tr>
+                        <tr><td><span class="type">CustomHud</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Custom HUD overlay commands</td></tr>
+                        <tr><td><span class="type">UpdateVisibleHudComponents</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Set which HUD elements are visible</td></tr>
+                        <tr><td><span class="type">ResetUserInterfaceState</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Full UI state reset</td></tr>
+                        <tr><td><span class="type">ChatMessage</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Chat message in the HUD</td></tr>
+                        <tr><td><span class="type">OpenChatWithCommand</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Opens chat with a pre-filled command</td></tr>
+                        <tr><td><span class="type">UpdateLanguage</span></td><td>&mdash;</td><td>S&rarr;C</td><td>Switch client localization</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="examples">
+                <h2>Complete Examples</h2>
+
+                <h3>Example: Minigame HUD with Score and Timer</h3>
+                <pre><code><span class="kw">public class</span> <span class="type">MinigameHud</span> <span class="kw">extends</span> <span class="type">CustomUIHud</span> {
+    <span class="kw">private int</span> <span class="field">score</span> = <span class="num">0</span>;
+    <span class="kw">private int</span> <span class="field">timeRemaining</span> = <span class="num">300</span>;
+
+    <span class="kw">public</span> <span class="type">MinigameHud</span>(<span class="type">PlayerRef</span> <span class="field">playerRef</span>) {
+        <span class="kw">super</span>(<span class="field">playerRef</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">build</span>(<span class="type">UICommandBuilder</span> <span class="field">builder</span>) {
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"score.text"</span>,
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Score: "</span> + <span class="field">score</span>));
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"timer.text"</span>,
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="fn">formatTime</span>(<span class="field">timeRemaining</span>)));
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"score.visible"</span>, <span class="kw">true</span>);
+        <span class="field">builder</span>.<span class="fn">set</span>(<span class="str">"timer.visible"</span>, <span class="kw">true</span>);
+    }
+
+    <span class="kw">public void</span> <span class="fn">addScore</span>(<span class="kw">int</span> <span class="field">points</span>) {
+        <span class="kw">this</span>.<span class="field">score</span> += <span class="field">points</span>;
+        <span class="type">UICommandBuilder</span> <span class="field">b</span> = <span class="kw">new</span> <span class="type">UICommandBuilder</span>();
+        <span class="field">b</span>.<span class="fn">set</span>(<span class="str">"score.text"</span>,
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Score: "</span> + <span class="field">score</span>));
+        <span class="fn">update</span>(<span class="kw">false</span>, <span class="field">b</span>);
+    }
+
+    <span class="kw">public void</span> <span class="fn">tick</span>() {
+        <span class="field">timeRemaining</span>--;
+        <span class="type">UICommandBuilder</span> <span class="field">b</span> = <span class="kw">new</span> <span class="type">UICommandBuilder</span>();
+        <span class="field">b</span>.<span class="fn">set</span>(<span class="str">"timer.text"</span>,
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="fn">formatTime</span>(<span class="field">timeRemaining</span>)));
+        <span class="fn">update</span>(<span class="kw">false</span>, <span class="field">b</span>);
+    }
+
+    <span class="kw">private</span> <span class="type">String</span> <span class="fn">formatTime</span>(<span class="kw">int</span> <span class="field">seconds</span>) {
+        <span class="kw">return</span> <span class="type">String</span>.<span class="fn">format</span>(<span class="str">"%d:%02d"</span>,
+            <span class="field">seconds</span> / <span class="num">60</span>, <span class="field">seconds</span> % <span class="num">60</span>);
+    }
+}</code></pre>
+
+                <h3>Example: Cinematic Mode (Hide All UI)</h3>
+                <pre><code><span class="comment">// Enter cinematic mode</span>
+<span class="type">Player</span> <span class="field">player</span> = (<span class="type">Player</span>) <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="type">HudManager</span> <span class="field">hud</span> = <span class="field">player</span>.<span class="fn">getHudManager</span>();
+
+<span class="comment">// Hide everything</span>
+<span class="field">hud</span>.<span class="fn">setVisibleHudComponents</span>(<span class="field">playerRef</span>);
+
+<span class="comment">// Show title for dramatic effect</span>
+<span class="type">EventTitleUtil</span>.<span class="fn">showEventTitleToPlayer</span>(
+    <span class="field">playerRef</span>,
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Chapter 1"</span>),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"The Beginning"</span>),
+    <span class="kw">true</span>, <span class="kw">null</span>, <span class="num">6.0f</span>, <span class="num">2.0f</span>, <span class="num">2.0f</span>
+);
+
+<span class="comment">// Later, restore default HUD</span>
+<span class="field">hud</span>.<span class="fn">resetHud</span>(<span class="field">playerRef</span>);</code></pre>
+
+                <h3>Example: PvP Mode (Minimal HUD)</h3>
+                <pre><code><span class="comment">// Show only essential PvP components</span>
+<span class="field">hudManager</span>.<span class="fn">setVisibleHudComponents</span>(<span class="field">playerRef</span>,
+    <span class="type">HudComponent</span>.Health,
+    <span class="type">HudComponent</span>.Hotbar,
+    <span class="type">HudComponent</span>.Reticle,
+    <span class="type">HudComponent</span>.KillFeed,
+    <span class="type">HudComponent</span>.AmmoIndicator,
+    <span class="type">HudComponent</span>.Stamina,
+    <span class="type">HudComponent</span>.Notifications,
+    <span class="type">HudComponent</span>.EventTitle
+);</code></pre>
+
+                <h3>Example: Styled Notification Sequence</h3>
+                <pre><code><span class="type">PacketHandler</span> <span class="field">handler</span> = <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>();
+
+<span class="comment">// Achievement notification with icon</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">handler</span>,
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Achievement Unlocked!"</span>),
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"First Blood"</span>),
+    <span class="str">"Icons/Achievement"</span>,
+    <span class="type">NotificationStyle</span>.Success
+);
+
+<span class="comment">// Warning notification</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">handler</span>,
+    <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Low Health!"</span>),
+    <span class="type">NotificationStyle</span>.Warning
+);
+
+<span class="comment">// Item pickup with item metadata</span>
+<span class="type">NotificationUtil</span>.<span class="fn">sendNotification</span>(
+    <span class="field">handler</span>,
+    <span class="type">Message</span>.<span class="fn">translation</span>(<span class="str">"server.item.pickup"</span>),
+    <span class="type">Message</span>.<span class="fn">translation</span>(<span class="field">item</span>.<span class="fn">getTranslationKey</span>()),
+    <span class="field">itemWithAllMetadata</span>
+);</code></pre>
+            </section>
+
         </div>
     </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

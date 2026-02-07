@@ -7,53 +7,139 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
-
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1>Hytale Server</h1>
             <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
         </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html" class="active">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>Threading Model</h1>
-            <p class="page-desc">Critical threading rules for Hytale server plugin development. Violating these rules causes crashes.</p>
+            <p class="page-desc">Deep dive into the Hytale server threading architecture: the ticking thread, tick loop internals, thread pools, parallel entity processing, cross-thread communication, and critical safety rules.</p>
 
-            <!-- The Golden Rule -->
-            <section>
+            <!-- ============================================================ -->
+            <!-- THE GOLDEN RULE                                              -->
+            <!-- ============================================================ -->
+            <section id="the-golden-rule">
                 <h2>The Golden Rule</h2>
-                <div class="danger-box">
-                    <strong>⚠️ CRITICAL:</strong> ALL entity store operations MUST be called from the world thread. Calling Store methods from the wrong thread throws <code>IllegalStateException: Assert not in thread!</code>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>Each <span class="type">World</span> runs on its own <span class="type">TickingThread</span>. All entity and component operations on a world's <span class="type">Store</span> <strong>MUST</strong> happen on that world's ticking thread. Violating this rule causes race conditions, data corruption, or an immediate <code>AssertionError</code>.</p>
+                </div>
+
+                <p>The server enforces this constraint with <code>debugAssertInTickingThread()</code> calls scattered throughout the codebase. Any code path that touches the ECS store &mdash; reading components, writing components, adding entities, removing entities &mdash; will hit this assertion if called from the wrong thread:</p>
+
+                <pre><code><span class="kw">public void</span> <span class="fn">debugAssertInTickingThread</span>() {
+    <span class="kw">if</span> (!<span class="type">Thread</span>.<span class="fn">currentThread</span>().<span class="fn">equals</span>(<span class="kw">this</span>.<span class="field">thread</span>) &amp;&amp; <span class="kw">this</span>.<span class="field">thread</span> != <span class="kw">null</span>) {
+        <span class="kw">throw new</span> <span class="type">AssertionError</span>(<span class="str">"Assert not in ticking thread!"</span>);
+    }
+}</code></pre>
+
+                <p>This check appears in critical locations including:</p>
+                <ul>
+                    <li><code>Entity.remove()</code> &mdash; calls <code>world.debugAssertInTickingThread()</code> before removing from Store</li>
+                    <li><code>ChunkStore</code> operations &mdash; chunk loading, unloading, flag mutations</li>
+                    <li><code>WorldChunk</code> block modifications &mdash; all block state changes</li>
+                    <li><code>FloodLightCalculation</code> &mdash; lighting propagation updates</li>
+                    <li><code>TickingThread.setTps()</code> &mdash; TPS changes must happen on the thread itself</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Even <em>reading</em> components from the wrong thread is unsafe. The Store is not designed for concurrent reads. If another thread mutates the archetype layout while you read, you get undefined behavior &mdash; stale data, null pointers, or worse.</p>
                 </div>
             </section>
 
-            <!-- Thread Context Reference -->
-            <section>
-                <h2>Thread Context Reference</h2>
+            <!-- ============================================================ -->
+            <!-- THREAD ARCHITECTURE OVERVIEW                                 -->
+            <!-- ============================================================ -->
+            <section id="thread-architecture">
+                <h2>Thread Architecture Overview</h2>
+
+                <p>The Hytale server uses a multi-threaded architecture where each world is isolated on its own thread. Global services run on shared thread pools. Understanding which thread your code runs on is essential for writing correct plugins.</p>
+
+<div class="diagram">
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                         Hytale Server JVM                              &#9474;
+&#9474;                                                                        &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474;  World Ticking Threads (one per world)                          &#9474;  &#9474;
+&#9474;  &#9474;                                                                  &#9474;  &#9474;
+&#9474;  &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  World "lobby" &#9474;  &#9474; World "adventure"&#9474;  &#9474; World "arena" &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  30 TPS        &#9474;  &#9474; 30 TPS          &#9474;  &#9474; 30 TPS       &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  EntityStore   &#9474;  &#9474; EntityStore     &#9474;  &#9474; EntityStore  &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  ChunkStore    &#9474;  &#9474; ChunkStore      &#9474;  &#9474; ChunkStore   &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474;  Lighting      &#9474;  &#9474; Lighting        &#9474;  &#9474; Lighting     &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;                                                                        &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474;  Shared Thread Pools                                            &#9474;  &#9474;
+&#9474;  &#9474;                                                                  &#9474;  &#9474;
+&#9474;  &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474; ForkJoinPool      &#9474;  &#9474; SCHEDULED_EXECUTOR               &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474; (common pool)     &#9474;  &#9474; Single-thread scheduler          &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474; Commands, async   &#9474;  &#9474; Delayed tasks, periodic cleanup  &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9474; parallel systems  &#9474;  &#9474; Plugin scheduled futures          &#9474;  &#9474;  &#9474;
+&#9474;  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;                                                                        &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474; Utility Threads               &#9474;  &#9474; Netty I/O Threads              &#9474;  &#9474;
+&#9474;  &#9474; ForceTimeHighResolution (D)    &#9474;  &#9474; Network read/write             &#9474;  &#9474;
+&#9474;  &#9474; KeepAlive (non-daemon)         &#9474;  &#9474; Packet encode/decode           &#9474;  &#9474;
+&#9474;  &#9474; AssetMonitor (D)               &#9474;  &#9474; Connection management          &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Thread Context Reference</h3>
                 <p>Each context runs on a different thread. Understand where your code executes:</p>
                 <table class="reference-table">
                     <thead>
@@ -65,192 +151,775 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><code>CommandBase.executeSync()</code></td>
-                            <td>ForkJoinPool</td>
-                            <td class="no">❌ NO</td>
+                            <td>Event handlers</td>
+                            <td>World ticking thread</td>
+                            <td class="yes">YES</td>
                         </tr>
                         <tr>
                             <td><code>Interaction.firstRun()</code></td>
-                            <td>World thread</td>
-                            <td class="yes">✓ YES</td>
-                        </tr>
-                        <tr>
-                            <td>Event handlers</td>
-                            <td>World thread</td>
-                            <td class="yes">✓ YES</td>
+                            <td>World ticking thread</td>
+                            <td class="yes">YES</td>
                         </tr>
                         <tr>
                             <td><code>World.execute(Runnable)</code></td>
-                            <td>World thread</td>
-                            <td class="yes">✓ YES</td>
+                            <td>World ticking thread</td>
+                            <td class="yes">YES</td>
+                        </tr>
+                        <tr>
+                            <td><code>EntityTickingSystem.tick()</code></td>
+                            <td>World ticking thread</td>
+                            <td class="yes">YES</td>
+                        </tr>
+                        <tr>
+                            <td><code>CommandBase.executeSync()</code></td>
+                            <td>ForkJoinPool (common)</td>
+                            <td class="no">NO</td>
+                        </tr>
+                        <tr>
+                            <td><code>SCHEDULED_EXECUTOR</code> tasks</td>
+                            <td>Scheduler daemon thread</td>
+                            <td class="no">NO</td>
+                        </tr>
+                        <tr>
+                            <td>Netty packet handlers</td>
+                            <td>Netty I/O thread</td>
+                            <td class="no">NO</td>
+                        </tr>
+                        <tr>
+                            <td><code>CompletableFuture</code> callbacks</td>
+                            <td>Varies (caller or pool)</td>
+                            <td class="no">NO</td>
                         </tr>
                     </tbody>
                 </table>
             </section>
 
-            <!-- Thread-Safe Operations -->
-            <section>
-                <h2>Thread-Safe Operations</h2>
-                <p>These operations can be safely called from ANY thread:</p>
+            <!-- ============================================================ -->
+            <!-- TICKING THREAD ARCHITECTURE                                  -->
+            <!-- ============================================================ -->
+            <section id="ticking-thread">
+                <h2>TickingThread Architecture</h2>
+
+                <p><code><span class="type">TickingThread</span></code> is the abstract base class that powers every world's game loop. It implements <code><span class="type">Runnable</span></code> and manages its own <code><span class="type">Thread</span></code> instance with high-precision nanosecond timing. The <code><span class="type">World</span></code> class extends <code><span class="type">TickingThread</span></code>, which means each world <em>is</em> its own thread.</p>
+
+                <h3>Constants</h3>
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Constant</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>TPS</code></td>
+                            <td><span class="num">30</span></td>
+                            <td>Default ticks per second for all worlds</td>
+                        </tr>
+                        <tr>
+                            <td><code>NANOS_IN_ONE_SECOND</code></td>
+                            <td><span class="num">1,000,000,000</span></td>
+                            <td>Nanoseconds in one second</td>
+                        </tr>
+                        <tr>
+                            <td><code>NANOS_IN_ONE_MILLI</code></td>
+                            <td><span class="num">1,000,000</span></td>
+                            <td>Nanoseconds in one millisecond</td>
+                        </tr>
+                        <tr>
+                            <td><code>SLEEP_OFFSET</code></td>
+                            <td><span class="num">3,000,000</span> ns (3ms)</td>
+                            <td>Subtracted from sleep time to compensate for OS scheduling jitter. Mutable via <code>SleepOffsetCommand</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>tickStepNanos</code></td>
+                            <td><span class="num">33,333,333</span> ns (at 30 TPS)</td>
+                            <td>Computed as <code>1,000,000,000 / tps</code>. The target duration of one tick.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Constructor</h3>
+                <p>The constructor accepts a thread name, an optional TPS value (default 30), and a daemon flag. It computes <code>tickStepNanos</code> and initializes the performance metric tracker:</p>
+                <pre><code><span class="kw">public</span> <span class="fn">TickingThread</span>(<span class="type">String</span> <span class="field">threadName</span>, <span class="kw">int</span> <span class="field">tps</span>, <span class="kw">boolean</span> <span class="field">daemon</span>) {
+    <span class="kw">this</span>.<span class="field">threadName</span> = threadName;
+    <span class="kw">this</span>.<span class="field">tps</span> = tps;
+    <span class="kw">this</span>.<span class="field">tickStepNanos</span> = <span class="num">1000000000</span> / tps;
+
+    <span class="kw">this</span>.<span class="field">bufferedTickLengthMetricSet</span> = <span class="type">HistoricMetric</span>.<span class="fn">builder</span>(<span class="kw">this</span>.<span class="field">tickStepNanos</span>, <span class="type">TimeUnit</span>.NANOSECONDS)
+        .<span class="fn">addPeriod</span>(<span class="num">10L</span>, <span class="type">TimeUnit</span>.SECONDS)
+        .<span class="fn">addPeriod</span>(<span class="num">1L</span>, <span class="type">TimeUnit</span>.MINUTES)
+        .<span class="fn">addPeriod</span>(<span class="num">5L</span>, <span class="type">TimeUnit</span>.MINUTES)
+        .<span class="fn">build</span>();
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>TPS can be changed at runtime via <code>setTps(int)</code>, but it must be called from the ticking thread itself (enforced by <code>debugAssertInTickingThread()</code>). The valid range is 1 to 2048.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TICK LOOP IMPLEMENTATION                                     -->
+            <!-- ============================================================ -->
+            <section id="tick-loop">
+                <h2>Tick Loop Implementation</h2>
+
+                <p>The tick loop is the heart of every world. It runs continuously on a dedicated thread, calling <code>tick(float dt)</code> at the configured TPS. The implementation uses a hybrid spin-wait / sleep strategy for precise timing.</p>
+
+                <h3>Pseudocode</h3>
+                <pre><code><span class="fn">onStart</span>()                                        <span class="comment">// subclass initialization</span>
+<span class="field">startedFuture</span>.<span class="fn">complete</span>(<span class="kw">null</span>)                       <span class="comment">// signal that thread is ready</span>
+<span class="field">beforeTick</span> = <span class="type">System</span>.<span class="fn">nanoTime</span>() - <span class="field">tickStepNanos</span>     <span class="comment">// prime first tick immediately</span>
+
+<span class="kw">while</span> (thread not interrupted) {
+    <span class="kw">if</span> (not idle) {
+        <span class="comment">// SPIN-WAIT: busy-loop until enough time has passed</span>
+        <span class="kw">while</span> ((<span class="field">delta</span> = nanoTime() - <span class="field">beforeTick</span>) &lt; <span class="field">tickStepNanos</span>) {
+            <span class="type">Thread</span>.<span class="fn">onSpinWait</span>()         <span class="comment">// CPU hint to reduce power</span>
+        }
+    } <span class="kw">else</span> {
+        <span class="comment">// IDLE: just measure elapsed time (no spin-wait)</span>
+        <span class="field">delta</span> = nanoTime() - <span class="field">beforeTick</span>
+    }
+
+    <span class="field">beforeTick</span> = nanoTime()
+    <span class="fn">tick</span>((<span class="kw">float</span>)<span class="field">delta</span> / <span class="num">1_000_000_000.0f</span>)     <span class="comment">// delta as seconds</span>
+
+    <span class="field">tickLength</span> = nanoTime() - <span class="field">beforeTick</span>         <span class="comment">// measure tick cost</span>
+    <span class="field">metrics</span>.<span class="fn">add</span>(nanoTime(), <span class="field">tickLength</span>)          <span class="comment">// record for monitoring</span>
+
+    <span class="field">sleepLength</span> = <span class="field">tickStepNanos</span> - <span class="field">tickLength</span>
+    <span class="kw">if</span> (not idle) <span class="field">sleepLength</span> -= <span class="field">SLEEP_OFFSET</span>    <span class="comment">// compensate for OS jitter</span>
+    <span class="kw">if</span> (<span class="field">sleepLength</span> &gt; <span class="num">0</span>) <span class="type">Thread</span>.<span class="fn">sleep</span>(<span class="field">sleepLength</span> / <span class="num">1_000_000</span>)
+}</code></pre>
+
+                <h3>Key Behaviors</h3>
+                <ul>
+                    <li><strong>Spin-wait for active worlds</strong> &mdash; When <code>isIdle()</code> returns <code>false</code> (the default), the loop busy-waits using <code>Thread.onSpinWait()</code>. This provides sub-millisecond precision at the cost of CPU usage. The JVM intrinsic translates to x86 <code>PAUSE</code> or ARM <code>YIELD</code> instructions to reduce power consumption during the spin.</li>
+                    <li><strong>Sleep-based idle timing</strong> &mdash; When a world is idle (e.g., no players loaded), <code>isIdle()</code> returns <code>true</code> and the spin-wait is skipped entirely. The loop still runs but relies solely on <code>Thread.sleep()</code>, freeing CPU resources.</li>
+                    <li><strong>Adaptive sleep offset</strong> &mdash; The <code>SLEEP_OFFSET</code> (default 3ms) is subtracted from the sleep duration for non-idle worlds. This accounts for OS thread scheduling latency &mdash; <code>Thread.sleep()</code> typically oversleeps by 1-15ms depending on the platform. The spin-wait after sleep picks up the remaining time precisely.</li>
+                    <li><strong>Graceful shutdown</strong> &mdash; On thread interruption, the loop exits and calls <code>onShutdown()</code>. If the thread doesn't stop within 30 seconds, it is forcibly terminated with <code>Thread.stop()</code> (deprecated but used as a last resort).</li>
+                </ul>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>The <code>SLEEP_OFFSET</code> value can be tuned at runtime using the built-in <code>/sleepoffset</code> command. If your server runs on a platform with particularly poor timer resolution (e.g., some Windows configurations), increasing this value can reduce tick jitter.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- DELTA TIME                                                   -->
+            <!-- ============================================================ -->
+            <section id="delta-time">
+                <h2>Delta Time</h2>
+
+                <p>The <code>tick(float dt)</code> method receives the elapsed time since the last tick as a floating-point value in <strong>seconds</strong>. At the default 30 TPS, the nominal delta is approximately <span class="num">0.0333</span> seconds (33.3 milliseconds).</p>
+
+                <pre><code><span class="comment">// Inside TickingThread.run():</span>
+<span class="fn">tick</span>((<span class="kw">float</span>)<span class="field">delta</span> / <span class="num">1.0E9F</span>);  <span class="comment">// delta is nanoseconds, converted to seconds</span></code></pre>
+
+                <p>Delta time is used throughout the server for:</p>
+                <ul>
+                    <li><strong>Physics simulation</strong> &mdash; velocity integration, gravity application, projectile trajectories</li>
+                    <li><strong>Animation timing</strong> &mdash; model animation frame advancement</li>
+                    <li><strong>Cooldown calculations</strong> &mdash; ability cooldowns, attack timers, interaction delays</li>
+                    <li><strong>Spawn controllers</strong> &mdash; spawn rate calculations, wave timing</li>
+                    <li><strong>Stamina/effect systems</strong> &mdash; drain rates, regeneration, buff/debuff durations</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Delta time is <em>not</em> guaranteed to be exactly <code>1/TPS</code>. Under heavy load, ticks take longer and delta increases. Always multiply rates by <code>dt</code> rather than assuming a fixed time step. A system that moves an entity at 10 blocks/second should compute <code>position += velocity * dt</code>, not <code>position += velocity / 30</code>.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- PERFORMANCE MONITORING                                       -->
+            <!-- ============================================================ -->
+            <section id="performance-monitoring">
+                <h2>Performance Monitoring</h2>
+
+                <p>Every <code><span class="type">TickingThread</span></code> maintains a <code><span class="type">HistoricMetric</span></code> that tracks tick durations across three time windows:</p>
+
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Metric Bucket</th>
+                            <th>Window</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Short-term</td>
+                            <td><span class="num">10</span> seconds</td>
+                            <td>Detecting immediate lag spikes</td>
+                        </tr>
+                        <tr>
+                            <td>Medium-term</td>
+                            <td><span class="num">1</span> minute</td>
+                            <td>Identifying sustained performance issues</td>
+                        </tr>
+                        <tr>
+                            <td>Long-term</td>
+                            <td><span class="num">5</span> minutes</td>
+                            <td>Tracking overall server health trends</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>After each tick, the measured tick length (in nanoseconds) is added to the metric set:</p>
+                <pre><code><span class="kw">long</span> <span class="field">tickLength</span> = <span class="type">System</span>.<span class="fn">nanoTime</span>() - <span class="field">beforeTick</span>;
+<span class="kw">this</span>.<span class="field">bufferedTickLengthMetricSet</span>.<span class="fn">add</span>(<span class="type">System</span>.<span class="fn">nanoTime</span>(), <span class="field">tickLength</span>);</code></pre>
+
+                <p>The metric baseline is set to <code>tickStepNanos</code>, so values above the baseline indicate the tick took longer than allowed. Access the metrics via <code>getBufferedTickLengthMetricSet()</code> for custom monitoring tools or dashboards.</p>
+
+                <p>The <code>SCHEDULED_EXECUTOR</code> is used for periodic background tasks such as metric aggregation and cleanup operations:</p>
+                <pre><code><span class="kw">public static final</span> <span class="type">ScheduledExecutorService</span> <span class="field">SCHEDULED_EXECUTOR</span> =
+    <span class="type">Executors</span>.<span class="fn">newSingleThreadScheduledExecutor</span>(<span class="type">ThreadUtil</span>.<span class="fn">daemon</span>(<span class="str">"Scheduler"</span>));</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- THREAD POOLS                                                 -->
+            <!-- ============================================================ -->
+            <section id="thread-pools">
+                <h2>Thread Pools</h2>
+
+                <h3>ForkJoinPool with HytaleForkJoinThreadFactory</h3>
+                <p>The server configures the JVM's common <code><span class="type">ForkJoinPool</span></code> to use a custom thread factory at startup:</p>
+
+                <pre><code><span class="type">System</span>.<span class="fn">setProperty</span>(
+    <span class="str">"java.util.concurrent.ForkJoinPool.common.threadFactory"</span>,
+    <span class="type">HytaleForkJoinThreadFactory</span>.<span class="kw">class</span>.<span class="fn">getName</span>()
+);</code></pre>
+
+                <p>The factory creates <code><span class="type">WorkerThread</span></code> instances that extend <code><span class="type">ForkJoinWorkerThread</span></code> and implement <code><span class="type">InitStackThread</span></code>. Each worker captures its creation stack trace, enabling diagnostic tools to trace where threads were spawned:</p>
+
+                <pre><code><span class="kw">public class</span> <span class="type">HytaleForkJoinThreadFactory</span>
+    <span class="kw">implements</span> <span class="type">ForkJoinPool</span>.<span class="type">ForkJoinWorkerThreadFactory</span> {
+
+    <span class="kw">public</span> <span class="type">ForkJoinWorkerThread</span> <span class="fn">newThread</span>(<span class="type">ForkJoinPool</span> <span class="field">pool</span>) {
+        <span class="kw">return new</span> <span class="type">WorkerThread</span>(<span class="field">pool</span>);
+    }
+
+    <span class="kw">public static class</span> <span class="type">WorkerThread</span> <span class="kw">extends</span> <span class="type">ForkJoinWorkerThread</span>
+        <span class="kw">implements</span> <span class="type">InitStackThread</span> {
+
+        <span class="kw">private final</span> <span class="type">StackTraceElement</span>[] <span class="field">initStack</span>;
+
+        <span class="kw">protected</span> <span class="fn">WorkerThread</span>(<span class="type">ForkJoinPool</span> <span class="field">pool</span>) {
+            <span class="kw">super</span>(<span class="field">pool</span>);
+            <span class="kw">this</span>.<span class="field">initStack</span> = <span class="type">Thread</span>.<span class="fn">currentThread</span>().<span class="fn">getStackTrace</span>();
+        }
+    }
+}</code></pre>
+
+                <h3>CommandManager &amp; ForkJoinPool.commonPool()</h3>
+                <p>The <code>CommandManager</code> dispatches command execution onto <code>ForkJoinPool.commonPool()</code>. This means all <code>CommandBase.executeSync()</code> calls run on a ForkJoinPool worker &mdash; <strong>not</strong> the world thread. This is why you must use <code>world.execute()</code> to bridge back to the world thread from command handlers.</p>
+
+                <h3>SCHEDULED_EXECUTOR</h3>
+                <p>A single-threaded <code><span class="type">ScheduledExecutorService</span></code> named <code>"Scheduler"</code> runs as a daemon thread. It handles:</p>
+                <ul>
+                    <li>Delayed task execution (e.g., scheduled shutdowns with 3-second forced halt)</li>
+                    <li>Periodic cleanup tasks via <code>scheduleWithFixedDelay()</code></li>
+                    <li>Plugin-registered <code>ScheduledFuture</code> tasks</li>
+                </ul>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>Tasks on <code>SCHEDULED_EXECUTOR</code> run on a <strong>background scheduler thread</strong>, not any world thread. Never access Store operations directly from scheduled tasks. Always wrap them in <code>world.execute()</code>.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- ENTITY TICKING SYSTEM                                        -->
+            <!-- ============================================================ -->
+            <section id="entity-ticking-system">
+                <h2>EntityTickingSystem</h2>
+
+                <p><code><span class="type">EntityTickingSystem&lt;ECS_TYPE&gt;</span></code> is the base class for all ECS systems that process entities each tick. It extends <code><span class="type">ArchetypeTickingSystem</span></code> and provides infrastructure for both sequential and parallel entity processing.</p>
+
+                <h3>Core Method Signature</h3>
+                <pre><code><span class="kw">public abstract void</span> <span class="fn">tick</span>(
+    <span class="kw">float</span> <span class="field">dt</span>,                                <span class="comment">// delta time in seconds</span>
+    <span class="kw">int</span> <span class="field">index</span>,                               <span class="comment">// entity index in archetype chunk</span>
+    <span class="type">ArchetypeChunk</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="field">archetypeChunk</span>, <span class="comment">// data for matching entities</span>
+    <span class="type">Store</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="field">store</span>,                   <span class="comment">// the ECS store</span>
+    <span class="type">CommandBuffer</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="field">commandBuffer</span>    <span class="comment">// deferred operations buffer</span>
+);</code></pre>
+
+                <h3>Parallel Processing</h3>
+                <p>Systems can opt into parallel execution by overriding <code>isParallel()</code>. The framework provides two helper methods:</p>
+                <ul>
+                    <li><code><span class="fn">useParallel</span>(archetypeChunkSize, taskCount)</code> &mdash; Returns <code>true</code> when the task count is already non-zero or the chunk size exceeds <code>ParallelRangeTask.PARALLELISM</code></li>
+                    <li><code><span class="fn">maybeUseParallel</span>(archetypeChunkSize, taskCount)</code> &mdash; Currently always returns <code>false</code> (conservative default)</li>
+                </ul>
+
+                <p>When parallel execution is enabled, the system splits entity processing across <code><span class="type">ParallelRangeTask</span></code> workers via the ForkJoinPool:</p>
+
+<div class="diagram">
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  EntityTickingSystem.doTick()                            &#9474;
+&#9474;                                                          &#9474;
+&#9474;  isParallel() == false?                                  &#9474;
+&#9474;  &#9492;&#9472;&#9472; Sequential: for(0..size) tick(dt, i, chunk, store, cb) &#9474;
+&#9474;                                                          &#9474;
+&#9474;  isParallel() == true?                                   &#9474;
+&#9474;  &#9492;&#9472;&#9472; Split into ParallelRangeTask workers:                  &#9474;
+&#9474;      &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;      &#9474; Worker 0    &#9474; &#9474; Worker 1    &#9474; &#9474; Worker N    &#9474;  &#9474;
+&#9474;      &#9474; range 0..k  &#9474; &#9474; range k..m  &#9474; &#9474; range m..n  &#9474;  &#9474;
+&#9474;      &#9474; forked CB   &#9474; &#9474; forked CB   &#9474; &#9474; forked CB   &#9474;  &#9474;
+&#9474;      &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;              &#9474;               &#9474;               &#9474;          &#9474;
+&#9474;              &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;          &#9474;
+&#9474;                      &#9474;                                  &#9474;
+&#9474;          mergeParallel(commandBuffer)                     &#9474;
+&#9474;          &#9492;&#9472;&#9472; All forked buffers merged back                  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>SystemTaskData</h3>
+                <p>The <code><span class="type">SystemTaskData&lt;ECS_TYPE&gt;</span></code> inner class implements <code><span class="type">IntConsumer</span></code> and manages per-worker state during parallel execution. Each worker gets its own forked <code><span class="type">CommandBuffer</span></code> that is merged back into the main buffer after all workers complete:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">accept</span>(<span class="kw">int</span> <span class="field">index</span>) {
+    <span class="kw">assert</span> <span class="kw">this</span>.<span class="field">commandBuffer</span>.<span class="fn">setThread</span>();
+    <span class="kw">this</span>.<span class="field">system</span>.<span class="fn">tick</span>(<span class="kw">this</span>.<span class="field">dt</span>, <span class="field">index</span>, <span class="kw">this</span>.<span class="field">archetypeChunk</span>, <span class="kw">this</span>.<span class="field">store</span>, <span class="kw">this</span>.<span class="field">commandBuffer</span>);
+}</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- COMMAND BUFFER PATTERN                                       -->
+            <!-- ============================================================ -->
+            <section id="command-buffer">
+                <h2>CommandBuffer Pattern</h2>
+
+                <p>The <code><span class="type">CommandBuffer&lt;ECS_TYPE&gt;</span></code> is a critical thread-safety mechanism in the ECS. It queues structural entity operations (add/remove entity, add/remove component) so they can be applied on the main ticking thread after all systems have finished processing for the current tick.</p>
+
+                <h3>Why It Exists</h3>
+                <p>When a system processes entities in parallel, directly modifying the Store would cause data races. The CommandBuffer collects all deferred mutations and applies them atomically:</p>
+
+                <ol>
+                    <li>Systems process entities, writing deferred operations into forked CommandBuffers</li>
+                    <li>After parallel execution completes, forked buffers are merged via <code>mergeParallel(commandBuffer)</code></li>
+                    <li>The main ticking thread flushes the CommandBuffer, applying all queued operations to the Store</li>
+                </ol>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>Even for sequential (non-parallel) systems, the CommandBuffer is used. This ensures that structural changes (like removing an entity) don't invalidate iteration state mid-tick.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- THREAD UTILITIES                                             -->
+            <!-- ============================================================ -->
+            <section id="thread-utilities">
+                <h2>Thread Utilities</h2>
+
+                <p>The <code><span class="type">ThreadUtil</span></code> class provides several utility methods for thread management:</p>
+
+                <h3>forceTimeHighResolution()</h3>
+                <p>Creates a daemon thread named <code>"ForceTimeHighResolution"</code> that sleeps indefinitely. On Windows, the existence of a sleeping thread forces the OS to switch to a high-resolution timer mode (1ms instead of the default 15.6ms). Without this, <code>Thread.sleep()</code> granularity is extremely poor:</p>
+                <pre><code><span class="kw">public static void</span> <span class="fn">forceTimeHighResolution</span>() {
+    <span class="type">Thread</span> <span class="field">t</span> = <span class="kw">new</span> <span class="type">Thread</span>(() -&gt; {
+        <span class="kw">try</span> {
+            <span class="kw">while</span> (!<span class="type">Thread</span>.<span class="fn">interrupted</span>())
+                <span class="type">Thread</span>.<span class="fn">sleep</span>(<span class="type">Long</span>.MAX_VALUE);
+        } <span class="kw">catch</span> (<span class="type">InterruptedException</span> <span class="field">ignored</span>) {
+            <span class="type">Thread</span>.<span class="fn">currentThread</span>().<span class="fn">interrupt</span>();
+        }
+    }, <span class="str">"ForceTimeHighResolution"</span>);
+    <span class="field">t</span>.<span class="fn">setDaemon</span>(<span class="kw">true</span>);
+    <span class="field">t</span>.<span class="fn">start</span>();
+}</code></pre>
+
+                <h3>createKeepAliveThread(Semaphore)</h3>
+                <p>Creates a <strong>non-daemon</strong> thread named <code>"KeepAlive"</code> that blocks on the given semaphore. This prevents the JVM from exiting when all other threads are daemons. The server releases the semaphore during shutdown to allow the keep-alive thread to terminate:</p>
+                <pre><code><span class="kw">public static void</span> <span class="fn">createKeepAliveThread</span>(<span class="type">Semaphore</span> <span class="field">alive</span>) {
+    <span class="type">Thread</span> <span class="field">t</span> = <span class="kw">new</span> <span class="type">Thread</span>(() -&gt; {
+        <span class="kw">try</span> { <span class="field">alive</span>.<span class="fn">acquire</span>(); }
+        <span class="kw">catch</span> (<span class="type">InterruptedException</span> <span class="field">ignored</span>) { <span class="type">Thread</span>.<span class="fn">currentThread</span>().<span class="fn">interrupt</span>(); }
+    }, <span class="str">"KeepAlive"</span>);
+    <span class="field">t</span>.<span class="fn">setDaemon</span>(<span class="kw">false</span>);   <span class="comment">// non-daemon: keeps JVM alive</span>
+    <span class="field">t</span>.<span class="fn">start</span>();
+}</code></pre>
+
+                <h3>ThreadWatcher (SecurityManager)</h3>
+                <p><code><span class="type">ThreadWatcher</span></code> extends <code><span class="type">SecurityManager</span></code> to intercept thread creation. It accepts a predicate and an action &mdash; when a new thread group is accessed by a thread matching the predicate, the action fires. This allows the server to monitor and log rogue thread creation by plugins:</p>
+                <pre><code><span class="kw">class</span> <span class="type">ThreadWatcher</span> <span class="kw">extends</span> <span class="type">SecurityManager</span> {
+    <span class="kw">private final</span> <span class="type">Predicate</span>&lt;<span class="type">Thread</span>&gt; <span class="field">predicate</span>;
+    <span class="kw">private final</span> <span class="type">Consumer</span>&lt;<span class="type">Thread</span>&gt; <span class="field">action</span>;
+
+    <span class="kw">public void</span> <span class="fn">checkAccess</span>(<span class="type">ThreadGroup</span> <span class="field">g</span>) {
+        <span class="type">Thread</span> <span class="field">creatingThread</span> = <span class="type">Thread</span>.<span class="fn">currentThread</span>();
+        <span class="kw">if</span> (<span class="kw">this</span>.<span class="field">predicate</span>.<span class="fn">test</span>(<span class="field">creatingThread</span>)) {
+            <span class="kw">this</span>.<span class="field">action</span>.<span class="fn">accept</span>(<span class="field">creatingThread</span>);
+        }
+    }
+}</code></pre>
+
+                <h3>Factory Methods</h3>
+                <ul>
+                    <li><code><span class="fn">daemon</span>(<span class="type">String</span> name)</code> &mdash; Returns a <code>ThreadFactory</code> that creates daemon threads with the given name</li>
+                    <li><code><span class="fn">daemonCounted</span>(<span class="type">String</span> name)</code> &mdash; Same, but appends an <code>AtomicLong</code> counter to the name (use <code>%d</code> in the format string)</li>
+                    <li><code><span class="fn">newCachedThreadPool</span>(<span class="kw">int</span> max, <span class="type">ThreadFactory</span>)</code> &mdash; Creates a cached <code>ThreadPoolExecutor</code> with the given maximum size and 60-second keep-alive</li>
+                </ul>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- TASK REGISTRY                                                -->
+            <!-- ============================================================ -->
+            <section id="task-registry">
+                <h2>Task Registry</h2>
+
+                <p>Plugins can register asynchronous tasks with the server so they are automatically cancelled on plugin shutdown. The task registry accepts both <code><span class="type">CompletableFuture&lt;Void&gt;</span></code> and <code><span class="type">ScheduledFuture&lt;Void&gt;</span></code>:</p>
+
+                <pre><code><span class="comment">// Register a one-shot async task</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">Void</span>&gt; <span class="field">task</span> = <span class="type">CompletableFuture</span>.<span class="fn">runAsync</span>(() -&gt; {
+    <span class="comment">// expensive computation</span>
+});
+<span class="fn">registerTask</span>(<span class="field">task</span>);
+
+<span class="comment">// Register a repeating scheduled task</span>
+<span class="type">ScheduledFuture</span>&lt;<span class="type">Void</span>&gt; <span class="field">repeating</span> = <span class="type">HytaleServer</span>.<span class="field">SCHEDULED_EXECUTOR</span>.<span class="fn">scheduleAtFixedRate</span>(
+    () -&gt; world.<span class="fn">execute</span>(() -&gt; { <span class="comment">/* Store ops */</span> }),
+    <span class="num">0</span>, <span class="num">5</span>, <span class="type">TimeUnit</span>.SECONDS
+);
+<span class="fn">registerTask</span>(<span class="field">repeating</span>);</code></pre>
+
+                <p>When the plugin is disabled, all registered tasks are cancelled. This prevents orphaned background tasks from continuing to run after a plugin is unloaded. Precondition checks ensure tasks are not null and are registered only once.</p>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- CROSS-THREAD COMMUNICATION                                   -->
+            <!-- ============================================================ -->
+            <section id="cross-thread-communication">
+                <h2>Cross-Thread Communication</h2>
+
+                <p>Since each world runs on its own thread, the server provides several thread-safe primitives for cross-thread communication:</p>
+
+                <h3>PlayerRef &mdash; Thread-Safe Player Handle</h3>
+                <p><code><span class="type">PlayerRef</span></code> is the primary mechanism for safely interacting with players from any thread. Unlike Store-backed components, PlayerRef methods are designed for concurrent access:</p>
+                <ul>
+                    <li><code>playerRef.getTransform()</code> &mdash; position and rotation (snapshot)</li>
+                    <li><code>playerRef.getUsername()</code> &mdash; player name</li>
+                    <li><code>playerRef.getUuid()</code> &mdash; UUID</li>
+                    <li><code>playerRef.getWorld()</code> &mdash; current world reference</li>
+                    <li><code>playerRef.sendMessage(Message)</code> &mdash; sends a chat message</li>
+                </ul>
+
+                <h3>CompletableFuture for Async Results</h3>
+                <p><code><span class="type">CompletableFuture</span></code> is used extensively for async operations that produce results. The <code>TickingThread.start()</code> method itself returns a <code>CompletableFuture&lt;Void&gt;</code> that completes when the thread has initialized:</p>
+                <pre><code><span class="type">CompletableFuture</span>&lt;<span class="type">Void</span>&gt; <span class="field">started</span> = world.<span class="fn">start</span>();
+<span class="field">started</span>.<span class="fn">thenRun</span>(() -&gt; {
+    <span class="comment">// World thread is now running</span>
+    <span class="type">LOGGER</span>.<span class="fn">info</span>(<span class="str">"World started successfully"</span>);
+});</code></pre>
+
+                <h3>StampedLock for Chunk Access</h3>
+                <p><code><span class="type">StampedLock</span></code> is used for concurrent access to chunk flag data, providing optimistic read locking that allows non-blocking reads in the common case while still ensuring write safety.</p>
+
+                <h3>Concurrent Data Structures</h3>
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Structure</th>
+                            <th>Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">ConcurrentHashMap</span></code></td>
+                            <td>UUID-to-player lookups, NetworkID mappings, session tracking</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">AtomicInteger</span></code></td>
+                            <td>Network ID generation (<code>takeNextNetworkId()</code>), connection counters</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">AtomicBoolean</span></code></td>
+                            <td>Entity removal flags (<code>wasRemoved</code>), shutdown state (<code>needsShutdown</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">StampedLock</span></code></td>
+                            <td>Chunk flag access, cache bucket locking</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- COMMON PATTERNS                                              -->
+            <!-- ============================================================ -->
+            <section id="common-patterns">
+                <h2>Common Patterns</h2>
+
+                <h3>Running Code on the World Thread</h3>
+                <p><code>World</code> extends <code>TickingThread</code> which implements <code>Executor</code>. The <code>world.execute(Runnable)</code> method queues code to run on the world's tick thread:</p>
+                <pre><code>world.<span class="fn">execute</span>(() -&gt; {
+    <span class="comment">// This runs on the world's ticking thread</span>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    <span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">entityRef</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+    );
+    <span class="comment">// Safe to read and write components here</span>
+});</code></pre>
+
+                <h3>Scheduling a Delayed Task</h3>
+                <p>For delayed work that requires Store access, schedule on the executor then dispatch to the world thread:</p>
+                <pre><code><span class="type">HytaleServer</span>.<span class="field">SCHEDULED_EXECUTOR</span>.<span class="fn">schedule</span>(() -&gt; {
+    world.<span class="fn">execute</span>(() -&gt; {
+        <span class="comment">// Runs on world thread after 1 second delay</span>
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+        <span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">entityRef</span>, <span class="type">RemoveReason</span>.REMOVE);
+    });
+}, <span class="num">1000</span>, <span class="type">TimeUnit</span>.MILLISECONDS);</code></pre>
+
+                <h3>Safe Cross-World Player Operations</h3>
+                <p>Use <code>PlayerRef</code> for thread-safe reads, then schedule onto the target world for mutations:</p>
+                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> <span class="field">ctx</span>) {
+    <span class="comment">// Get thread-safe player handle (safe from any thread)</span>
+    <span class="type">PlayerRef</span> <span class="field">playerRef</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">ctx</span>.<span class="fn">sender</span>().<span class="fn">getUuid</span>());
+    <span class="type">String</span> <span class="field">name</span> = <span class="field">playerRef</span>.<span class="fn">getUsername</span>();         <span class="comment">// thread-safe</span>
+    <span class="type">Vector3d</span> <span class="field">pos</span> = <span class="field">playerRef</span>.<span class="fn">getTransform</span>().<span class="fn">getPosition</span>(); <span class="comment">// thread-safe</span>
+
+    <span class="comment">// Schedule Store operations on the world thread</span>
+    <span class="type">World</span> <span class="field">world</span> = <span class="field">playerRef</span>.<span class="fn">getWorld</span>();
+    <span class="field">world</span>.<span class="fn">execute</span>(() -&gt; {
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+        <span class="comment">// Now safe to mutate components</span>
+    });
+}</code></pre>
+
+                <h3>Async Chunk Loading with Future</h3>
+                <p>Entity's <code>toHolder()</code> method demonstrates the pattern of using <code>CompletableFuture.supplyAsync</code> with the world as an executor to safely bridge threads:</p>
+                <pre><code><span class="comment">// From Entity.toHolder() -- if called off the world thread,</span>
+<span class="comment">// dispatches to the world thread and blocks for the result:</span>
+<span class="kw">if</span> (!<span class="kw">this</span>.<span class="field">world</span>.<span class="fn">isInThread</span>()) {
+    <span class="kw">return</span> <span class="type">CompletableFuture</span>.&lt;<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt;&gt;<span class="fn">supplyAsync</span>(
+        <span class="kw">this</span>::toHolder,
+        (<span class="type">Executor</span>) <span class="kw">this</span>.<span class="field">world</span>
+    ).<span class="fn">join</span>();
+}</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Calling <code>.join()</code> or <code>.get()</code> on a future from the world thread will <strong>deadlock</strong> if the future itself needs to run on the same world thread. Only block on futures from threads that are not the target executor.</p>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- THREAD-SAFE OPERATIONS                                       -->
+            <!-- ============================================================ -->
+            <section id="thread-safe-operations">
+                <h2>Thread-Safe Operations Reference</h2>
+
+                <p>These operations can be safely called from <strong>any</strong> thread:</p>
 
                 <h3>PlayerRef Methods</h3>
                 <ul>
-                    <li><code>playerRef.getTransform()</code> — position/rotation</li>
-                    <li><code>playerRef.getUsername()</code> — player name</li>
-                    <li><code>playerRef.getUuid()</code> — UUID</li>
-                    <li><code>playerRef.sendMessage(Message)</code> — sends chat message</li>
+                    <li><code>playerRef.getTransform()</code> &mdash; position/rotation snapshot</li>
+                    <li><code>playerRef.getUsername()</code> &mdash; player name</li>
+                    <li><code>playerRef.getUuid()</code> &mdash; UUID</li>
+                    <li><code>playerRef.sendMessage(Message)</code> &mdash; sends chat message</li>
                 </ul>
 
                 <h3>Other Thread-Safe APIs</h3>
                 <ul>
-                    <li><code>PacketHandler.writeNoCache()</code> — send packets</li>
-                    <li><code>PermissionsModule.get()</code> methods</li>
-                    <li><code>EventTitleUtil.showEventTitleToPlayer()</code></li>
-                    <li><code>NotificationUtil.sendNotification()</code></li>
+                    <li><code>PacketHandler.writeNoCache()</code> &mdash; send packets directly</li>
+                    <li><code>PermissionsModule.get()</code> methods &mdash; permission checks</li>
+                    <li><code>EventTitleUtil.showEventTitleToPlayer()</code> &mdash; display titles</li>
+                    <li><code>NotificationUtil.sendNotification()</code> &mdash; send notifications</li>
+                    <li><code>Universe.get().getPlayer(uuid)</code> &mdash; player lookup</li>
+                    <li><code>Universe.get().getWorld(name)</code> &mdash; world lookup</li>
                 </ul>
-            </section>
 
-            <!-- Getting Player Data from Commands -->
-            <section>
-                <h2>Getting Player Data from Commands</h2>
-                <p>Commands execute on a ForkJoinPool thread, not the world thread. Here are two recommended approaches:</p>
-
-                <h3>Approach 1 (Recommended): Use Thread-Safe PlayerRef + Schedule Store Ops</h3>
-                <p>Get thread-safe data directly, then schedule Store operations on the world thread:</p>
-                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
-    <span class="type">PlayerRef</span> playerRef = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(ctx.<span class="fn">sender</span>().<span class="fn">getUuid</span>());
-    <span class="type">Vector3d</span> position = playerRef.<span class="fn">getTransform</span>().<span class="fn">getPosition</span>(); <span class="comment">// thread-safe</span>
-
-    <span class="type">World</span> world = playerRef.<span class="fn">getWorld</span>();
-    world.<span class="fn">execute</span>(() -> {
-        <span class="comment">// Store operations here — now on world thread</span>
-        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
-        <span class="comment">// ...</span>
-    });
-}</code></pre>
-
-                <h3>Approach 2: Schedule Everything on World Thread</h3>
-                <p>If you need extensive Store access, schedule the entire operation:</p>
-                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
-    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
-    <span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
-    world.<span class="fn">execute</span>(() -> {
-        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
-        <span class="type">TransformComponent</span> transform = store.<span class="fn">getComponent</span>(ref, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>());
-        <span class="comment">// all Store ops safe here</span>
-    });
-}</code></pre>
-            </section>
-
-            <!-- World.execute() Pattern -->
-            <section>
-                <h2>World.execute() Pattern</h2>
-                <p><code>World</code> extends <code>TickingThread</code> which implements <code>Executor</code>. The <code>world.execute(Runnable)</code> method queues code to run on the world's tick thread, making it safe for all Store operations.</p>
-                <p>This is the standard way to bridge from any thread back to the world thread:</p>
-                <pre><code>world.<span class="fn">execute</span>(() -> {
-    <span class="comment">// Safe to access Store here</span>
-    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
-});</code></pre>
-            </section>
-
-            <!-- Delayed Execution -->
-            <section>
-                <h2>Delayed Execution</h2>
-                <p>For delayed work that requires Store access, use the scheduled executor then dispatch to the world thread:</p>
-                <pre><code><span class="type">HytaleServer</span>.<span class="fn">SCHEDULED_EXECUTOR</span>.<span class="fn">schedule</span>(() -> {
-    world.<span class="fn">execute</span>(() -> {
-        <span class="comment">// runs on world thread after delay</span>
-        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
-    });
-}, <span class="str">1000</span>, <span class="type">TimeUnit</span>.MILLISECONDS);</code></pre>
-
-                <div class="warning-box">
-                    <strong>⚠️ WARNING:</strong> <code>HytaleServer.SCHEDULED_EXECUTOR</code> runs on a background thread, NOT the world thread. Always wrap Store operations in <code>world.execute()</code>.
-                </div>
-            </section>
-
-            <!-- Common Mistakes -->
-            <section>
-                <h2>Common Mistakes</h2>
-                <p>Here are dangerous patterns to avoid:</p>
-
-                <h3>❌ WRONG: Accessing Store from Command Thread</h3>
-                <p>This will crash with <code>IllegalStateException</code>:</p>
-                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
-    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
-    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = ref.<span class="fn">getStore</span>();  <span class="comment">// CRASH!</span>
-}</code></pre>
-
-                <h3>✓ RIGHT: Schedule on World Thread</h3>
-                <p>This is safe:</p>
-                <pre><code><span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> ctx) {
-    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; ref = ctx.<span class="fn">senderAsPlayerRef</span>();
-    <span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
-    world.<span class="fn">execute</span>(() -> {
-        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>(); <span class="comment">// Safe!</span>
-    });
-}</code></pre>
-            </section>
-
-            <!-- Store Operation Reference -->
-            <section>
-                <h2>Store Operation Reference</h2>
-                <p>All of these operations MUST be called from the world thread:</p>
+                <h3>Store Operations (World Thread ONLY)</h3>
+                <p>All of these operations MUST be called from the world's ticking thread:</p>
                 <table class="reference-table">
                     <thead>
                         <tr>
                             <th>Operation</th>
                             <th>Description</th>
-                            <th>Thread</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><code>Store.getComponent()</code></td>
-                            <td>Get component</td>
-                            <td>World thread</td>
+                            <td>Read a component from an entity</td>
                         </tr>
                         <tr>
                             <td><code>Store.ensureAndGetComponent()</code></td>
-                            <td>Get or create</td>
-                            <td>World thread</td>
+                            <td>Get or create a component</td>
                         </tr>
                         <tr>
                             <td><code>Store.addEntity()</code></td>
-                            <td>Spawn entity</td>
-                            <td>World thread</td>
+                            <td>Spawn an entity into the world</td>
                         </tr>
                         <tr>
                             <td><code>Store.removeEntity()</code></td>
-                            <td>Despawn entity</td>
-                            <td>World thread</td>
+                            <td>Despawn an entity from the world</td>
                         </tr>
                         <tr>
                             <td><code>Store.hasComponent()</code></td>
-                            <td>Check component</td>
-                            <td>World thread</td>
+                            <td>Check if entity has a component</td>
                         </tr>
                         <tr>
                             <td><code>Store.putComponent()</code></td>
-                            <td>Add/update component</td>
-                            <td>World thread</td>
+                            <td>Add or update a component</td>
                         </tr>
                         <tr>
                             <td><code>Store.removeComponent()</code></td>
-                            <td>Remove component</td>
-                            <td>World thread</td>
+                            <td>Remove a component from an entity</td>
+                        </tr>
+                        <tr>
+                            <td><code>Store.getArchetype()</code></td>
+                            <td>Get the archetype of an entity</td>
                         </tr>
                     </tbody>
                 </table>
             </section>
 
+            <!-- ============================================================ -->
+            <!-- COMMON MISTAKES                                              -->
+            <!-- ============================================================ -->
+            <section id="common-mistakes">
+                <h2>Common Mistakes</h2>
+
+                <h3>Accessing Store from Command Thread</h3>
+                <p>This is the most common threading violation. Commands run on the ForkJoinPool, not the world thread:</p>
+                <pre><code><span class="comment">// WRONG: This will throw AssertionError!</span>
+<span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> <span class="field">ctx</span>) {
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">ctx</span>.<span class="fn">senderAsPlayerRef</span>();
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">ref</span>.<span class="fn">getStore</span>();  <span class="comment">// CRASH!</span>
+}</code></pre>
+
+                <pre><code><span class="comment">// RIGHT: Schedule on the world thread</span>
+<span class="kw">public void</span> <span class="fn">executeSync</span>(<span class="type">CommandContext</span> <span class="field">ctx</span>) {
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">ctx</span>.<span class="fn">senderAsPlayerRef</span>();
+    <span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+    <span class="field">world</span>.<span class="fn">execute</span>(() -&gt; {
+        <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+        <span class="comment">// Safe!</span>
+    });
+}</code></pre>
+
+                <h3>Blocking the World Thread</h3>
+                <pre><code><span class="comment">// WRONG: Blocks the tick thread, causing lag spikes</span>
+world.<span class="fn">execute</span>(() -&gt; {
+    <span class="type">Thread</span>.<span class="fn">sleep</span>(<span class="num">5000</span>); <span class="comment">// 5 seconds of frozen ticks!</span>
+});</code></pre>
+
+                <pre><code><span class="comment">// RIGHT: Use scheduled executor for delays</span>
+<span class="type">HytaleServer</span>.<span class="field">SCHEDULED_EXECUTOR</span>.<span class="fn">schedule</span>(() -&gt; {
+    world.<span class="fn">execute</span>(() -&gt; { <span class="comment">/* delayed Store ops */</span> });
+}, <span class="num">5</span>, <span class="type">TimeUnit</span>.SECONDS);</code></pre>
+
+                <h3>Deadlocking with CompletableFuture</h3>
+                <pre><code><span class="comment">// WRONG: Deadlock if called from the world thread</span>
+world.<span class="fn">execute</span>(() -&gt; {
+    <span class="type">CompletableFuture</span>.<span class="fn">supplyAsync</span>(() -&gt; computeResult(), (<span class="type">Executor</span>) world).<span class="fn">join</span>();
+    <span class="comment">// .join() blocks the world thread, but the future needs</span>
+    <span class="comment">// the world thread to execute -- DEADLOCK!</span>
+});</code></pre>
+
+                <h3>Forgetting to Register Tasks</h3>
+                <pre><code><span class="comment">// WRONG: Orphaned task continues after plugin unload</span>
+<span class="type">HytaleServer</span>.<span class="field">SCHEDULED_EXECUTOR</span>.<span class="fn">scheduleAtFixedRate</span>(
+    () -&gt; doSomething(), <span class="num">0</span>, <span class="num">10</span>, <span class="type">TimeUnit</span>.SECONDS
+);
+
+<span class="comment">// RIGHT: Register the task for auto-cleanup</span>
+<span class="type">ScheduledFuture</span>&lt;?&gt; <span class="field">task</span> = <span class="type">HytaleServer</span>.<span class="field">SCHEDULED_EXECUTOR</span>.<span class="fn">scheduleAtFixedRate</span>(
+    () -&gt; doSomething(), <span class="num">0</span>, <span class="num">10</span>, <span class="type">TimeUnit</span>.SECONDS
+);
+<span class="fn">registerTask</span>(<span class="field">task</span>);</code></pre>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- LIFECYCLE                                                    -->
+            <!-- ============================================================ -->
+            <section id="lifecycle">
+                <h2>TickingThread Lifecycle</h2>
+
+                <p>Understanding the lifecycle of a ticking thread is important for initialization and cleanup logic.</p>
+
+<div class="diagram">
+  start()
+    &#9474;
+    &#9474;  Creates Thread, sets daemon flag
+    &#9474;  Thread.start() invoked
+    &#9474;  Returns CompletableFuture&lt;Void&gt;
+    &#9660;
+  run()
+    &#9474;
+    &#9474;  onStart()                        -- subclass init
+    &#9474;  startedFuture.complete(null)      -- signal callers
+    &#9474;
+    &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+    &#9474;  &#9474;  TICK LOOP                                 &#9474;
+    &#9474;  &#9474;  spin-wait / measure delta / tick(dt)      &#9474;
+    &#9474;  &#9474;  measure tickLength / sleep remainder      &#9474;
+    &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+    &#9474;
+    &#9474;  InterruptedException or thread.interrupt()
+    &#9660;
+  onShutdown()                       -- subclass cleanup
+    &#9474;
+    &#9660;
+  Thread exits
+</div>
+
+                <p>The <code>stop()</code> method provides graceful shutdown with a 30-second timeout:</p>
+                <ol>
+                    <li>Repeatedly calls <code>thread.interrupt()</code> and <code>thread.join(tickStepNanos)</code></li>
+                    <li>If the thread hasn't stopped after 30 seconds, logs the stack trace and calls <code>thread.stop()</code></li>
+                    <li>If <code>needsShutdown</code> is still true, calls <code>onShutdown()</code> to ensure cleanup runs</li>
+                </ol>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- SUMMARY                                                      -->
+            <!-- ============================================================ -->
+            <section id="summary">
+                <h2>Summary</h2>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>When in doubt, check which thread your code runs on with <code>world.isInThread()</code>. If it returns <code>false</code>, wrap your Store operations in <code>world.execute()</code>.</p>
+                </div>
+
+                <p>Key takeaways for plugin developers:</p>
+                <ol>
+                    <li><strong>One thread per world.</strong> Each World is a TickingThread. Store operations are only safe on the owning thread.</li>
+                    <li><strong>Use <code>world.execute()</code> to bridge threads.</strong> Commands, scheduled tasks, and network handlers all run off the world thread. Always dispatch back.</li>
+                    <li><strong>Use <code>PlayerRef</code> for thread-safe reads.</strong> Username, UUID, transform, and messaging are safe from any thread.</li>
+                    <li><strong>Never block the world thread.</strong> Use <code>SCHEDULED_EXECUTOR</code> for delays, <code>CompletableFuture</code> for async work.</li>
+                    <li><strong>Register your tasks.</strong> Use <code>registerTask()</code> so background work is cleaned up when your plugin unloads.</li>
+                    <li><strong>CommandBuffer for parallel systems.</strong> Fork buffers for parallel workers, merge back to main after completion.</li>
+                    <li><strong>30 TPS default.</strong> Each tick targets 33.3ms. Monitor performance via the 10s/1min/5min metric buckets.</li>
+                </ol>
+            </section>
+
         </div>
     </main>
 
-    <script>
-        document.getElementById('menuToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('open');
-        });
-    </script>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

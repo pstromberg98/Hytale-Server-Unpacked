@@ -7,246 +7,927 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1>Hytale Server</h1>
             <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
         </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html" class="active">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>Worlds &amp; Universe</h1>
-            <p class="page-desc">How the Hytale server organizes worlds, the Universe singleton, and cross-world operations.</p>
+            <p class="page-desc">The Universe singleton, World lifecycle and threading, ChunkStore and EntityStore ECS, chunk loading states, cross-world operations, and thread-safe player access.</p>
 
-            <h2>The Universe Singleton</h2>
-            <p><span class="type">Universe</span> is the global entry point for accessing worlds, players, and server state. Every server has exactly one Universe instance, accessible via <span class="fn">Universe.get()</span>.</p>
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>The Hytale server organizes all gameplay state into a strict hierarchy: a single <span class="type">Universe</span> contains multiple <span class="type">World</span> instances, each of which owns a <span class="type">ChunkStore</span> (for terrain/chunk data) and an <span class="type">EntityStore</span> (for mobile entities). Every world runs on its own dedicated <span class="type">TickingThread</span>, making the world the fundamental unit of thread isolation.</p>
+                <p>This design means that all entity and chunk operations within a single world are serialized and safe, but <strong>cross-world operations require explicit coordination</strong> via the <code>world.execute()</code> executor pattern.</p>
 
-            <h3>Key Methods</h3>
-            <div class="code-block">
-<pre><span class="type">Universe</span> universe = <span class="type">Universe</span>.<span class="fn">get</span>();
+<div class="diagram">HytaleServer
+ └─ Universe (singleton)
+     ├─ players: ConcurrentHashMap&lt;UUID, PlayerRef&gt;
+     ├─ worlds: ConcurrentHashMap&lt;String, World&gt;
+     ├─ worldsByUuid: ConcurrentHashMap&lt;UUID, World&gt;
+     ├─ playerStorage: PlayerStorage
+     └─ worldConfigProvider: WorldConfigProvider
+         │
+         ├─ World "overworld" (TickingThread)
+         │    ├─ ChunkStore (ECS store for chunk data)
+         │    │    └─ chunks: Long2ObjectConcurrentHashMap&lt;ChunkLoadState&gt;
+         │    ├─ EntityStore (ECS store for entities)
+         │    │    ├─ entitiesByUuid: ConcurrentHashMap&lt;UUID, Ref&gt;
+         │    │    └─ networkIdToRef: Int2ObjectOpenHashMap&lt;Ref&gt;
+         │    └─ WorldConfig (seed, spawn, ticking, PvP, etc.)
+         │
+         ├─ World "adventure" (TickingThread)
+         │    ├─ ChunkStore
+         │    ├─ EntityStore
+         │    └─ WorldConfig
+         │
+         └─ World "instance-Temple-abc123" (TickingThread)
+              ├─ ChunkStore
+              ├─ EntityStore
+              └─ WorldConfig (deleteOnRemove = true)
+</div>
+            </section>
 
-<span class="comment">// Access all online players</span>
-<span class="type">List</span>&lt;<span class="type">PlayerRef</span>&gt; players = universe.<span class="fn">getPlayers</span>();
+            <section id="universe-singleton">
+                <h2>The Universe Singleton</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe</code></p>
+                <p><span class="type">Universe</span> is the global root container for the entire server's game state. It extends <span class="type">JavaPlugin</span> and is instantiated once during server boot. The static accessor <code>Universe.get()</code> returns the singleton instance.</p>
 
-<span class="comment">// Get a specific player by UUID</span>
-<span class="type">PlayerRef</span> player = universe.<span class="fn">getPlayer</span>(uuid);
+                <h3>Internal Data Structures</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>players</code></td><td><code>ConcurrentHashMap&lt;UUID, PlayerRef&gt;</code></td><td>All online players, keyed by UUID</td></tr>
+                        <tr><td><code>worlds</code></td><td><code>ConcurrentHashMap&lt;String, World&gt;</code></td><td>All loaded worlds, keyed by lowercase name</td></tr>
+                        <tr><td><code>worldsByUuid</code></td><td><code>ConcurrentHashMap&lt;UUID, World&gt;</code></td><td>All loaded worlds, keyed by config UUID</td></tr>
+                        <tr><td><code>playerStorage</code></td><td><span class="type">PlayerStorage</span></td><td>Persistence layer for player data</td></tr>
+                        <tr><td><code>worldConfigProvider</code></td><td><span class="type">WorldConfigProvider</span></td><td>Loads/creates WorldConfig for new worlds</td></tr>
+                        <tr><td><code>path</code></td><td><span class="type">Path</span></td><td>Filesystem path: <code>Constants.UNIVERSE_PATH</code></td></tr>
+                    </tbody>
+                </table>
 
-<span class="comment">// Access all worlds</span>
-<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">World</span>&gt; worlds = universe.<span class="fn">getWorlds</span>();
+                <h3>Key Methods</h3>
+                <pre><code><span class="comment">// Get the singleton</span>
+<span class="type">Universe</span> <span class="field">universe</span> = <span class="type">Universe</span>.<span class="fn">get</span>();
 
-<span class="comment">// Get a world by name</span>
-<span class="type">World</span> world = universe.<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+<span class="comment">// World access (all thread-safe)</span>
+<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">World</span>&gt; <span class="field">allWorlds</span> = <span class="field">universe</span>.<span class="fn">getWorlds</span>();          <span class="comment">// unmodifiable view</span>
+<span class="type">World</span> <span class="field">world</span> = <span class="field">universe</span>.<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);                  <span class="comment">// by name (case-insensitive)</span>
+<span class="type">World</span> <span class="field">world</span> = <span class="field">universe</span>.<span class="fn">getWorld</span>(<span class="field">worldUuid</span>);                     <span class="comment">// by UUID</span>
+<span class="type">World</span> <span class="field">defaultWorld</span> = <span class="field">universe</span>.<span class="fn">getDefaultWorld</span>();                <span class="comment">// from server config</span>
 
-<span class="comment">// Get a world by UUID</span>
-<span class="type">World</span> world = universe.<span class="fn">getWorld</span>(worldUuid);
+<span class="comment">// Player access (all thread-safe)</span>
+<span class="type">List</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">online</span> = <span class="field">universe</span>.<span class="fn">getPlayers</span>();               <span class="comment">// snapshot copy</span>
+<span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">universe</span>.<span class="fn">getPlayer</span>(<span class="field">uuid</span>);                    <span class="comment">// by UUID</span>
+<span class="type">PlayerRef</span> <span class="field">player</span> = <span class="field">universe</span>.<span class="fn">getPlayer</span>(<span class="str">"Steve"</span>, <span class="type">NameMatching</span>.<span class="field">EXACT</span>); <span class="comment">// by name</span>
+<span class="kw">int</span> <span class="field">count</span> = <span class="field">universe</span>.<span class="fn">getPlayerCount</span>();
 
-<span class="comment">// Broadcast a message to all players</span>
-universe.<span class="fn">sendMessage</span>(message);</pre>
-            </div>
+<span class="comment">// Broadcast to all players</span>
+<span class="field">universe</span>.<span class="fn">sendMessage</span>(<span class="field">message</span>);
+<span class="field">universe</span>.<span class="fn">broadcastPacket</span>(<span class="field">packet</span>);</code></pre>
 
-            <div class="info-box note">
-                <div class="label">Thread Safety</div>
-                <p>Universe methods are thread-safe. You can call <span class="fn">getPlayers()</span>, <span class="fn">getPlayer(UUID)</span>, <span class="fn">getWorlds()</span>, and <span class="fn">getWorld()</span> from any thread. However, to perform operations on worlds or their entities, you must use <span class="fn">world.execute(Runnable)</span> to queue work on the world's tick thread.</p>
-            </div>
+                <div class="info-box note">
+                    <div class="label">Thread Safety</div>
+                    <p>All Universe lookup methods (<span class="fn">getWorld()</span>, <span class="fn">getPlayer()</span>, <span class="fn">getWorlds()</span>, <span class="fn">getPlayers()</span>) are backed by <span class="type">ConcurrentHashMap</span> and are safe to call from any thread. However, operating on the returned <span class="type">World</span> or <span class="type">PlayerRef</span> objects may require being on the correct world thread.</p>
+                </div>
 
-            <h2>World as TickingThread</h2>
-            <p>Each <span class="type">World</span> is a <span class="type">TickingThread</span> — a self-contained execution context with its own thread and tick loop. This design ensures that all entity operations within a world are serialized and occur on the same thread.</p>
+                <h3>World Creation &amp; Loading</h3>
+                <p>Universe provides several methods for creating and loading worlds, all returning <span class="type">CompletableFuture</span>:</p>
 
-            <h3>Core Concepts</h3>
-            <ul>
-                <li><strong>World extends TickingThread:</strong> Each world has its own dedicated thread that advances the tick loop. All entity updates happen on this thread.</li>
-                <li><strong>Isolated EntityStore:</strong> Each world has its own <span class="type">EntityStore</span> containing all entities in that world. Entities in one world are completely separate from entities in another world.</li>
-                <li><strong>Executor pattern:</strong> <span class="type">World</span> extends <span class="type">Executor</span>, allowing you to queue work via <span class="fn">execute(Runnable)</span>.</li>
-            </ul>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">CompletableFuture</span>&lt;<span class="type">World</span>&gt; <span class="fn">addWorld</span>(<span class="type">String</span> name)</code></td>
+                            <td>Creates a new world or loads existing from disk with default settings</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">CompletableFuture</span>&lt;<span class="type">World</span>&gt; <span class="fn">loadWorld</span>(<span class="type">String</span> name)</code></td>
+                            <td>Loads an existing world from disk (throws if not found)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">CompletableFuture</span>&lt;<span class="type">World</span>&gt; <span class="fn">makeWorld</span>(<span class="type">String</span>, <span class="type">Path</span>, <span class="type">WorldConfig</span>)</code></td>
+                            <td>Creates a world from an explicit config (lowest level)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">removeWorld</span>(<span class="type">String</span> name)</code></td>
+                            <td>Removes a world, firing <span class="type">RemoveWorldEvent</span> (cancellable)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">isWorldLoadable</span>(<span class="type">String</span> name)</code></td>
+                            <td>Checks if a world directory with a config file exists on disk</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-            <h3>Queuing Work on a World Thread</h3>
-            <div class="code-block">
-<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+                <h3>Startup Sequence</h3>
+                <p>When the Universe starts, it follows this sequence:</p>
+                <ol>
+                    <li><strong>Directory creation:</strong> Ensures <code>Constants.UNIVERSE_PATH</code> exists.</li>
+                    <li><strong>Setup phase:</strong> Registers ECS component types, systems, codecs for spawn providers, world gen providers, chunk storage providers, and resource storage providers.</li>
+                    <li><strong>Start phase:</strong> Loads <span class="type">PlayerStorage</span> from server config, reads the legacy block ID map, scans the <code>universe/worlds/</code> directory and loads each world folder via <code>loadWorldFromStart()</code>.</li>
+                    <li><strong>Default world:</strong> If the configured default world does not exist yet, it is created via <code>addWorld()</code>.</li>
+                    <li><strong>Ready:</strong> <span class="type">AllWorldsLoadedEvent</span> is dispatched, and <code>universeReady</code> completes.</li>
+                </ol>
+
+                <pre><code><span class="comment">// Wait for all worlds to finish loading before proceeding</span>
+<span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getUniverseReady</span>().<span class="fn">join</span>();
+
+<span class="comment">// Create a new world programmatically</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">World</span>&gt; <span class="field">future</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">addWorld</span>(<span class="str">"my-world"</span>);
+<span class="field">future</span>.<span class="fn">thenAccept</span>(<span class="field">world</span> -> {
+    <span class="comment">// World is loaded and its tick thread is running</span>
+    <span class="field">world</span>.<span class="fn">execute</span>(() -> {
+        <span class="comment">// Safe to access world state here</span>
+    });
+});</code></pre>
+
+                <h3>Shutdown Sequence</h3>
+                <p>On shutdown, Universe first disconnects all players via <code>disconnectAllPLayers()</code>, then stops all world threads via <code>shutdownAllWorlds()</code>. The <span class="type">ShutdownEvent</span> is dispatched before these operations.</p>
+            </section>
+
+            <section id="world-lifecycle">
+                <h2>World Creation &amp; Lifecycle</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world</code></p>
+                <p>A <span class="type">World</span> is a self-contained game dimension. It extends <span class="type">TickingThread</span>, giving it a dedicated thread with a tick loop. Creating a world involves multiple asynchronous steps:</p>
+
+                <h3>Creation Pipeline</h3>
+                <ol>
+                    <li><strong>Config load:</strong> <span class="type">WorldConfigProvider</span> loads or creates a <span class="type">WorldConfig</span> from the save path.</li>
+                    <li><strong>Constructor:</strong> <code>new World(name, savePath, worldConfig)</code> allocates the <span class="type">ChunkStore</span> and <span class="type">EntityStore</span>.</li>
+                    <li><strong>AddWorldEvent:</strong> The event bus fires <span class="type">AddWorldEvent</span> (cancellable). If cancelled, a <span class="type">WorldLoadCancelledException</span> is thrown.</li>
+                    <li><strong>Registration:</strong> The world is added to both <code>worlds</code> (by name) and <code>worldsByUuid</code> (by UUID) maps.</li>
+                    <li><strong>Init:</strong> <code>world.init()</code> initializes the chunk and entity stores, sets up the world generator, and loads the world map provider.</li>
+                    <li><strong>Start:</strong> <code>world.start()</code> begins the tick thread, starting the world's game loop.</li>
+                </ol>
+
+                <div class="info-box warning">
+                    <div class="label">Race Condition Protection</div>
+                    <p><code>makeWorld()</code> uses <code>putIfAbsent()</code> on both the name and UUID maps. If a concurrent call inserts the same world, a <span class="type">ConcurrentModificationException</span> is thrown. Failed world creations are cleaned up via <code>removeWorldExceptionally()</code>.</p>
+                </div>
+
+                <h3>WorldConfig</h3>
+                <p>Each world has a <span class="type">WorldConfig</span> stored at <code>universe/worlds/&lt;name&gt;/config.bson</code>. It defines every aspect of world behavior:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>UUID</code></td><td><span class="type">UUID</span></td><td>Random</td><td>Unique identifier for the world</td></tr>
+                        <tr><td><code>Seed</code></td><td><span class="kw">long</span></td><td><code>System.currentTimeMillis()</code></td><td>World generation seed</td></tr>
+                        <tr><td><code>SpawnProvider</code></td><td><span class="type">ISpawnProvider</span></td><td><code>null</code></td><td>Where players spawn (Global, Individual, FitToHeightMap)</td></tr>
+                        <tr><td><code>WorldGen</code></td><td><span class="type">IWorldGenProvider</span></td><td>Default</td><td>World generator (Flat, Void, Dummy)</td></tr>
+                        <tr><td><code>ChunkStorage</code></td><td><span class="type">IChunkStorageProvider</span></td><td>Hytale</td><td>How chunks are persisted (Hytale, IndexedStorage, Empty)</td></tr>
+                        <tr><td><code>IsTicking</code></td><td><span class="kw">boolean</span></td><td><code>true</code></td><td>Whether chunks tick</td></tr>
+                        <tr><td><code>IsBlockTicking</code></td><td><span class="kw">boolean</span></td><td><code>true</code></td><td>Whether blocks tick (crops, redstone)</td></tr>
+                        <tr><td><code>IsPvpEnabled</code></td><td><span class="kw">boolean</span></td><td><code>false</code></td><td>PvP combat toggle</td></tr>
+                        <tr><td><code>GameMode</code></td><td><span class="type">GameMode</span></td><td>Server default</td><td>Default game mode for the world</td></tr>
+                        <tr><td><code>IsSavingChunks</code></td><td><span class="kw">boolean</span></td><td><code>true</code></td><td>Whether chunk data can be saved to disk</td></tr>
+                        <tr><td><code>SaveNewChunks</code></td><td><span class="kw">boolean</span></td><td><code>true</code></td><td>Whether newly generated chunks are marked dirty</td></tr>
+                        <tr><td><code>IsUnloadingChunks</code></td><td><span class="kw">boolean</span></td><td><code>true</code></td><td>Whether chunks can be unloaded</td></tr>
+                        <tr><td><code>DeleteOnRemove</code></td><td><span class="kw">boolean</span></td><td><code>false</code></td><td>Delete world directory when removed</td></tr>
+                        <tr><td><code>DeleteOnUniverseStart</code></td><td><span class="kw">boolean</span></td><td><code>false</code></td><td>Delete world on next server boot</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Access world config</span>
+<span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+<span class="type">WorldConfig</span> <span class="field">config</span> = <span class="field">world</span>.<span class="fn">getWorldConfig</span>();
+
+<span class="comment">// Read configuration</span>
+<span class="kw">long</span> <span class="field">seed</span> = <span class="field">config</span>.<span class="fn">getSeed</span>();
+<span class="kw">boolean</span> <span class="field">pvp</span> = <span class="field">config</span>.<span class="fn">isPvpEnabled</span>();
+<span class="type">GameMode</span> <span class="field">mode</span> = <span class="field">config</span>.<span class="fn">getGameMode</span>();
+
+<span class="comment">// Modify and mark as changed for save</span>
+<span class="field">config</span>.<span class="fn">setPvpEnabled</span>(<span class="kw">true</span>);
+<span class="field">config</span>.<span class="fn">markChanged</span>();
+
+<span class="comment">// Get spawn point for a player</span>
+<span class="type">ISpawnProvider</span> <span class="field">spawn</span> = <span class="field">config</span>.<span class="fn">getSpawnProvider</span>();
+<span class="kw">if</span> (<span class="field">spawn</span> != <span class="kw">null</span>) {
+    <span class="type">Transform</span> <span class="field">spawnPoint</span> = <span class="field">spawn</span>.<span class="fn">getSpawnPoint</span>(<span class="field">world</span>, <span class="field">playerUuid</span>);
+}</code></pre>
+            </section>
+
+            <section id="world-threading">
+                <h2>World Threading Model</h2>
+                <p>Each <span class="type">World</span> extends <span class="type">TickingThread</span> and also implements <span class="type">Executor</span>. This means every world has:</p>
+                <ul>
+                    <li>A <strong>dedicated thread</strong> that runs the tick loop.</li>
+                    <li>A <strong>task queue</strong> consumed at safe points during the tick cycle via <code>consumeTaskQueue()</code>.</li>
+                    <li>The <strong><code>execute(Runnable)</code> method</strong> that enqueues work to run on the world thread.</li>
+                    <li>The <strong><code>isInThread()</code> method</strong> that checks if the caller is on the world's tick thread.</li>
+                </ul>
+
+<div class="diagram">World Thread Tick Loop
+ ┌──────────────────────────────────────────────┐
+ │  1. consumeTaskQueue()  &larr; drains execute() queue
+ │  2. ChunkStore tick     &larr; ECS systems on chunks
+ │  3. EntityStore tick    &larr; ECS systems on entities
+ │  4. Chunk saving        &larr; serializes dirty chunks
+ │  5. Chunk unloading     &larr; removes unused chunks
+ │  6. Network sync        &larr; sends delta updates
+ └──────────────────────────────────────────────┘
+</div>
+
+                <h3>The <code>world.execute()</code> Pattern</h3>
+                <p>This is the <strong>fundamental pattern</strong> for safe world access from any thread. When you need to modify entities, chunks, or any world state from outside the world's tick thread, you must schedule the work:</p>
+
+                <pre><code><span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
 
 <span class="comment">// Queue a runnable on the world's tick thread</span>
-world.<span class="fn">execute</span>(() -> {
-    <span class="comment">// This code runs on the world thread, safe to access EntityStore</span>
-    <span class="type">EntityStore</span> store = world.<span class="fn">getEntityStore</span>();
-    <span class="comment">// ... do entity operations ...</span>
+<span class="field">world</span>.<span class="fn">execute</span>(() -> {
+    <span class="comment">// This code runs on the world thread &mdash; safe to access stores</span>
+    <span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+    <span class="type">ChunkStore</span> <span class="field">chunkStore</span> = <span class="field">world</span>.<span class="fn">getChunkStore</span>();
+    <span class="comment">// ... modify entities, blocks, chunks ...</span>
 });
 
-<span class="comment">// Check if you're already on the world thread</span>
-<span class="kw">if</span> (world.<span class="fn">isInThread</span>()) {
-    <span class="comment">// You're safe to access world entities directly</span>
-}</pre>
-            </div>
+<span class="comment">// For async work that returns a result, use CompletableFuture</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">Void</span>&gt; <span class="field">future</span> = <span class="type">CompletableFuture</span>.<span class="fn">runAsync</span>(() -> {
+    <span class="comment">// Runs on the world thread</span>
+    <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>().<span class="fn">assertThread</span>();
+}, (<span class="type">Executor</span>) <span class="field">world</span>);
 
-            <div class="info-box warning">
-                <div class="label">Critical Threading Rule</div>
-                <p>Never access one world's <span class="type">EntityStore</span> from another world's thread or from a background thread. Always use <span class="fn">world.execute()</span> to schedule work on the correct world thread. Violating this can cause race conditions and data corruption.</p>
-            </div>
+<span class="comment">// Check if already on the world thread</span>
+<span class="kw">if</span> (<span class="field">world</span>.<span class="fn">isInThread</span>()) {
+    <span class="comment">// Direct access is safe</span>
+} <span class="kw">else</span> {
+    <span class="comment">// Must use execute() or CompletableFuture</span>
+}</code></pre>
 
-            <h2>Accessing the EntityStore</h2>
-            <p>The <span class="type">EntityStore</span> holds all entities in a world, organized as components in an ECS system.</p>
+                <div class="info-box warning">
+                    <div class="label">Critical Threading Rule</div>
+                    <p>Never access a world's <span class="type">EntityStore</span> or <span class="type">ChunkStore</span> from another world's thread or from a background thread without using <code>world.execute()</code>. The stores call <code>assertThread()</code> / <code>debugAssertInTickingThread()</code> internally, and violations can cause race conditions, data corruption, or assertion failures.</p>
+                </div>
 
-            <div class="code-block">
-<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+                <h3>GC Awareness</h3>
+                <p>The server registers a GC notification callback in <span class="type">HytaleServer</span> that calls <code>world.markGCHasRun()</code> on every world after a garbage collection event. World systems can then call <code>consumeGCHasRun()</code> to check if a GC pause might explain an unexpectedly long operation (e.g., chunk loading taking longer than a tick step).</p>
+            </section>
 
-world.<span class="fn">execute</span>(() -> {
-    <span class="comment">// Get the EntityStore</span>
-    <span class="type">EntityStore</span> entityStore = world.<span class="fn">getEntityStore</span>();
+            <section id="chunk-store">
+                <h2>ChunkStore &mdash; The Chunk ECS</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.storage</code></p>
+                <p><span class="type">ChunkStore</span> is the ECS container for all chunk data in a world. It wraps a <code>Store&lt;ChunkStore&gt;</code> and manages the lifecycle of chunk loading, generation, saving, and unloading. Each chunk in the store is an ECS entity (a <span class="type">Holder</span>/<span class="type">Ref</span>) with components like <span class="type">WorldChunk</span>, <span class="type">BlockChunk</span>, <span class="type">BlockComponentChunk</span>, and <span class="type">EntityChunk</span>.</p>
 
-    <span class="comment">// Get the underlying Store&lt;EntityStore&gt; for component access</span>
-    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = entityStore.<span class="fn">getStore</span>();
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>world</code></td><td><span class="type">World</span></td><td>Owning world</td></tr>
+                        <tr><td><code>chunks</code></td><td><code>Long2ObjectConcurrentHashMap&lt;ChunkLoadState&gt;</code></td><td>All known chunk states, keyed by packed chunk index</td></tr>
+                        <tr><td><code>store</code></td><td><code>Store&lt;ChunkStore&gt;</code></td><td>The underlying ECS store</td></tr>
+                        <tr><td><code>loader</code></td><td><span class="type">IChunkLoader</span></td><td>Loads chunks from disk</td></tr>
+                        <tr><td><code>saver</code></td><td><span class="type">IChunkSaver</span></td><td>Saves chunks to disk</td></tr>
+                        <tr><td><code>generator</code></td><td><span class="type">IWorldGen</span></td><td>Generates new chunks (guarded by <span class="type">StampedLock</span>)</td></tr>
+                    </tbody>
+                </table>
 
-    <span class="comment">// Iterate all entities in the world</span>
-    entityStore.<span class="fn">forEach</span>(ref -> {
-        <span class="type">PlayerRef</span> playerRef = store.<span class="fn">getComponent</span>(ref, <span class="type">PlayerRef</span>.<span class="fn">getComponentType</span>());
-    });
-});</pre>
-            </div>
+                <h3>Chunk Access Methods</h3>
+                <pre><code><span class="type">ChunkStore</span> <span class="field">chunkStore</span> = <span class="field">world</span>.<span class="fn">getChunkStore</span>();
 
-            <h2>World Configuration</h2>
-            <p>Each world has configuration settings accessed via <span class="fn">getWorldConfig()</span>.</p>
+<span class="comment">// Get a loaded chunk reference (returns null if not loaded)</span>
+<span class="type">Ref</span>&lt;<span class="type">ChunkStore</span>&gt; <span class="field">ref</span> = <span class="field">chunkStore</span>.<span class="fn">getChunkReference</span>(<span class="field">packedIndex</span>);
 
-            <div class="code-block">
-<pre><span class="type">World</span> world = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+<span class="comment">// Get or load/generate a chunk asynchronously</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">Ref</span>&lt;<span class="type">ChunkStore</span>&gt;&gt; <span class="field">future</span> = <span class="field">chunkStore</span>.<span class="fn">getChunkReferenceAsync</span>(<span class="field">packedIndex</span>);
 
-<span class="comment">// Get the world config</span>
-<span class="type">WorldConfig</span> config = world.<span class="fn">getWorldConfig</span>();
+<span class="comment">// Get or load/generate with flags</span>
+<span class="field">future</span> = <span class="field">chunkStore</span>.<span class="fn">getChunkReferenceAsync</span>(<span class="field">packedIndex</span>, <span class="type">GetChunkFlags</span>.<span class="field">SET_TICKING</span>);
 
-<span class="comment">// Get the spawn point provider</span>
-<span class="type">SpawnProvider</span> spawnProvider = config.<span class="fn">getSpawnProvider</span>();
+<span class="comment">// Get a chunk section reference (by section coordinates)</span>
+<span class="type">Ref</span>&lt;<span class="type">ChunkStore</span>&gt; <span class="field">sectionRef</span> = <span class="field">chunkStore</span>.<span class="fn">getChunkSectionReference</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
 
-<span class="comment">// Get the spawn position for a player</span>
-<span class="type">Vector3d</span> spawnPos = spawnProvider.<span class="fn">getSpawnPoint</span>(world, playerUuid);
+<span class="comment">// Get a component from a chunk</span>
+<span class="type">WorldChunk</span> <span class="field">wc</span> = <span class="field">chunkStore</span>.<span class="fn">getChunkComponent</span>(<span class="field">index</span>, <span class="type">WorldChunk</span>.<span class="fn">getComponentType</span>());
 
-<span class="comment">// Get world name</span>
-<span class="type">String</span> worldName = world.<span class="fn">getName</span>();</pre>
-            </div>
+<span class="comment">// Query metrics</span>
+<span class="kw">int</span> <span class="field">loaded</span> = <span class="field">chunkStore</span>.<span class="fn">getLoadedChunksCount</span>();
+<span class="kw">int</span> <span class="field">generated</span> = <span class="field">chunkStore</span>.<span class="fn">getTotalGeneratedChunksCount</span>();
+<span class="kw">int</span> <span class="field">fromDisk</span> = <span class="field">chunkStore</span>.<span class="fn">getTotalLoadedChunksCount</span>();</code></pre>
 
-            <h2>Cross-World Operations</h2>
-            <p>Moving a player between worlds requires careful coordination. Since each world has its own thread and <span class="type">EntityStore</span>, you cannot simply move a player reference from one world to another. Use the proper transfer methods.</p>
+                <h3>GetChunkFlags Bitmask</h3>
+                <p>The <code>flags</code> parameter on <code>getChunkReferenceAsync()</code> controls the loading behavior:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Hex</th>
+                            <th>Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>NONE</code></td><td><code>0x0</code></td><td>Load from disk, generate if missing, do not set ticking</td></tr>
+                        <tr><td><code>NO_LOAD</code></td><td><code>0x1</code></td><td>Skip loading from disk</td></tr>
+                        <tr><td><code>NO_GENERATE</code></td><td><code>0x2</code></td><td>Skip world generation if not on disk</td></tr>
+                        <tr><td><code>SET_TICKING</code></td><td><code>0x4</code></td><td>Mark the chunk as ticking after load (enables block ticking, entity updates)</td></tr>
+                        <tr><td><code>BYPASS_LOADED</code></td><td><code>0x8</code></td><td>Re-load even if already loaded</td></tr>
+                        <tr><td><code>POLL_STILL_NEEDED</code></td><td><code>0x10</code></td><td>Check if any player still needs the chunk during generation</td></tr>
+                    </tbody>
+                </table>
 
-            <div class="info-box warning">
-                <div class="label">Cross-World Thread Safety</div>
-                <p>Each world has its own thread. You cannot directly access one world's <span class="type">EntityStore</span> from another world's thread. Always queue operations on the target world's thread using <span class="fn">world.execute()</span>.</p>
-            </div>
+                <h3>Registered ECS Systems</h3>
+                <p>ChunkStore registers several systems at the static registry level:</p>
+                <ul>
+                    <li><span class="type">ChunkLoaderSaverSetupSystem</span> &mdash; Initializes the <span class="type">IChunkLoader</span> and <span class="type">IChunkSaver</span> from the world's <span class="type">IChunkStorageProvider</span> when the store starts, and closes them on shutdown.</li>
+                    <li><span class="type">ChunkUnloadingSystem</span> &mdash; Periodically unloads chunks that are no longer needed by any player (based on <code>keepAlive</code> timer and <code>shouldKeepLoaded()</code>).</li>
+                    <li><span class="type">ChunkSavingSystems.Ticking</span> &mdash; Saves dirty chunks on each tick cycle when the world config allows saving.</li>
+                    <li><span class="type">ChunkSavingSystems.WorldRemoved</span> &mdash; Saves all remaining dirty chunks when the world is shutting down.</li>
+                </ul>
+            </section>
 
-            <h3>Method 1: addPlayer (Recommended)</h3>
-            <p>The safest way to transfer a player to another world is using <span class="fn">World.addPlayer()</span>, which returns a <span class="type">CompletableFuture&lt;PlayerRef&gt;</span> that completes when the transfer is done.</p>
+            <section id="chunk-load-state">
+                <h2>ChunkLoadState &amp; Chunk Lifecycle</h2>
+                <p>Every chunk position tracked by <span class="type">ChunkStore</span> has a <span class="type">ChunkLoadState</span> entry in the <code>chunks</code> map. This inner class manages the asynchronous loading pipeline:</p>
 
-            <div class="code-block">
-<pre><span class="type">World</span> targetWorld = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
-<span class="type">Transform</span> spawnPoint = targetWorld.<span class="fn">getWorldConfig</span>()
+                <h3>ChunkLoadState Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>lock</code></td><td><span class="type">StampedLock</span></td><td>Protects concurrent access to this state</td></tr>
+                        <tr><td><code>flags</code></td><td><span class="kw">int</span></td><td>Bitmask of <span class="type">GetChunkFlags</span> used for this load</td></tr>
+                        <tr><td><code>future</code></td><td><code>CompletableFuture&lt;Ref&lt;ChunkStore&gt;&gt;</code></td><td>Pending load/generation future (null when complete)</td></tr>
+                        <tr><td><code>reference</code></td><td><code>Ref&lt;ChunkStore&gt;</code></td><td>The loaded chunk reference (null while loading)</td></tr>
+                        <tr><td><code>throwable</code></td><td><span class="type">Throwable</span></td><td>Last failure (null on success)</td></tr>
+                        <tr><td><code>failedWhen</code></td><td><span class="kw">long</span></td><td>Nano timestamp of last failure</td></tr>
+                        <tr><td><code>failedCounter</code></td><td><span class="kw">int</span></td><td>Consecutive failure count (used for exponential backoff)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Chunk Loading Pipeline</h3>
+<div class="diagram">getChunkReferenceAsync(index, flags)
+ │
+ ├─ Check: Is chunk already loaded? (reference != null)
+ │    └─ YES &rarr; return CompletableFuture.completedFuture(reference)
+ │
+ ├─ Check: Is chunk on failure backoff?
+ │    └─ YES &rarr; return failedFuture (exponential backoff)
+ │
+ ├─ Step 1: Load from disk (unless NO_LOAD flag)
+ │    └─ loader.loadHolder(x, z)
+ │         └─ thenApplyAsync &rarr; preLoadChunkAsync() [off-thread]
+ │              └─ thenApplyAsync &rarr; postLoadChunk() [world thread]
+ │
+ ├─ Step 2: Generate (unless NO_GENERATE flag, only if disk load returned null)
+ │    └─ generator.generate(seed, index, x, z, stillNeededCheck)
+ │         └─ thenApplyAsync &rarr; preLoadChunkAsync() [off-thread]
+ │              └─ thenApplyAsync &rarr; postLoadChunk() [world thread]
+ │
+ └─ Step 3: Set ticking (if SET_TICKING flag)
+      └─ thenApplyAsync &rarr; setFlag(ChunkFlag.TICKING, true) [world thread]
+</div>
+
+                <h3>Pre-Load and Post-Load</h3>
+                <ul>
+                    <li><strong><code>preLoadChunkAsync()</code></strong> &mdash; Runs off the world thread. Validates the holder, loads the <span class="type">BlockChunk</span>, marks newly generated chunks for saving if configured, fires <span class="type">ChunkPreLoadProcessEvent</span>, and enables lighting updates.</li>
+                    <li><strong><code>postLoadChunk()</code></strong> &mdash; Runs on the world thread (<code>debugAssertInTickingThread()</code>). Sets <code>ChunkFlag.START_INIT</code>, adds the holder to the store, calls <code>initFlags()</code>, and initializes chunk lighting.</li>
+                </ul>
+
+                <h3>Failure Backoff</h3>
+                <p>When a chunk load or generation fails, the <code>fail()</code> method records the failure time and increments the counter. Subsequent requests for the same chunk are rejected with exponential backoff: <code>min(MAX_FAILURE_BACKOFF_NANOS, count^2 * FAILURE_BACKOFF_NANOS)</code>, where the maximum is 10 seconds. This prevents a bad chunk from consuming all server resources in a retry loop.</p>
+            </section>
+
+            <section id="world-chunk">
+                <h2>WorldChunk Lifecycle</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.chunk</code></p>
+                <p><span class="type">WorldChunk</span> is the top-level chunk component that implements both <span class="type">BlockAccessor</span> and <code>Component&lt;ChunkStore&gt;</code>. It ties together block storage, block components, entities, and chunk lifecycle management. See the <a href="blocks.html">Blocks</a> page for details on block storage within chunks.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>world</code></td><td><span class="type">World</span></td><td>The owning world</td></tr>
+                        <tr><td><code>blockChunk</code></td><td><span class="type">BlockChunk</span></td><td>Raw block grid data (10 sections of 32&times;32&times;32)</td></tr>
+                        <tr><td><code>blockComponentChunk</code></td><td><span class="type">BlockComponentChunk</span></td><td>Per-block ECS component holders (chests, etc.)</td></tr>
+                        <tr><td><code>entityChunk</code></td><td><span class="type">EntityChunk</span></td><td>Mobile entities within this chunk column</td></tr>
+                        <tr><td><code>flags</code></td><td><code>Flags&lt;ChunkFlag&gt;</code></td><td>Lifecycle state flags</td></tr>
+                        <tr><td><code>flagsLock</code></td><td><span class="type">StampedLock</span></td><td>Thread-safe access to flags</td></tr>
+                        <tr><td><code>keepAlive</code></td><td><span class="kw">int</span></td><td>Ticks before chunk can be unloaded (default 15)</td></tr>
+                        <tr><td><code>keepLoaded</code></td><td><span class="type">AtomicInteger</span></td><td>Reference count that prevents unloading</td></tr>
+                        <tr><td><code>needsSaving</code></td><td><span class="kw">boolean</span></td><td>Dirty flag for persistence</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>ChunkFlag Enum</h3>
+                <p>The lifecycle of a chunk is tracked through flags set via <code>setFlag(flag, value)</code>, which is protected by a <span class="type">StampedLock</span>:</p>
+                <table>
+                    <thead>
+                        <tr><th>Flag</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>START_INIT</code></td><td>Set during <code>postLoadChunk()</code> before adding to store</td></tr>
+                        <tr><td><code>INIT</code></td><td>Set after <code>initFlags()</code> completes &mdash; chunk is fully initialized</td></tr>
+                        <tr><td><code>TICKING</code></td><td>Chunk is actively ticking (blocks update, entities process). When set, removes <code>NonTickingComponent</code>; when cleared, adds it.</td></tr>
+                        <tr><td><code>NEWLY_GENERATED</code></td><td>Chunk was just generated (not loaded from disk)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Keep-Alive &amp; Unloading</h3>
+                <p>Chunks have two mechanisms to prevent premature unloading:</p>
+                <ul>
+                    <li><strong>keepAlive timer</strong> (default 15 ticks): Decremented each poll. When a chunk becomes ticking, <code>resetKeepAlive()</code> resets it to 15. The <span class="type">ChunkUnloadingSystem</span> only considers unloading when <code>keepAlive</code> reaches 0.</li>
+                    <li><strong>keepLoaded reference count</strong>: An <span class="type">AtomicInteger</span> incremented by <code>addKeepLoaded()</code> and decremented by <code>removeKeepLoaded()</code>. While positive, the chunk is never unloaded regardless of the timer.</li>
+                </ul>
+            </section>
+
+            <section id="block-section-palette">
+                <h2>BlockSection &amp; Palette Compression</h2>
+                <p>Each <span class="type">WorldChunk</span> contains a <span class="type">BlockChunk</span> with 10 <span class="type">BlockSection</span> instances, each covering a 32&times;32&times;32 cube. Block data is stored using palette compression through <span class="type">ISectionPalette</span> implementations that automatically promote and demote based on the number of unique block types.</p>
+                <p>For full details on palette storage, see the <a href="blocks.html#palette-storage">Palette-Based Block Storage</a> section in the Blocks documentation.</p>
+
+<div class="diagram">WorldChunk (32&times;256&times;32)
+ └─ BlockChunk
+      └─ BlockSection[10] (each 32&times;32&times;32 = 32,768 blocks)
+           ├─ chunkSection   (ISectionPalette &mdash; block type IDs)
+           ├─ fillerSection   (ISectionPalette &mdash; filler offsets)
+           ├─ rotationSection (ISectionPalette &mdash; rotation indices)
+           ├─ localLight      (ChunkLightData)
+           ├─ globalLight     (ChunkLightData)
+           ├─ tickingBlocks   (BitSet)
+           └─ changedPositions (IntOpenHashSet)
+</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Palette Implementation</th>
+                            <th>Bits/Block</th>
+                            <th>Max Unique</th>
+                            <th>Memory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">EmptySectionPalette</span></td><td>0</td><td>1 (air)</td><td>None (singleton)</td></tr>
+                        <tr><td><span class="type">HalfByteSectionPalette</span></td><td>4</td><td>16</td><td>16 KB (nibble-packed)</td></tr>
+                        <tr><td><span class="type">ByteSectionPalette</span></td><td>8</td><td>256</td><td>32 KB</td></tr>
+                        <tr><td><span class="type">ShortSectionPalette</span></td><td>16</td><td>65,536</td><td>64 KB</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="entity-store">
+                <h2>EntityStore &mdash; Per-World Entity Management</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.storage</code></p>
+                <p><span class="type">EntityStore</span> is the ECS container for all <strong>mobile entities</strong> in a world (players, NPCs, dropped items, projectiles). Each world has its own independent EntityStore. Entities in one world are completely invisible to another world's store.</p>
+
+                <h3>Internal Data Structures</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>world</code></td><td><span class="type">World</span></td><td>Owning world</td></tr>
+                        <tr><td><code>store</code></td><td><code>Store&lt;EntityStore&gt;</code></td><td>The underlying ECS store</td></tr>
+                        <tr><td><code>entitiesByUuid</code></td><td><code>ConcurrentHashMap&lt;UUID, Ref&gt;</code></td><td>UUID-to-entity lookup (maintained by <span class="type">UUIDSystem</span>)</td></tr>
+                        <tr><td><code>networkIdToRef</code></td><td><code>Int2ObjectOpenHashMap&lt;Ref&gt;</code></td><td>Network ID lookup (maintained by <span class="type">NetworkIdSystem</span>)</td></tr>
+                        <tr><td><code>networkIdCounter</code></td><td><span class="type">AtomicInteger</span></td><td>Auto-incrementing network ID allocator (starts at 1)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Methods</h3>
+                <pre><code><span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+
+<span class="comment">// Get the ECS store for component access</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Look up an entity by UUID</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">entityStore</span>.<span class="fn">getRefFromUUID</span>(<span class="field">uuid</span>);
+
+<span class="comment">// Look up an entity by network ID</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">entityStore</span>.<span class="fn">getRefFromNetworkId</span>(<span class="field">networkId</span>);
+
+<span class="comment">// Add a new entity</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.<span class="field">SPAWN</span>);
+
+<span class="comment">// Remove an entity</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.<span class="field">REMOVE</span>);
+
+<span class="comment">// Allocate a network ID for an entity</span>
+<span class="kw">int</span> <span class="field">netId</span> = <span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>();</code></pre>
+
+                <h3>Automatic Index Systems</h3>
+                <p>EntityStore registers two internal systems that maintain lookup indices automatically:</p>
+                <ul>
+                    <li><strong><span class="type">UUIDSystem</span></strong> &mdash; When an entity with a <span class="type">UUIDComponent</span> is added, its UUID is inserted into <code>entitiesByUuid</code>. Duplicate UUIDs cause the new entity to be removed immediately with a warning. On entity removal, the entry is cleaned up.</li>
+                    <li><strong><span class="type">NetworkIdSystem</span></strong> &mdash; When an entity with a <span class="type">NetworkId</span> component is added, it is inserted into <code>networkIdToRef</code>. If the ID collides, a new ID is allocated via <code>takeNextNetworkId()</code>. On removal, the entry is cleaned up.</li>
+                </ul>
+
+                <div class="info-box note">
+                    <div class="label">Two Stores, One World</div>
+                    <p>A world has both a <span class="type">ChunkStore</span> (for terrain) and an <span class="type">EntityStore</span> (for entities). They are separate ECS stores with separate component registries. Block components (like <span class="type">BlockState</span>) live in the ChunkStore. Entity components (like <span class="type">TransformComponent</span>, <span class="type">Velocity</span>) live in the EntityStore. The <span class="type">PlayerRef</span> component also lives in the EntityStore.</p>
+                </div>
+            </section>
+
+            <section id="player-ref">
+                <h2>PlayerRef &amp; Thread-Safe Player Access</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe</code></p>
+                <p><span class="type">PlayerRef</span> implements <code>Component&lt;EntityStore&gt;</code> and serves as the <strong>thread-safe handle</strong> for accessing player state across the server. It is the bridge between the network layer and the ECS world.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>uuid</code></td><td><span class="type">UUID</span></td><td>Player's unique identifier</td></tr>
+                        <tr><td><code>username</code></td><td><span class="type">String</span></td><td>Player's display name</td></tr>
+                        <tr><td><code>language</code></td><td><span class="type">String</span></td><td>Client language preference</td></tr>
+                        <tr><td><code>packetHandler</code></td><td><span class="type">PacketHandler</span></td><td>Network connection (read/write packets)</td></tr>
+                        <tr><td><code>chunkTracker</code></td><td><span class="type">ChunkTracker</span></td><td>Tracks which chunks should be sent to this player</td></tr>
+                        <tr><td><code>entity</code></td><td><code>Ref&lt;EntityStore&gt;</code></td><td>ECS reference when in a world (null when not in a world)</td></tr>
+                        <tr><td><code>holder</code></td><td><code>Holder&lt;EntityStore&gt;</code></td><td>Detached holder when transitioning between worlds</td></tr>
+                        <tr><td><code>worldUuid</code></td><td><span class="type">UUID</span></td><td>UUID of the world the player is currently in</td></tr>
+                        <tr><td><code>transform</code></td><td><span class="type">Transform</span></td><td>Cached position/rotation</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>State Transitions</h3>
+                <p>A PlayerRef has two mutually exclusive states:</p>
+                <ul>
+                    <li><strong>In a world:</strong> <code>entity != null</code>, <code>holder == null</code>. The player is an entity in the world's <span class="type">EntityStore</span>.</li>
+                    <li><strong>Between worlds:</strong> <code>entity == null</code>, <code>holder != null</code>. The player has been removed from one world but not yet added to another.</li>
+                </ul>
+
+                <pre><code><span class="comment">// Get a player from the Universe (thread-safe)</span>
+<span class="type">PlayerRef</span> <span class="field">playerRef</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayer</span>(<span class="field">uuid</span>);
+
+<span class="comment">// Check if the player is valid (in a world or transitioning)</span>
+<span class="kw">boolean</span> <span class="field">valid</span> = <span class="field">playerRef</span>.<span class="fn">isValid</span>();  <span class="comment">// entity != null || holder != null</span>
+
+<span class="comment">// Get the ECS reference (only valid when in a world)</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">playerRef</span>.<span class="fn">getReference</span>();
+
+<span class="comment">// Access a component (thread-aware: blocks if called from wrong thread)</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">playerRef</span>.<span class="fn">getComponent</span>(<span class="type">Player</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Send a message</span>
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="field">message</span>);
+
+<span class="comment">// Get networking handle</span>
+<span class="type">PacketHandler</span> <span class="field">handler</span> = <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>();
+
+<span class="comment">// Refer player to another server</span>
+<span class="field">playerRef</span>.<span class="fn">referToServer</span>(<span class="str">"play.example.com"</span>, <span class="num">5520</span>);</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">getComponent() Cross-Thread Behavior</div>
+                    <p><code>PlayerRef.getComponent()</code> is marked <code>@Deprecated</code> because of its complex threading behavior. When the player is in a world and you call it from the wrong thread, it logs a <span class="type">SEVERE</span> warning and blocks the calling thread by using <code>CompletableFuture.supplyAsync(..., world).join()</code>. This is a safety net, not intended for normal use. Always prefer accessing components on the world thread via <code>world.execute()</code>.</p>
+                </div>
+
+                <h3>Player Connection Flow</h3>
+                <p>When a player connects, <code>Universe.addPlayer()</code> orchestrates the following:</p>
+                <ol>
+                    <li>Load player data from <span class="type">PlayerStorage</span> (async)</li>
+                    <li>Create <span class="type">PlayerRef</span>, <span class="type">ChunkTracker</span>, <span class="type">Player</span>, <span class="type">UUIDComponent</span>, and other components</li>
+                    <li>Insert into <code>players</code> map via <code>putIfAbsent</code> (duplicate detection)</li>
+                    <li>Fire <span class="type">PlayerConnectEvent</span> (plugins can redirect to a different world)</li>
+                    <li>Send <span class="type">ServerTags</span> packet</li>
+                    <li>Call <code>world.addPlayer(playerRef, null, false, false)</code> on the target world</li>
+                </ol>
+
+                <p>When a player disconnects, <code>Universe.removePlayer()</code>:</p>
+                <ol>
+                    <li>Fires <span class="type">PlayerDisconnectEvent</span></li>
+                    <li>Calls <code>Player.remove()</code> on the world thread (with 5-second timeout if queued)</li>
+                    <li>Removes from <code>players</code> map</li>
+                    <li>In singleplayer mode, shuts down the server if no players remain</li>
+                </ol>
+            </section>
+
+            <section id="cross-world">
+                <h2>Cross-World Operations</h2>
+                <p>Moving a player between worlds requires careful coordination. Since each world has its own thread and <span class="type">EntityStore</span>, the player must be removed from one store and added to another. This is inherently a multi-step, multi-threaded operation.</p>
+
+                <h3>Method 1: World.addPlayer() (Recommended)</h3>
+                <p>The safest way to transfer a player. This method handles removing the player from their current world and adding them to the target world, returning a <span class="type">CompletableFuture</span> that completes when the transfer is done.</p>
+
+                <pre><code><span class="type">World</span> <span class="field">targetWorld</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"adventure"</span>);
+<span class="type">Transform</span> <span class="field">spawnPoint</span> = <span class="field">targetWorld</span>.<span class="fn">getWorldConfig</span>()
     .<span class="fn">getSpawnProvider</span>()
-    .<span class="fn">getSpawnPoint</span>(targetWorld, playerUuid);
+    .<span class="fn">getSpawnPoint</span>(<span class="field">targetWorld</span>, <span class="field">playerRef</span>.<span class="fn">getUuid</span>());
 
 <span class="comment">// Transfer player to target world</span>
-<span class="type">CompletableFuture</span>&lt;<span class="type">PlayerRef</span>&gt; future = targetWorld.<span class="fn">addPlayer</span>(playerRef, spawnPoint);
+<span class="type">CompletableFuture</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">future</span> = <span class="field">targetWorld</span>.<span class="fn">addPlayer</span>(<span class="field">playerRef</span>, <span class="field">spawnPoint</span>);
 
 <span class="comment">// Handle completion</span>
-future.<span class="fn">thenAccept</span>(newPlayerRef -> {
+<span class="field">future</span>.<span class="fn">thenAccept</span>(<span class="field">newPlayerRef</span> -> {
     <span class="comment">// Player has been transferred and is now in the target world</span>
-});</pre>
-            </div>
+});</code></pre>
 
-            <h3>Method 2: Teleport Component</h3>
-            <p>For loaded worlds, you can also use the <span class="type">Teleport</span> component to transfer players. This is less safe than <span class="fn">addPlayer()</span> but works for quick transfers.</p>
+                <h3>Method 2: Teleport Component</h3>
+                <p>For loaded worlds, you can add a <span class="type">Teleport</span> component to the player entity. The teleportation system will process it on the next tick.</p>
 
-            <div class="code-block">
-<pre>world.<span class="fn">execute</span>(() -> {
-    <span class="type">World</span> targetWorld = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"dungeon"</span>);
-    <span class="type">Transform</span> destination = <span class="type">Transform</span>.<span class="fn">create</span>(x, y, z, yaw, pitch);
+                <pre><code><span class="field">world</span>.<span class="fn">execute</span>(() -> {
+    <span class="type">World</span> <span class="field">targetWorld</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"dungeon"</span>);
+    <span class="type">Transform</span> <span class="field">destination</span> = <span class="type">Transform</span>.<span class="fn">create</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">yaw</span>, <span class="field">pitch</span>);
 
     <span class="comment">// Create teleport component</span>
-    <span class="type">Teleport</span> teleport = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(targetWorld, destination);
+    <span class="type">Teleport</span> <span class="field">teleport</span> = <span class="type">Teleport</span>.<span class="fn">createForPlayer</span>(<span class="field">targetWorld</span>, <span class="field">destination</span>);
 
     <span class="comment">// Add to player entity</span>
-    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; store = world.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
-    store.<span class="fn">addComponent</span>(playerRef, <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), teleport);
-});</pre>
-            </div>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">playerRef</span>.<span class="fn">getReference</span>(), <span class="type">Teleport</span>.<span class="fn">getComponentType</span>(), <span class="field">teleport</span>);
+});</code></pre>
 
-            <h2>Instance Worlds</h2>
-            <p>Teleporter blocks create temporary instance worlds that are isolated from the main world. Players enter the instance, complete the challenge, and return to their original location.</p>
+                <h3>Method 3: Universe.resetPlayer()</h3>
+                <p>For resetting a player to a fresh state (e.g., after death or game mode change), <code>Universe.resetPlayer()</code> reloads the player's data from storage and moves them to a target world:</p>
 
-            <h3>Instance World Naming</h3>
-            <p>Instance worlds follow the naming pattern: <span class="code">instance-&lt;TemplateName&gt;-&lt;uuid&gt;</span></p>
-            <p>Examples:</p>
-            <ul>
-                <li><span class="code">instance-Forgotten_Temple-a1b2c3d4</span></li>
-                <li><span class="code">instance-Ancient_Tomb-f7e8d9c0</span></li>
-            </ul>
+                <pre><code><span class="comment">// Reset player with fresh data, move to a specific world</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">future</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">resetPlayer</span>(
+    <span class="field">playerRef</span>,
+    <span class="field">freshHolder</span>,
+    <span class="field">targetWorld</span>,
+    <span class="field">spawnTransform</span>
+);
 
-            <h3>Instance Lifecycle</h3>
-            <ol>
-                <li><strong>Creation:</strong> When a player interacts with a teleporter, an instance world is created from the template.</li>
-                <li><strong>Populated:</strong> The player is added to the instance world and spawned at the designated entry point.</li>
-                <li><strong>Isolated:</strong> The instance is completely separate from the main world. Other players cannot enter the same instance.</li>
-                <li><strong>Cleanup:</strong> When the player exits (via teleporter or leaving the instance), the instance world may be cleaned up.</li>
-            </ol>
+<span class="comment">// Or reset with default world (stays in current world)</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">future</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">resetPlayer</span>(<span class="field">playerRef</span>);</code></pre>
 
-            <div class="info-box note">
-                <div class="label">Instance State</div>
-                <p>Instance worlds are created on demand and destroyed when empty. Each instance is independent — progress in one instance does not affect other instances of the same template.</p>
-            </div>
+                <p>The reset process:</p>
+                <ol>
+                    <li>Removes the player from the current world's <span class="type">EntityStore</span> (on that world's thread)</li>
+                    <li>Copies state from old <span class="type">Player</span> to new <span class="type">Player</span> component</li>
+                    <li>Replaces the <span class="type">PlayerRef</span>'s holder with fresh data</li>
+                    <li>Adds the player to the target world via <code>addPlayer()</code></li>
+                </ol>
 
-            <h2>Player Storage</h2>
-            <p>Player data is stored globally across all worlds in the player storage system, not per-world.</p>
+                <div class="info-box warning">
+                    <div class="label">Cross-World Thread Safety</div>
+                    <p>You cannot directly access one world's <span class="type">EntityStore</span> from another world's thread. The pattern for cross-world operations is always: remove from source world (on source thread) then add to target world (on target thread), using <span class="type">CompletableFuture</span> chaining or <code>execute()</code> to coordinate.</p>
+                </div>
+            </section>
 
-            <div class="code-block">
-<pre><span class="comment">// Get the player storage system</span>
-<span class="type">PlayerStorage</span> storage = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayerStorage</span>();
+            <section id="instance-worlds">
+                <h2>Instance Worlds</h2>
+                <p>Instance worlds are temporary worlds created on demand for isolated gameplay experiences (dungeons, challenges). They follow a naming pattern and have specific lifecycle behavior.</p>
 
-<span class="comment">// Load player data from disk</span>
-<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; holder = storage.<span class="fn">load</span>(playerUuid);
+                <h3>Instance Naming</h3>
+                <p>Instance worlds follow the pattern: <code>instance-&lt;TemplateName&gt;-&lt;uuid&gt;</code></p>
+                <ul>
+                    <li><code>instance-Forgotten_Temple-a1b2c3d4</code></li>
+                    <li><code>instance-Ancient_Tomb-f7e8d9c0</code></li>
+                </ul>
 
-<span class="comment">// Save player data to disk</span>
-storage.<span class="fn">save</span>(playerUuid, holder);
+                <h3>Instance Configuration</h3>
+                <p>Instances typically set these <span class="type">WorldConfig</span> properties:</p>
+                <ul>
+                    <li><code>deleteOnRemove = true</code> &mdash; Automatically delete world directory when removed</li>
+                    <li><code>deleteOnUniverseStart = true</code> &mdash; Clean up orphaned instances on next server boot</li>
+                    <li><code>canSaveChunks = false</code> &mdash; Instance terrain is not saved</li>
+                    <li><code>isSavingPlayers = false</code> &mdash; Player state in instances is not persisted</li>
+                </ul>
 
-<span class="comment">// Check if player exists</span>
-<span class="kw">boolean</span> exists = storage.<span class="fn">exists</span>(playerUuid);</pre>
-            </div>
+                <h3>Instance Lifecycle</h3>
+                <ol>
+                    <li><strong>Creation:</strong> <code>Universe.makeWorld()</code> is called with a cloned <span class="type">WorldConfig</span> and a fresh UUID.</li>
+                    <li><strong>Player enter:</strong> <code>world.addPlayer()</code> transfers the player into the instance.</li>
+                    <li><strong>Isolation:</strong> The instance is a fully separate world with its own thread, chunk store, and entity store.</li>
+                    <li><strong>Player exit:</strong> The player is transferred back to the origin world.</li>
+                    <li><strong>Cleanup:</strong> <code>Universe.removeWorld()</code> stops the world thread and, because <code>deleteOnRemove = true</code>, deletes the world directory.</li>
+                </ol>
+            </section>
 
-            <h3>Player Data Location</h3>
-            <p>Player data is stored in: <span class="code">universe/players/&lt;uuid&gt;.json</span></p>
-            <p>This path is relative to the server's data directory and contains all persistent data for the player, regardless of which world they're in.</p>
+            <section id="player-storage">
+                <h2>Player Storage</h2>
+                <p>Player data is stored globally via <span class="type">PlayerStorage</span>, not per-world. The storage provider is configured in the server config and loaded during Universe startup.</p>
 
-            <div class="info-box note">
-                <div class="label">Persistence Timing</div>
-                <p>Player data is typically loaded on login and saved on logout. Some plugins may save data periodically or on demand. Always call <span class="fn">save()</span> explicitly if you modify player components and need to persist changes immediately.</p>
-            </div>
+                <pre><code><span class="comment">// Get the player storage system</span>
+<span class="type">PlayerStorage</span> <span class="field">storage</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPlayerStorage</span>();
 
-            <h2>Summary</h2>
-            <p>The Universe and World systems provide a clean abstraction for managing multiple worlds and players:</p>
-            <ul>
-                <li><strong>Universe:</strong> Global singleton for accessing all worlds and players.</li>
-                <li><strong>World:</strong> Self-contained execution context with its own thread and entities.</li>
-                <li><strong>EntityStore:</strong> Component store for all entities in a world.</li>
-                <li><strong>Cross-world transfer:</strong> Use <span class="fn">addPlayer()</span> or the Teleport component.</li>
-                <li><strong>Player storage:</strong> Persists globally, not per-world.</li>
-            </ul>
+<span class="comment">// Load player data (returns a Holder with all components)</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt;&gt; <span class="field">holder</span> = <span class="field">storage</span>.<span class="fn">load</span>(<span class="field">playerUuid</span>);
+
+<span class="comment">// Player data path: universe/players/&lt;uuid&gt;.json</span>
+
+<span class="comment">// Replace the storage implementation</span>
+<span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">setPlayerStorage</span>(<span class="field">customStorage</span>);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Persistence Timing</div>
+                    <p>Player data is loaded on connect and saved on disconnect. The <span class="type">WorldConfig.isSavingPlayers</span> flag controls whether the current world saves player state. Instance worlds typically set this to <code>false</code> so that instance progress is not persisted if the player disconnects mid-instance.</p>
+                </div>
+            </section>
+
+            <section id="backups">
+                <h2>Universe Backups</h2>
+                <p>The Universe supports automated backups when the <code>--backup</code> command-line flag is set. Backups are scheduled via <code>HytaleServer.SCHEDULED_EXECUTOR</code> at the configured frequency.</p>
+
+                <pre><code><span class="comment">// Trigger a manual backup</span>
+<span class="type">CompletableFuture</span>&lt;<span class="type">Void</span>&gt; <span class="field">backupFuture</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">runBackup</span>();
+
+<span class="field">backupFuture</span>.<span class="fn">thenAccept</span>(<span class="field">v</span> -> {
+    <span class="comment">// Backup completed successfully</span>
+});</code></pre>
+
+                <p>The backup process:</p>
+                <ol>
+                    <li>For each world, schedule a save on the world thread to flush all dirty chunks</li>
+                    <li>Wait for all chunk saving to complete via <code>ChunkSavingSystems.Data.waitForSavingChunks()</code></li>
+                    <li>Start the <span class="type">BackupTask</span> to copy the universe directory to the backup location</li>
+                </ol>
+            </section>
+
+            <section id="code-examples">
+                <h2>Common Code Examples</h2>
+
+                <h3>Spawning an Entity in a World</h3>
+                <pre><code><span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="field">world</span>.<span class="fn">execute</span>(() -> {
+    <span class="comment">// Build entity holder with components</span>
+    <span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">EntityStore</span>.<span class="field">REGISTRY</span>.<span class="fn">newHolder</span>();
+    <span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+        <span class="kw">new</span> <span class="type">TransformComponent</span>(<span class="num">100.0</span>, <span class="num">65.0</span>, <span class="num">200.0</span>));
+    <span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>(),
+        <span class="kw">new</span> <span class="type">UUIDComponent</span>(<span class="type">UUID</span>.<span class="fn">randomUUID</span>()));
+
+    <span class="comment">// Add to the world's entity store</span>
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.<span class="field">SPAWN</span>);
+});</code></pre>
+
+                <h3>Loading a Chunk and Placing a Block</h3>
+                <pre><code><span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+<span class="kw">int</span> <span class="field">blockX</span> = <span class="num">100</span>, <span class="field">blockY</span> = <span class="num">65</span>, <span class="field">blockZ</span> = <span class="num">200</span>;
+
+<span class="comment">// Compute chunk index from block coordinates</span>
+<span class="kw">long</span> <span class="field">chunkIndex</span> = <span class="type">ChunkUtil</span>.<span class="fn">indexChunkFromBlock</span>(<span class="field">blockX</span>, <span class="field">blockZ</span>);
+
+<span class="comment">// Request the chunk (loads from disk or generates if needed)</span>
+<span class="field">world</span>.<span class="fn">getChunkStore</span>().<span class="fn">getChunkReferenceAsync</span>(<span class="field">chunkIndex</span>, <span class="type">GetChunkFlags</span>.<span class="field">SET_TICKING</span>)
+    .<span class="fn">thenAcceptAsync</span>(<span class="field">ref</span> -> {
+        <span class="kw">if</span> (<span class="field">ref</span> == <span class="kw">null</span>) <span class="kw">return</span>;
+        <span class="type">WorldChunk</span> <span class="field">chunk</span> = (<span class="type">WorldChunk</span>) <span class="field">world</span>.<span class="fn">getChunkStore</span>().<span class="fn">getStore</span>()
+            .<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">WorldChunk</span>.<span class="fn">getComponentType</span>());
+        <span class="field">chunk</span>.<span class="fn">setBlock</span>(<span class="field">blockX</span>, <span class="field">blockY</span>, <span class="field">blockZ</span>, <span class="str">"Stone"</span>);
+    }, (<span class="type">Executor</span>) <span class="field">world</span>);</code></pre>
+
+                <h3>Iterating All Players in a World</h3>
+                <pre><code><span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="field">world</span>.<span class="fn">execute</span>(() -> {
+    <span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+    <span class="comment">// Use the world's player ref list</span>
+    <span class="kw">for</span> (<span class="type">PlayerRef</span> <span class="field">playerRef</span> : <span class="field">world</span>.<span class="fn">getPlayerRefs</span>()) {
+        <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">playerRef</span>.<span class="fn">getReference</span>();
+        <span class="kw">if</span> (<span class="field">ref</span> == <span class="kw">null</span> || !<span class="field">ref</span>.<span class="fn">isValid</span>()) <span class="kw">continue</span>;
+
+        <span class="type">Player</span> <span class="field">player</span> = (<span class="type">Player</span>) <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+        <span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">text</span>(<span class="str">"Hello from the world thread!"</span>));
+    }
+});</code></pre>
+
+                <h3>Creating a Temporary Instance World</h3>
+                <pre><code><span class="type">String</span> <span class="field">instanceName</span> = <span class="str">"instance-Arena-"</span> + <span class="type">UUID</span>.<span class="fn">randomUUID</span>().<span class="fn">toString</span>().<span class="fn">substring</span>(<span class="num">0</span>, <span class="num">8</span>);
+<span class="type">Path</span> <span class="field">savePath</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getPath</span>().<span class="fn">resolve</span>(<span class="str">"worlds"</span>).<span class="fn">resolve</span>(<span class="field">instanceName</span>);
+
+<span class="comment">// Create config for the instance</span>
+<span class="type">WorldConfig</span> <span class="field">config</span> = <span class="kw">new</span> <span class="type">WorldConfig</span>();
+<span class="field">config</span>.<span class="fn">setDeleteOnRemove</span>(<span class="kw">true</span>);
+<span class="field">config</span>.<span class="fn">setDeleteOnUniverseStart</span>(<span class="kw">true</span>);
+<span class="field">config</span>.<span class="fn">setCanSaveChunks</span>(<span class="kw">false</span>);
+<span class="field">config</span>.<span class="fn">setSavingPlayers</span>(<span class="kw">false</span>);
+<span class="field">config</span>.<span class="fn">setCanUnloadChunks</span>(<span class="kw">false</span>);
+
+<span class="comment">// Create and start the world</span>
+<span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">makeWorld</span>(<span class="field">instanceName</span>, <span class="field">savePath</span>, <span class="field">config</span>)
+    .<span class="fn">thenCompose</span>(<span class="field">instanceWorld</span> -> {
+        <span class="comment">// Transfer the player into the instance</span>
+        <span class="kw">return</span> <span class="field">instanceWorld</span>.<span class="fn">addPlayer</span>(<span class="field">playerRef</span>, <span class="kw">null</span>);
+    });</code></pre>
+
+                <h3>Finding an Entity by UUID Across All Worlds</h3>
+                <pre><code><span class="kw">public</span> <span class="kw">static</span> <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">findEntity</span>(<span class="type">UUID</span> <span class="field">uuid</span>) {
+    <span class="kw">for</span> (<span class="type">World</span> <span class="field">world</span> : <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorlds</span>().<span class="fn">values</span>()) {
+        <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getRefFromUUID</span>(<span class="field">uuid</span>);
+        <span class="kw">if</span> (<span class="field">ref</span> != <span class="kw">null</span>) <span class="kw">return</span> <span class="field">ref</span>;
+    }
+    <span class="kw">return</span> <span class="kw">null</span>;
+}</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>The <code>findEntity()</code> example above returns a <span class="type">Ref</span> that belongs to a specific world's store. You must use that <span class="type">Ref</span> only on the owning world's thread. Call <code>((EntityStore) ref.getStore().getExternalData()).getWorld()</code> to discover which world owns it, then use <code>world.execute()</code> for any operations.</p>
+                </div>
+            </section>
+
+            <section id="summary">
+                <h2>Summary</h2>
+                <p>The Universe and World systems form the backbone of the Hytale server architecture:</p>
+                <ul>
+                    <li><strong>Universe:</strong> Global singleton. Thread-safe access to all worlds and players. Manages lifecycle of world creation, loading, removal, and player connections.</li>
+                    <li><strong>World:</strong> Self-contained <span class="type">TickingThread</span> with dedicated game loop. Owns a <span class="type">ChunkStore</span> and an <span class="type">EntityStore</span>. Implements <span class="type">Executor</span> for safe cross-thread scheduling.</li>
+                    <li><strong>ChunkStore:</strong> ECS store for terrain data. Manages async chunk loading, generation, saving, and unloading with exponential backoff on failures.</li>
+                    <li><strong>EntityStore:</strong> ECS store for mobile entities. Auto-maintains UUID and NetworkId indices via internal systems.</li>
+                    <li><strong>WorldChunk:</strong> Top-level chunk component with flag-based lifecycle, keep-alive timers, and block access delegation.</li>
+                    <li><strong>ChunkLoadState:</strong> Per-chunk async state machine tracking loading futures, references, and failure backoff.</li>
+                    <li><strong>PlayerRef:</strong> Thread-safe player handle. Transitions between "in world" (entity reference) and "between worlds" (detached holder) states.</li>
+                    <li><strong>Cross-world transfer:</strong> Use <code>World.addPlayer()</code>, the <span class="type">Teleport</span> component, or <code>Universe.resetPlayer()</code>.</li>
+                    <li><strong>Player storage:</strong> Persisted globally via <span class="type">PlayerStorage</span>, not per-world.</li>
+                    <li><strong>Instance worlds:</strong> Temporary worlds with <code>deleteOnRemove = true</code>, created via <code>makeWorld()</code>.</li>
+                </ul>
+            </section>
+
         </div>
     </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC &amp; AI System - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html" class="active">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <div class="page-toc"></div>
+
+    <main class="main">
+        <div class="content">
+            <h1>NPC &amp; AI System</h1>
+            <p class="page-desc">Behavior trees, blackboard data, decision makers, navigation, sensors, roles, and the full NPC subsystem architecture across 956 decompiled files.</p>
+
+            <section id="overview">
+                <h2 id="overview-heading">Overview</h2>
+                <p>The NPC system is one of the largest subsystems in the Hytale server, spanning <strong>956 files</strong> under the <code>com.hypixel.hytale.server.npc</code> package. It provides a full AI framework including behavior trees, sensory perception, pathfinding, state machines, role-based behavior, and a blackboard system for runtime data sharing between AI components.</p>
+                <p>NPCs are ECS entities with specialized components that drive their behavior each tick. The system is designed around a pipeline: <strong>sensors</strong> gather world data, the <strong>blackboard</strong> stores it, the <strong>decision maker</strong> evaluates conditions and selects actions, and <strong>movement</strong> and <strong>instruction</strong> systems execute them.</p>
+
+<div class="diagram">Sensor Input &rarr; Blackboard Storage &rarr; Decision Maker &rarr; Instructions &rarr; Movement/Actions
+     &#9474;                    &#9474;                     &#9474;                   &#9474;                &#9474;
+  Sight/Sound         Key-Value State      Behavior Trees      AI Sequences     Pathfinding
+  Proximity           Combat Flags         Condition Eval      Attack/Flee      Walk/Run/Fly
+                      Goal Tracking        Action Selection    Interact         Swim/Climb</div>
+
+                <div class="info-box note">
+                    <div class="label">Scale</div>
+                    <p>At 956 files, the NPC subsystem is larger than many standalone applications. The <code>corecomponents</code> package alone contains 356 files. Understanding the package structure is essential before diving into individual classes.</p>
+                </div>
+            </section>
+
+            <section id="architecture">
+                <h2 id="architecture-heading">Package Architecture</h2>
+                <p>The NPC system is organized into 18 sub-packages, each responsible for a distinct aspect of NPC behavior. The following table shows every sub-package with its file count and purpose:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sub-Package</th>
+                            <th>Files</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>corecomponents</code></td>
+                            <td>356</td>
+                            <td>Core NPC behaviors and data components &mdash; the largest package, containing fundamental ECS components that define NPC identity, stats, and capabilities</td>
+                        </tr>
+                        <tr>
+                            <td><code>asset</code></td>
+                            <td>173</td>
+                            <td>NPC asset definitions and configuration &mdash; model references, animation sets, sound mappings, and visual properties</td>
+                        </tr>
+                        <tr>
+                            <td><code>systems</code></td>
+                            <td>72</td>
+                            <td>NPC behavior systems &mdash; tick-processing logic that runs each frame to update NPC state and execute actions</td>
+                        </tr>
+                        <tr>
+                            <td><code>util</code></td>
+                            <td>72</td>
+                            <td>NPC utilities &mdash; helper classes for common NPC operations, math, distance checks, and targeting</td>
+                        </tr>
+                        <tr>
+                            <td><code>commands</code></td>
+                            <td>50</td>
+                            <td>NPC-related commands &mdash; spawn, despawn, configure, debug, and manage NPCs via the command system</td>
+                        </tr>
+                        <tr>
+                            <td><code>blackboard</code></td>
+                            <td>40</td>
+                            <td>State storage &mdash; key-value pair system for AI decision-making data shared across NPC subsystems</td>
+                        </tr>
+                        <tr>
+                            <td><code>movement</code></td>
+                            <td>36</td>
+                            <td>Movement controllers &mdash; pathfinding movement execution, locomotion modes (walk, run, swim, fly, climb)</td>
+                        </tr>
+                        <tr>
+                            <td><code>decisionmaker</code></td>
+                            <td>26</td>
+                            <td>AI decision tree / behavior tree system &mdash; evaluates conditions and selects actions based on blackboard state</td>
+                        </tr>
+                        <tr>
+                            <td><code>role</code></td>
+                            <td>24</td>
+                            <td>NPC role definitions &mdash; merchant, guard, villager, hostile mob, and other behavioral archetypes</td>
+                        </tr>
+                        <tr>
+                            <td><code>sensorinfo</code></td>
+                            <td>20</td>
+                            <td>Sensory input &mdash; sight range, sound detection, proximity awareness, and threat evaluation</td>
+                        </tr>
+                        <tr>
+                            <td><code>components</code></td>
+                            <td>17</td>
+                            <td>Additional ECS components &mdash; supplementary components beyond core, for specialized NPC features</td>
+                        </tr>
+                        <tr>
+                            <td><code>instructions</code></td>
+                            <td>15</td>
+                            <td>AI instruction sequences &mdash; ordered action lists that NPCs execute (attack sequences, patrol routes, dialogue)</td>
+                        </tr>
+                        <tr>
+                            <td><code>navigation</code></td>
+                            <td>14</td>
+                            <td>Pathfinding and navigation mesh &mdash; path calculation, obstacle avoidance, nav mesh queries</td>
+                        </tr>
+                        <tr>
+                            <td><code>statetransition</code></td>
+                            <td>9</td>
+                            <td>State machine transitions &mdash; rules governing how NPCs transition between behavioral states</td>
+                        </tr>
+                        <tr>
+                            <td><code>valuestore</code></td>
+                            <td>6</td>
+                            <td>Runtime value storage &mdash; persistent runtime values that survive across ticks and state changes</td>
+                        </tr>
+                        <tr>
+                            <td><code>interactions</code></td>
+                            <td>5</td>
+                            <td>NPC-player interactions &mdash; dialogue triggers, trade initiation, quest hand-offs</td>
+                        </tr>
+                        <tr>
+                            <td><code>config</code></td>
+                            <td>4</td>
+                            <td>NPC configuration &mdash; global NPC system settings and tuning parameters</td>
+                        </tr>
+                        <tr>
+                            <td><code>storage</code></td>
+                            <td>3</td>
+                            <td>NPC persistence &mdash; serialization and deserialization of NPC state to disk</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+<div class="diagram">com.hypixel.hytale.server.npc
+ &#9500;&#9472;&#9472; corecomponents/    (356)  Core behaviors &amp; data
+ &#9500;&#9472;&#9472; asset/             (173)  Asset definitions
+ &#9500;&#9472;&#9472; systems/            (72)  Tick processing
+ &#9500;&#9472;&#9472; util/               (72)  Utilities
+ &#9500;&#9472;&#9472; commands/           (50)  NPC commands
+ &#9500;&#9472;&#9472; blackboard/         (40)  AI state storage
+ &#9500;&#9472;&#9472; movement/           (36)  Locomotion
+ &#9500;&#9472;&#9472; decisionmaker/      (26)  Behavior trees
+ &#9500;&#9472;&#9472; role/               (24)  Role definitions
+ &#9500;&#9472;&#9472; sensorinfo/         (20)  Perception
+ &#9500;&#9472;&#9472; components/         (17)  Extra ECS components
+ &#9500;&#9472;&#9472; instructions/       (15)  Action sequences
+ &#9500;&#9472;&#9472; navigation/         (14)  Pathfinding
+ &#9500;&#9472;&#9472; statetransition/     (9)  State machine
+ &#9500;&#9472;&#9472; valuestore/          (6)  Runtime values
+ &#9500;&#9472;&#9472; interactions/        (5)  Player interactions
+ &#9500;&#9472;&#9472; config/              (4)  Configuration
+ &#9492;&#9472;&#9472; storage/             (3)  Persistence</div>
+            </section>
+
+            <section id="blackboard">
+                <h2 id="blackboard-heading">Blackboard System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.blackboard</code> (40 files)</p>
+                <p>The blackboard is a <strong>key-value state storage</strong> system that acts as shared memory for all AI subsystems within a single NPC. Sensors write perception data to the blackboard, the decision maker reads it to evaluate conditions, and instruction systems consume it to execute actions.</p>
+
+                <h3 id="blackboard-concept">How It Works</h3>
+                <p>Each NPC entity has a blackboard component attached to it in the ECS. The blackboard stores typed key-value pairs that represent the NPC's current understanding of the world. This pattern decouples sensors from decision-making logic, allowing each system to operate independently while sharing data through a common interface.</p>
+
+<div class="diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                    NPC Blackboard                    &#9474;
+&#9474;                                                     &#9474;
+&#9474;  Key                        Value                   &#9474;
+&#9474;  &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;  &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;  &#9474;
+&#9474;  "target_entity"           Ref&lt;EntityStore&gt;        &#9474;
+&#9474;  "target_distance"         42.5f                   &#9474;
+&#9474;  "threat_level"            ThreatLevel.HIGH        &#9474;
+&#9474;  "current_goal"            Goal.ATTACK             &#9474;
+&#9474;  "has_line_of_sight"       true                    &#9474;
+&#9474;  "last_damage_time"        1709234567890L          &#9474;
+&#9474;  "home_position"           Vector3d(100, 64, 200)  &#9474;
+&#9474;  "patrol_waypoint_index"   3                       &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+                <h3 id="blackboard-data">Typical Blackboard Data</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Example Keys</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Perception</td>
+                            <td><code>target_entity</code>, <code>target_distance</code>, <code>has_line_of_sight</code></td>
+                            <td>Data written by sensors about detected entities and environmental conditions</td>
+                        </tr>
+                        <tr>
+                            <td>Goals</td>
+                            <td><code>current_goal</code>, <code>goal_priority</code>, <code>goal_timeout</code></td>
+                            <td>The NPC's current objective as determined by the decision maker</td>
+                        </tr>
+                        <tr>
+                            <td>Combat</td>
+                            <td><code>threat_level</code>, <code>last_damage_time</code>, <code>attack_cooldown</code></td>
+                            <td>Combat-related state for fight-or-flight decisions</td>
+                        </tr>
+                        <tr>
+                            <td>Navigation</td>
+                            <td><code>home_position</code>, <code>patrol_waypoint_index</code>, <code>destination</code></td>
+                            <td>Movement targets and patrol state for the navigation system</td>
+                        </tr>
+                        <tr>
+                            <td>Social</td>
+                            <td><code>interaction_target</code>, <code>dialogue_state</code>, <code>trade_active</code></td>
+                            <td>Player interaction state for role-based behaviors</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Conceptual blackboard access pattern</span>
+<span class="comment">// Sensors write data each tick</span>
+<span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"target_entity"</span>, <span class="field">nearestThreat</span>);
+<span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"target_distance"</span>, <span class="field">distance</span>);
+<span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"has_line_of_sight"</span>, <span class="field">canSee</span>);
+
+<span class="comment">// Decision maker reads data to choose actions</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">target</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"target_entity"</span>);
+<span class="kw">float</span> <span class="field">dist</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"target_distance"</span>);
+<span class="kw">boolean</span> <span class="field">los</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"has_line_of_sight"</span>);
+
+<span class="kw">if</span> (<span class="field">target</span> != <span class="kw">null</span> &amp;&amp; <span class="field">dist</span> &lt; <span class="field">attackRange</span> &amp;&amp; <span class="field">los</span>) {
+    <span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"current_goal"</span>, <span class="type">Goal</span>.ATTACK);
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Design Pattern</div>
+                    <p>The blackboard pattern is a well-known game AI technique. It allows multiple AI systems to communicate without direct dependencies. Each system only needs to know the blackboard key names, not the implementation details of other systems.</p>
+                </div>
+            </section>
+
+            <section id="decision-maker">
+                <h2 id="decision-maker-heading">Decision Maker</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.decisionmaker</code> (26 files)</p>
+                <p>The decision maker implements a <strong>behavior tree / decision tree</strong> system that evaluates conditions from the blackboard and selects the appropriate action for each NPC every tick. The 26 files in this package define the tree structure, node types, condition evaluators, and action selectors.</p>
+
+                <h3 id="decision-tree-structure">Behavior Tree Structure</h3>
+                <p>Behavior trees are composed of nodes organized in a hierarchy. Each node returns a status (success, failure, or running) that propagates up the tree to determine the final action.</p>
+
+<div class="diagram">                    [Root Selector]
+                    &#9474;
+          &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+          &#9474;                       &#9474;
+   [Combat Sequence]        [Idle Sequence]
+          &#9474;                       &#9474;
+    &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;       &#9484;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+    &#9474;           &#9474;       &#9474;          &#9474;
+[Has Target?] [Attack]  [Wander]  [Look Around]
+ (condition)  (action)  (action)   (action)</div>
+
+                <h3 id="node-types">Node Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node Type</th>
+                            <th>Behavior</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Selector</strong></td>
+                            <td>OR logic</td>
+                            <td>Tries each child in order until one succeeds. Used for fallback behavior (try combat, then try patrol, then idle).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sequence</strong></td>
+                            <td>AND logic</td>
+                            <td>Runs each child in order, stopping on failure. Used for multi-step actions (check condition, then execute).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Condition</strong></td>
+                            <td>Boolean check</td>
+                            <td>Reads blackboard data and returns success or failure. Examples: has target, health below threshold, is daytime.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Action</strong></td>
+                            <td>Execute behavior</td>
+                            <td>Performs an NPC action: attack, flee, patrol, interact, play animation. Returns running if not complete.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Decorator</strong></td>
+                            <td>Modify child</td>
+                            <td>Wraps a child node to invert results, add cooldowns, repeat actions, or limit execution time.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Conceptual behavior tree evaluation</span>
+<span class="comment">// The decision maker traverses the tree each tick</span>
+<span class="kw">public</span> <span class="kw">enum</span> <span class="type">NodeStatus</span> {
+    SUCCESS,    <span class="comment">// Node completed successfully</span>
+    FAILURE,    <span class="comment">// Node failed, try next sibling</span>
+    RUNNING     <span class="comment">// Node still executing, continue next tick</span>
+}
+
+<span class="comment">// Selector: tries children until one succeeds</span>
+<span class="kw">for</span> (<span class="type">BehaviorNode</span> <span class="field">child</span> : <span class="field">children</span>) {
+    <span class="type">NodeStatus</span> <span class="field">status</span> = <span class="field">child</span>.<span class="fn">evaluate</span>(<span class="field">blackboard</span>);
+    <span class="kw">if</span> (<span class="field">status</span> != <span class="type">NodeStatus</span>.FAILURE) {
+        <span class="kw">return</span> <span class="field">status</span>;  <span class="comment">// SUCCESS or RUNNING</span>
+    }
+}
+<span class="kw">return</span> <span class="type">NodeStatus</span>.FAILURE;  <span class="comment">// All children failed</span></code></pre>
+            </section>
+
+            <section id="sensors">
+                <h2 id="sensors-heading">Sensor System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.sensorinfo</code> (20 files)</p>
+                <p>The sensor system defines how NPCs perceive the world around them. Sensors run each tick (or at configured intervals) to detect entities, sounds, and environmental changes, writing their findings to the blackboard for the decision maker to consume.</p>
+
+                <h3 id="sensor-types">Sensor Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sensor</th>
+                            <th>Detection Method</th>
+                            <th>Blackboard Output</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Sight Sensor</strong></td>
+                            <td>Cone-shaped raycast from NPC facing direction within a configured range and field of view</td>
+                            <td>Visible entities list, nearest visible threat, line-of-sight flags</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sound Sensor</strong></td>
+                            <td>Spherical radius check for sound events (footsteps, combat, block breaks) emitted by entities</td>
+                            <td>Sound source position, sound type, estimated distance</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Proximity Sensor</strong></td>
+                            <td>Simple distance check against all nearby entities within a configured radius</td>
+                            <td>Nearby entity list, closest entity, entity count in range</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+<div class="diagram">                   Sight Cone (FOV)
+                      /.  .  .\
+                     / .  .  . \
+                    /  .  .  .  \
+                   /   .  .  .   \
+         NPC  ----&lt;    . (Target) \
+                   \   .  .  .   /
+                    \  .  .  .  /
+                     \ .  .  . /
+                      \.  .  ./
+
+         &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+         &#9474;  Sound Radius (spherical)      &#9474;
+         &#9474;     Proximity Radius (sphere)  &#9474;
+         &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+                <pre><code><span class="comment">// Sensor writes perception data to the blackboard each tick</span>
+<span class="kw">public</span> <span class="kw">void</span> <span class="fn">tickSightSensor</span>(<span class="type">NPCEntity</span> <span class="field">npc</span>, <span class="type">Blackboard</span> <span class="field">blackboard</span>, <span class="type">Accessor</span> <span class="field">accessor</span>) {
+    <span class="type">List</span>&lt;<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;&gt; <span class="field">visible</span> = <span class="fn">scanVisibleEntities</span>(
+        <span class="field">npc</span>.<span class="fn">getPosition</span>(),
+        <span class="field">npc</span>.<span class="fn">getFacingDirection</span>(),
+        <span class="field">sightRange</span>,
+        <span class="field">fieldOfView</span>,
+        <span class="field">accessor</span>
+    );
+
+    <span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"visible_entities"</span>, <span class="field">visible</span>);
+
+    <span class="comment">// Find nearest threat</span>
+    <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">nearestThreat</span> = <span class="fn">findNearestThreat</span>(<span class="field">visible</span>, <span class="field">npc</span>, <span class="field">accessor</span>);
+    <span class="field">blackboard</span>.<span class="fn">set</span>(<span class="str">"target_entity"</span>, <span class="field">nearestThreat</span>);
+}</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Performance</div>
+                    <p>Sensor checks (especially sight raycasts) are computationally expensive. The NPC system staggers sensor updates across ticks so not all NPCs run full sensor sweeps on the same frame. Check the <code>systems/</code> package for the tick scheduling logic.</p>
+                </div>
+            </section>
+
+            <section id="navigation">
+                <h2 id="navigation-heading">Navigation &amp; Pathfinding</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.navigation</code> (14 files)</p>
+                <p>The navigation system handles path calculation and obstacle avoidance for NPC movement. It provides pathfinding queries that compute a series of waypoints from the NPC's current position to a target destination, accounting for terrain, obstacles, and the NPC's movement capabilities.</p>
+
+                <h3 id="navigation-components">Navigation Components</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Path Calculator</td>
+                            <td>Computes waypoint paths between two world positions using the navigation mesh</td>
+                        </tr>
+                        <tr>
+                            <td>Obstacle Avoidance</td>
+                            <td>Real-time steering to avoid dynamic obstacles (other entities, moving objects)</td>
+                        </tr>
+                        <tr>
+                            <td>Navigation Mesh</td>
+                            <td>Walkable surface representation derived from chunk block data for efficient pathfinding</td>
+                        </tr>
+                        <tr>
+                            <td>Path Smoothing</td>
+                            <td>Post-processes raw paths to remove unnecessary waypoints and create natural movement</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+<div class="diagram">Path Calculation Pipeline:
+
+  Start Position &#9472;&#9472;&#9472;&#9658; Nav Mesh Query &#9472;&#9472;&#9472;&#9658; Raw Path &#9472;&#9472;&#9472;&#9658; Path Smoothing &#9472;&#9472;&#9472;&#9658; Waypoints
+       &#9474;                    &#9474;                  &#9474;                  &#9474;
+   NPC current          Find walkable       A* or similar     Remove redundant
+   world pos            surfaces            pathfinding        intermediate nodes
+                                            algorithm</div>
+
+                <pre><code><span class="comment">// Navigation path request (conceptual)</span>
+<span class="type">Vector3d</span> <span class="field">start</span> = <span class="field">npc</span>.<span class="fn">getPosition</span>();
+<span class="type">Vector3d</span> <span class="field">target</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"destination"</span>);
+
+<span class="comment">// Request a path from the navigation system</span>
+<span class="type">NavigationPath</span> <span class="field">path</span> = <span class="field">navigator</span>.<span class="fn">findPath</span>(<span class="field">start</span>, <span class="field">target</span>);
+
+<span class="kw">if</span> (<span class="field">path</span>.<span class="fn">isValid</span>()) {
+    <span class="comment">// Follow the waypoints</span>
+    <span class="type">Vector3d</span> <span class="field">nextWaypoint</span> = <span class="field">path</span>.<span class="fn">getNextWaypoint</span>();
+    <span class="field">movementController</span>.<span class="fn">moveTo</span>(<span class="field">nextWaypoint</span>);
+}</code></pre>
+            </section>
+
+            <section id="movement">
+                <h2 id="movement-heading">Movement System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.movement</code> (36 files)</p>
+                <p>The movement system handles NPC locomotion across 36 files. It translates navigation waypoints and direct movement commands into physics-based entity motion, supporting multiple movement modes that NPCs can switch between dynamically.</p>
+
+                <h3 id="movement-modes">Movement Modes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Description</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Walking</strong></td>
+                            <td>Standard ground locomotion with gravity and terrain following</td>
+                            <td>Default movement for ground-based NPCs</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Running</strong></td>
+                            <td>Increased speed ground locomotion, typically used during chase or flee</td>
+                            <td>Combat pursuit, fleeing from threats</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Swimming</strong></td>
+                            <td>Water-based movement with buoyancy and water resistance</td>
+                            <td>Aquatic NPCs or traversing bodies of water</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Flying</strong></td>
+                            <td>Three-dimensional movement without gravity constraints</td>
+                            <td>Birds, bats, flying mobs, boss phases</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Climbing</strong></td>
+                            <td>Vertical movement along surfaces (ladders, walls for spider-like NPCs)</td>
+                            <td>Spiders, wall-climbing creatures</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Movement controller updates NPC position each tick</span>
+<span class="comment">// Mode determines physics behavior</span>
+<span class="kw">switch</span> (<span class="field">movementMode</span>) {
+    <span class="kw">case</span> WALKING:
+        <span class="fn">applyGravity</span>(<span class="field">velocity</span>);
+        <span class="fn">followTerrain</span>(<span class="field">position</span>, <span class="field">velocity</span>);
+        <span class="kw">break</span>;
+    <span class="kw">case</span> FLYING:
+        <span class="fn">applyDrag</span>(<span class="field">velocity</span>);
+        <span class="fn">moveTowards</span>(<span class="field">targetPosition</span>, <span class="field">flySpeed</span>);
+        <span class="kw">break</span>;
+    <span class="kw">case</span> SWIMMING:
+        <span class="fn">applyBuoyancy</span>(<span class="field">velocity</span>);
+        <span class="fn">applyWaterResistance</span>(<span class="field">velocity</span>);
+        <span class="kw">break</span>;
+}
+<span class="field">position</span>.<span class="fn">add</span>(<span class="field">velocity</span>);</code></pre>
+            </section>
+
+            <section id="roles">
+                <h2 id="roles-heading">Role System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.role</code> (24 files)</p>
+                <p>Roles define <strong>behavioral archetypes</strong> for NPCs. A role configures which decision trees, sensors, movement modes, and interactions an NPC supports. The 24 role definition files allow NPCs to be assigned predefined behavior patterns without custom coding.</p>
+
+                <h3 id="role-examples">Role Examples</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Behavior Pattern</th>
+                            <th>Key Traits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Merchant</strong></td>
+                            <td>Stationary, interactable, trades items with players</td>
+                            <td>Trade inventory, dialogue, no combat AI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Guard</strong></td>
+                            <td>Patrols area, engages hostile entities, defends territory</td>
+                            <td>Patrol waypoints, aggro range, combat AI, territory bounds</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Villager</strong></td>
+                            <td>Wanders settlement, follows daily schedule, flees from threats</td>
+                            <td>Schedule system, home position, flee behavior</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hostile Mob</strong></td>
+                            <td>Hunts players and passive NPCs within aggro range</td>
+                            <td>Aggro radius, attack patterns, target selection, loot table</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Passive Creature</strong></td>
+                            <td>Wanders naturally, flees from threats, groups with same species</td>
+                            <td>Herd behavior, flee triggers, ambient animations</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Get role index by name</span>
+<span class="kw">int</span> <span class="field">roleIndex</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">getIndex</span>(<span class="str">"Guard"</span>);
+
+<span class="comment">// Role defines the behavior tree, sensors, movement, and interactions</span>
+<span class="comment">// When spawning an NPC with a role, all these systems are configured automatically</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+<span class="type">Pair</span>&lt;<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;, <span class="type">NPCEntity</span>&gt; <span class="field">result</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnEntity</span>(
+    <span class="field">store</span>,
+    <span class="field">roleIndex</span>,       <span class="comment">// "Guard" role</span>
+    <span class="field">position</span>,
+    <span class="field">rotation</span>,
+    <span class="kw">null</span>,            <span class="comment">// model (null = use role default)</span>
+    <span class="kw">null</span>             <span class="comment">// callback</span>
+);</code></pre>
+            </section>
+
+            <section id="state-transitions">
+                <h2 id="state-transitions-heading">State Transitions</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.statetransition</code> (9 files)</p>
+                <p>The state transition system implements a <strong>finite state machine</strong> for NPC behavioral states. Each NPC exists in one state at a time, and transitions between states are governed by conditions evaluated from blackboard data.</p>
+
+                <h3 id="npc-states">NPC States</h3>
+<div class="diagram">         &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     detect threat      &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+         &#9474;  IDLE  &#9474; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9658; &#9474; COMBAT  &#9474;
+         &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;                    &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+              &#9474;  &#9650;                        &#9474;  &#9474;
+     timeout  &#9474;  &#9474; no threats             &#9474;  &#9474; health low
+              &#9660;  &#9474;                        &#9660;  &#9474;
+         &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;                   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+         &#9474; PATROL &#9474;                   &#9474;  FLEE  &#9474;
+         &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;                   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+              &#9474;                             &#9474;
+     interact &#9474;                    safe     &#9474;
+              &#9660;                             &#9660;
+         &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;           &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+         &#9474; INTERACT  &#9474;           &#9474; RECOVER  &#9474;
+         &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;           &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>State</th>
+                            <th>Description</th>
+                            <th>Typical Transitions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Idle</strong></td>
+                            <td>NPC is stationary, performing ambient animations</td>
+                            <td>Patrol (timeout), Combat (threat detected), Interact (player nearby)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Patrol</strong></td>
+                            <td>NPC follows a waypoint route through its territory</td>
+                            <td>Idle (patrol complete), Combat (threat detected)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Combat</strong></td>
+                            <td>NPC is actively engaging a target</td>
+                            <td>Flee (health low), Idle (target eliminated/lost)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Flee</strong></td>
+                            <td>NPC is running away from a threat</td>
+                            <td>Recover (reached safe distance), Idle (threat gone)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Interact</strong></td>
+                            <td>NPC is engaged with a player (trade, dialogue)</td>
+                            <td>Idle (interaction complete), Combat (attacked)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Recover</strong></td>
+                            <td>NPC is healing or resting after fleeing</td>
+                            <td>Idle (recovered), Flee (threat re-engaged)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// State transitions are condition-based</span>
+<span class="comment">// Each transition has a source state, target state, and condition</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">CombatToFleeTransition</span> <span class="kw">implements</span> <span class="type">StateTransition</span> {
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">shouldTransition</span>(<span class="type">Blackboard</span> <span class="field">blackboard</span>) {
+        <span class="kw">float</span> <span class="field">health</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"current_health"</span>);
+        <span class="kw">float</span> <span class="field">maxHealth</span> = <span class="field">blackboard</span>.<span class="fn">get</span>(<span class="str">"max_health"</span>);
+        <span class="kw">return</span> <span class="field">health</span> / <span class="field">maxHealth</span> &lt; <span class="field">fleeThreshold</span>;  <span class="comment">// e.g., 20%</span>
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">NPCState</span> <span class="fn">getSourceState</span>() { <span class="kw">return</span> <span class="type">NPCState</span>.COMBAT; }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">NPCState</span> <span class="fn">getTargetState</span>() { <span class="kw">return</span> <span class="type">NPCState</span>.FLEE; }
+}</code></pre>
+            </section>
+
+            <section id="spawning">
+                <h2 id="spawning-heading">Spawning NPCs</h2>
+                <p>NPCs are spawned through the <code>NPCPlugin</code> API, which handles entity creation, component assembly, role configuration, and world registration in a single call.</p>
+
+                <h3 id="basic-spawn">Basic Spawn</h3>
+                <pre><code><span class="comment">// Simple NPC spawn using NPCPlugin API</span>
+<span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnNPC</span>(<span class="field">world</span>, <span class="field">npcAssetId</span>, <span class="field">position</span>, <span class="field">rotation</span>);</code></pre>
+
+                <h3 id="detailed-spawn">Detailed Spawn with Role</h3>
+                <pre><code><span class="comment">// Get role index by name</span>
+<span class="kw">int</span> <span class="field">roleIndex</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">getIndex</span>(<span class="str">"Zombie"</span>);
+
+<span class="comment">// Spawn NPC with full control</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+<span class="type">Pair</span>&lt;<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;, <span class="type">NPCEntity</span>&gt; <span class="field">result</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnEntity</span>(
+    <span class="field">store</span>,
+    <span class="field">roleIndex</span>,
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">100</span>, <span class="field">70</span>, <span class="field">100</span>),  <span class="comment">// position</span>
+    <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="field">0</span>, <span class="field">0</span>, <span class="field">0</span>),       <span class="comment">// rotation</span>
+    <span class="kw">null</span>,                         <span class="comment">// model (null = use role default)</span>
+    <span class="kw">null</span>                          <span class="comment">// post-spawn callback</span>
+);
+
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">npcRef</span> = <span class="field">result</span>.<span class="fn">first</span>();
+<span class="type">NPCEntity</span> <span class="field">npc</span> = <span class="field">result</span>.<span class="fn">second</span>();</code></pre>
+
+                <h3 id="spawn-hooks">Spawn with Pre/Post Hooks</h3>
+                <pre><code><span class="comment">// Advanced spawn with lifecycle hooks</span>
+<span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnEntity</span>(<span class="field">store</span>, <span class="field">roleIndex</span>, <span class="field">position</span>, <span class="field">rotation</span>, <span class="field">model</span>,
+    (<span class="field">npc</span>, <span class="field">holder</span>, <span class="field">s</span>) -&gt; {
+        <span class="comment">// Pre-add hook: modify the entity before it enters the world</span>
+        <span class="comment">// Add custom components, set initial blackboard values, etc.</span>
+        <span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+            <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Elite Guard"</span>));
+    },
+    (<span class="field">npc</span>, <span class="field">ref</span>, <span class="field">s</span>) -&gt; {
+        <span class="comment">// Post-spawn hook: entity is now in the world</span>
+        <span class="comment">// Start AI, trigger events, log spawn, etc.</span>
+        <span class="field">logger</span>.<span class="fn">info</span>(<span class="str">"Spawned NPC at "</span> + <span class="field">position</span>);
+    }
+);</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Threading</div>
+                    <p>NPC spawning must be performed on the <strong>world's tick thread</strong>. If calling from a command handler or another thread, use <code>world.execute(() -&gt; { ... })</code> to schedule the spawn operation.</p>
+                </div>
+            </section>
+
+            <section id="instructions">
+                <h2 id="instructions-heading">Instruction System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.instructions</code> (15 files)</p>
+                <p>Instructions are <strong>ordered action sequences</strong> that NPCs execute when selected by the decision maker. An instruction defines a series of steps (move to position, play animation, wait, attack) that the NPC follows in order.</p>
+
+                <h3 id="instruction-types">Instruction Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instruction</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Move To</td>
+                            <td>Navigate to a target position using the pathfinding system</td>
+                        </tr>
+                        <tr>
+                            <td>Attack Target</td>
+                            <td>Engage the current combat target with the NPC's attack pattern</td>
+                        </tr>
+                        <tr>
+                            <td>Play Animation</td>
+                            <td>Trigger a specific animation on the NPC model</td>
+                        </tr>
+                        <tr>
+                            <td>Wait</td>
+                            <td>Pause for a specified duration before continuing</td>
+                        </tr>
+                        <tr>
+                            <td>Look At</td>
+                            <td>Rotate to face a target entity or position</td>
+                        </tr>
+                        <tr>
+                            <td>Interact</td>
+                            <td>Begin an interaction sequence with a player (dialogue, trade)</td>
+                        </tr>
+                        <tr>
+                            <td>Flee From</td>
+                            <td>Move away from a threat using the navigation system</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Conceptual instruction sequence for a guard NPC</span>
+<span class="comment">// Decision maker selects this when a threat enters the guard's territory</span>
+<span class="type">InstructionSequence</span> <span class="field">guardResponse</span> = <span class="kw">new</span> <span class="type">InstructionSequence</span>(
+    <span class="kw">new</span> <span class="type">LookAtInstruction</span>(<span class="field">threatEntity</span>),
+    <span class="kw">new</span> <span class="type">PlayAnimationInstruction</span>(<span class="str">"alert"</span>),
+    <span class="kw">new</span> <span class="type">WaitInstruction</span>(<span class="field">500</span>),  <span class="comment">// 500ms alert pose</span>
+    <span class="kw">new</span> <span class="type">MoveToInstruction</span>(<span class="field">threatEntity</span>.<span class="fn">getPosition</span>()),
+    <span class="kw">new</span> <span class="type">AttackTargetInstruction</span>(<span class="field">threatEntity</span>)
+);</code></pre>
+            </section>
+
+            <section id="commands">
+                <h2 id="commands-heading">NPC Commands</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.commands</code> (50 files)</p>
+                <p>The NPC command system provides 50 command files for managing NPCs at runtime. These commands are used for spawning, debugging, configuring, and controlling NPCs from the server console or in-game chat.</p>
+
+                <h3 id="command-categories">Command Categories</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Purpose</th>
+                            <th>Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Spawn/Despawn</strong></td>
+                            <td>Create and remove NPC entities</td>
+                            <td>Spawn by role name, despawn by selection, bulk spawn/despawn</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Configuration</strong></td>
+                            <td>Modify NPC properties at runtime</td>
+                            <td>Set aggro range, change movement speed, assign role</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Debug</strong></td>
+                            <td>Inspect NPC AI state for development</td>
+                            <td>Show blackboard contents, display behavior tree, visualize paths</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Control</strong></td>
+                            <td>Direct NPC actions manually</td>
+                            <td>Force state transition, set target, override decision maker</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Registering NPC commands in your plugin</span>
+<span class="anno">@Override</span>
+<span class="kw">protected</span> <span class="kw">void</span> <span class="fn">setup</span>() {
+    <span class="comment">// NPC commands are registered by the built-in NPCPlugin</span>
+    <span class="comment">// Access the NPC API through NPCPlugin.get()</span>
+    <span class="type">NPCPlugin</span> <span class="field">npcPlugin</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>();
+
+    <span class="comment">// Use the NPC API to interact with NPCs programmatically</span>
+    <span class="comment">// rather than through commands when building plugins</span>
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Built-in Commands</div>
+                    <p>The 50 NPC command files are part of the built-in <code>NPCPlugin</code> and are registered automatically. Plugin developers interact with NPCs through the <code>NPCPlugin</code> Java API rather than invoking commands directly.</p>
+                </div>
+            </section>
+
+            <section id="interactions">
+                <h2 id="interactions-heading">NPC-Player Interactions</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.interactions</code> (5 files)</p>
+                <p>The interaction system handles direct NPC-player engagement: dialogue, trading, quest hand-offs, and other player-facing behaviors. When a player approaches an interactable NPC, the interaction system manages the session lifecycle.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Interaction Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Dialogue</strong></td>
+                            <td>NPC displays conversation text with response options sent to the player's UI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trade</strong></td>
+                            <td>Opens a trade interface between the player and the NPC's inventory</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quest</strong></td>
+                            <td>NPC offers or advances a quest objective, updating the player's active objectives</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="core-components">
+                <h2 id="core-components-heading">Core Components</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.corecomponents</code> (356 files)</p>
+                <p>The core components package is the largest in the NPC system. It contains the fundamental ECS components that define NPC identity, capabilities, and runtime data. These components are attached to NPC entities when they are spawned and drive all NPC behavior systems.</p>
+
+                <h3 id="component-categories">Key Component Categories</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Purpose</th>
+                            <th>Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Identity</strong></td>
+                            <td>NPC type, name, and unique identification</td>
+                            <td><span class="type">NPCEntity</span>, <span class="type">NPCAssetRef</span>, <span class="type">UUIDComponent</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stats</strong></td>
+                            <td>Health, damage, speed, and other numeric attributes</td>
+                            <td><span class="type">HealthComponent</span>, <span class="type">SpeedModifier</span>, <span class="type">DamageComponent</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Visual</strong></td>
+                            <td>Model, animations, nameplate, and rendering</td>
+                            <td><span class="type">ModelComponent</span>, <span class="type">AnimationState</span>, <span class="type">Nameplate</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Physics</strong></td>
+                            <td>Position, velocity, bounding box, collision</td>
+                            <td><span class="type">TransformComponent</span>, <span class="type">Velocity</span>, <span class="type">BoundingBox</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI</strong></td>
+                            <td>Blackboard, decision tree, sensors, navigation</td>
+                            <td><span class="type">BlackboardComponent</span>, <span class="type">DecisionMakerComponent</span>, <span class="type">SensorComponent</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lifecycle</strong></td>
+                            <td>Spawn, despawn, persistence, and state tracking</td>
+                            <td><span class="type">DespawnComponent</span>, <span class="type">SpawnData</span>, <span class="type">PersistenceFlag</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="systems-tick">
+                <h2 id="systems-tick-heading">NPC Systems (Tick Processing)</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.systems</code> (72 files)</p>
+                <p>NPC systems are the <strong>tick-processing logic</strong> that runs each frame to update NPC state. Each system queries the ECS for entities with specific components and processes them. The 72 system files cover every aspect of NPC runtime behavior.</p>
+
+                <h3 id="tick-order">Tick Processing Order</h3>
+                <p>NPC systems execute in a defined order each tick to ensure consistent behavior:</p>
+
+                <ol>
+                    <li><strong>Sensor Systems</strong> &mdash; Scan environment, update blackboard with perception data</li>
+                    <li><strong>Decision Systems</strong> &mdash; Evaluate behavior trees, select actions based on blackboard</li>
+                    <li><strong>State Transition Systems</strong> &mdash; Process state machine transitions based on conditions</li>
+                    <li><strong>Instruction Systems</strong> &mdash; Execute current action sequences (attack, move, interact)</li>
+                    <li><strong>Navigation Systems</strong> &mdash; Calculate and update pathfinding</li>
+                    <li><strong>Movement Systems</strong> &mdash; Apply physics, update entity position and velocity</li>
+                    <li><strong>Animation Systems</strong> &mdash; Sync animations with current state and actions</li>
+                    <li><strong>Network Sync Systems</strong> &mdash; Send NPC state updates to nearby clients</li>
+                </ol>
+
+<div class="diagram">Per-Tick NPC Processing Pipeline:
+
+  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474; Sensors &#9474;&#9658;&#9474; Decision &#9474;&#9658;&#9474; State  &#9474;&#9658;&#9474; Navigation  &#9474;&#9658;&#9474; Movement &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+      &#9474;             &#9474;            &#9474;             &#9474;               &#9474;
+  Scan world    Evaluate tree   Transition    Pathfind         Apply physics
+  Update board  Select action   if needed     Update path      Update position</div>
+
+                <div class="info-box warning">
+                    <div class="label">Performance</div>
+                    <p>With 956 NPC files and potentially hundreds of NPCs active simultaneously, the tick processing pipeline is performance-critical. The system uses techniques like sensor staggering, LOD-based tick frequency, and spatial partitioning to maintain acceptable frame rates.</p>
+                </div>
+            </section>
+
+            <section id="asset-system">
+                <h2 id="asset-system-heading">NPC Assets</h2>
+                <p>Package: <code>com.hypixel.hytale.server.npc.asset</code> (173 files)</p>
+                <p>NPC assets define the visual and configuration data for NPC types. Each NPC type has an asset definition that specifies its model, animations, sounds, and default properties. The 173 asset files cover all NPC types in the game.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Model Reference</td>
+                            <td>3D model asset ID used for client-side rendering</td>
+                        </tr>
+                        <tr>
+                            <td>Animation Set</td>
+                            <td>Named animations (idle, walk, run, attack, death) mapped to the model's skeleton</td>
+                        </tr>
+                        <tr>
+                            <td>Sound Mapping</td>
+                            <td>Sound events for NPC actions (footsteps, attack sounds, hurt sounds, ambient sounds)</td>
+                        </tr>
+                        <tr>
+                            <td>Default Properties</td>
+                            <td>Base stats (health, speed, damage), sensor ranges, and behavior tree references</td>
+                        </tr>
+                        <tr>
+                            <td>Loot Tables</td>
+                            <td>Item drops on death, including rarity weights and quantity ranges</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="persistence">
+                <h2 id="persistence-heading">NPC Persistence</h2>
+                <p>Packages: <code>com.hypixel.hytale.server.npc.storage</code> (3 files), <code>com.hypixel.hytale.server.npc.valuestore</code> (6 files)</p>
+                <p>NPC persistence handles saving and loading NPC state to disk. The storage package (3 files) manages serialization and deserialization of NPC entities, while the value store (6 files) maintains runtime values that survive across ticks and state changes.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Files</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>storage</code></td>
+                            <td>3</td>
+                            <td>Disk serialization &mdash; saving NPC entity state when chunks unload and restoring them on load</td>
+                        </tr>
+                        <tr>
+                            <td><code>valuestore</code></td>
+                            <td>6</td>
+                            <td>Runtime value persistence &mdash; typed key-value data that survives across AI state transitions and ticks</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Chunk-Bound Persistence</div>
+                    <p>NPCs are persisted with their chunk. When a chunk unloads, any NPCs within it are serialized to disk. When the chunk reloads, the NPCs are deserialized and their AI state is restored, including blackboard data and current behavior tree node.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

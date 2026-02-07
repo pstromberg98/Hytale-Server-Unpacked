@@ -7,204 +7,893 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html" class="active">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
-    <main class="main"><div class="content">
-        <h1>Sound &amp; Audio</h1>
-        <p class="page-desc">Playing sounds, music control, custom audio via data mods, and the SoundUtil API.</p>
+    <main class="main">
+        <nav class="page-toc"></nav>
+        <div class="content">
+            <h1>Sound &amp; Audio</h1>
+            <p class="page-desc">Server-side audio architecture, 2D and 3D sound playback via SoundUtil, entity-attached audio, sound asset types, ambient audio effects, reverb and equalizer systems, block and item sounds, and custom sound registration via data mods.</p>
 
-        <h2>Overview</h2>
-        <p>Sounds are asset-driven and referenced by string IDs, converted to integer indices for network transmission. All playback goes through <code>SoundUtil</code> static methods.</p>
+            <section id="architecture-overview">
+                <h2>Architecture Overview</h2>
+                <p>The Hytale sound system is entirely <strong>server-authoritative</strong>. The server determines which sounds to play, constructs the appropriate network packets, and sends them to clients. The client is responsible only for audio playback and mixing. All server-side audio logic flows through <span class="type">SoundUtil</span>, a static utility class in <code>com.hypixel.hytale.server.core.universe.world</code>.</p>
 
-        <div class="warning-box">
-            <strong>⚠️ Threading Warning:</strong> All SoundUtil methods must be called from the world thread. Use <code>world.execute()</code> from commands.
-        </div>
+                <p>Sounds are defined as <strong>assets</strong> &mdash; JSON configuration files loaded into the <span class="type">AssetRegistry</span> at startup. Each sound is referenced by a string ID (e.g., <code>"Game/Combat/Sword_Hit"</code>) which is converted to an integer index for efficient network transmission. Index <code>0</code> is reserved as the <code>EMPTY</code> sentinel; all <span class="type">SoundUtil</span> methods silently return when given index <code>0</code>.</p>
 
-        <h2>Sound Categories</h2>
-        <p>Sounds are organized into categories for independent volume control:</p>
-        <pre><code class="language-java"><span class="keyword">SoundCategory</span>.Music    <span class="comment">// Background music</span>
-<span class="keyword">SoundCategory</span>.Ambient  <span class="comment">// Environmental sounds</span>
-<span class="keyword">SoundCategory</span>.SFX      <span class="comment">// Sound effects (most gameplay sounds)</span>
-<span class="keyword">SoundCategory</span>.UI       <span class="comment">// User interface sounds</span></code></pre>
+                <p>There are two fundamental playback modes:</p>
+                <ul>
+                    <li><strong>2D (Non-spatial):</strong> Constant volume regardless of listener position. Used for UI sounds, music, and global effects. Sent via <code>PlaySoundEvent2D</code> packets.</li>
+                    <li><strong>3D (Spatial):</strong> Positional audio at world coordinates with distance-based attenuation. The server uses the <span class="type">SpatialResource</span> spatial index to find players within <code>maxDistance</code> and sends <code>PlaySoundEvent3D</code> packets only to those players.</li>
+                </ul>
 
-        <h2>Sound Event Resolution</h2>
-        <p>Sounds are identified by string IDs at runtime, then converted to integer indices:</p>
-        <pre><code class="language-java"><span class="comment">// Convert sound ID string to integer index</span>
-<span class="keyword">int</span> soundIndex = <span class="keyword">SoundEvent</span>.getAssetMap().getIndex(<span class="string">"Game/Combat/Sword_Hit"</span>);
+<div class="diagram">Server                                          Client
+  &#9474;                                                &#9474;
+  &#9474;  SoundUtil.playSoundEvent3d(...)               &#9474;
+  &#9474;    &#9474;                                            &#9474;
+  &#9474;    &#9500;&#9472; Resolve SoundEvent from index             &#9474;
+  &#9474;    &#9500;&#9472; Query SpatialResource for nearby players  &#9474;
+  &#9474;    &#9500;&#9472; Filter by maxDistance + predicate          &#9474;
+  &#9474;    &#9474;                                            &#9474;
+  &#9474;    &#9500;&#9472; PlaySoundEvent3D packet &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9658; Decode packet
+  &#9474;    &#9474;                                            &#9500;&#9472; Look up SoundEvent
+  &#9474;    &#9474;                                            &#9500;&#9472; Apply attenuation
+  &#9474;    &#9474;                                            &#9500;&#9472; Select random layer
+  &#9474;    &#9474;                                            &#9492;&#9472; Play audio file
+  &#9474;                                                &#9474;
+</div>
 
-<span class="comment">// Check if sound exists</span>
-<span class="keyword">int</span> index = <span class="keyword">SoundEvent</span>.getAssetMap().getIndexOrDefault(<span class="string">"Game/Combat/Sword_Hit"</span>, -<span class="number">1</span>);
-<span class="keyword">if</span> (index != -<span class="number">1</span>) {
-    <span class="comment">// Sound exists</span>
-}</code></pre>
+                <div class="info-box warning">
+                    <div class="label">Threading Warning</div>
+                    <p>All <span class="type">SoundUtil</span> methods access the <span class="type">SpatialResource</span> and <span class="type">ComponentAccessor</span>, which are bound to the world's tick thread. You <strong>must</strong> call these methods from the world thread. From commands or event handlers on other threads, use <code>world.execute(() -&gt; SoundUtil.playSoundEvent3d(...))</code>.</p>
+                </div>
+            </section>
 
-        <div class="info-box">
-            <strong>ℹ️ Note:</strong> Sound event IDs are case-sensitive string paths like <code>'Game/Combat/Sword_Hit'</code>.
-        </div>
+            <section id="sound-categories">
+                <h2>Sound Categories</h2>
+                <p>Every sound playback call specifies a <span class="type">SoundCategory</span> enum value. Categories allow the client to apply independent volume sliders. The protocol enum <code>com.hypixel.hytale.protocol.SoundCategory</code> defines the following:</p>
 
-        <h2>3D Positional Sounds</h2>
-        <p>Sounds that emanate from a world position with distance attenuation:</p>
-        <pre><code class="language-java"><span class="comment">// Basic 3D sound</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">SoundCategory</span>.Music</code></td><td>Background music tracks</td></tr>
+                        <tr><td><code><span class="type">SoundCategory</span>.Ambient</code></td><td>Environmental and weather sounds</td></tr>
+                        <tr><td><code><span class="type">SoundCategory</span>.SFX</code></td><td>Gameplay sound effects (combat, footsteps, interactions)</td></tr>
+                        <tr><td><code><span class="type">SoundCategory</span>.UI</code></td><td>User interface sounds (clicks, notifications)</td></tr>
+                    </tbody>
+                </table>
+
+                <p>In addition to protocol-level categories, the asset system provides <span class="type">AudioCategory</span> &mdash; a hierarchical, asset-defined grouping. Audio categories act like an audio bus: a category's volume is combined with its parent's volume up the inheritance chain. For example, if a category has +4 dB and its parent has -2 dB, the effective volume is +2 dB.</p>
+
+                <pre><code><span class="comment">// AudioCategory is an asset-driven volume grouping</span>
+<span class="comment">// Package: com.hypixel.hytale.server.core.asset.type.audiocategory.config</span>
+<span class="type">AudioCategory</span> <span class="field">category</span> = (<span class="type">AudioCategory</span>) <span class="type">AudioCategory</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="str">"MyCategory"</span>);
+<span class="kw">float</span> <span class="field">volume</span> = <span class="field">category</span>.<span class="fn">getVolume</span>(); <span class="comment">// linear gain (converted from dB internally)</span></code></pre>
+            </section>
+
+            <section id="sound-commands">
+                <h2>Sound Commands</h2>
+                <p>The server provides built-in commands for testing and triggering sounds. The root command <code>/sound</code> extends <span class="type">AbstractPlayerCommand</span> and opens the <span class="type">PlaySoundPage</span> interactive UI when invoked without subcommands.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Aliases</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/sound</code></td>
+                            <td>&mdash;</td>
+                            <td>Opens the <span class="type">PlaySoundPage</span> custom UI for interactive sound browsing and playback</td>
+                        </tr>
+                        <tr>
+                            <td><code>/sound 2d &lt;sound&gt; [category] [--all]</code></td>
+                            <td><code>play</code></td>
+                            <td>Play a non-spatial 2D sound to the target player (or all players with <code>--all</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code>/sound 3d &lt;sound&gt; &lt;position&gt; [category] [--all]</code></td>
+                            <td><code>play3d</code></td>
+                            <td>Play a spatial 3D sound at the given position to the target player (or all with <code>--all</code>)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Both subcommands extend <span class="type">AbstractTargetPlayerCommand</span>, meaning they accept a target player argument. The <code>category</code> argument defaults to <code>SoundCategory.SFX</code> if omitted. The <code>sound</code> argument uses <code>ArgTypes.SOUND_EVENT_ASSET</code> for tab completion of all registered sound event IDs.</p>
+
+                <pre><code><span class="comment">// Example commands</span>
+/sound 2d Game/UI/Click                        <span class="comment">// Play UI click to self</span>
+/sound 2d Game/UI/Click --all                   <span class="comment">// Play to all players</span>
+/sound 3d Game/Combat/Sword_Hit 100 64 200      <span class="comment">// Play at coordinates</span>
+/sound 3d Game/Combat/Sword_Hit ~0 ~0 ~0        <span class="comment">// Play at player position (relative)</span></code></pre>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>Running <code>/sound</code> with no arguments opens the <span class="type">PlaySoundPage</span> UI, which is managed by the player's <span class="type">PageManager</span>. This provides an interactive browser for all registered sound events with play/stop controls.</p>
+                </div>
+            </section>
+
+            <section id="playing-2d-sounds">
+                <h2>Playing 2D Sounds</h2>
+                <p>Non-positional audio plays at constant volume regardless of the listener's position in the world. Use 2D sounds for UI feedback, music stings, global announcements, and any audio that should not be spatially located.</p>
+
+                <h3>SoundUtil 2D API</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">playSoundEvent2d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Broadcast 2D sound to all players in the world</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">playSoundEvent2d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="kw">float</span>, <span class="kw">float</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Broadcast with volume and pitch modifiers</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">playSoundEvent2d</span>(<span class="type">Ref</span>, <span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play to a specific player entity ref</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">playSoundEvent2dToPlayer</span>(<span class="type">PlayerRef</span>, <span class="kw">int</span>, <span class="type">SoundCategory</span>)</code></td>
+                            <td>Play directly to a <span class="type">PlayerRef</span> (no accessor needed)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">playSoundEvent2dToPlayer</span>(<span class="type">PlayerRef</span>, <span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="kw">float</span>, <span class="kw">float</span>)</code></td>
+                            <td>Play to <span class="type">PlayerRef</span> with volume and pitch modifiers</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Code Examples</h3>
+                <pre><code><span class="comment">// Resolve sound event index from string ID</span>
+<span class="kw">int</span> <span class="field">soundIndex</span> = <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"Game/UI/Click"</span>);
+
+<span class="comment">// Play to ALL players in the world</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent2d</span>(<span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.UI, (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// Play to ALL players with custom volume and pitch</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent2d</span>(<span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.UI,
+    <span class="num">0.8f</span>,  <span class="comment">// volume modifier</span>
+    <span class="num">1.2f</span>,  <span class="comment">// pitch modifier</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// Play to a SPECIFIC player via their entity Ref</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent2d</span>(<span class="field">playerRef</span>, <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.UI, (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// Play to a specific player via PlayerRef (no accessor needed)</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent2dToPlayer</span>(<span class="field">playerRefComponent</span>, <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.UI);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>The <code>playSoundEvent2dToPlayer</code> overload that takes a <span class="type">PlayerRef</span> directly writes the packet via <code>playerRefComponent.getPacketHandler().write()</code>. This is the most lightweight path when you already have the <span class="type">PlayerRef</span>.</p>
+                </div>
+            </section>
+
+            <section id="playing-3d-sounds">
+                <h2>Playing 3D Sounds</h2>
+                <p>Positional audio emanates from a specific world coordinate with distance-based attenuation. The server uses the <span class="type">SpatialResource</span> player spatial index to efficiently find all players within the sound event's <code>maxDistance</code>, then sends <code>PlaySoundEvent3D</code> packets only to those players.</p>
+
+                <h3>SoundUtil 3D API</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="kw">double</span>, <span class="kw">double</span>, <span class="kw">double</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play at position to all nearby players</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="kw">double</span>, <span class="kw">double</span>, <span class="kw">double</span>, <span class="kw">float</span>, <span class="kw">float</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play at position with volume/pitch modifiers</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, <span class="type">Vector3d</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play at Vector3d position</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3d</span>(<span class="kw">int</span>, <span class="type">SoundCategory</span>, ..., <span class="type">Predicate</span>&lt;<span class="type">Ref</span>&gt;, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play with player filter predicate</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3d</span>(<span class="type">Ref</span>, <span class="kw">int</span>, ..., <span class="kw">boolean</span>, <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play with source entity visibility checks and optional self-exclusion</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">playSoundEvent3dToPlayer</span>(<span class="type">Ref</span>, <span class="kw">int</span>, <span class="type">SoundCategory</span>, ..., <span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Play 3D sound to a single specific player (with distance check)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Code Examples</h3>
+                <pre><code><span class="kw">int</span> <span class="field">soundIndex</span> = <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"Game/Combat/Sword_Hit"</span>);
+
+<span class="comment">// Basic 3D sound at coordinates</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.SFX,
+    <span class="num">100.0</span>, <span class="num">64.0</span>, <span class="num">200.0</span>,
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// 3D sound with volume and pitch modifiers</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.SFX,
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    <span class="num">1.5f</span>,  <span class="comment">// volume modifier (150%)</span>
+    <span class="num">0.8f</span>,  <span class="comment">// pitch modifier (lower pitch)</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// 3D sound with player filter predicate</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.SFX,
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    <span class="num">1.0f</span>, <span class="num">1.0f</span>,
+    <span class="field">ref</span> -&gt; <span class="fn">shouldPlayerHear</span>(<span class="field">ref</span>),  <span class="comment">// Predicate&lt;Ref&lt;EntityStore&gt;&gt;</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// 3D sound from a source entity (respects visibility/stealth)</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">sourceEntityRef</span>,              <span class="comment">// source entity (nullable)</span>
+    <span class="field">soundIndex</span>,
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    <span class="kw">false</span>,                         <span class="comment">// ignoreSource: if true, source won't hear it</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// 3D sound to a SINGLE player only (with distance check)</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3dToPlayer</span>(
+    <span class="field">playerRef</span>, <span class="field">soundIndex</span>, <span class="type">SoundCategory</span>.SFX,
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Spatial Filtering</div>
+                    <p>The 3D playback methods use <code>playerSpatialResource.getSpatialStructure().collect(position, maxDistance, results)</code> to find players within range. The <code>playSoundEvent3dToPlayer</code> variant additionally checks <code>transformComponent.getPosition().distanceSquaredTo(x, y, z) &lt;= maxDistance * maxDistance</code> before sending the packet.</p>
+                </div>
+            </section>
+
+            <section id="entity-attached-sounds">
+                <h2>Entity-Attached Sounds</h2>
+                <p>Sounds can be attached to entities so they follow the entity's position as it moves. This is handled through two mechanisms: one-shot entity sounds via <span class="type">SoundUtil</span>, and continuous looping sounds via the <span class="type">AudioComponent</span> ECS component.</p>
+
+                <h3>One-Shot Entity Sounds</h3>
+                <pre><code><span class="comment">// Play a sound attached to an entity by its network ID</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEventEntity</span>(<span class="field">soundIndex</span>, <span class="field">entityNetworkId</span>, (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
 
 <span class="comment">// With volume and pitch modifiers</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z,
-    <span class="number">1.0f</span>,  <span class="comment">// volume (1.0 = default)</span>
-    <span class="number">1.0f</span>,  <span class="comment">// pitch (1.0 = default)</span>
-    accessor);
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEventEntity</span>(<span class="field">soundIndex</span>, <span class="field">entityNetworkId</span>,
+    <span class="num">1.0f</span>,  <span class="comment">// volume</span>
+    <span class="num">1.0f</span>,  <span class="comment">// pitch</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);</code></pre>
 
-<span class="comment">// To specific player only</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent3dToPlayer(playerRef, soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);
+                <p>Entity sounds are broadcast to all players via <code>PlayerUtil.broadcastPacketToPlayers()</code> using a <code>PlaySoundEventEntity</code> packet. The client tracks the entity by network ID and updates the sound position each frame.</p>
 
-<span class="comment">// With player filter</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z,
-    <span class="number">1.0f</span>, <span class="number">1.0f</span>,
-    ref -&gt; shouldHear(ref),  <span class="comment">// Predicate&lt;Ref&lt;EntityStore&gt;&gt;</span>
-    accessor);</code></pre>
+                <h3>AudioComponent (Continuous Audio)</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.component</code></p>
+                <p>For persistent, looping sounds attached to an entity (engine hum, ambient creature sounds), use the <span class="type">AudioComponent</span> ECS component. This component maintains a list of sound event IDs and is synchronized to nearby clients via the entity tracker system.</p>
 
-        <h2>2D Non-Positional Sounds</h2>
-        <p>Constant volume regardless of position (ideal for UI sounds and global effects):</p>
-        <pre><code class="language-java"><span class="comment">// To all players in world</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent2d(soundIndex, <span class="keyword">SoundCategory</span>.UI, accessor);
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">addSound</span>(<span class="kw">int</span> soundIndex)</code></td>
+                            <td>Add a sound event to the entity's audio list and mark as network-outdated</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span>[] <span class="fn">getSoundEventIds</span>()</code></td>
+                            <td>Returns all currently attached sound event indices</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">consumeNetworkOutdated</span>()</code></td>
+                            <td>Returns and clears the dirty flag (used by the tracker system)</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-<span class="comment">// To specific player</span>
-<span class="keyword">SoundUtil</span>.playSoundEvent2dToPlayer(playerRef, soundIndex, <span class="keyword">SoundCategory</span>.UI, accessor);</code></pre>
+                <pre><code><span class="comment">// Add continuous audio to an entity</span>
+<span class="type">AudioComponent</span> <span class="field">audio</span> = <span class="kw">new</span> <span class="type">AudioComponent</span>();
+<span class="field">audio</span>.<span class="fn">addSound</span>(<span class="field">loopingSoundIndex</span>);
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">entityRef</span>, <span class="field">audio</span>);
 
-        <h2>Entity-Attached Sounds</h2>
-        <p>Sounds that follow an entity as it moves:</p>
-        <pre><code class="language-java"><span class="comment">// Attach sound to entity by network ID</span>
-<span class="keyword">SoundUtil</span>.playSoundEventEntity(soundIndex, entityNetworkId, accessor);
+<span class="comment">// Or with pre-populated sounds</span>
+<span class="type">IntList</span> <span class="field">sounds</span> = <span class="kw">new</span> <span class="type">IntArrayList</span>();
+<span class="field">sounds</span>.<span class="fn">add</span>(<span class="field">engineHumIndex</span>);
+<span class="field">sounds</span>.<span class="fn">add</span>(<span class="field">propellerWhirIndex</span>);
+<span class="type">AudioComponent</span> <span class="field">audio</span> = <span class="kw">new</span> <span class="type">AudioComponent</span>(<span class="field">sounds</span>);</code></pre>
 
-<span class="comment">// With volume/pitch</span>
-<span class="keyword">SoundUtil</span>.playSoundEventEntity(soundIndex, entityNetworkId, <span class="number">1.0f</span>, <span class="number">1.0f</span>, accessor);</code></pre>
+                <h3>AudioSystems &mdash; Entity Tracker Integration</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.system</code></p>
+                <p>The <span class="type">AudioSystems.EntityTrackerUpdate</span> system runs during the entity tracker update phase. It queries entities with both <span class="type">Visible</span> and <span class="type">AudioComponent</span> components. When the audio component is marked as outdated (a sound was added), or when new players enter visibility range, it queues <span class="type">ComponentUpdate</span> packets containing the sound event ID list.</p>
+            </section>
 
-        <p>For continuous entity audio, use <code>AudioComponent</code>:</p>
-        <pre><code class="language-java"><span class="keyword">AudioComponent</span> audio = <span class="keyword">new</span> <span class="keyword">AudioComponent</span>();
-audio.addSound(loopSoundIndex);
-store.addComponent(entityRef, audio);</code></pre>
+            <section id="sound-asset-types">
+                <h2>Sound Asset Types</h2>
+                <p>The audio system defines several asset types, all registered through the <span class="type">AssetRegistry</span> and loaded from JSON files.</p>
 
-        <h2>Volume &amp; Pitch</h2>
-        <p>Sound properties use linear multipliers:</p>
-        <ul>
-            <li><strong>Volume:</strong> 1.0 = default, 0.5 = half, 2.0 = double</li>
-            <li><strong>Pitch:</strong> 1.0 = default, 0.5 = one octave down, 2.0 = one octave up</li>
-        </ul>
+                <h3>SoundEvent</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.soundevent.config</code></p>
+                <p>The fundamental sound asset. Defines a playable sound with multiple layers, randomization, volume, pitch, attenuation, and instance limits. Sound events are identified by string IDs and backed by an <span class="type">IndexedLookupTableAssetMap</span> for O(1) index lookups.</p>
 
-        <p>For dB/semitone conversion, use <code>AudioUtil</code>:</p>
-        <pre><code class="language-java"><span class="keyword">float</span> linear = <span class="keyword">AudioUtil</span>.decibelsToLinearGain(-<span class="number">6.0f</span>);
-<span class="keyword">float</span> pitch = <span class="keyword">AudioUtil</span>.semitonesToLinearPitch(<span class="number">12.0f</span>); <span class="comment">// +1 octave</span></code></pre>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Volume</code></td><td><span class="kw">float</span> (dB)</td><td>0 dB</td><td>Base volume adjustment in decibels (-100 to +10 dB)</td></tr>
+                        <tr><td><code>Pitch</code></td><td><span class="kw">float</span> (semitones)</td><td>0 st</td><td>Pitch adjustment in semitones (-12 to +12)</td></tr>
+                        <tr><td><code>MusicDuckingVolume</code></td><td><span class="kw">float</span> (dB)</td><td>0 dB</td><td>How much to reduce music volume while playing (-100 to 0 dB)</td></tr>
+                        <tr><td><code>AmbientDuckingVolume</code></td><td><span class="kw">float</span> (dB)</td><td>0 dB</td><td>How much to reduce ambient sounds while playing (-100 to 0 dB)</td></tr>
+                        <tr><td><code>StartAttenuationDistance</code></td><td><span class="kw">float</span> (blocks)</td><td>2.0</td><td>Distance at which volume begins decreasing</td></tr>
+                        <tr><td><code>MaxDistance</code></td><td><span class="kw">float</span> (blocks)</td><td>16.0</td><td>Maximum audible distance (fully attenuated beyond this)</td></tr>
+                        <tr><td><code>MaxInstance</code></td><td><span class="kw">int</span></td><td>50</td><td>Maximum simultaneous instances of this sound (1&ndash;100)</td></tr>
+                        <tr><td><code>PreventSoundInterruption</code></td><td><span class="kw">boolean</span></td><td>false</td><td>If true, this sound cannot be interrupted by new plays</td></tr>
+                        <tr><td><code>AudioCategory</code></td><td><span class="type">String</span></td><td>null</td><td>Asset ID of the <span class="type">AudioCategory</span> for additional volume routing</td></tr>
+                        <tr><td><code>Layers</code></td><td><span class="type">SoundEventLayer[]</span></td><td>&mdash;</td><td>Array of sound layers (at least one required)</td></tr>
+                    </tbody>
+                </table>
 
-        <h2>Custom Sounds via Data Mods</h2>
-        <p>Add custom sounds to your plugin by extending the data mod:</p>
+                <div class="info-box note">
+                    <div class="label">dB and Semitone Conversion</div>
+                    <p>Volume and pitch values are stored in JSON as decibels and semitones respectively, but converted to linear gain and linear pitch internally using <code>AudioUtil.decibelsToLinearGain()</code> and <code>AudioUtil.semitonesToLinearPitch()</code>. The getters return the linear values.</p>
+                </div>
 
-        <h3>File Structure</h3>
-        <pre><code class="language-text">plugins/yourplugin/src/main/assets/
-├── manifest.json
-└── Server/
-    ├── SoundEvent/YourSounds/custom_sound.json
-    └── Audio/YourSounds/sound_file.ogg</code></pre>
+                <h3>SoundEventLayer</h3>
+                <p>Each sound event contains one or more <strong>layers</strong> that are played together (or probabilistically). Layers enable complex sounds composed of multiple audio files with independent timing, looping, and randomization.</p>
 
-        <h3>Sound Event Definition</h3>
-        <p>Create <code>Server/SoundEvent/YourSounds/custom_sound.json</code>:</p>
-        <pre><code class="language-json">{
-  <span class="string">"id"</span>: <span class="string">"YourPlugin/Custom_Sound"</span>,
-  <span class="string">"volume"</span>: <span class="number">1.0</span>,
-  <span class="string">"pitch"</span>: <span class="number">1.0</span>,
-  <span class="string">"startAttenuationDistance"</span>: <span class="number">8.0</span>,
-  <span class="string">"maxDistance"</span>: <span class="number">32.0</span>,
-  <span class="string">"maxInstance"</span>: <span class="number">5</span>,
-  <span class="string">"layers"</span>: [
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Volume</code></td><td><span class="kw">float</span> (dB)</td><td>0 dB</td><td>Per-layer volume offset (-100 to +10 dB)</td></tr>
+                        <tr><td><code>StartDelay</code></td><td><span class="kw">float</span> (seconds)</td><td>0.0</td><td>Delay before this layer begins playing</td></tr>
+                        <tr><td><code>Looping</code></td><td><span class="kw">boolean</span></td><td>false</td><td>Whether this layer loops continuously</td></tr>
+                        <tr><td><code>Probability</code></td><td><span class="kw">int</span> (%)</td><td>100</td><td>Chance this layer plays when the event fires</td></tr>
+                        <tr><td><code>ProbabilityRerollDelay</code></td><td><span class="kw">float</span> (seconds)</td><td>1.0</td><td>Time before probability can be rerolled</td></tr>
+                        <tr><td><code>RandomSettings</code></td><td><span class="type">RandomSettings</span></td><td>&mdash;</td><td>Randomization ranges for volume, pitch, and start offset</td></tr>
+                        <tr><td><code>Files</code></td><td><span class="type">String[]</span></td><td>&mdash;</td><td>List of audio file paths; one chosen at random per play</td></tr>
+                        <tr><td><code>RoundRobinHistorySize</code></td><td><span class="kw">int</span></td><td>0</td><td>Prevents repeating the same file within N plays (0 = disabled)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>RandomSettings</h3>
+                <p>Per-layer randomization of volume, pitch, and playback start offset.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Range</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>MinVolume</code></td><td><span class="kw">float</span> (dB)</td><td>-100 to 0</td><td>Minimum random volume offset</td></tr>
+                        <tr><td><code>MaxVolume</code></td><td><span class="kw">float</span> (dB)</td><td>0 to +10</td><td>Maximum random volume offset</td></tr>
+                        <tr><td><code>MinPitch</code></td><td><span class="kw">float</span> (semitones)</td><td>-12 to 0</td><td>Minimum random pitch offset</td></tr>
+                        <tr><td><code>MaxPitch</code></td><td><span class="kw">float</span> (semitones)</td><td>0 to +12</td><td>Maximum random pitch offset</td></tr>
+                        <tr><td><code>MaxStartOffset</code></td><td><span class="kw">float</span> (seconds)</td><td>0 to &infin;</td><td>Maximum random start offset (for looping sounds to prevent phasing)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>SoundSet</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.soundset.config</code></p>
+                <p>A named collection of keyed sound events with an associated <span class="type">SoundCategory</span>. Used to group related sounds under a single asset (e.g., all sounds for a material type or interaction set). The keys are arbitrary strings, and values are sound event IDs resolved to indices at load time.</p>
+
+                <pre><code><span class="comment">// Look up a SoundSet</span>
+<span class="type">SoundSet</span> <span class="field">set</span> = (<span class="type">SoundSet</span>) <span class="type">SoundSet</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="str">"Stone_Material"</span>);
+
+<span class="comment">// Get a specific sound event index by key</span>
+<span class="kw">int</span> <span class="field">hitSound</span> = <span class="field">set</span>.<span class="fn">getSoundEventIndices</span>().<span class="fn">getInt</span>(<span class="str">"Hit"</span>);
+<span class="type">SoundCategory</span> <span class="field">category</span> = <span class="field">set</span>.<span class="fn">getCategory</span>(); <span class="comment">// e.g. SoundCategory.SFX</span></code></pre>
+            </section>
+
+            <section id="sound-event-configuration">
+                <h2>Sound Event Configuration</h2>
+                <p>Sound events are defined as JSON files in the asset directory. Here is a complete example showing all supported fields:</p>
+
+                <pre><code>{
+  <span class="str">"Volume"</span>: <span class="num">-3.0</span>,
+  <span class="str">"Pitch"</span>: <span class="num">0.0</span>,
+  <span class="str">"MusicDuckingVolume"</span>: <span class="num">-6.0</span>,
+  <span class="str">"AmbientDuckingVolume"</span>: <span class="num">0.0</span>,
+  <span class="str">"StartAttenuationDistance"</span>: <span class="num">4.0</span>,
+  <span class="str">"MaxDistance"</span>: <span class="num">24.0</span>,
+  <span class="str">"MaxInstance"</span>: <span class="num">8</span>,
+  <span class="str">"PreventSoundInterruption"</span>: <span class="kw">false</span>,
+  <span class="str">"AudioCategory"</span>: <span class="str">"Combat"</span>,
+  <span class="str">"Layers"</span>: [
     {
-      <span class="string">"files"</span>: [<span class="string">"YourSounds/sound_file.ogg"</span>],
-      <span class="string">"volumeVariance"</span>: <span class="number">0.1</span>,
-      <span class="string">"pitchVariance"</span>: <span class="number">0.05</span>
+      <span class="str">"Volume"</span>: <span class="num">0.0</span>,
+      <span class="str">"StartDelay"</span>: <span class="num">0.0</span>,
+      <span class="str">"Looping"</span>: <span class="kw">false</span>,
+      <span class="str">"Probability"</span>: <span class="num">100</span>,
+      <span class="str">"ProbabilityRerollDelay"</span>: <span class="num">1.0</span>,
+      <span class="str">"RoundRobinHistorySize"</span>: <span class="num">3</span>,
+      <span class="str">"RandomSettings"</span>: {
+        <span class="str">"MinVolume"</span>: <span class="num">-2.0</span>,
+        <span class="str">"MaxVolume"</span>: <span class="num">2.0</span>,
+        <span class="str">"MinPitch"</span>: <span class="num">-1.0</span>,
+        <span class="str">"MaxPitch"</span>: <span class="num">1.0</span>,
+        <span class="str">"MaxStartOffset"</span>: <span class="num">0.0</span>
+      },
+      <span class="str">"Files"</span>: [
+        <span class="str">"Game/Combat/sword_hit_01.ogg"</span>,
+        <span class="str">"Game/Combat/sword_hit_02.ogg"</span>,
+        <span class="str">"Game/Combat/sword_hit_03.ogg"</span>
+      ]
+    },
+    {
+      <span class="str">"Volume"</span>: <span class="num">-6.0</span>,
+      <span class="str">"Probability"</span>: <span class="num">50</span>,
+      <span class="str">"Files"</span>: [
+        <span class="str">"Game/Combat/sword_ring_01.ogg"</span>
+      ]
     }
   ]
 }</code></pre>
 
-        <h3>Audio Requirements</h3>
-        <ul>
-            <li><strong>Format:</strong> OGG Vorbis</li>
-            <li><strong>Sample Rate:</strong> 44100 Hz recommended</li>
-            <li><strong>Channels:</strong> Mono or stereo</li>
-        </ul>
+                <p>This example defines a sword hit sound with two layers: a primary hit layer (always plays, selects from 3 variants with round-robin to avoid repetition) and a secondary metallic ring layer (50% chance to play). Both layers have independent volume and randomization settings.</p>
 
-        <h3>Playing Custom Sounds</h3>
-        <pre><code class="language-java"><span class="keyword">int</span> soundIndex = <span class="keyword">SoundEvent</span>.getAssetMap().getIndex(<span class="string">"YourPlugin/Custom_Sound"</span>);
-<span class="keyword">SoundUtil</span>.playSoundEvent3d(soundIndex, <span class="keyword">SoundCategory</span>.SFX, x, y, z, accessor);</code></pre>
+                <pre><code><span class="comment">// Resolving the sound event at runtime</span>
+<span class="kw">int</span> <span class="field">index</span> = <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"Game/Combat/Sword_Hit"</span>);
 
-        <h2>Music Control</h2>
-        <p>Background music is controlled via the AmbienceFX system:</p>
-        <ul>
-            <li><code>AmbienceFX.getAssetMap()</code> — get ambience definitions</li>
-            <li>Built-in command: <code>/setmusic &lt;ambience_fx_id&gt;</code></li>
-        </ul>
+<span class="comment">// Check if a sound event exists before using it</span>
+<span class="kw">int</span> <span class="field">index</span> = <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndexOrDefault</span>(<span class="str">"Game/Combat/Sword_Hit"</span>, -<span class="num">1</span>);
+<span class="kw">if</span> (<span class="field">index</span> != -<span class="num">1</span>) {
+    <span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(<span class="field">index</span>, <span class="type">SoundCategory</span>.SFX, <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">accessor</span>);
+}
 
-        <h2>Sound Event Properties</h2>
-        <table class="api-table">
-            <thead>
-                <tr>
-                    <th>Property</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><code>volume</code></td>
-                    <td>Base volume multiplier (1.0 = default)</td>
-                </tr>
-                <tr>
-                    <td><code>pitch</code></td>
-                    <td>Base pitch multiplier (1.0 = default)</td>
-                </tr>
-                <tr>
-                    <td><code>startAttenuationDistance</code></td>
-                    <td>Distance (blocks) where volume begins decreasing</td>
-                </tr>
-                <tr>
-                    <td><code>maxDistance</code></td>
-                    <td>Maximum audible distance (blocks)</td>
-                </tr>
-                <tr>
-                    <td><code>maxInstance</code></td>
-                    <td>Maximum simultaneous plays of this sound</td>
-                </tr>
-                <tr>
-                    <td><code>preventSoundInterruption</code></td>
-                    <td>Don't stop if already playing</td>
-                </tr>
-                <tr>
-                    <td><code>layers</code></td>
-                    <td>Multiple audio layers with randomization</td>
-                </tr>
-            </tbody>
-        </table>
+<span class="comment">// Access the full SoundEvent asset for inspection</span>
+<span class="type">SoundEvent</span> <span class="field">event</span> = (<span class="type">SoundEvent</span>) <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="field">index</span>);
+<span class="kw">float</span> <span class="field">maxDist</span> = <span class="field">event</span>.<span class="fn">getMaxDistance</span>();       <span class="comment">// 24.0</span>
+<span class="kw">int</span> <span class="field">maxInst</span> = <span class="field">event</span>.<span class="fn">getMaxInstance</span>();           <span class="comment">// 8</span>
+<span class="type">SoundEventLayer</span>[] <span class="field">layers</span> = <span class="field">event</span>.<span class="fn">getLayers</span>();  <span class="comment">// 2 layers</span></code></pre>
+            </section>
 
-    </div></main>
+            <section id="ambient-audio">
+                <h2>Ambient Audio System</h2>
+                <p>The ambient audio system drives environmental soundscapes based on the player's location, biome, and weather conditions. It is built on the <span class="type">AmbienceFX</span> asset type and managed by the built-in ambience plugin (<code>builtin/ambience</code>).</p>
+
+                <h3>AmbienceFX Sound Effects</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.ambiencefx.config</code></p>
+                <p>Each <span class="type">AmbienceFXSoundEffect</span> binds a <span class="type">ReverbEffect</span> and an <span class="type">EqualizerEffect</span> to an ambience zone. When a player enters a zone, the associated reverb and EQ settings are sent to the client for audio processing.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>ReverbEffectId</code></td><td><span class="type">String</span></td><td>Reference to a <span class="type">ReverbEffect</span> asset</td></tr>
+                        <tr><td><code>EqualizerEffectId</code></td><td><span class="type">String</span></td><td>Reference to an <span class="type">EqualizerEffect</span> asset</td></tr>
+                        <tr><td><code>IsInstant</code></td><td><span class="kw">boolean</span></td><td>If true, apply effects immediately (no crossfade)</td></tr>
+                    </tbody>
+                </table>
+
+                <p>The ambience system integrates with the world's zone system. Zones defined in the world generation pipeline reference <span class="type">AmbienceFX</span> assets, which in turn contain sound effect configurations. The <span class="type">WorldMapTracker</span> tracks player zone transitions and triggers ambient audio changes.</p>
+
+                <pre><code><span class="comment">// Access AmbienceFX asset map</span>
+<span class="type">AmbienceFX</span> <span class="field">ambience</span> = (<span class="type">AmbienceFX</span>) <span class="type">AmbienceFX</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="str">"Forest_Day"</span>);
+
+<span class="comment">// Built-in command to set ambience</span>
+/setmusic Forest_Day</code></pre>
+            </section>
+
+            <section id="reverb-equalizer">
+                <h2>Reverb &amp; Equalizer Effects</h2>
+                <p>The server defines audio processing effects as assets that are sent to clients for real-time audio filtering. These effects are applied globally to the player's audio mix based on their current ambience zone.</p>
+
+                <h3>ReverbEffect</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.reverbeffect.config</code></p>
+                <p>A full reverb effect with parameters for room simulation. All gain values are specified in decibels and converted to linear gain internally. Sent to clients via <code>UpdateReverbEffects</code> packets.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Default</th>
+                            <th>Range</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>DryGain</code></td><td>0 dB</td><td>-100 to +10 dB</td><td>Dry (unprocessed) signal gain</td></tr>
+                        <tr><td><code>ModalDensity</code></td><td>1.0</td><td>0.0 &ndash; 1.0</td><td>Modal density of the reverb space</td></tr>
+                        <tr><td><code>Diffusion</code></td><td>1.0</td><td>0.0 &ndash; 1.0</td><td>Diffusion of reverb reflections</td></tr>
+                        <tr><td><code>Gain</code></td><td>-10 dB</td><td>-100 to 0 dB</td><td>Overall reverb gain</td></tr>
+                        <tr><td><code>HighFrequencyGain</code></td><td>-1 dB</td><td>-100 to 0 dB</td><td>High frequency reverb gain</td></tr>
+                        <tr><td><code>DecayTime</code></td><td>1.49s</td><td>0.1 &ndash; 20.0s</td><td>Reverb decay time in seconds</td></tr>
+                        <tr><td><code>HighFrequencyDecayRatio</code></td><td>0.83</td><td>0.1 &ndash; 2.0</td><td>HF decay time relative to overall decay</td></tr>
+                        <tr><td><code>ReflectionGain</code></td><td>-26 dB</td><td>-100 to +10 dB</td><td>Early reflections gain</td></tr>
+                        <tr><td><code>ReflectionDelay</code></td><td>0.007s</td><td>0.0 &ndash; 0.3s</td><td>Early reflections delay</td></tr>
+                        <tr><td><code>LateReverbGain</code></td><td>+2 dB</td><td>-100 to +20 dB</td><td>Late reverb tail gain</td></tr>
+                        <tr><td><code>LateReverbDelay</code></td><td>0.011s</td><td>0.0 &ndash; 0.1s</td><td>Late reverb tail delay</td></tr>
+                        <tr><td><code>RoomRolloffFactor</code></td><td>0.0</td><td>0.0 &ndash; 10.0</td><td>Distance-based reverb rolloff</td></tr>
+                        <tr><td><code>AirAbsorbptionHighFrequencyGain</code></td><td>-0.05 dB</td><td>-1.0 to 0.0 dB</td><td>Air absorption effect on high frequencies</td></tr>
+                        <tr><td><code>LimitDecayHighFrequency</code></td><td>true</td><td>&mdash;</td><td>Whether to limit HF decay time</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>EqualizerEffect</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.equalizereffect.config</code></p>
+                <p>A 4-band parametric equalizer for shaping the audio frequency response. Used to simulate indoor, cave, underwater, and other environmental acoustic properties. Sent to clients via <code>UpdateEqualizerEffects</code> packets.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Default</th>
+                            <th>Range</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>LowGain</code></td><td>0 dB</td><td>-18 to +18 dB</td><td>Low band gain</td></tr>
+                        <tr><td><code>LowCutOff</code></td><td>200 Hz</td><td>50 &ndash; 800 Hz</td><td>Low band cutoff frequency</td></tr>
+                        <tr><td><code>LowMidGain</code></td><td>0 dB</td><td>-18 to +18 dB</td><td>Low-mid band gain</td></tr>
+                        <tr><td><code>LowMidCenter</code></td><td>500 Hz</td><td>200 &ndash; 3000 Hz</td><td>Low-mid band center frequency</td></tr>
+                        <tr><td><code>LowMidWidth</code></td><td>1.0</td><td>0.01 &ndash; 1.0</td><td>Low-mid band width (Q factor)</td></tr>
+                        <tr><td><code>HighMidGain</code></td><td>0 dB</td><td>-18 to +18 dB</td><td>High-mid band gain</td></tr>
+                        <tr><td><code>HighMidCenter</code></td><td>3000 Hz</td><td>1000 &ndash; 8000 Hz</td><td>High-mid band center frequency</td></tr>
+                        <tr><td><code>HighMidWidth</code></td><td>1.0</td><td>0.01 &ndash; 1.0</td><td>High-mid band width (Q factor)</td></tr>
+                        <tr><td><code>HighGain</code></td><td>0 dB</td><td>-18 to +18 dB</td><td>High band gain</td></tr>
+                        <tr><td><code>HighCutOff</code></td><td>6000 Hz</td><td>4000 &ndash; 16000 Hz</td><td>High band cutoff frequency</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box tip">
+                    <div class="label">Environment Presets</div>
+                    <p>Reverb and equalizer effects are combined in <span class="type">AmbienceFXSoundEffect</span> to create complete acoustic environments. A cave preset might use long decay, high diffusion reverb combined with a low-pass EQ to muffle high frequencies. An outdoor preset uses minimal reverb with a flat EQ.</p>
+                </div>
+            </section>
+
+            <section id="block-sounds">
+                <h2>Block &amp; Item Sounds</h2>
+
+                <h3>BlockSoundSet</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.blocksound.config</code></p>
+                <p>Defines the set of sounds triggered by block interactions. Each <span class="type">BlockType</span> can reference a <span class="type">BlockSoundSet</span> via <code>getBlockSoundSetIndex()</code>. Sound events are keyed by <span class="type">BlockSoundEvent</span> enum values.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>BlockSoundEvent</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>MoveIn</code></td><td>Played when an entity enters the block (e.g., walking on it)</td></tr>
+                        <tr><td><code>MoveOut</code></td><td>Played when an entity leaves the block</td></tr>
+                        <tr><td><code>Break</code></td><td>Played when the block is broken</td></tr>
+                        <tr><td><code>Place</code></td><td>Played when the block is placed</td></tr>
+                        <tr><td><code>Hit</code></td><td>Played each tick while the block is being mined</td></tr>
+                    </tbody>
+                </table>
+
+                <p>Block sound sets also define a <code>MoveInRepeatRange</code> (<span class="type">FloatRange</span>) that controls the interval between repeated footstep sounds when moving over the block (default 0.5&ndash;1.5 seconds).</p>
+
+                <h4>Movement Audio System</h4>
+                <p>The <span class="type">AudioSystems.TickMovementAudio</span> ECS system handles footstep sounds. It queries entities with <span class="type">TransformComponent</span>, <span class="type">PositionDataComponent</span>, <span class="type">MovementAudioComponent</span>, and <span class="type">MovementStatesComponent</span>. Each tick, it checks if the entity's current block has changed, and if so, plays the <code>MoveIn</code> sound for the new block and <code>MoveOut</code> sound for the previous block.</p>
+
+                <pre><code><span class="comment">// How the movement audio system resolves block sounds</span>
+<span class="kw">int</span> <span class="field">insideBlockTypeId</span> = <span class="field">positionData</span>.<span class="fn">getInsideBlockTypeId</span>();
+<span class="type">BlockType</span> <span class="field">blockType</span> = (<span class="type">BlockType</span>) <span class="type">BlockType</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="field">insideBlockTypeId</span>);
+<span class="kw">int</span> <span class="field">soundSetId</span> = <span class="field">blockType</span>.<span class="fn">getBlockSoundSetIndex</span>();
+
+<span class="kw">if</span> (<span class="field">soundSetId</span> != <span class="num">0</span>) {
+    <span class="type">BlockSoundSet</span> <span class="field">soundSet</span> = (<span class="type">BlockSoundSet</span>) <span class="type">BlockSoundSet</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="field">soundSetId</span>);
+    <span class="kw">int</span> <span class="field">soundEvent</span> = <span class="field">soundSet</span>.<span class="fn">getSoundEventIndices</span>().<span class="fn">getOrDefault</span>(<span class="type">BlockSoundEvent</span>.MoveIn, <span class="num">0</span>);
+    <span class="kw">if</span> (<span class="field">soundEvent</span> != <span class="num">0</span>) {
+        <span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(<span class="field">soundEvent</span>, <span class="type">SoundCategory</span>.SFX,
+            <span class="field">position</span>.<span class="field">x</span>, <span class="field">position</span>.<span class="field">y</span>, <span class="field">position</span>.<span class="field">z</span>, <span class="field">predicate</span>, <span class="field">accessor</span>);
+    }
+}</code></pre>
+
+                <h3>ItemSoundSet</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.itemsound.config</code></p>
+                <p>Defines sounds triggered by item interactions. Each <span class="type">Item</span> asset can reference an <span class="type">ItemSoundSet</span>. Sound events are keyed by <span class="type">ItemSoundEvent</span> enum values (e.g., Equip, Use, Drop). Item sounds are validated to be stereo and one-shot (not looping).</p>
+
+                <pre><code><span class="comment">// ItemSoundSet lookup</span>
+<span class="type">ItemSoundSet</span> <span class="field">itemSounds</span> = (<span class="type">ItemSoundSet</span>) <span class="type">ItemSoundSet</span>.<span class="fn">getAssetMap</span>().<span class="fn">getAsset</span>(<span class="str">"Sword_Sounds"</span>);
+<span class="kw">int</span> <span class="field">equipSound</span> = <span class="field">itemSounds</span>.<span class="fn">getSoundEventIndices</span>().<span class="fn">getOrDefault</span>(<span class="type">ItemSoundEvent</span>.Equip, <span class="num">0</span>);</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Validation Constraints</div>
+                    <p><span class="type">BlockSoundSet</span> sounds must be <strong>mono</strong> (single channel) for proper 3D spatialization. <span class="type">ItemSoundSet</span> sounds must be <strong>stereo</strong>. Both must be <strong>one-shot</strong> (non-looping). These constraints are enforced at asset load time by <code>SoundEventValidators.MONO_VALIDATOR_CACHE</code>, <code>STEREO_VALIDATOR_CACHE</code>, and <code>ONESHOT_VALIDATOR_CACHE</code>.</p>
+                </div>
+            </section>
+
+            <section id="volume-pitch">
+                <h2>Volume &amp; Pitch</h2>
+                <p>The audio system uses two unit systems that are converted at asset load time:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>JSON Unit</th>
+                            <th>Internal Unit</th>
+                            <th>Conversion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Volume</td><td>Decibels (dB)</td><td>Linear gain</td><td><code>AudioUtil.decibelsToLinearGain()</code></td></tr>
+                        <tr><td>Pitch</td><td>Semitones (st)</td><td>Linear pitch</td><td><code>AudioUtil.semitonesToLinearPitch()</code></td></tr>
+                    </tbody>
+                </table>
+
+                <p>Runtime playback modifiers (the <code>volumeModifier</code> and <code>pitchModifier</code> parameters on <span class="type">SoundUtil</span> methods) are <strong>linear multipliers</strong>:</p>
+                <ul>
+                    <li><strong>Volume:</strong> <code>1.0</code> = default, <code>0.5</code> = half volume, <code>2.0</code> = double volume</li>
+                    <li><strong>Pitch:</strong> <code>1.0</code> = default, <code>0.5</code> = one octave down, <code>2.0</code> = one octave up</li>
+                </ul>
+
+                <pre><code><span class="comment">// Convert between units using AudioUtil</span>
+<span class="kw">float</span> <span class="field">linearGain</span> = <span class="type">AudioUtil</span>.<span class="fn">decibelsToLinearGain</span>(-<span class="num">6.0f</span>);     <span class="comment">// ~0.5 (half volume)</span>
+<span class="kw">float</span> <span class="field">dB</span> = <span class="type">AudioUtil</span>.<span class="fn">linearGainToDecibels</span>(<span class="num">0.5f</span>);              <span class="comment">// ~-6.0 dB</span>
+<span class="kw">float</span> <span class="field">linearPitch</span> = <span class="type">AudioUtil</span>.<span class="fn">semitonesToLinearPitch</span>(<span class="num">12.0f</span>);   <span class="comment">// 2.0 (+1 octave)</span>
+<span class="kw">float</span> <span class="field">semitones</span> = <span class="type">AudioUtil</span>.<span class="fn">linearPitchToSemitones</span>(<span class="num">2.0f</span>);     <span class="comment">// 12.0 st</span></code></pre>
+            </section>
+
+            <section id="entity-integration">
+                <h2>Integration with Entity System</h2>
+                <p>Sound playback integrates deeply with the ECS architecture through several patterns:</p>
+
+                <h3>Source Entity Visibility</h3>
+                <p>The <code>playSoundEvent3d(sourceRef, ...)</code> overloads perform visibility checks before sending sounds. If a source entity is hidden from a player (e.g., via stealth mechanics), the sound will not be sent to that player. This uses <code>Entity.isHiddenFromLivingEntity()</code> internally.</p>
+
+                <pre><code><span class="comment">// Sound respects entity visibility</span>
+<span class="comment">// Players who can't see the source entity won't hear its sounds</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">stealthyEntityRef</span>,   <span class="comment">// source entity</span>
+    <span class="field">footstepSound</span>,       <span class="comment">// sound event index</span>
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    <span class="kw">false</span>,                <span class="comment">// ignoreSource = false (source hears own sound)</span>
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);</code></pre>
+
+                <h3>Damage Sound Effects</h3>
+                <p>The damage system (<span class="type">Damage.SoundEffect</span>) uses sound events to play hit, critical, and death sounds when entities take damage. These sound effects reference <span class="type">SoundEvent</span> IDs and are played at the damaged entity's position.</p>
+
+                <h3>Projectile Sounds</h3>
+                <p>The <span class="type">ProjectileConfig</span> and <span class="type">ProjectileModule</span> define sounds for projectile launch, flight, and impact. Each projectile type can reference separate <span class="type">SoundEvent</span> assets for these phases.</p>
+
+                <h3>NPC Action Sounds</h3>
+                <p>NPCs can trigger sounds through the <span class="type">ActionPlaySound</span> behavior action in <code>com.hypixel.hytale.server.npc.corecomponents.audiovisual</code>. This allows behavior trees to play sounds as part of NPC state transitions and interactions.</p>
+            </section>
+
+            <section id="data-mod-support">
+                <h2>Custom Sounds via Data Mods</h2>
+                <p>Plugins can register custom sounds through the data mod system. Sound files are loaded from the plugin's asset directory and registered in the global <span class="type">AssetRegistry</span>.</p>
+
+                <h3>File Structure</h3>
+                <pre><code>plugins/yourplugin/src/main/assets/
+&#9500;&#9472;&#9472; manifest.json
+&#9492;&#9472;&#9472; Server/
+    &#9500;&#9472;&#9472; SoundEvent/
+    &#9474;   &#9492;&#9472;&#9472; YourPlugin/
+    &#9474;       &#9492;&#9472;&#9472; custom_sound.json
+    &#9500;&#9472;&#9472; AudioCategory/
+    &#9474;   &#9492;&#9472;&#9472; YourPlugin/
+    &#9474;       &#9492;&#9472;&#9472; custom_category.json
+    &#9492;&#9472;&#9472; Audio/
+        &#9492;&#9472;&#9472; YourPlugin/
+            &#9500;&#9472;&#9472; sound_01.ogg
+            &#9500;&#9472;&#9472; sound_02.ogg
+            &#9492;&#9472;&#9472; sound_03.ogg</code></pre>
+
+                <h3>Sound Event Definition</h3>
+                <p>Create <code>Server/SoundEvent/YourPlugin/custom_sound.json</code>:</p>
+                <pre><code>{
+  <span class="str">"Volume"</span>: <span class="num">0.0</span>,
+  <span class="str">"Pitch"</span>: <span class="num">0.0</span>,
+  <span class="str">"StartAttenuationDistance"</span>: <span class="num">8.0</span>,
+  <span class="str">"MaxDistance"</span>: <span class="num">32.0</span>,
+  <span class="str">"MaxInstance"</span>: <span class="num">5</span>,
+  <span class="str">"Layers"</span>: [
+    {
+      <span class="str">"Files"</span>: [
+        <span class="str">"YourPlugin/sound_01.ogg"</span>,
+        <span class="str">"YourPlugin/sound_02.ogg"</span>,
+        <span class="str">"YourPlugin/sound_03.ogg"</span>
+      ],
+      <span class="str">"RandomSettings"</span>: {
+        <span class="str">"MinVolume"</span>: <span class="num">-1.0</span>,
+        <span class="str">"MaxVolume"</span>: <span class="num">1.0</span>,
+        <span class="str">"MinPitch"</span>: <span class="num">-0.5</span>,
+        <span class="str">"MaxPitch"</span>: <span class="num">0.5</span>
+      },
+      <span class="str">"RoundRobinHistorySize"</span>: <span class="num">2</span>
+    }
+  ]
+}</code></pre>
+
+                <h3>Audio File Requirements</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Requirement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Format</td><td><strong>OGG Vorbis</strong> (validated by <code>OggVorbisInfoCache</code>)</td></tr>
+                        <tr><td>Sample Rate</td><td>44100 Hz recommended</td></tr>
+                        <tr><td>Channels (3D/Block)</td><td>Mono (1 channel) &mdash; required for proper spatialization</td></tr>
+                        <tr><td>Channels (2D/Item)</td><td>Stereo (2 channels) &mdash; for non-spatial playback</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Playing Custom Sounds</h3>
+                <pre><code><span class="comment">// In your plugin code, after assets are loaded</span>
+<span class="kw">int</span> <span class="field">customSoundIndex</span> = <span class="type">SoundEvent</span>.<span class="fn">getAssetMap</span>().<span class="fn">getIndex</span>(<span class="str">"YourPlugin/custom_sound"</span>);
+
+<span class="comment">// Play 3D at a position</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent3d</span>(
+    <span class="field">customSoundIndex</span>, <span class="type">SoundCategory</span>.SFX,
+    <span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>,
+    (<span class="type">ComponentAccessor</span>) <span class="field">store</span>);
+
+<span class="comment">// Play 2D to a specific player</span>
+<span class="type">SoundUtil</span>.<span class="fn">playSoundEvent2dToPlayer</span>(
+    <span class="field">playerRef</span>, <span class="field">customSoundIndex</span>, <span class="type">SoundCategory</span>.SFX);</code></pre>
+
+                <div class="info-box danger">
+                    <div class="label">Important</div>
+                    <p>Sound event IDs are <strong>case-sensitive</strong> string paths derived from the file path relative to the <code>SoundEvent/</code> directory. Ensure your file names and code references match exactly. The <code>OggVorbisInfoCache</code> validates channel counts at load time &mdash; a mono file used for an <span class="type">ItemSoundSet</span> (which requires stereo) will produce a validation error.</p>
+                </div>
+            </section>
+
+            <section id="network-packets">
+                <h2>Network Packets</h2>
+                <p>Sound-related network communication uses several packet types. All audio assets are synchronized to clients on connection via update packets.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Packet</th>
+                            <th>Direction</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">PlaySoundEvent2D</span></code></td><td>S &rarr; C</td><td>Play a non-positional sound (index, category, volume, pitch)</td></tr>
+                        <tr><td><code><span class="type">PlaySoundEvent3D</span></code></td><td>S &rarr; C</td><td>Play a positional sound (index, category, position, volume, pitch)</td></tr>
+                        <tr><td><code><span class="type">PlaySoundEventEntity</span></code></td><td>S &rarr; C</td><td>Play a sound attached to an entity (index, networkId, volume, pitch)</td></tr>
+                        <tr><td><code><span class="type">UpdateReverbEffects</span></code></td><td>S &rarr; C</td><td>Synchronize all <span class="type">ReverbEffect</span> assets to the client</td></tr>
+                        <tr><td><code><span class="type">UpdateEqualizerEffects</span></code></td><td>S &rarr; C</td><td>Synchronize all <span class="type">EqualizerEffect</span> assets to the client</td></tr>
+                        <tr><td><code><span class="type">UpdateItemSoundSets</span></code></td><td>S &rarr; C</td><td>Synchronize all <span class="type">ItemSoundSet</span> assets to the client</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="class-reference">
+                <h2>Class Reference</h2>
+                <p>Key classes and their packages for the sound and audio system:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Package</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">SoundUtil</span></td><td><code>c.h.h.server.core.universe.world</code></td><td>Static methods for all sound playback</td></tr>
+                        <tr><td><span class="type">SoundEvent</span></td><td><code>c.h.h.server.core.asset.type.soundevent.config</code></td><td>Sound event asset definition</td></tr>
+                        <tr><td><span class="type">SoundEventLayer</span></td><td><code>c.h.h.server.core.asset.type.soundevent.config</code></td><td>Individual layer within a sound event</td></tr>
+                        <tr><td><span class="type">SoundSet</span></td><td><code>c.h.h.server.core.asset.type.soundset.config</code></td><td>Named collection of keyed sound events</td></tr>
+                        <tr><td><span class="type">AudioCategory</span></td><td><code>c.h.h.server.core.asset.type.audiocategory.config</code></td><td>Hierarchical volume grouping asset</td></tr>
+                        <tr><td><span class="type">AudioComponent</span></td><td><code>c.h.h.server.core.modules.entity.component</code></td><td>ECS component for continuous entity audio</td></tr>
+                        <tr><td><span class="type">AudioSystems</span></td><td><code>c.h.h.server.core.modules.entity.system</code></td><td>ECS systems for audio tracker updates and movement sounds</td></tr>
+                        <tr><td><span class="type">BlockSoundSet</span></td><td><code>c.h.h.server.core.asset.type.blocksound.config</code></td><td>Block interaction sound definitions</td></tr>
+                        <tr><td><span class="type">ItemSoundSet</span></td><td><code>c.h.h.server.core.asset.type.itemsound.config</code></td><td>Item interaction sound definitions</td></tr>
+                        <tr><td><span class="type">ReverbEffect</span></td><td><code>c.h.h.server.core.asset.type.reverbeffect.config</code></td><td>Reverb effect asset definition</td></tr>
+                        <tr><td><span class="type">EqualizerEffect</span></td><td><code>c.h.h.server.core.asset.type.equalizereffect.config</code></td><td>4-band EQ effect asset definition</td></tr>
+                        <tr><td><span class="type">AmbienceFXSoundEffect</span></td><td><code>c.h.h.server.core.asset.type.ambiencefx.config</code></td><td>Binds reverb + EQ to ambience zones</td></tr>
+                        <tr><td><span class="type">SoundCommand</span></td><td><code>c.h.h.server.core.command.commands.utility.sound</code></td><td>Root /sound command</td></tr>
+                        <tr><td><span class="type">PlaySoundPage</span></td><td><code>c.h.h.server.core.entity.entities.player.pages.audio</code></td><td>Interactive UI for sound browsing</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </div>
+    </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

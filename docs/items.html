@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items & Inventory - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html" class="active">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <div class="page-toc"></div>
+
+    <main class="main">
+        <div class="content has-toc">
+            <h1>Items &amp; Inventory</h1>
+            <p class="page-desc">Item representation, slot-based inventory containers, equipment slots, item asset configuration, transactions, and network synchronization.</p>
+
+            <h2 id="overview">Overview</h2>
+            <p>The Hytale item and inventory system is built around three core abstractions:</p>
+            <ul>
+                <li><strong>ItemStack</strong> &mdash; An immutable-style value object representing a quantity of a specific item, with optional metadata and durability tracking.</li>
+                <li><strong>ItemContainer</strong> &mdash; An abstract base class for slot-based storage (hotbar, backpack, armor). All mutations return transaction objects for event propagation and network sync.</li>
+                <li><strong>Inventory</strong> &mdash; A composite object that groups multiple <code>ItemContainer</code> instances (hotbar, backpack, armor, hands, utility) into the full player inventory.</li>
+            </ul>
+
+            <p>Item type definitions are loaded from JSON asset files via the <code>Item</code> class (a <code>JsonAsset</code>), which specifies display names, models, durability, stacking limits, and type-specific configurations for weapons, armor, tools, utilities, and gliders.</p>
+
+<div class="diagram">Inventory (per-player, global)
+ &#9500;&#9472;&#9472; Hotbar (ItemContainer, 9 slots)
+ &#9474;    &#9492;&#9472;&#9472; ItemStack[ ] &mdash; quick-access items
+ &#9500;&#9472;&#9472; Backpack (ItemContainer, variable slots)
+ &#9474;    &#9492;&#9472;&#9472; ItemStack[ ] &mdash; main storage
+ &#9500;&#9472;&#9472; Armor (ItemContainer, 5 slots)
+ &#9474;    &#9500;&#9472;&#9472; Head
+ &#9474;    &#9500;&#9472;&#9472; Chest
+ &#9474;    &#9500;&#9472;&#9472; Legs
+ &#9474;    &#9500;&#9472;&#9472; Feet
+ &#9474;    &#9492;&#9472;&#9472; Offhand
+ &#9500;&#9472;&#9472; Hands
+ &#9474;    &#9500;&#9472;&#9472; Main Hand (active hotbar slot)
+ &#9474;    &#9492;&#9472;&#9472; Offhand
+ &#9492;&#9472;&#9472; Utility (special slot)
+</div>
+
+            <h2 id="itemstack">ItemStack</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.entity.inventory</code></p>
+            <p><code>ItemStack</code> is the core value object representing a stack of items. It encapsulates the item type, quantity, durability state, and arbitrary metadata stored as a <code>BsonDocument</code>.</p>
+
+            <h3 id="itemstack-fields">Fields</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>itemId</code></td>
+                        <td><span class="type">String</span></td>
+                        <td>The asset identifier of the item (e.g. <code>"IronSword"</code>, <code>"WoodPlanks"</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>quantity</code></td>
+                        <td><span class="kw">int</span></td>
+                        <td>Number of items in the stack (must be &gt; 0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>durability</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Current durability value (must be &ge; 0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxDurability</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Maximum durability from the item asset definition</td>
+                    </tr>
+                    <tr>
+                        <td><code>metadata</code></td>
+                        <td><span class="type">BsonDocument</span></td>
+                        <td>Arbitrary key-value metadata (custom data, enchantments, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><code>overrideDroppedItemAnimation</code></td>
+                        <td><span class="kw">boolean</span></td>
+                        <td>Whether to override the default drop animation when this item is dropped</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="itemstack-constructor">Constructor</h3>
+            <pre><code class="language-java"><span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="type">String</span> <span class="field">itemId</span>, <span class="kw">int</span> <span class="field">quantity</span>, <span class="type">BsonDocument</span> <span class="field">metadata</span>)</code></pre>
+            <p>Creates a new <code>ItemStack</code> with the given item ID, quantity, and metadata. The durability is initialized from the item's asset definition. The codec enforces that <code>quantity &gt; 0</code> and <code>durability &ge; 0</code>.</p>
+
+            <h3 id="itemstack-methods">Key Methods</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Return Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code><span class="fn">isEmpty</span>()</code></td>
+                        <td><span class="kw">boolean</span></td>
+                        <td>Returns <code>true</code> if the stack has zero quantity or is the sentinel empty stack</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="fn">isBroken</span>()</code></td>
+                        <td><span class="kw">boolean</span></td>
+                        <td>Returns <code>true</code> if durability has reached zero (item is destroyed)</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="fn">getItem</span>()</code></td>
+                        <td><span class="type">Item</span></td>
+                        <td>Resolves and returns the <code>Item</code> asset definition for this stack's <code>itemId</code></td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="fn">withIncreasedDurability</span>(<span class="kw">double</span> amount)</code></td>
+                        <td><span class="type">ItemStack</span></td>
+                        <td>Returns a new <code>ItemStack</code> with durability increased by the given amount (clamped to max)</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="fn">toPacket</span>()</code></td>
+                        <td><span class="type">ItemStackPacket</span></td>
+                        <td>Serializes the stack for network transmission to the client</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="itemstack-usage">Usage Example</h3>
+            <pre><code class="language-java"><span class="comment">// Create a stack of 16 wood planks</span>
+<span class="type">ItemStack</span> <span class="field">planks</span> = <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"WoodPlanks"</span>, <span class="num">16</span>, <span class="keyword">null</span>);
+
+<span class="comment">// Create a sword with metadata</span>
+<span class="type">BsonDocument</span> <span class="field">meta</span> = <span class="keyword">new</span> <span class="type">BsonDocument</span>();
+<span class="field">meta</span>.<span class="fn">put</span>(<span class="str">"enchantment"</span>, <span class="keyword">new</span> <span class="type">BsonString</span>(<span class="str">"sharpness"</span>));
+<span class="type">ItemStack</span> <span class="field">sword</span> = <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"IronSword"</span>, <span class="num">1</span>, <span class="field">meta</span>);
+
+<span class="comment">// Check durability</span>
+<span class="keyword">if</span> (<span class="field">sword</span>.<span class="fn">isBroken</span>()) {
+    <span class="comment">// Item has been destroyed through use</span>
+}
+
+<span class="comment">// Repair an item</span>
+<span class="type">ItemStack</span> <span class="field">repaired</span> = <span class="field">sword</span>.<span class="fn">withIncreasedDurability</span>(<span class="num">50.0</span>);</code></pre>
+
+            <div class="info-box note">
+                <div class="label">Note</div>
+                <p><code>ItemStack</code> follows an immutable-style pattern. Methods like <code>withIncreasedDurability()</code> return a <strong>new</strong> <code>ItemStack</code> rather than mutating the original. To persist changes, you must set the new stack back into the container slot.</p>
+            </div>
+
+            <h2 id="item-container">ItemContainer</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.entity.inventory</code></p>
+            <p><code>ItemContainer</code> is the abstract base class for all slot-based item storage. Hotbar, backpack, and armor containers all extend this class. Every mutation method returns a transaction object that records what changed, enabling event propagation and network synchronization.</p>
+
+            <h3 id="container-methods">Key Methods</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code><span class="type">ItemStackPacket</span>[] <span class="fn">toPacket</span>()</code></td>
+                        <td>Serializes all slots for network transmission</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="kw">void</span> <span class="fn">registerChangeEvent</span>(<span class="type">Consumer</span>&lt;<span class="type">ItemContainerChangeEvent</span>&gt;)</code></td>
+                        <td>Registers a listener called on every slot modification</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ClearTransaction</span> <span class="fn">clear</span>()</code></td>
+                        <td>Removes all items from every slot, returns a transaction</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ItemStackSlotTransaction</span> <span class="fn">addItemStackToSlot</span>(<span class="kw">int</span> slot, <span class="type">ItemStack</span>)</code></td>
+                        <td>Adds an item stack to a specific slot, merging if compatible</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ItemStackSlotTransaction</span> <span class="fn">setItemStackForSlot</span>(<span class="kw">int</span> slot, <span class="type">ItemStack</span>)</code></td>
+                        <td>Replaces the item stack in a specific slot</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ItemStackSlotTransaction</span> <span class="fn">removeItemStackFromSlot</span>(<span class="kw">int</span> slot)</code></td>
+                        <td>Removes and returns the item stack from a specific slot</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ListTransaction</span> <span class="fn">addItemStacks</span>(<span class="type">List</span>&lt;<span class="type">ItemStack</span>&gt;)</code></td>
+                        <td>Adds multiple item stacks, distributing across available slots</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="transaction-types">Transaction Types</h3>
+            <p>Every container mutation returns a transaction object that describes what happened. These transactions are used to fire <code>ItemContainerChangeEvent</code> and track dirty state for network sync.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Transaction Type</th>
+                        <th>Returned By</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code><span class="type">ItemStackSlotTransaction</span></code></td>
+                        <td><code>addItemStackToSlot</code>, <code>setItemStackForSlot</code>, <code>removeItemStackFromSlot</code></td>
+                        <td>Records the previous and new item stack for a single slot</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ItemStackTransaction</span></code></td>
+                        <td>Internal compound operations</td>
+                        <td>Records a batch of slot changes from a single logical operation</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ListTransaction</span></code></td>
+                        <td><code>addItemStacks</code></td>
+                        <td>Records the result of distributing multiple stacks; includes overflow items that did not fit</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">ClearTransaction</span></code></td>
+                        <td><code>clear</code></td>
+                        <td>Records all items that were removed during a container clear</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 id="inventory-structure">Inventory Structure</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.entity.inventory</code></p>
+            <p>The <code>Inventory</code> class composes multiple <code>ItemContainer</code> instances into the full player inventory. Each container manages a specific set of equipment or storage slots.</p>
+
+            <h3 id="inventory-containers">Container Layout</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Container</th>
+                        <th>Slots</th>
+                        <th>Access Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Hotbar</strong></td>
+                        <td>9</td>
+                        <td><code><span class="fn">getHotbar</span>()</code></td>
+                        <td>Quick-access item bar visible to the player at all times</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backpack</strong></td>
+                        <td>Variable</td>
+                        <td><code><span class="fn">getBackpack</span>()</code></td>
+                        <td>Main item storage, opened via inventory screen</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Armor</strong></td>
+                        <td>5</td>
+                        <td><code><span class="fn">getArmor</span>()</code></td>
+                        <td>Equipment slots: head, chest, legs, feet, offhand</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hands</strong></td>
+                        <td>2</td>
+                        <td><code><span class="fn">getItemInHand</span>()</code></td>
+                        <td>Currently held items (main hand from hotbar selection, offhand from armor)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Utility</strong></td>
+                        <td>1</td>
+                        <td><code><span class="fn">getUtilityItem</span>()</code></td>
+                        <td>Special-purpose slot for utility items (e.g. glider)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="inventory-methods">Key Methods</h3>
+            <pre><code class="language-java"><span class="comment">// Access sub-containers</span>
+<span class="type">ItemContainer</span> <span class="field">hotbar</span> = <span class="field">inventory</span>.<span class="fn">getHotbar</span>();
+<span class="type">ItemContainer</span> <span class="field">backpack</span> = <span class="field">inventory</span>.<span class="fn">getBackpack</span>();
+<span class="type">ItemContainer</span> <span class="field">armor</span> = <span class="field">inventory</span>.<span class="fn">getArmor</span>();
+
+<span class="comment">// Get item currently held in main hand</span>
+<span class="type">ItemStack</span> <span class="field">held</span> = <span class="field">inventory</span>.<span class="fn">getItemInHand</span>();
+
+<span class="comment">// Get utility slot item (e.g. glider)</span>
+<span class="type">ItemStack</span> <span class="field">utility</span> = <span class="field">inventory</span>.<span class="fn">getUtilityItem</span>();
+
+<span class="comment">// Get combined view: hotbar slots first, then backpack</span>
+<span class="type">List</span>&lt;<span class="type">ItemStack</span>&gt; <span class="field">allItems</span> = <span class="field">inventory</span>.<span class="fn">getCombinedHotbarFirst</span>();</code></pre>
+
+            <h3 id="inventory-access">Accessing a Player's Inventory</h3>
+            <pre><code class="language-java"><span class="comment">// From the Player component (requires world thread)</span>
+<span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+<span class="type">Inventory</span> <span class="field">inventory</span> = <span class="field">player</span>.<span class="fn">getInventory</span>();
+
+<span class="comment">// Give a player 32 stone blocks</span>
+<span class="type">ItemStack</span> <span class="field">stone</span> = <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"Stone"</span>, <span class="num">32</span>, <span class="keyword">null</span>);
+<span class="type">ListTransaction</span> <span class="field">result</span> = <span class="field">inventory</span>.<span class="fn">getHotbar</span>().<span class="fn">addItemStacks</span>(<span class="type">List</span>.<span class="fn">of</span>(<span class="field">stone</span>));
+
+<span class="comment">// Check for overflow (items that didn't fit)</span>
+<span class="keyword">if</span> (!<span class="field">result</span>.<span class="fn">getOverflow</span>().<span class="fn">isEmpty</span>()) {
+    <span class="comment">// Try adding overflow to backpack</span>
+    <span class="field">inventory</span>.<span class="fn">getBackpack</span>().<span class="fn">addItemStacks</span>(<span class="field">result</span>.<span class="fn">getOverflow</span>());
+}</code></pre>
+
+            <div class="info-box warning">
+                <div class="label">Warning</div>
+                <p>Accessing <code>Player.getInventory()</code> requires the <strong>world thread</strong>. The <code>Player</code> component is an ECS component and must be read from the world's <code>EntityStore</code>. Use <code>world.execute()</code> to schedule inventory operations from other threads.</p>
+            </div>
+
+            <h2 id="item-asset">Item Asset Configuration</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.asset.type</code></p>
+            <p>The <code>Item</code> class is a <code>JsonAsset</code> that defines the static properties of an item type. These definitions are loaded from the game's data files and are shared across all instances of that item.</p>
+
+            <h3 id="item-fields">Core Fields</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>displayName</code></td>
+                        <td><span class="type">String</span></td>
+                        <td>Human-readable name shown in UI (e.g. <code>"Iron Sword"</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>model</code></td>
+                        <td><span class="type">String</span></td>
+                        <td>3D model asset reference for rendering</td>
+                    </tr>
+                    <tr>
+                        <td><code>playerAnimations</code></td>
+                        <td><span class="type">String</span></td>
+                        <td>Animation set used when the player holds this item</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxDurability</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Maximum durability value (0 = unbreakable)</td>
+                    </tr>
+                    <tr>
+                        <td><code>durabilityLossOnHit</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Durability lost each time the item is used to hit an entity</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxStack</code></td>
+                        <td><span class="kw">int</span></td>
+                        <td>Maximum stack size (e.g. 1 for tools, 64 for blocks)</td>
+                    </tr>
+                    <tr>
+                        <td><code>itemEntityConfig</code></td>
+                        <td><span class="type">ItemEntityConfig</span></td>
+                        <td>Configuration for dropped item entity behavior (physics, despawn time)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 id="item-type-configs">Type-Specific Configurations</h3>
+            <p>Items can have one or more type-specific configuration blocks that define specialized behavior:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Config Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>weapon</code></td>
+                        <td><span class="type">ItemWeapon</span></td>
+                        <td>Weapon stats, modifiers, dual-wield rendering</td>
+                    </tr>
+                    <tr>
+                        <td><code>armor</code></td>
+                        <td><span class="type">ItemArmor</span></td>
+                        <td>Armor stats, damage reduction, knockback reduction</td>
+                    </tr>
+                    <tr>
+                        <td><code>tool</code></td>
+                        <td><span class="type">ItemTool</span></td>
+                        <td>Tool properties for block interaction (mining speed, harvest level)</td>
+                    </tr>
+                    <tr>
+                        <td><code>utility</code></td>
+                        <td><span class="type">ItemUtility</span></td>
+                        <td>Utility item behavior (consumables, throwables)</td>
+                    </tr>
+                    <tr>
+                        <td><code>glider</code></td>
+                        <td><span class="type">ItemGlider</span></td>
+                        <td>Glider flight properties (lift, drag, speed)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 id="weapon-config">Weapon Configuration</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.asset.type</code></p>
+            <p>The <code>ItemWeapon</code> class defines combat-specific properties for weapon items.</p>
+
+            <h3 id="weapon-fields">ItemWeapon Fields</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>statModifiers</code></td>
+                        <td><code><span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">StatModifier</span>&gt;</code></td>
+                        <td>Map of stat modifier keys to their values (e.g. attack damage, attack speed)</td>
+                    </tr>
+                    <tr>
+                        <td><code>entityStatsToClear</code></td>
+                        <td><code><span class="type">List</span>&lt;<span class="type">String</span>&gt;</code></td>
+                        <td>Entity stat keys to clear when this weapon is unequipped</td>
+                    </tr>
+                    <tr>
+                        <td><code>renderDualWielded</code></td>
+                        <td><span class="kw">boolean</span></td>
+                        <td>Whether to render the weapon in both hands when dual-wielding</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code class="language-java"><span class="comment">// Accessing weapon data from an ItemStack</span>
+<span class="type">Item</span> <span class="field">itemAsset</span> = <span class="field">itemStack</span>.<span class="fn">getItem</span>();
+<span class="type">ItemWeapon</span> <span class="field">weapon</span> = <span class="field">itemAsset</span>.<span class="field">weapon</span>;
+
+<span class="keyword">if</span> (<span class="field">weapon</span> != <span class="keyword">null</span>) {
+    <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">StatModifier</span>&gt; <span class="field">mods</span> = <span class="field">weapon</span>.<span class="field">statModifiers</span>;
+    <span class="kw">boolean</span> <span class="field">dualWield</span> = <span class="field">weapon</span>.<span class="field">renderDualWielded</span>;
+}</code></pre>
+
+            <h2 id="armor-config">Armor Configuration</h2>
+            <p>Package: <code>com.hypixel.hytale.server.core.asset.type</code></p>
+            <p>The <code>ItemArmor</code> class defines defensive properties for armor items.</p>
+
+            <h3 id="armor-fields">ItemArmor Fields</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>durabilityLossOnHit</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Durability lost when the wearer takes a hit</td>
+                    </tr>
+                    <tr>
+                        <td><code>damageReduction</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Flat damage reduction applied to incoming hits</td>
+                    </tr>
+                    <tr>
+                        <td><code>knockbackReduction</code></td>
+                        <td><span class="kw">double</span></td>
+                        <td>Percentage reduction of knockback force received</td>
+                    </tr>
+                    <tr>
+                        <td><code>statModifiers</code></td>
+                        <td><code><span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">StatModifier</span>&gt;</code></td>
+                        <td>Stat modifiers applied while this armor piece is equipped</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box note">
+                <div class="label">Note</div>
+                <p>Armor has 5 slots: <strong>head</strong>, <strong>chest</strong>, <strong>legs</strong>, <strong>feet</strong>, and <strong>offhand</strong>. Each slot independently contributes its damage reduction, knockback reduction, and stat modifiers. The total is summed across all equipped pieces.</p>
+            </div>
+
+            <h2 id="transactions">Item Transactions</h2>
+            <p>All inventory modifications are transactional. Every method that changes slot contents returns a transaction object describing what was modified. This design enables:</p>
+            <ul>
+                <li><strong>Event propagation</strong> &mdash; Transactions trigger <code>ItemContainerChangeEvent</code> for listeners</li>
+                <li><strong>Dirty tracking</strong> &mdash; Modified containers are flagged for network synchronization</li>
+                <li><strong>Overflow handling</strong> &mdash; <code>ListTransaction</code> reports items that could not be placed</li>
+                <li><strong>Undo/verification</strong> &mdash; Transactions record previous state for rollback scenarios</li>
+            </ul>
+
+            <h3 id="transaction-example">Transaction Example</h3>
+            <pre><code class="language-java"><span class="comment">// Add items to a player's hotbar</span>
+<span class="type">Inventory</span> <span class="field">inventory</span> = <span class="field">player</span>.<span class="fn">getInventory</span>();
+<span class="type">ItemContainer</span> <span class="field">hotbar</span> = <span class="field">inventory</span>.<span class="fn">getHotbar</span>();
+
+<span class="comment">// Add a single item to slot 0</span>
+<span class="type">ItemStack</span> <span class="field">sword</span> = <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"IronSword"</span>, <span class="num">1</span>, <span class="keyword">null</span>);
+<span class="type">ItemStackSlotTransaction</span> <span class="field">txn</span> = <span class="field">hotbar</span>.<span class="fn">setItemStackForSlot</span>(<span class="num">0</span>, <span class="field">sword</span>);
+
+<span class="comment">// txn contains the previous ItemStack and the new one</span>
+<span class="type">ItemStack</span> <span class="field">previous</span> = <span class="field">txn</span>.<span class="fn">getPreviousItemStack</span>();
+
+<span class="comment">// Add multiple items, handling overflow</span>
+<span class="type">List</span>&lt;<span class="type">ItemStack</span>&gt; <span class="field">loot</span> = <span class="type">List</span>.<span class="fn">of</span>(
+    <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"GoldIngot"</span>, <span class="num">12</span>, <span class="keyword">null</span>),
+    <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"Diamond"</span>, <span class="num">3</span>, <span class="keyword">null</span>),
+    <span class="keyword">new</span> <span class="type">ItemStack</span>(<span class="str">"Arrow"</span>, <span class="num">64</span>, <span class="keyword">null</span>)
+);
+<span class="type">ListTransaction</span> <span class="field">listTxn</span> = <span class="field">hotbar</span>.<span class="fn">addItemStacks</span>(<span class="field">loot</span>);
+
+<span class="comment">// Check what didn't fit</span>
+<span class="type">List</span>&lt;<span class="type">ItemStack</span>&gt; <span class="field">overflow</span> = <span class="field">listTxn</span>.<span class="fn">getOverflow</span>();
+<span class="keyword">if</span> (!<span class="field">overflow</span>.<span class="fn">isEmpty</span>()) {
+    <span class="comment">// Overflow goes to backpack</span>
+    <span class="field">inventory</span>.<span class="fn">getBackpack</span>().<span class="fn">addItemStacks</span>(<span class="field">overflow</span>);
+}
+
+<span class="comment">// Remove an item from slot 3</span>
+<span class="type">ItemStackSlotTransaction</span> <span class="field">removeTxn</span> = <span class="field">hotbar</span>.<span class="fn">removeItemStackFromSlot</span>(<span class="num">3</span>);
+<span class="type">ItemStack</span> <span class="field">removed</span> = <span class="field">removeTxn</span>.<span class="fn">getPreviousItemStack</span>();
+
+<span class="comment">// Clear the entire hotbar</span>
+<span class="type">ClearTransaction</span> <span class="field">clearTxn</span> = <span class="field">hotbar</span>.<span class="fn">clear</span>();</code></pre>
+
+            <h3 id="change-events">Change Events</h3>
+            <pre><code class="language-java"><span class="comment">// Listen for inventory changes</span>
+<span class="field">inventory</span>.<span class="fn">getHotbar</span>().<span class="fn">registerChangeEvent</span>(<span class="field">event</span> -> {
+    <span class="type">System</span>.<span class="field">out</span>.<span class="fn">println</span>(<span class="str">"Hotbar changed: slot "</span> + <span class="field">event</span>.<span class="fn">getSlot</span>());
+    <span class="type">System</span>.<span class="field">out</span>.<span class="fn">println</span>(<span class="str">"  Previous: "</span> + <span class="field">event</span>.<span class="fn">getPrevious</span>());
+    <span class="type">System</span>.<span class="field">out</span>.<span class="fn">println</span>(<span class="str">"  New: "</span> + <span class="field">event</span>.<span class="fn">getCurrent</span>());
+});</code></pre>
+
+            <h2 id="network-sync">Network Synchronization</h2>
+            <p>Inventory state is synchronized to clients using a <strong>dirty flag pattern</strong>. When any container slot is modified, the inventory is marked as dirty. On the next network tick, the server checks the dirty flag and sends updated slot data to the client.</p>
+
+            <h3 id="dirty-pattern">Dirty Flag Pattern</h3>
+            <pre><code class="language-java"><span class="comment">// The server tick loop checks for dirty inventories</span>
+<span class="keyword">if</span> (<span class="field">inventory</span>.<span class="fn">consumeIsDirty</span>()) {
+    <span class="comment">// consumeIsDirty() returns true AND resets the flag atomically</span>
+    <span class="type">InventoryPacket</span> <span class="field">packet</span> = <span class="field">inventory</span>.<span class="fn">toPacket</span>();
+    <span class="field">playerRef</span>.<span class="fn">getPacketHandler</span>().<span class="fn">send</span>(<span class="field">packet</span>);
+}</code></pre>
+
+            <p>The <code>toPacket()</code> method serializes the entire inventory (all containers) into a network packet. Each <code>ItemContainer</code> also has its own <code>toPacket()</code> that returns an array of <code>ItemStackPacket</code> objects for its slots.</p>
+
+            <div class="info-box note">
+                <div class="label">Note</div>
+                <p>The dirty flag is set automatically by all transaction-producing methods. You do not need to manually mark the inventory as dirty after modifying slots. The flag is consumed (reset) atomically by <code>consumeIsDirty()</code> to prevent duplicate sends.</p>
+            </div>
+
+            <h2 id="persistence">Persistence</h2>
+
+            <div class="info-box danger">
+                <div class="label">Danger</div>
+                <p>Inventories are <strong>GLOBAL</strong> across all worlds. When a player changes worlds, their inventory travels with them. There is <strong>no built-in per-world inventory system</strong>. If you need per-world inventories, you must implement manual save/restore logic on world transfer events.</p>
+            </div>
+
+            <p>Player inventories are serialized as part of the player data file at <code>universe/players/&lt;uuid&gt;.json</code>. The serialization chain is:</p>
+
+            <ol>
+                <li><code>EntityStore.REGISTRY.serialize(holder)</code> &mdash; serializes the entire player entity</li>
+                <li><code>Player.CODEC</code> inherits from <code>LivingEntity.CODEC</code> which includes the <code>Inventory</code> field</li>
+                <li><code>Inventory.CODEC</code> serializes all container slots (hotbar, backpack, armor, utility)</li>
+                <li>Each <code>ItemStack</code> is serialized via its own codec with validation (quantity &gt; 0, durability &ge; 0)</li>
+            </ol>
+
+            <p>Because inventories are global, they persist identically regardless of which world the player is in. Moving between worlds does not trigger any inventory save/load cycle &mdash; the same in-memory <code>Inventory</code> object follows the player.</p>
+
+            <h3 id="per-world-workaround">Per-World Inventory Workaround</h3>
+            <pre><code class="language-java"><span class="comment">// Plugin-level per-world inventory swapping</span>
+<span class="field">plugin</span>.<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">AddPlayerToWorldEvent</span>.<span class="keyword">class</span>,
+    (<span class="field">event</span>) -> {
+        <span class="type">UUID</span> <span class="field">uuid</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>().<span class="fn">getUuid</span>();
+        <span class="type">World</span> <span class="field">newWorld</span> = <span class="field">event</span>.<span class="fn">getWorld</span>();
+
+        <span class="comment">// Save current inventory to plugin storage</span>
+        <span class="fn">saveInventoryToStorage</span>(<span class="field">uuid</span>, <span class="field">previousWorld</span>);
+
+        <span class="comment">// Clear and load inventory for new world</span>
+        <span class="field">newWorld</span>.<span class="fn">execute</span>(() -> {
+            <span class="type">Player</span> <span class="field">player</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+            <span class="field">player</span>.<span class="fn">getInventory</span>().<span class="fn">getHotbar</span>().<span class="fn">clear</span>();
+            <span class="field">player</span>.<span class="fn">getInventory</span>().<span class="fn">getBackpack</span>().<span class="fn">clear</span>();
+            <span class="field">player</span>.<span class="fn">getInventory</span>().<span class="fn">getArmor</span>().<span class="fn">clear</span>();
+            <span class="fn">loadInventoryFromStorage</span>(<span class="field">uuid</span>, <span class="field">newWorld</span>, <span class="field">player</span>);
+        });
+    }
+);</code></pre>
+
+            <h2 id="crafting">Crafting System</h2>
+            <p>Hytale includes a bench-based crafting system. Crafting is triggered through workbench interactions, and recipes are validated against the player's known recipes and the bench's tier level.</p>
+
+            <h3 id="crafting-events">Crafting Events</h3>
+            <p>When a player crafts an item, a <code>CraftRecipeEvent</code> is fired through the event bus. This can be used to track crafting analytics, modify outputs, or add custom crafting logic.</p>
+
+            <h3 id="bench-system">Bench System</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code><span class="type">BenchType</span></code></td>
+                        <td>Defines a category of crafting bench (e.g. crafting table, furnace, anvil)</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">BenchTierLevel</span></code></td>
+                        <td>Represents the tier/upgrade level of a bench, unlocking higher-tier recipes</td>
+                    </tr>
+                    <tr>
+                        <td><code><span class="type">BenchRequirement</span></code></td>
+                        <td>Defines the bench type and minimum tier required to craft a recipe</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code class="language-java"><span class="comment">// Listen for crafting events</span>
+<span class="field">plugin</span>.<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">CraftRecipeEvent</span>.<span class="keyword">class</span>,
+    (<span class="field">event</span>) -> {
+        <span class="type">String</span> <span class="field">recipe</span> = <span class="field">event</span>.<span class="fn">getRecipeId</span>();
+        <span class="type">PlayerRef</span> <span class="field">crafter</span> = <span class="field">event</span>.<span class="fn">getPlayerRef</span>();
+        <span class="fn">log</span>(<span class="field">crafter</span>.<span class="fn">getUsername</span>() + <span class="str">" crafted: "</span> + <span class="field">recipe</span>);
+    }
+);</code></pre>
+
+            <div class="info-box tip">
+                <div class="label">Tip</div>
+                <p>Players have a <code>knownRecipes</code> set that tracks which recipes they have unlocked. Recipes can be discovered through gameplay progression or granted programmatically via the Player component. Use <code>Player.getKnownRecipes()</code> to inspect and modify this set.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

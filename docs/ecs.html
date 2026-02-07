@@ -3,300 +3,1260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECS Architecture - Hytale Server Documentation</title>
+    <title>ECS Architecture - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
-
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1>Hytale Server</h1>
             <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
         </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html" class="active">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>ECS Architecture</h1>
-            <p class="page-desc">How the Hytale server uses Entity Component System architecture for all game objects.</p>
+            <p class="page-desc">A complete guide to Hytale's Entity Component System &mdash; Store, Ref, Holder, Component, ComponentType, Archetype, queries, systems, events, and thread safety.</p>
 
-            <section id="what-is-ecs">
-                <h2>What is ECS?</h2>
-                <p>The Hytale server implements a complete Entity Component System (ECS) architecture. This is fundamentally different from traditional object-oriented game development:</p>
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>The Hytale server is built on a custom <strong>Entity Component System</strong> (ECS) architecture. This is a data-oriented design pattern where game objects are not represented by class hierarchies, but instead by <em>compositions</em> of data containers called components, stored in flat arrays inside a central database called a Store.</p>
+
+                <p>The three pillars of Hytale's ECS are:</p>
                 <ul>
-                    <li><strong>Entities are NOT classes you extend</strong> — they are collections of components stored in a <span class="type">Holder</span> that gets added to the <span class="type">Store</span></li>
-                    <li><strong>Components are pure data</strong> — they contain only state (Transform, Model, Nameplate, etc.) with minimal or no behavior</li>
-                    <li><strong>Systems process entities</strong> — code that operates on entities that have specific component combinations</li>
+                    <li><strong>Entities</strong> &mdash; lightweight integer indices into the Store. Not classes, not objects &mdash; just IDs tracked by <span class="type">Ref&lt;T&gt;</span> references.</li>
+                    <li><strong>Components</strong> &mdash; pure data containers implementing the <span class="type">Component&lt;T&gt;</span> interface. Each component holds state (position, velocity, model, nameplate) with minimal behavior.</li>
+                    <li><strong>Systems</strong> &mdash; logic that processes all entities matching a specific component combination (query). Systems run each tick or in response to events.</li>
                 </ul>
-                <p>This approach provides better performance, composability, and makes it easy to add/remove capabilities from entities at runtime without class inheritance chains.</p>
+
+                <p>All core ECS types live in <code>com.hypixel.hytale.component.*</code>. The architecture supports two distinct store types &mdash; <span class="type">EntityStore</span> for mobile entities and <span class="type">ChunkStore</span> for chunk-scoped data &mdash; both built on the same generic <span class="type">Store&lt;T&gt;</span> foundation.</p>
+
+<div class="diagram">ECS Architecture Overview
+
+   ComponentRegistry&lt;T&gt;                     Store&lt;T&gt;
+   ┌──────────────────────┐                 ┌─────────────────────────────────┐
+   │ Registers:           │    creates      │ refs[]          (entity IDs)    │
+   │  - ComponentTypes    │ ───────────&gt;   │ archetypeChunks[] (SoA storage) │
+   │  - SystemTypes       │                 │ resources[]     (global data)   │
+   │  - Resources         │                 │ systemMetrics[] (perf tracking) │
+   │  - Systems           │                 └─────────────────────────────────┘
+   └──────────────────────┘                          │
+                                                     │ contains
+                                                     ▼
+                                              ArchetypeChunk&lt;T&gt;
+                                              ┌───────────────────────┐
+                                              │ archetype (component  │
+                                              │   combination)        │
+                                              │ refs[]   (per-entity) │
+                                              │ components[][] (SoA)  │
+                                              └───────────────────────┘
+</div>
+
+                <div class="info-box note">
+                    <div class="label">Key Concept</div>
+                    <p>Entities are <strong>NOT</strong> classes you extend. A "player entity" is just a <span class="type">Ref&lt;EntityStore&gt;</span> whose archetype happens to include <span class="type">Player</span>, <span class="type">TransformComponent</span>, <span class="type">NetworkId</span>, and other components. You compose behavior by adding and removing components, not by subclassing.</p>
+                </div>
             </section>
 
-            <section id="core-ecs-types">
-                <h2>Core ECS Types</h2>
-                <p>All core ECS types are in the <code>com.hypixel.hytale.component.*</code> packages:</p>
+            <section id="store">
+                <h2>Store&lt;T&gt; &mdash; The Central Container</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>The <span class="type">Store&lt;ECS_TYPE&gt;</span> is the central database for all entities and their components. It implements <span class="type">ComponentAccessor&lt;ECS_TYPE&gt;</span> and is generic over the external data type &mdash; either <span class="type">EntityStore</span> or <span class="type">ChunkStore</span>.</p>
 
-                <div class="table-wrapper">
-                    <table class="api-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="type">Store&lt;EntityStore&gt;</span></td>
-                                <td>The database of all entities and components in a world. Access via <code>world.getEntityStore().getStore()</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Ref&lt;EntityStore&gt;</span></td>
-                                <td>A lightweight reference to an entity in the Store. Used to read/write components for a specific entity.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Holder&lt;EntityStore&gt;</span></td>
-                                <td>A builder for constructing new entities before adding them to the Store. Created via <code>EntityStore.REGISTRY.newHolder()</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Component</span></td>
-                                <td>Base type for all component data. Components are pure data containers.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">ComponentType</span></td>
-                                <td>Type token for a component, accessed via static <code>getComponentType()</code> method on each component class.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Archetype</span></td>
-                                <td>Defines what components an entity has. Used for queries and optimization.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">AddReason / RemoveReason</span></td>
-                                <td>Enums used when adding/removing entities from the Store to indicate the reason for the change.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <h3>Internal Structure</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>refs[]</code></td><td><span class="type">Ref&lt;T&gt;[]</span></td><td>Array of entity references, indexed by entity ID</td></tr>
+                        <tr><td><code>entityToArchetypeChunk[]</code></td><td><span class="type">int[]</span></td><td>Maps entity index to its archetype chunk index</td></tr>
+                        <tr><td><code>entityChunkIndex[]</code></td><td><span class="type">int[]</span></td><td>Maps entity index to its position within the archetype chunk</td></tr>
+                        <tr><td><code>archetypeChunks[]</code></td><td><span class="type">ArchetypeChunk&lt;T&gt;[]</span></td><td>Structure-of-Arrays storage grouped by archetype</td></tr>
+                        <tr><td><code>resources[]</code></td><td><span class="type">Resource&lt;T&gt;[]</span></td><td>Global per-store resources (not per-entity)</td></tr>
+                        <tr><td><code>registry</code></td><td><span class="type">ComponentRegistry&lt;T&gt;</span></td><td>The registry that created this store</td></tr>
+                        <tr><td><code>thread</code></td><td><span class="type">Thread</span></td><td>The owning thread &mdash; captured at construction time</td></tr>
+                        <tr><td><code>processing</code></td><td><span class="type">ProcessingCounter</span></td><td>Lock used to protect entity add/remove operations</td></tr>
+                        <tr><td><code>commandBuffers</code></td><td><span class="type">Deque&lt;CommandBuffer&lt;T&gt;&gt;</span></td><td>Pooled command buffers for deferred operations</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Operations</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Ref</span>&lt;T&gt; <span class="fn">addEntity</span>(<span class="type">Holder</span>&lt;T&gt;, <span class="type">AddReason</span>)</code></td>
+                            <td>Adds a pre-built entity to the store. Returns a Ref if successful, null if removed during add.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Holder</span>&lt;T&gt; <span class="fn">removeEntity</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">RemoveReason</span>)</code></td>
+                            <td>Removes an entity from the store. Returns a Holder containing the removed components.</td>
+                        </tr>
+                        <tr>
+                            <td><code>T <span class="fn">getComponent</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">ComponentType</span>)</code></td>
+                            <td>Returns the component for a given entity, or null if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code>T <span class="fn">ensureAndGetComponent</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">ComponentType</span>)</code></td>
+                            <td>Returns the component, creating it with defaults if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">addComponent</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">ComponentType</span>, T)</code></td>
+                            <td>Adds a component to an existing entity. Throws if already present.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">putComponent</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">ComponentType</span>, T)</code></td>
+                            <td>Adds or replaces a component on an existing entity.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">removeComponent</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">ComponentType</span>)</code></td>
+                            <td>Removes a component from an entity. Throws if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Archetype</span>&lt;T&gt; <span class="fn">getArchetype</span>(<span class="type">Ref</span>&lt;T&gt;)</code></td>
+                            <td>Returns the current archetype (component set) for an entity.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getEntityCount</span>()</code></td>
+                            <td>Returns total entity count in the store.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getEntityCountFor</span>(<span class="type">Query</span>&lt;T&gt;)</code></td>
+                            <td>Returns entity count matching a query.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">invoke</span>(<span class="type">Ref</span>&lt;T&gt;, <span class="type">EcsEvent</span>)</code></td>
+                            <td>Fires an entity-scoped event for all matching systems.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">invoke</span>(<span class="type">EcsEvent</span>)</code></td>
+                            <td>Fires a world-scoped event for all matching systems.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Obtain the Store from the world</span>
+<span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Check entity count</span>
+<span class="kw">int</span> <span class="field">totalEntities</span> = <span class="field">store</span>.<span class="fn">getEntityCount</span>();
+
+<span class="comment">// Access the external data (EntityStore or ChunkStore)</span>
+<span class="type">EntityStore</span> <span class="field">external</span> = <span class="field">store</span>.<span class="fn">getExternalData</span>();</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Thread Affinity</div>
+                    <p>A <span class="type">Store</span> captures <code>Thread.currentThread()</code> at construction. All mutating operations call <code>assertThread()</code> to verify they run on the owning thread. Accessing a Store from the wrong thread throws an exception.</p>
                 </div>
+            </section>
+
+            <section id="ref">
+                <h2>Ref&lt;T&gt; &mdash; Entity References</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>A <span class="type">Ref&lt;ECS_TYPE&gt;</span> is a <strong>lightweight, mutable reference</strong> to an entity within a Store. It wraps an integer index into the Store's internal arrays. All component reads and writes require a Ref.</p>
+
+                <h3>Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>store</code></td><td><span class="type">Store&lt;T&gt;</span></td><td>The Store this Ref belongs to</td></tr>
+                        <tr><td><code>index</code></td><td><span class="kw">volatile int</span></td><td>Current entity index. <code>Integer.MIN_VALUE</code> when invalid.</td></tr>
+                        <tr><td><code>invalidatedBy</code></td><td><span class="kw">volatile</span> <span class="type">Throwable</span></td><td>Stack trace of whatever invalidated this Ref (for debugging)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Lifecycle</h3>
+                <ol>
+                    <li><strong>Creation:</strong> A Ref is created with <code><span class="kw">new</span> <span class="type">Ref</span>&lt;&gt;(store)</code> and starts with index <code>Integer.MIN_VALUE</code> (invalid).</li>
+                    <li><strong>Activation:</strong> When <code>store.addEntity()</code> is called, the Ref's index is set to a valid entity index via <code>setIndex()</code>.</li>
+                    <li><strong>Usage:</strong> Pass the Ref to <code>store.getComponent()</code>, <code>store.addComponent()</code>, etc.</li>
+                    <li><strong>Invalidation:</strong> When <code>store.removeEntity()</code> is called, the Ref's index is reset to <code>Integer.MIN_VALUE</code> and a Throwable is stored for diagnostic purposes.</li>
+                </ol>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="kw">boolean</span> <span class="fn">isValid</span>()</code></td><td>Returns true if the Ref still points to a live entity</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">validate</span>()</code></td><td>Throws <span class="type">IllegalStateException</span> with the invalidation stack trace if invalid</td></tr>
+                        <tr><td><code><span class="kw">int</span> <span class="fn">getIndex</span>()</code></td><td>Returns the current entity index</td></tr>
+                        <tr><td><code><span class="type">Store</span>&lt;T&gt; <span class="fn">getStore</span>()</code></td><td>Returns the Store this Ref belongs to</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Check if entity is still alive</span>
+<span class="kw">if</span> (<span class="field">entityRef</span>.<span class="fn">isValid</span>()) {
+    <span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+        <span class="field">entityRef</span>,
+        <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+    );
+}
+
+<span class="comment">// Validate throws with full stack trace on invalid refs</span>
+<span class="field">entityRef</span>.<span class="fn">validate</span>(); <span class="comment">// IllegalStateException if dead</span></code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Refs are <strong>mutable</strong>. When an entity is removed from the Store, its index slot is reused by swapping the last entity into the removed slot. This means the <em>internal index</em> of a Ref can change. Always use Ref identity, never cache <code>getIndex()</code> values long-term.</p>
+                </div>
+            </section>
+
+            <section id="holder">
+                <h2>Holder&lt;T&gt; &mdash; Entity Builders</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>A <span class="type">Holder&lt;ECS_TYPE&gt;</span> is a <strong>pre-assembly container</strong> for building an entity's component set before adding it to the Store. It also serves as the output container when removing an entity &mdash; the removed components are copied into a Holder so they can be transferred to another Store or serialized.</p>
+
+                <h3>Internal Structure</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>registry</code></td><td><span class="type">ComponentRegistry&lt;T&gt;</span></td><td>The registry this Holder was created from</td></tr>
+                        <tr><td><code>archetype</code></td><td><span class="type">Archetype&lt;T&gt;</span></td><td>Current component combination</td></tr>
+                        <tr><td><code>components[]</code></td><td><span class="type">Component&lt;T&gt;[]</span></td><td>Array of component instances, indexed by ComponentType index</td></tr>
+                        <tr><td><code>lock</code></td><td><span class="type">StampedLock</span></td><td>Thread-safety lock for all operations</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">addComponent</span>(<span class="type">ComponentType</span>, T)</code></td>
+                            <td>Adds a component. Throws if component type already present.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">replaceComponent</span>(<span class="type">ComponentType</span>, T)</code></td>
+                            <td>Replaces an existing component. Throws if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">putComponent</span>(<span class="type">ComponentType</span>, T)</code></td>
+                            <td>Adds or replaces a component (upsert).</td>
+                        </tr>
+                        <tr>
+                            <td><code>T <span class="fn">getComponent</span>(<span class="type">ComponentType</span>)</code></td>
+                            <td>Returns the component, or null if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">removeComponent</span>(<span class="type">ComponentType</span>)</code></td>
+                            <td>Removes a component from the Holder. Throws if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code>T <span class="fn">ensureAndGetComponent</span>(<span class="type">ComponentType</span>)</code></td>
+                            <td>Returns the component, creating it with defaults if absent.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Holder</span>&lt;T&gt; <span class="fn">clone</span>()</code></td>
+                            <td>Deep-clones all components into a new Holder.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Archetype</span>&lt;T&gt; <span class="fn">getArchetype</span>()</code></td>
+                            <td>Returns the current archetype of this Holder.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Create a new Holder from the EntityStore registry</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">EntityStore</span>.REGISTRY.<span class="fn">newHolder</span>();
+
+<span class="comment">// Assemble components</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">TransformComponent</span>(<span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">0</span>, <span class="num">64</span>, <span class="num">0</span>), <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>))
+);
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">NetworkId</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">NetworkId</span>(<span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>())
+);
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">BoundingBox</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">BoundingBox</span>(<span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">1.0</span>, <span class="num">2.0</span>, <span class="num">1.0</span>))
+);
+
+<span class="comment">// Add to the store</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);
+
+<span class="comment">// When removing, components are copied back into a Holder</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">removed</span> = <span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.REMOVE);
+<span class="type">TransformComponent</span> <span class="field">lastPos</span> = <span class="field">removed</span>.<span class="fn">getComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>());</code></pre>
+            </section>
+
+            <section id="component">
+                <h2>Component&lt;T&gt; &mdash; Data Containers</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>The <span class="type">Component&lt;ECS_TYPE&gt;</span> interface is the base type for all ECS component data. Components are pure data containers &mdash; they hold state and expose it through getters/setters, but should contain minimal logic.</p>
+
+                <pre><code><span class="kw">public interface</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="kw">extends</span> <span class="type">Cloneable</span> {
+
+    <span class="comment">// Deep-clone this component</span>
+    <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="fn">clone</span>();
+
+    <span class="comment">// Clone for serialization (defaults to clone())</span>
+    <span class="kw">default</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="fn">cloneSerializable</span>() {
+        <span class="kw">return</span> <span class="fn">clone</span>();
+    }
+}</code></pre>
+
+                <h3>Implementing a Custom Component</h3>
+                <p>To create a new component, implement the <span class="type">Component</span> interface with the appropriate store type parameter:</p>
+
+                <pre><code><span class="kw">public class</span> <span class="type">HealthComponent</span> <span class="kw">implements</span> <span class="type">Component</span>&lt;<span class="type">EntityStore</span>&gt; {
+
+    <span class="kw">private float</span> <span class="field">health</span>;
+    <span class="kw">private float</span> <span class="field">maxHealth</span>;
+
+    <span class="kw">public</span> <span class="type">HealthComponent</span>() {
+        <span class="kw">this</span>.<span class="field">health</span> = <span class="num">20.0f</span>;
+        <span class="kw">this</span>.<span class="field">maxHealth</span> = <span class="num">20.0f</span>;
+    }
+
+    <span class="kw">public</span> <span class="type">HealthComponent</span>(<span class="kw">float</span> <span class="field">health</span>, <span class="kw">float</span> <span class="field">maxHealth</span>) {
+        <span class="kw">this</span>.<span class="field">health</span> = <span class="field">health</span>;
+        <span class="kw">this</span>.<span class="field">maxHealth</span> = <span class="field">maxHealth</span>;
+    }
+
+    <span class="kw">public float</span> <span class="fn">getHealth</span>()    { <span class="kw">return</span> <span class="field">health</span>; }
+    <span class="kw">public float</span> <span class="fn">getMaxHealth</span>() { <span class="kw">return</span> <span class="field">maxHealth</span>; }
+    <span class="kw">public void</span>  <span class="fn">setHealth</span>(<span class="kw">float</span> <span class="field">h</span>) { <span class="kw">this</span>.<span class="field">health</span> = <span class="field">h</span>; }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Component</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">clone</span>() {
+        <span class="kw">return new</span> <span class="type">HealthComponent</span>(<span class="field">health</span>, <span class="field">maxHealth</span>);
+    }
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>Components must implement <code>clone()</code>. This is used by the ECS when copying entities between stores, serializing, or creating entity snapshots. The <code>cloneSerializable()</code> variant is used specifically for persistence &mdash; it can return null to skip non-persistent fields.</p>
+                </div>
+            </section>
+
+            <section id="component-type">
+                <h2>ComponentType&lt;T, C&gt; &mdash; Type Tokens</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>A <span class="type">ComponentType&lt;ECS_TYPE, C&gt;</span> is a type-safe token that uniquely identifies a component class within a <span class="type">ComponentRegistry</span>. Each component class has exactly one ComponentType, accessed via a static <code>getComponentType()</code> method.</p>
+
+                <h3>How ComponentTypes Work</h3>
+                <p>Internally, each ComponentType holds an integer <code>index</code> assigned by the <span class="type">ComponentRegistry</span> during registration. This index is used as the array offset in <span class="type">Archetype</span>'s component type array and in <span class="type">Holder</span>'s component array, enabling O(1) lookup without hashing.</p>
+
+                <h3>Registration</h3>
+                <p>ComponentTypes are registered inside System classes via the <code>registerComponent()</code> method:</p>
+
+                <pre><code><span class="kw">public class</span> <span class="type">MySystem</span> <span class="kw">extends</span> <span class="type">EntityTickingSystem</span>&lt;<span class="type">EntityStore</span>&gt; {
+
+    <span class="comment">// Register a component type with a class, serialization ID, and codec</span>
+    <span class="kw">private static final</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">HealthComponent</span>&gt; <span class="field">HEALTH_TYPE</span> =
+        <span class="fn">registerComponent</span>(<span class="type">HealthComponent</span>.<span class="kw">class</span>, <span class="str">"Health"</span>, <span class="field">healthCodec</span>);
+
+    <span class="comment">// Register without serialization (transient component)</span>
+    <span class="kw">private static final</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">CooldownComponent</span>&gt; <span class="field">COOLDOWN_TYPE</span> =
+        <span class="fn">registerComponent</span>(<span class="type">CooldownComponent</span>.<span class="kw">class</span>, <span class="type">CooldownComponent</span>::<span class="kw">new</span>);
+}</code></pre>
+
+                <h3>Usage Patterns</h3>
+                <pre><code><span class="comment">// Get a component from an entity</span>
+<span class="type">HealthComponent</span> <span class="field">health</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">entityRef</span>,
+    <span class="type">HealthComponent</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="comment">// Check presence without retrieving</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">arch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">entityRef</span>);
+<span class="kw">boolean</span> <span class="field">hasHealth</span> = <span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">HealthComponent</span>.<span class="fn">getComponentType</span>());</code></pre>
+            </section>
+
+            <section id="archetype">
+                <h2>Archetype &mdash; Component Patterns</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>An <span class="type">Archetype&lt;ECS_TYPE&gt;</span> describes the <strong>exact set of component types</strong> an entity has. It is an immutable value type implemented as a sparse array of <span class="type">ComponentType</span> references indexed by their registry indices.</p>
+
+                <h3>How Archetypes Enable Fast Queries</h3>
+                <p>The Store groups entities by archetype into <span class="type">ArchetypeChunks</span>. All entities with the same component combination live in the same chunk, stored in Structure-of-Arrays layout. This means systems can iterate over contiguous arrays of components without per-entity branching.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>minIndex</code></td><td><span class="kw">int</span></td><td>Lowest occupied index in the componentTypes array</td></tr>
+                        <tr><td><code>count</code></td><td><span class="kw">int</span></td><td>Number of component types in this archetype</td></tr>
+                        <tr><td><code>componentTypes[]</code></td><td><span class="type">ComponentType[]</span></td><td>Sparse array &mdash; non-null at occupied indices</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">contains</span>(<span class="type">ComponentType</span>)</code></td>
+                            <td>O(1) check if a component type is present</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">contains</span>(<span class="type">Archetype</span>)</code></td>
+                            <td>Checks if this archetype is a superset of another</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">Archetype</span> <span class="fn">of</span>(<span class="type">ComponentType</span>...)</code></td>
+                            <td>Creates an archetype from one or more component types</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">Archetype</span> <span class="fn">add</span>(<span class="type">Archetype</span>, <span class="type">ComponentType</span>)</code></td>
+                            <td>Returns a new archetype with an additional component type</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">Archetype</span> <span class="fn">remove</span>(<span class="type">Archetype</span>, <span class="type">ComponentType</span>)</code></td>
+                            <td>Returns a new archetype with a component type removed</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">Archetype</span> <span class="fn">empty</span>()</code></td>
+                            <td>Returns the singleton empty archetype</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">count</span>()</code></td>
+                            <td>Returns the number of component types</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">ExactArchetypeQuery</span> <span class="fn">asExactQuery</span>()</code></td>
+                            <td>Returns a cached query that matches only this exact archetype</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Create an archetype for a basic entity</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">playerArchetype</span> = <span class="type">Archetype</span>.<span class="fn">of</span>(
+    <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">Player</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">NetworkId</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">ModelComponent</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="comment">// Check if an entity has at least these components</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">entityArch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">ref</span>);
+<span class="kw">boolean</span> <span class="field">isPlayer</span> = <span class="field">entityArch</span>.<span class="fn">contains</span>(<span class="field">playerArchetype</span>);
+
+<span class="comment">// Add a component, producing a new archetype</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">withNameplate</span> = <span class="type">Archetype</span>.<span class="fn">add</span>(
+    <span class="field">playerArchetype</span>,
+    <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>()
+);</code></pre>
+
+                <h3>ArchetypeChunk &mdash; SoA Storage</h3>
+                <p>Each unique archetype in the Store has a corresponding <span class="type">ArchetypeChunk</span> that stores entities in <strong>Structure-of-Arrays</strong> format. Instead of an array of entity objects, each containing its own components, the ArchetypeChunk stores a separate array per component type:</p>
+
+<div class="diagram">ArchetypeChunk for [Transform, Player, NetworkId]
+
+  refs[]       = [ ref0,  ref1,  ref2,  ref3  ]
+  Transform[]  = [ pos0,  pos1,  pos2,  pos3  ]
+  Player[]     = [ plr0,  plr1,  plr2,  plr3  ]
+  NetworkId[]  = [ nid0,  nid1,  nid2,  nid3  ]
+</div>
+
+                <p>This layout enables cache-friendly iteration &mdash; a system that only reads Transform data iterates a single contiguous array, never touching Player or NetworkId memory.</p>
+            </section>
+
+            <section id="add-remove-reason">
+                <h2>AddReason &amp; RemoveReason</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>When entities are added to or removed from a Store, a reason enum is provided. This informs systems <em>why</em> the change happened, allowing them to respond differently to spawning vs. loading vs. transferring.</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Enum</th><th>Values</th><th>Use Cases</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">AddReason</span></td>
+                            <td><code>SPAWN</code>, <code>LOAD</code>, <code>TRANSFER</code></td>
+                            <td>New entity creation, loading from disk, moving between worlds</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">RemoveReason</span></td>
+                            <td><code>REMOVE</code>, <code>SAVE</code>, <code>TRANSFER</code></td>
+                            <td>Entity despawn/death, saving to disk, moving between worlds</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Spawn a brand new entity</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);
+
+<span class="comment">// Load from persistence</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">loaded</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">savedHolder</span>, <span class="type">AddReason</span>.LOAD);
+
+<span class="comment">// Despawn an entity</span>
+<span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.REMOVE);
+
+<span class="comment">// Transfer between worlds</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="field">sourceStore</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.TRANSFER);
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">newRef</span> = <span class="field">targetStore</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.TRANSFER);</code></pre>
+            </section>
+
+            <section id="systems">
+                <h2>ECS Systems</h2>
+                <p>Package: <code>com.hypixel.hytale.component.system</code></p>
+                <p>Systems contain the <strong>logic</strong> of the ECS. They process entities that match a specific component query. Hytale provides a rich hierarchy of system types for different use cases.</p>
+
+                <h3>System Type Hierarchy</h3>
+<div class="diagram">ISystem&lt;T&gt;                          (base interface)
+ ├─ System&lt;T&gt;                       (registers components/resources)
+ │   ├─ StoreSystem&lt;T&gt;              (lifecycle: added/removed from store)
+ │   ├─ HolderSystem&lt;T&gt;             (entity add/remove with Holder access)
+ │   ├─ RefSystem&lt;T&gt;                (entity add/remove with Ref access)
+ │   ├─ RefChangeSystem&lt;T,C&gt;        (component add/set/remove callbacks)
+ │   └─ TickingSystem&lt;T&gt;            (runs each tick)
+ │       ├─ ArchetypeTickingSystem   (ticks per archetype chunk)
+ │       │   └─ EntityTickingSystem  (ticks per entity, supports parallel)
+ │       └─ DelayedEntitySystem      (ticks with configurable delay)
+ ├─ EntityEventSystem&lt;T, Event&gt;     (handles entity-scoped events)
+ └─ WorldEventSystem&lt;T, Event&gt;      (handles world-scoped events)
+</div>
+
+                <h3>System Types in Detail</h3>
+                <table>
+                    <thead>
+                        <tr><th>System Type</th><th>Purpose</th><th>Key Method</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">StoreSystem</span></td>
+                            <td>Reacts to being added or removed from a Store</td>
+                            <td><code><span class="fn">onSystemAddedToStore</span>(<span class="type">Store</span>)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HolderSystem</span></td>
+                            <td>Receives entity Holders on add/remove (pre-store for add, post-store for remove)</td>
+                            <td><code><span class="fn">onEntityAdd</span>(<span class="type">Holder</span>, <span class="type">AddReason</span>, <span class="type">Store</span>)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">RefSystem</span></td>
+                            <td>Receives entity Refs after they are added to the Store</td>
+                            <td><code><span class="fn">onEntityAdded</span>(<span class="type">Ref</span>, <span class="type">AddReason</span>, <span class="type">Store</span>, <span class="type">CommandBuffer</span>)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">RefChangeSystem</span></td>
+                            <td>Reacts to individual component add/set/remove on entities</td>
+                            <td><code><span class="fn">onComponentAdded</span>(<span class="type">Ref</span>, T, <span class="type">Store</span>, <span class="type">CommandBuffer</span>)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">EntityTickingSystem</span></td>
+                            <td>Runs every tick for each entity matching the query</td>
+                            <td><code><span class="fn">tick</span>(<span class="kw">float</span> dt, <span class="kw">int</span> index, <span class="type">ArchetypeChunk</span>, <span class="type">Store</span>, <span class="type">CommandBuffer</span>)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">EntityEventSystem</span></td>
+                            <td>Handles entity-scoped events (dispatched to a specific entity)</td>
+                            <td><code><span class="fn">handle</span>(<span class="kw">int</span>, <span class="type">ArchetypeChunk</span>, <span class="type">Store</span>, <span class="type">CommandBuffer</span>, Event)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">WorldEventSystem</span></td>
+                            <td>Handles world-scoped events (dispatched to the entire store)</td>
+                            <td><code><span class="fn">handle</span>(<span class="type">Store</span>, <span class="type">CommandBuffer</span>, Event)</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Query-Based Filtering</h3>
+                <p>Most system types implement <span class="type">QuerySystem</span>, which means they declare a <span class="type">Query</span> that determines which entities the system processes. The Store uses this query to precompute a BitSet of archetype chunks that match, so at runtime there is zero per-entity overhead for query evaluation.</p>
+
+                <pre><code><span class="kw">public class</span> <span class="type">GravitySystem</span> <span class="kw">extends</span> <span class="type">EntityTickingSystem</span>&lt;<span class="type">EntityStore</span>&gt; {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">getQuery</span>() {
+        <span class="comment">// Only process entities that have both Transform and Velocity</span>
+        <span class="kw">return</span> <span class="type">Archetype</span>.<span class="fn">of</span>(
+            <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+            <span class="type">Velocity</span>.<span class="fn">getComponentType</span>()
+        );
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">tick</span>(<span class="kw">float</span> <span class="field">dt</span>, <span class="kw">int</span> <span class="field">index</span>,
+                     <span class="type">ArchetypeChunk</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">chunk</span>,
+                     <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                     <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>) {
+
+        <span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">chunk</span>.<span class="fn">getComponent</span>(
+            <span class="field">index</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+        );
+        <span class="type">Velocity</span> <span class="field">velocity</span> = <span class="field">chunk</span>.<span class="fn">getComponent</span>(
+            <span class="field">index</span>, <span class="type">Velocity</span>.<span class="fn">getComponentType</span>()
+        );
+
+        <span class="comment">// Apply gravity</span>
+        <span class="field">velocity</span>.<span class="fn">addY</span>(-<span class="num">9.81f</span> * <span class="field">dt</span>);
+    }
+}</code></pre>
+
+                <h3>System Registration</h3>
+                <p>Systems are registered on the <span class="type">ComponentRegistry</span>, typically in static initializer blocks:</p>
+
+                <pre><code><span class="comment">// Register a system on the EntityStore registry</span>
+<span class="type">EntityStore</span>.REGISTRY.<span class="fn">registerSystem</span>(<span class="kw">new</span> <span class="type">GravitySystem</span>());
+
+<span class="comment">// Register a system type (for looking up instances later)</span>
+<span class="type">SystemType</span>&lt;<span class="type">EntityStore</span>, <span class="type">GravitySystem</span>&gt; <span class="field">GRAVITY_TYPE</span> =
+    <span class="type">EntityStore</span>.REGISTRY.<span class="fn">registerSystemType</span>(<span class="type">GravitySystem</span>.<span class="kw">class</span>);</code></pre>
+
+                <h3>System Dependencies &amp; Ordering</h3>
+                <p>Systems can declare ordering dependencies via the <code>getDependencies()</code> method. The ECS uses a <span class="type">DependencyGraph</span> to topologically sort systems, ensuring they execute in the correct order.</p>
+            </section>
+
+            <section id="ecs-events">
+                <h2>EcsEvent &amp; CancellableEcsEvent</h2>
+                <p>Package: <code>com.hypixel.hytale.component.system</code></p>
+                <p>The ECS has its own event system, separate from the global <span class="type">EventBus</span>. ECS events are dispatched through the Store and are processed by <span class="type">EntityEventSystem</span> and <span class="type">WorldEventSystem</span> instances.</p>
+
+                <h3>Event Base Classes</h3>
+                <table>
+                    <thead>
+                        <tr><th>Class</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">EcsEvent</span></td>
+                            <td>Abstract base class. Empty &mdash; serves only as a marker type.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CancellableEcsEvent</span></td>
+                            <td>Extends <span class="type">EcsEvent</span>, implements <span class="type">ICancellableEcsEvent</span>. Adds <code>isCancelled()</code> and <code>setCancelled(boolean)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ICancellableEcsEvent</span></td>
+                            <td>Interface for the cancellation contract.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Entity Events vs. World Events</h3>
+                <p>There are two distinct scopes for ECS events:</p>
+                <ul>
+                    <li><strong>Entity Events</strong> &mdash; dispatched to a specific entity via <code>store.invoke(ref, event)</code>. Only systems whose query matches the target entity's archetype will receive the event.</li>
+                    <li><strong>World Events</strong> &mdash; dispatched to the entire store via <code>store.invoke(event)</code>. All registered <span class="type">WorldEventSystem</span> handlers for that event type will receive it.</li>
+                </ul>
+
+                <pre><code><span class="comment">// Define a custom entity event</span>
+<span class="kw">public class</span> <span class="type">DamageEvent</span> <span class="kw">extends</span> <span class="type">CancellableEcsEvent</span> {
+    <span class="kw">private float</span> <span class="field">damage</span>;
+    <span class="kw">private final</span> <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">source</span>;
+
+    <span class="kw">public</span> <span class="type">DamageEvent</span>(<span class="kw">float</span> <span class="field">damage</span>, <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">source</span>) {
+        <span class="kw">this</span>.<span class="field">damage</span> = <span class="field">damage</span>;
+        <span class="kw">this</span>.<span class="field">source</span> = <span class="field">source</span>;
+    }
+
+    <span class="kw">public float</span> <span class="fn">getDamage</span>()  { <span class="kw">return</span> <span class="field">damage</span>; }
+    <span class="kw">public void</span> <span class="fn">setDamage</span>(<span class="kw">float</span> <span class="field">d</span>) { <span class="field">damage</span> = <span class="field">d</span>; }
+}
+
+<span class="comment">// Dispatch to a specific entity</span>
+<span class="field">store</span>.<span class="fn">invoke</span>(<span class="field">targetRef</span>, <span class="kw">new</span> <span class="type">DamageEvent</span>(<span class="num">5.0f</span>, <span class="field">attackerRef</span>));
+
+<span class="comment">// Handle in a system</span>
+<span class="kw">public class</span> <span class="type">DamageHandler</span>
+    <span class="kw">extends</span> <span class="type">EntityEventSystem</span>&lt;<span class="type">EntityStore</span>, <span class="type">DamageEvent</span>&gt; {
+
+    <span class="kw">public</span> <span class="type">DamageHandler</span>() { <span class="kw">super</span>(<span class="type">DamageEvent</span>.<span class="kw">class</span>); }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">getQuery</span>() {
+        <span class="kw">return</span> <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">HealthComponent</span>.<span class="fn">getComponentType</span>());
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">handle</span>(<span class="kw">int</span> <span class="field">index</span>,
+                       <span class="type">ArchetypeChunk</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">chunk</span>,
+                       <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                       <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>,
+                       <span class="type">DamageEvent</span> <span class="field">event</span>) {
+
+        <span class="kw">if</span> (<span class="field">event</span>.<span class="fn">isCancelled</span>()) <span class="kw">return</span>;
+
+        <span class="type">HealthComponent</span> <span class="field">health</span> = <span class="field">chunk</span>.<span class="fn">getComponent</span>(
+            <span class="field">index</span>, <span class="type">HealthComponent</span>.<span class="fn">getComponentType</span>()
+        );
+        <span class="field">health</span>.<span class="fn">setHealth</span>(
+            <span class="field">health</span>.<span class="fn">getHealth</span>() - <span class="field">event</span>.<span class="fn">getDamage</span>()
+        );
+    }
+}</code></pre>
+
+                <div class="info-box danger">
+                    <div class="label">Critical</div>
+                    <p>ECS events and global <span class="type">EventBus</span> events are <strong>different systems</strong>. ECS events are dispatched via <code>store.invoke()</code> and received by <span class="type">EntityEventSystem</span> / <span class="type">WorldEventSystem</span>. Do NOT use <code>registerGlobal()</code> for ECS events &mdash; it will silently fail.</p>
+                </div>
+            </section>
+
+            <section id="store-operations">
+                <h2>Store Operations</h2>
+                <p>The <span class="type">Store</span> (via <span class="type">ComponentAccessor</span>) provides a complete API for manipulating entities and their components.</p>
+
+                <h3>Adding Components</h3>
+                <pre><code><span class="comment">// Add a specific component instance</span>
+<span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>,
+    <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Hello"</span>)
+);
+
+<span class="comment">// Add with default values (created by registry supplier)</span>
+<span class="type">Nameplate</span> <span class="field">np</span> = <span class="field">store</span>.<span class="fn">addComponent</span>(<span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Ensure exists (no-op if already present)</span>
+<span class="field">store</span>.<span class="fn">ensureComponent</span>(<span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Ensure and get (create if missing, return the instance)</span>
+<span class="type">Nameplate</span> <span class="field">nameplate</span> = <span class="field">store</span>.<span class="fn">ensureAndGetComponent</span>(
+    <span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="comment">// Put (add if missing, replace if present)</span>
+<span class="field">store</span>.<span class="fn">putComponent</span>(<span class="field">ref</span>,
+    <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Updated"</span>)
+);</code></pre>
+
+                <h3>Reading Components</h3>
+                <pre><code><span class="comment">// Read a component (returns null if absent)</span>
+<span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="kw">if</span> (<span class="field">transform</span> != <span class="kw">null</span>) {
+    <span class="type">Vector3d</span> <span class="field">pos</span> = <span class="field">transform</span>.<span class="fn">getPosition</span>();
+}
+
+<span class="comment">// Check archetype membership</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">arch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">ref</span>);
+<span class="kw">boolean</span> <span class="field">hasVelocity</span> = <span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">Velocity</span>.<span class="fn">getComponentType</span>());</code></pre>
+
+                <h3>Removing Components</h3>
+                <pre><code><span class="comment">// Remove a component (throws if absent)</span>
+<span class="field">store</span>.<span class="fn">removeComponent</span>(<span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Try remove (no-op if absent)</span>
+<span class="field">store</span>.<span class="fn">tryRemoveComponent</span>(<span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Archetype Migration</div>
+                    <p>When you add or remove a component from a live entity, its archetype changes. Internally, the Store moves the entity from one <span class="type">ArchetypeChunk</span> to another. This is a relatively expensive operation &mdash; prefer setting component values over adding/removing components in hot paths.</p>
+                </div>
+            </section>
+
+            <section id="query-system">
+                <h2>Query System</h2>
+                <p>Package: <code>com.hypixel.hytale.component.query</code></p>
+                <p>Queries determine which entities a system processes. They are evaluated against <span class="type">Archetype</span> objects, not individual entities, making them extremely efficient &mdash; the Store only needs to evaluate the query once per archetype, not once per entity.</p>
+
+                <h3>Query Types</h3>
+                <table>
+                    <thead>
+                        <tr><th>Query</th><th>Description</th><th>Factory</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">Archetype</span></td>
+                            <td>Matches any archetype that contains all specified component types (superset match)</td>
+                            <td><code><span class="type">Archetype</span>.<span class="fn">of</span>(...)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ExactArchetypeQuery</span></td>
+                            <td>Matches only the exact archetype (equality check)</td>
+                            <td><code><span class="field">archetype</span>.<span class="fn">asExactQuery</span>()</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">AnyQuery</span></td>
+                            <td>Matches all archetypes (always returns true)</td>
+                            <td><code><span class="type">Query</span>.<span class="fn">any</span>()</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">NotQuery</span></td>
+                            <td>Inverts another query</td>
+                            <td><code><span class="type">Query</span>.<span class="fn">not</span>(query)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">AndQuery</span></td>
+                            <td>All sub-queries must match</td>
+                            <td><code><span class="type">Query</span>.<span class="fn">and</span>(q1, q2, ...)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">OrQuery</span></td>
+                            <td>At least one sub-query must match</td>
+                            <td><code><span class="type">Query</span>.<span class="fn">or</span>(q1, q2, ...)</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Query Composition</h3>
+                <pre><code><span class="comment">// Match entities with Transform AND Velocity</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">movable</span> = <span class="type">Archetype</span>.<span class="fn">of</span>(
+    <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">Velocity</span>.<span class="fn">getComponentType</span>()
+);
+
+<span class="comment">// Match entities with Transform but WITHOUT Intangible</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">collidable</span> = <span class="type">Query</span>.<span class="fn">and</span>(
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()),
+    <span class="type">Query</span>.<span class="fn">not</span>(<span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">Intangible</span>.<span class="fn">getComponentType</span>()))
+);
+
+<span class="comment">// Match entities that have Player OR NPCEntity</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">livingThings</span> = <span class="type">Query</span>.<span class="fn">or</span>(
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">Player</span>.<span class="fn">getComponentType</span>()),
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">NPCEntity</span>.<span class="fn">getComponentType</span>())
+);
+
+<span class="comment">// Match all entities</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">everything</span> = <span class="type">Query</span>.<span class="fn">any</span>();
+
+<span class="comment">// Count entities matching a query</span>
+<span class="kw">int</span> <span class="field">playerCount</span> = <span class="field">store</span>.<span class="fn">getEntityCountFor</span>(
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">Player</span>.<span class="fn">getComponentType</span>())
+);</code></pre>
+
+                <h3>ReadWriteQuery</h3>
+                <p>The <span class="type">ReadWriteQuery</span> (implementing <span class="type">ReadWriteArchetypeQuery</span>) allows systems to declare separate read and write archetypes. This is used by the threading infrastructure to determine which systems can run in parallel without data races.</p>
+
+                <pre><code><span class="type">ReadWriteQuery</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">query</span> = <span class="kw">new</span> <span class="type">ReadWriteQuery</span>&lt;&gt;(
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()),  <span class="comment">// read</span>
+    <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">Velocity</span>.<span class="fn">getComponentType</span>())            <span class="comment">// write</span>
+);</code></pre>
+            </section>
+
+            <section id="entity-store-vs-chunk-store">
+                <h2>EntityStore vs. ChunkStore</h2>
+                <p>Hytale uses two separate ECS stores, each with its own <span class="type">ComponentRegistry</span>:</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Store</th><th>Scope</th><th>Registry</th><th>Examples</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>Mobile entities in a world (players, NPCs, projectiles, items)</td>
+                            <td><code><span class="type">EntityStore</span>.REGISTRY</code></td>
+                            <td><span class="type">Player</span>, <span class="type">TransformComponent</span>, <span class="type">Velocity</span>, <span class="type">NetworkId</span>, <span class="type">BoundingBox</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ChunkStore</span></td>
+                            <td>Chunk-scoped data (block grids, block states, terrain data)</td>
+                            <td><code><span class="type">ChunkStore</span>.REGISTRY</code></td>
+                            <td><span class="type">WorldChunk</span>, <span class="type">BlockSection</span>, <span class="type">BlockState</span>, <span class="type">ChunkColumn</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>EntityStore</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.storage</code></p>
+                <p>The <span class="type">EntityStore</span> wraps a <code>Store&lt;EntityStore&gt;</code> and adds entity-specific infrastructure:</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Feature</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>networkIdCounter</code></td><td>Atomic counter for assigning unique network IDs</td></tr>
+                        <tr><td><code>entitiesByUuid</code></td><td><span class="type">ConcurrentHashMap&lt;UUID, Ref&gt;</span> for UUID-based lookups</td></tr>
+                        <tr><td><code>networkIdToRef</code></td><td><span class="type">Int2ObjectMap&lt;Ref&gt;</span> for network-ID-based lookups</td></tr>
+                        <tr><td><code>SEND_PACKET_GROUP</code></td><td>A <span class="type">SystemGroup</span> for systems that send network packets</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Access the entity store</span>
+<span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Look up by UUID</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">entityStore</span>.<span class="fn">getRefFromUUID</span>(<span class="field">uuid</span>);
+
+<span class="comment">// Look up by network ID</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref2</span> = <span class="field">entityStore</span>.<span class="fn">getRefFromNetworkId</span>(<span class="field">netId</span>);
+
+<span class="comment">// Get the next available network ID</span>
+<span class="kw">int</span> <span class="field">netId</span> = <span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>();</code></pre>
+
+                <h3>ChunkStore</h3>
+                <p>The <span class="type">ChunkStore</span> wraps a <code>Store&lt;ChunkStore&gt;</code> and manages chunk lifecycle (loading, saving, unloading, generation). It uses a <span class="type">Long2ObjectConcurrentHashMap</span> to index chunks by packed (x, z) coordinates.</p>
+
+                <pre><code><span class="comment">// Access the chunk store</span>
+<span class="type">ChunkStore</span> <span class="field">chunkStore</span> = <span class="field">world</span>.<span class="fn">getChunkStore</span>();
+<span class="type">Store</span>&lt;<span class="type">ChunkStore</span>&gt; <span class="field">store</span> = <span class="field">chunkStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Get a chunk by coordinates</span>
+<span class="type">WorldChunk</span> <span class="field">chunk</span> = <span class="field">chunkStore</span>.<span class="fn">getChunk</span>(<span class="field">chunkX</span>, <span class="field">chunkZ</span>);</code></pre>
+            </section>
+
+            <section id="component-registry">
+                <h2>ComponentRegistry &mdash; The Type System</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>The <span class="type">ComponentRegistry&lt;ECS_TYPE&gt;</span> is the master registry for a store type. It manages registration of component types, resource types, system types, and systems. Both <span class="type">EntityStore</span> and <span class="type">ChunkStore</span> expose a static <code>REGISTRY</code> field.</p>
+
+                <h3>What Gets Registered</h3>
+                <table>
+                    <thead>
+                        <tr><th>Category</th><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Components</td>
+                            <td><code><span class="fn">registerComponent</span>(Class, id, codec, supplier)</code></td>
+                            <td>Registers a component type with optional serialization</td>
+                        </tr>
+                        <tr>
+                            <td>Resources</td>
+                            <td><code><span class="fn">registerResource</span>(Class, supplier)</code></td>
+                            <td>Registers a global per-store resource (not per-entity)</td>
+                        </tr>
+                        <tr>
+                            <td>Systems</td>
+                            <td><code><span class="fn">registerSystem</span>(ISystem)</code></td>
+                            <td>Registers a system instance</td>
+                        </tr>
+                        <tr>
+                            <td>System Types</td>
+                            <td><code><span class="fn">registerSystemType</span>(Class)</code></td>
+                            <td>Registers a system type for lookup by class</td>
+                        </tr>
+                        <tr>
+                            <td>System Groups</td>
+                            <td><code><span class="fn">registerSystemGroup</span>()</code></td>
+                            <td>Creates a named group for ordering systems</td>
+                        </tr>
+                        <tr>
+                            <td>Entity Events</td>
+                            <td><code><span class="fn">registerEntityEvent</span>(Class)</code></td>
+                            <td>Registers an entity-scoped event type</td>
+                        </tr>
+                        <tr>
+                            <td>World Events</td>
+                            <td><code><span class="fn">registerWorldEvent</span>(Class)</code></td>
+                            <td>Registers a world-scoped event type</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Internally, the registry uses a <span class="type">StampedLock</span> and assigns monotonically increasing integer indices to each registered type. These indices are what make <span class="type">Archetype</span> lookups O(1) &mdash; a simple array index dereference.</p>
+            </section>
+
+            <section id="thread-safety">
+                <h2>Thread Safety</h2>
+                <p>The ECS has specific threading rules that must be followed to avoid data corruption:</p>
+
+                <h3>Store Thread Affinity</h3>
+                <ul>
+                    <li>Each <span class="type">Store</span> captures <code>Thread.currentThread()</code> at construction.</li>
+                    <li>All mutating operations (addEntity, removeEntity, addComponent, etc.) assert they are called from the owning thread.</li>
+                    <li>Use <code>world.execute(Runnable)</code> to schedule work on the correct thread from external contexts.</li>
+                </ul>
+
+                <h3>Holder Thread Safety</h3>
+                <ul>
+                    <li><span class="type">Holder</span> uses a <span class="type">StampedLock</span> for all reads and writes.</li>
+                    <li>Holders can be safely passed between threads (e.g., built on an IO thread, added to Store on the world thread).</li>
+                    <li>Read operations acquire a read lock. Write operations (add, replace, remove) acquire a write lock.</li>
+                </ul>
+
+                <h3>Ref Volatility</h3>
+                <ul>
+                    <li>The <code>index</code> field on <span class="type">Ref</span> is <code>volatile</code>, ensuring visibility across threads.</li>
+                    <li>The <code>isValid()</code> check is thread-safe, but using a Ref on the wrong thread for Store operations will still throw.</li>
+                </ul>
+
+                <h3>Processing Lock</h3>
+                <ul>
+                    <li>The Store uses a <span class="type">ProcessingCounter</span> lock around entity add/remove and component mutations.</li>
+                    <li>During processing, <span class="type">RefSystem</span> callbacks fire. If a RefSystem removes the entity being added, the add operation handles this gracefully via <code>CommandBuffer</code> tracking.</li>
+                </ul>
+
+                <h3>CommandBuffer</h3>
+                <p>The <span class="type">CommandBuffer</span> is a deferred-execution mechanism. When systems need to mutate the Store during iteration (add/remove entities), the changes are queued in a <span class="type">CommandBuffer</span> and executed after the current processing phase completes. CommandBuffers are pooled via a <span class="type">Deque</span> to minimize allocation.</p>
+
+                <h3>Parallel Systems</h3>
+                <p><span class="type">EntityTickingSystem</span> supports optional parallelism. When <code>isParallel()</code> returns true and the entity count exceeds <code>ParallelRangeTask.PARALLELISM</code>, work is split across threads via <span class="type">ForkJoinPool</span>. Each parallel task gets its own forked <span class="type">CommandBuffer</span>, which is merged back after completion.</p>
+
+                <div class="info-box warning">
+                    <div class="label">Threading Rule</div>
+                    <p>All Store mutations <strong>must</strong> happen on the Store's owning thread. If you need to modify entities from a network handler, scheduler, or plugin callback, use <code>world.execute(() -> { ... })</code> to enqueue the work.</p>
+                </div>
+            </section>
+
+            <section id="weak-component-reference">
+                <h2>WeakComponentReference</h2>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>A <span class="type">WeakComponentReference&lt;T, C&gt;</span> provides a <strong>GC-friendly cache</strong> for frequently accessed components. It wraps a <span class="type">WeakReference</span> to a component instance and automatically re-fetches from the Store when the weak reference is cleared.</p>
+
+                <pre><code><span class="comment">// The reference caches the component via WeakReference</span>
+<span class="comment">// If GC clears it, the next get() re-fetches from the Store</span>
+<span class="type">WeakComponentReference</span>&lt;<span class="type">EntityStore</span>, <span class="type">TransformComponent</span>&gt; <span class="field">weakTransform</span>;
+
+<span class="comment">// Access the component (may re-fetch from store)</span>
+<span class="type">TransformComponent</span> <span class="field">t</span> = <span class="field">weakTransform</span>.<span class="fn">get</span>();
+<span class="kw">if</span> (<span class="field">t</span> != <span class="kw">null</span>) {
+    <span class="type">Vector3d</span> <span class="field">pos</span> = <span class="field">t</span>.<span class="fn">getPosition</span>();
+}</code></pre>
+
+                <p>The reference is automatically invalidated when its owning entity is removed from the Store.</p>
             </section>
 
             <section id="common-components">
                 <h2>Common Components</h2>
-                <p>These are frequently-used components you'll interact with when creating and modifying entities:</p>
+                <p>These are frequently-used components you will interact with when creating and modifying entities:</p>
 
-                <div class="table-wrapper">
-                    <table class="api-table">
-                        <thead>
-                            <tr>
-                                <th>Component</th>
-                                <th>Package</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="type">Transform</span></td>
-                                <td><code>...entity.component.TransformComponent</code></td>
-                                <td>Position and rotation. Constructor: <code><span class="kw">new</span> <span class="fn">TransformComponent</span>(<span class="type">Vector3d</span>, <span class="type">Vector3f</span>)</code></td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Model</span></td>
-                                <td><code>...entity.component.ModelComponent</code></td>
-                                <td>3D model for rendering. Required by entity tracker for network visibility.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">NetworkId</span></td>
-                                <td><code>...entity.tracker.NetworkId</code></td>
-                                <td>Required for client sync. Get ID from <code>EntityStore.takeNextNetworkId()</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Nameplate</span></td>
-                                <td><code>...entity.nameplate.Nameplate</code></td>
-                                <td>Floating text above entity. Note: NOT in the component package like others.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">BoundingBox</span></td>
-                                <td><code>...entity.component.BoundingBox</code></td>
-                                <td>Collision/visibility box. Uses <code><span class="type">Box</span></code> from math package.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">PlayerRef</span></td>
-                                <td><code>...universe.player.PlayerRef</code></td>
-                                <td>Links entity to a player. Thread-safe handle.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Player</span></td>
-                                <td><code>...entity.entities.Player</code></td>
-                                <td>Full player entity component with inventory, game mode, HUD access.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">UUIDComponent</span></td>
-                                <td><code>...entity.UUIDComponent</code></td>
-                                <td>Gives entity a UUID for persistent tracking.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">Intangible</span></td>
-                                <td><code>...entity.component.Intangible</code></td>
-                                <td>Makes entity non-collidable. Singleton: <code>Intangible.INSTANCE</code>.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="type">NPCEntity</span></td>
-                                <td><code>com.hypixel.hytale.server.npc.entities.NPCEntity</code></td>
-                                <td>NPC behavior and role data.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <table>
+                    <thead>
+                        <tr><th>Component</th><th>Package</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">TransformComponent</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>Position (<span class="type">Vector3d</span>) and rotation (<span class="type">Vector3f</span>)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ModelComponent</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>3D model for rendering. Required for network visibility.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">NetworkId</span></td>
+                            <td><code>...entity.tracker</code></td>
+                            <td>Required for client sync. Get ID from <code>entityStore.takeNextNetworkId()</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Nameplate</span></td>
+                            <td><code>...entity.nameplate</code></td>
+                            <td>Floating text above entity.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">BoundingBox</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>Collision/visibility box. Uses <span class="type">Box</span> from math package.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Velocity</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>Physics velocity vector.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">UUIDComponent</span></td>
+                            <td><code>...entity</code></td>
+                            <td>Gives entity a UUID for persistent tracking.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Player</span></td>
+                            <td><code>...entity.entities</code></td>
+                            <td>Full player entity component with inventory, game mode, HUD.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">PlayerRef</span></td>
+                            <td><code>...universe.player</code></td>
+                            <td>Thread-safe reference linking entity to a player session.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Intangible</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>Makes entity non-collidable. Singleton: <code>Intangible.INSTANCE</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">DespawnComponent</span></td>
+                            <td><code>...entity.component</code></td>
+                            <td>Auto-removes entity after a configurable timeout.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">NPCEntity</span></td>
+                            <td><code>...npc.entities</code></td>
+                            <td>NPC behavior and role data.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </section>
 
-            <section id="creating-entities">
-                <h2>Creating Entities</h2>
-                <p>To create a new entity, use the <span class="type">Holder</span> pattern. <strong>MUST be called from the world thread</strong>:</p>
+            <section id="complete-example">
+                <h2>Complete Examples</h2>
 
-                <pre><code><span class="comment">// MUST be called from world thread!</span>
+                <h3>Creating a Custom Entity</h3>
+                <pre><code><span class="comment">// Must be called from the world thread</span>
 <span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
 <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
 
-<span class="comment">// Create holder (entity builder)</span>
+<span class="comment">// 1. Build the entity with a Holder</span>
 <span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">EntityStore</span>.REGISTRY.<span class="fn">newHolder</span>();
 
-<span class="comment">// Add components</span>
-<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
     <span class="kw">new</span> <span class="type">TransformComponent</span>(
-        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>),
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100.0</span>, <span class="num">64.0</span>, <span class="num">200.0</span>),
         <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)
     )
 );
 
-<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">NetworkId</span>.<span class="fn">getComponentType</span>(),
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">NetworkId</span>.<span class="fn">getComponentType</span>(),
     <span class="kw">new</span> <span class="type">NetworkId</span>(<span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>())
 );
 
-<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
-    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Hello World"</span>)
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">ModelComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">Model</span>.<span class="fn">createScaledModel</span>(
+        <span class="type">ModelAsset</span>.DEBUG,
+        <span class="num">1.0f</span>,
+        <span class="type">Collections</span>.<span class="fn">emptyMap</span>(),
+        <span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">3.0</span>, <span class="num">3.0</span>, <span class="num">3.0</span>)
+    )
 );
 
-<span class="comment">// Spawn the entity</span>
-<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">entityRef</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);</code></pre>
-            </section>
-
-            <section id="reading-updating-components">
-                <h2>Reading &amp; Updating Components</h2>
-                <p>Once an entity is in the Store, you can read and modify its components:</p>
-
-                <pre><code><span class="comment">// Read a component</span>
-<span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
-    <span class="field">entityRef</span>,
-    <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>()
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"My Custom Entity"</span>)
 );
-<span class="type">Vector3d</span> <span class="field">position</span> = <span class="field">transform</span>.<span class="fn">getPosition</span>();
 
-<span class="comment">// Update a component</span>
-<span class="field">store</span>.<span class="fn">ensureAndGetComponent</span>(
-    <span class="field">entityRef</span>,
-    <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>()
-).<span class="fn">setText</span>(<span class="str">"Updated text"</span>);
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">BoundingBox</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">BoundingBox</span>(<span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">1.0</span>, <span class="num">2.0</span>, <span class="num">1.0</span>))
+);
 
-<span class="comment">// Check if entity has a component</span>
-<span class="kw">boolean</span> <span class="field">hasModel</span> = <span class="field">store</span>.<span class="fn">hasComponent</span>(
-    <span class="field">entityRef</span>,
-    <span class="type">ModelComponent</span>.<span class="fn">getComponentType</span>()
-);</code></pre>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(
+    <span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">UUIDComponent</span>(<span class="type">UUID</span>.<span class="fn">randomUUID</span>())
+);
+
+<span class="comment">// 2. Spawn into the world</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);
+
+<span class="comment">// 3. Modify after spawning</span>
+<span class="kw">if</span> (<span class="field">ref</span> != <span class="kw">null</span> &amp;&amp; <span class="field">ref</span>.<span class="fn">isValid</span>()) {
+    <span class="type">Nameplate</span> <span class="field">np</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());
+    <span class="field">np</span>.<span class="fn">setText</span>(<span class="str">"Updated Name"</span>);
+}
+
+<span class="comment">// 4. Eventually remove</span>
+<span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.REMOVE);</code></pre>
+
+                <h3>Building a Ticking System</h3>
+                <pre><code><span class="kw">public class</span> <span class="type">DespawnTickSystem</span>
+    <span class="kw">extends</span> <span class="type">EntityTickingSystem</span>&lt;<span class="type">EntityStore</span>&gt; {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">getQuery</span>() {
+        <span class="kw">return</span> <span class="type">Archetype</span>.<span class="fn">of</span>(<span class="type">DespawnComponent</span>.<span class="fn">getComponentType</span>());
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">tick</span>(<span class="kw">float</span> <span class="field">dt</span>, <span class="kw">int</span> <span class="field">index</span>,
+                     <span class="type">ArchetypeChunk</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">chunk</span>,
+                     <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                     <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>) {
+
+        <span class="type">DespawnComponent</span> <span class="field">despawn</span> = <span class="field">chunk</span>.<span class="fn">getComponent</span>(
+            <span class="field">index</span>, <span class="type">DespawnComponent</span>.<span class="fn">getComponentType</span>()
+        );
+
+        <span class="field">despawn</span>.<span class="fn">decrementTimer</span>(<span class="field">dt</span>);
+
+        <span class="kw">if</span> (<span class="field">despawn</span>.<span class="fn">isExpired</span>()) {
+            <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">chunk</span>.<span class="fn">getRef</span>(<span class="field">index</span>);
+            <span class="field">cmd</span>.<span class="fn">removeEntity</span>(<span class="field">ref</span>, <span class="type">RemoveReason</span>.REMOVE);
+        }
+    }
+}</code></pre>
+
+                <h3>Listening for Component Changes</h3>
+                <pre><code><span class="kw">public class</span> <span class="type">NameplateTracker</span>
+    <span class="kw">extends</span> <span class="type">RefChangeSystem</span>&lt;<span class="type">EntityStore</span>, <span class="type">Nameplate</span>&gt; {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">Nameplate</span>&gt; <span class="fn">componentType</span>() {
+        <span class="kw">return</span> <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>();
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">getQuery</span>() {
+        <span class="kw">return</span> <span class="type">Query</span>.<span class="fn">any</span>();
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onComponentAdded</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                                  <span class="type">Nameplate</span> <span class="field">nameplate</span>,
+                                  <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                                  <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>) {
+        <span class="comment">// Nameplate was added to an entity</span>
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onComponentSet</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                               <span class="type">Nameplate</span> <span class="field">oldValue</span>,
+                               <span class="type">Nameplate</span> <span class="field">newValue</span>,
+                               <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                               <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>) {
+        <span class="comment">// Nameplate was replaced on an entity</span>
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onComponentRemoved</span>(<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span>,
+                                    <span class="type">Nameplate</span> <span class="field">nameplate</span>,
+                                    <span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span>,
+                                    <span class="type">CommandBuffer</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">cmd</span>) {
+        <span class="comment">// Nameplate was removed from an entity</span>
+    }
+}</code></pre>
             </section>
 
-            <section id="removing-entities">
-                <h2>Removing Entities</h2>
-                <p>To despawn an entity, remove it from the Store:</p>
-
-                <pre><code><span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">entityRef</span>, <span class="type">RemoveReason</span>.REMOVE);</code></pre>
-            </section>
-
-            <section id="lod-culling">
-                <h2>LOD Culling System</h2>
-
-                <div class="info-box warning">
-                    <div class="label">Warning</div>
-                    <p><strong>Entities with tiny models disappear at short distances due to the LOD culler.</strong> If your entity vanishes when players get too close, this is likely the issue.</p>
-                </div>
-
-                <p>The server uses a Level-of-Detail (LOD) culling system to optimize rendering. The LOD culler uses this formula:</p>
-
-                <pre><code>maximumThickness &lt; <span class="num">3.5E-5</span> * distanceSquared <span class="comment">→ entity is culled</span></code></pre>
-
-                <p>This means very small models disappear at close range. Here are some example thresholds:</p>
-
-                <div class="table-wrapper">
-                    <table class="api-table">
-                        <thead>
-                            <tr>
-                                <th>Box Max Thickness</th>
-                                <th>Visible Until Distance</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="num">0.001</span></td>
-                                <td>~5.3 blocks</td>
-                            </tr>
-                            <tr>
-                                <td><span class="num">0.01</span></td>
-                                <td>~16.9 blocks</td>
-                            </tr>
-                            <tr>
-                                <td><span class="num">0.1</span></td>
-                                <td>~53.5 blocks</td>
-                            </tr>
-                            <tr>
-                                <td><span class="num">1.0</span></td>
-                                <td>~169 blocks</td>
-                            </tr>
-                            <tr>
-                                <td><span class="num">3.0</span></td>
-                                <td>~293 blocks</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="info-box danger">
-                    <div class="label">Critical</div>
-                    <p>The LOD culler uses the <strong>Model's bounding box</strong>, NOT the <span class="type">BoundingBox</span> component! The model component itself defines the culling boundary.</p>
-                </div>
-
-                <p>To fix this, use the 4-argument overload when creating a model:</p>
-
-                <pre><code><span class="type">Box</span> <span class="field">box</span> = <span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">3.0</span>, <span class="num">3.0</span>, <span class="num">3.0</span>);
-<span class="type">Model</span> <span class="field">model</span> = <span class="type">Model</span>.<span class="fn">createScaledModel</span>(
-    <span class="type">ModelAsset</span>.DEBUG,
-    <span class="num">0.001f</span>,
-    <span class="type">Collections</span>.<span class="fn">emptyMap</span>(),
-    <span class="field">box</span>
-);</code></pre>
-
-                <p>Increase the box size (the three <code><span class="num">3.0</span></code> values) until your entity no longer disappears at the desired visibility distance.</p>
-            </section>
-
-            <section id="entity-visibility-flow">
+            <section id="entity-visibility">
                 <h2>Entity Visibility Flow</h2>
                 <p>Understanding how entities become visible to clients is key to debugging rendering issues:</p>
 
@@ -307,7 +1267,7 @@
                     </li>
                     <li>
                         <strong>Entity tracker auto-adds Visible component</strong><br>
-                        When players are nearby (view distance: <code>playerViewRadius * 32</code> blocks), the tracker automatically adds a <code><span class="type">Visible</span></code> component to the entity.
+                        When players are nearby (view distance: <code>playerViewRadius * 32</code> blocks), the tracker automatically adds a <span class="type">Visible</span> component to the entity.
                     </li>
                     <li>
                         <strong>NameplateSystems processes Visible + Nameplate</strong><br>
@@ -315,31 +1275,73 @@
                     </li>
                     <li>
                         <strong>LOD culler checks Model's bounding box</strong><br>
-                        The culler evaluates whether the model's bounding box is large enough for the distance. If not, the entity is removed from the <span class="type">Visible</span> component and disappears from clients.
+                        The culler evaluates whether the model's bounding box is large enough for the distance. If not, the entity is culled from the <span class="type">Visible</span> set and disappears from clients.
                     </li>
                 </ol>
 
-                <p>Use this flow to debug: if an entity doesn't appear to players, check that it has a <span class="type">NetworkId</span> and <span class="type">ModelComponent</span> with a sufficiently large bounding box.</p>
+                <div class="info-box danger">
+                    <div class="label">LOD Culling</div>
+                    <p>The LOD culler uses <code>maximumThickness &lt; 3.5E-5 * distanceSquared</code>. Entities with tiny models will disappear at short distances. Use the 4-argument <code>Model.createScaledModel()</code> overload with a sufficiently large bounding <span class="type">Box</span> to prevent this.</p>
+                </div>
+            </section>
+
+            <section id="spatial-system">
+                <h2>Spatial Indexing</h2>
+                <p>Package: <code>com.hypixel.hytale.component.spatial</code></p>
+                <p>The ECS includes a spatial indexing subsystem for efficient proximity queries. The <span class="type">SpatialSystem</span> maintains a <span class="type">KDTree</span> of entity positions, using <span class="type">MortonCode</span> (Z-order curve) encoding for cache-friendly spatial partitioning.</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Class</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">SpatialSystem</span></td><td>ECS system that maintains the spatial index</td></tr>
+                        <tr><td><span class="type">SpatialResource</span></td><td>Global resource holding the spatial data structure</td></tr>
+                        <tr><td><span class="type">KDTree</span></td><td>k-d tree for nearest-neighbor and range queries</td></tr>
+                        <tr><td><span class="type">MortonCode</span></td><td>Encodes 3D positions into 1D keys preserving spatial locality</td></tr>
+                        <tr><td><span class="type">SpatialData</span></td><td>Per-entity spatial metadata</td></tr>
+                    </tbody>
+                </table>
+
+                <p>The KDTree supports closest-point queries via a <span class="type">ClosestState</span> helper and ordered iteration via <span class="type">OrderedEntry</span>.</p>
+            </section>
+
+            <section id="serialization">
+                <h2>Serialization</h2>
+                <p>The ECS supports full entity serialization to BSON for persistence. Components that have a registered codec and string ID are serializable. Components registered without a codec are transient and will not be persisted.</p>
+
+                <h3>Serialization Flow</h3>
+                <ol>
+                    <li><span class="type">Holder.cloneSerializable()</span> creates a copy containing only serializable components.</li>
+                    <li><span class="type">Holder.createComponentsMap()</span> produces a <code>Map&lt;String, Component&gt;</code> keyed by component ID.</li>
+                    <li>Each component is encoded via its registered <span class="type">BuilderCodec</span>.</li>
+                    <li>Unknown components (from newer versions) are preserved in <span class="type">UnknownComponents</span> and round-tripped as raw BSON.</li>
+                </ol>
+
+                <h3>NonSerialized &amp; NonTicking Markers</h3>
+                <p>Two marker interfaces control entity behavior:</p>
+                <ul>
+                    <li><span class="type">NonSerialized</span> &mdash; when present in an entity's archetype, the entire entity is skipped during save operations.</li>
+                    <li><span class="type">NonTicking</span> &mdash; when present, ticking systems skip this entity.</li>
+                </ul>
             </section>
 
         </div>
     </main>
-
-    <script>
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.querySelector('.sidebar');
-
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('visible');
-        });
-
-        // Close sidebar when clicking a link
-        const navLinks = document.querySelectorAll('.sidebar a');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                sidebar.classList.remove('visible');
-            });
-        });
-    </script>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

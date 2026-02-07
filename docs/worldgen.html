@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Generation - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation...">
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="document.querySelector('.search-overlay').classList.add('active'); document.querySelector('.search-input').focus();">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    Search
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()"></button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html" class="active">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <div class="page-toc"></div>
+
+    <main class="main">
+        <div class="content has-toc">
+            <h1>World Generation</h1>
+            <p class="page-desc">How the Hytale server generates terrain, biomes, caves, and structures from decompiled source analysis.</p>
+
+            <!-- Overview -->
+            <section id="overview">
+                <h2 id="overview-heading">Overview</h2>
+                <p>Hytale's world generation system is a multi-layered, asynchronous pipeline driven by the <span class="type">ChunkGenerator</span> class. It transforms a world seed and chunk coordinates into fully populated <span class="type">GeneratedChunk</span> objects containing block data, block state data, and entity data.</p>
+
+                <p>The generator runs on a dedicated thread pool sized to <code>Math.max(2, ceil(availableProcessors * 0.75))</code>. On an 8-core machine this yields 6 worker threads. Each chunk generation request returns a <code>CompletableFuture&lt;GeneratedChunk&gt;</code>, allowing the world to request many chunks simultaneously without blocking the main tick thread.</p>
+
+                <div class="info-box note">
+                    <div class="label">Thread Pool Sizing</div>
+                    <p>The pool size formula <code>Math.max(2, ceil(CPU * 0.75))</code> is defined as <code>ChunkGenerator.POOL_SIZE</code>. Worker threads are created by <span class="type">ChunkWorkerThreadFactory</span> with the naming pattern <code>ChunkGenerator-%d-Worker-%d</code>. Core threads are allowed to time out after 60 seconds of inactivity.</p>
+                </div>
+
+                <p>The generation system is organized around a hierarchy of <strong>Zones</strong> containing <strong>Biomes</strong>, which in turn define terrain shape, surface cover, underground layers, caves, structures, colors, and environmental effects. A multi-tier caching layer ensures that expensive noise calculations and biome lookups are reused across overlapping generation requests.</p>
+            </section>
+
+            <!-- Generation Pipeline -->
+            <section id="pipeline">
+                <h2 id="pipeline-heading">Generation Pipeline</h2>
+                <p>When <code>ChunkGenerator.generate(seed, index, x, z, stillNeeded)</code> is called, it dispatches work to the thread pool. The actual generation logic lives in <span class="type">ChunkGeneratorExecution</span>, which runs the following pipeline in order:</p>
+
+                <div class="flow">
+                    <span class="flow-step">Zone Lookup</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Biome Resolve</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Height Interpolation</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Tint Mapping</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Environment Mapping</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Block Population</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Cave Carving</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Prefab Placement</span>
+                    <span class="flow-arrow">&rarr;</span>
+                    <span class="flow-step">Water Population</span>
+                </div>
+
+                <h3 id="pipeline-detail">Pipeline Stages in Detail</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stage</th>
+                            <th>Class</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1. Zone Lookup</strong></td>
+                            <td><span class="type">ZonePatternGenerator</span></td>
+                            <td>Determines which Zone the chunk falls in using the cached <span class="type">ZonePatternGeneratorCache</span>. Returns a <span class="type">ZoneGeneratorResult</span> with the resolved Zone.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Biome Resolve</strong></td>
+                            <td><span class="type">BiomePatternGenerator</span></td>
+                            <td>Within the zone, resolves the specific Biome at each block column. Computes heightmap noise and threshold context. Results stored in <span class="type">ZoneBiomeResult</span>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Height Interpolation</strong></td>
+                            <td><span class="type">HeightThresholdInterpolator</span></td>
+                            <td>Pre-populates biome count lists and interpolated height noise for every column in the chunk. Uses <span class="type">BiomeInterpolation</span> radius for smooth blending between biomes.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4. Tint Mapping</strong></td>
+                            <td><span class="type">ChunkGeneratorExecution</span></td>
+                            <td>Samples biome tint colors in a 4-block radius around each column and averages RGB values for smooth color transitions.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Environment Mapping</strong></td>
+                            <td><span class="type">ChunkGeneratorExecution</span></td>
+                            <td>Resolves the environment ID (sky, lighting, weather) per column from the biome's <span class="type">EnvironmentContainer</span>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>6. Block Population</strong></td>
+                            <td><span class="type">BlockPopulator</span></td>
+                            <td>Fills blocks column by column. Uses height threshold interpolation to determine solid vs. air. Applies surface cover from <span class="type">CoverContainer</span> and underground layers from <span class="type">LayerContainer</span>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>7. Cave Carving</strong></td>
+                            <td><span class="type">CavePopulator</span></td>
+                            <td>Invokes <span class="type">CaveGenerator</span> to carve cave networks. Results are cached in <span class="type">CaveGeneratorCache</span> (5,000 entries, 30s timeout).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>8. Prefab Placement</strong></td>
+                            <td><span class="type">PrefabPopulator</span></td>
+                            <td>Places structures defined in the biome's <span class="type">PrefabContainer</span> and unique prefabs from <span class="type">UniquePrefabContainer</span>. Uses <span class="type">PrefabLoadingCache</span> for async prefab loading.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>9. Water Population</strong></td>
+                            <td><span class="type">WaterPopulator</span></td>
+                            <td>Fills water and other fluids based on the biome's <span class="type">WaterContainer</span> configuration. Sets fluid levels via <span class="type">FluidSection</span>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="execution-flow">Execution Flow (Code)</h3>
+                <pre><code><span class="comment">// ChunkGeneratorExecution.execute() — the core pipeline</span>
+<span class="kw">public void</span> <span class="fn">execute</span>(<span class="kw">int</span> <span class="field">seed</span>) {
+    <span class="type">WorldGenTimingsCollector</span> <span class="field">timings</span> = <span class="field">chunkGenerator</span>.<span class="fn">getTimings</span>();
+
+    <span class="fn">generateTintMapping</span>(<span class="field">seed</span>);
+    <span class="fn">generateEnvironmentMapping</span>(<span class="field">seed</span>);
+
+    <span class="kw">long</span> <span class="field">start</span> = -<span class="type">System</span>.<span class="fn">nanoTime</span>();
+    <span class="type">BlockPopulator</span>.<span class="fn">populate</span>(<span class="field">seed</span>, <span class="kw">this</span>);
+    <span class="field">timings</span>.<span class="fn">reportBlocksGeneration</span>(<span class="field">start</span> + <span class="type">System</span>.<span class="fn">nanoTime</span>());
+
+    <span class="field">start</span> = -<span class="type">System</span>.<span class="fn">nanoTime</span>();
+    <span class="type">CavePopulator</span>.<span class="fn">populate</span>(<span class="field">seed</span>, <span class="kw">this</span>);
+    <span class="field">timings</span>.<span class="fn">reportCaveGeneration</span>(<span class="field">start</span> + <span class="type">System</span>.<span class="fn">nanoTime</span>());
+
+    <span class="field">start</span> = -<span class="type">System</span>.<span class="fn">nanoTime</span>();
+    <span class="type">PrefabPopulator</span>.<span class="fn">populate</span>(<span class="field">seed</span>, <span class="kw">this</span>);
+    <span class="field">timings</span>.<span class="fn">reportPrefabGeneration</span>(<span class="field">start</span> + <span class="type">System</span>.<span class="fn">nanoTime</span>());
+
+    <span class="type">WaterPopulator</span>.<span class="fn">populate</span>(<span class="field">seed</span>, <span class="kw">this</span>);
+}</code></pre>
+            </section>
+
+            <!-- Biome System -->
+            <section id="biome-system">
+                <h2 id="biome-heading">Biome System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.worldgen.biome</code></p>
+                <p>The <span class="type">Biome</span> class is the central definition for a terrain region. Each biome defines terrain shape, surface appearance, underground composition, structures, environmental effects, and transitions. Biomes are resolved per-block-column within a Zone via <span class="type">BiomePatternGenerator</span>.</p>
+
+                <h3 id="biome-fields">Biome Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td><span class="type">int</span></td>
+                            <td>Unique numeric identifier, also used as <code>hashCode()</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>name</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Human-readable biome name</td>
+                        </tr>
+                        <tr>
+                            <td><code>interpolation</code></td>
+                            <td><span class="type">BiomeInterpolation</span></td>
+                            <td>Controls blending radius and method between adjacent biomes</td>
+                        </tr>
+                        <tr>
+                            <td><code>heightmapInterpreter</code></td>
+                            <td><span class="type">IHeightThresholdInterpreter</span></td>
+                            <td>Converts noise values to solid/air thresholds at each Y level</td>
+                        </tr>
+                        <tr>
+                            <td><code>coverContainer</code></td>
+                            <td><span class="type">CoverContainer</span></td>
+                            <td>Defines surface blocks (grass, sand, snow, etc.)</td>
+                        </tr>
+                        <tr>
+                            <td><code>layerContainer</code></td>
+                            <td><span class="type">LayerContainer</span></td>
+                            <td>Defines underground block layers (dirt, stone, ore distribution)</td>
+                        </tr>
+                        <tr>
+                            <td><code>prefabContainer</code></td>
+                            <td><span class="type">PrefabContainer</span></td>
+                            <td>Structures to place in this biome (trees, boulders, ruins). Nullable.</td>
+                        </tr>
+                        <tr>
+                            <td><code>tintContainer</code></td>
+                            <td><span class="type">TintContainer</span></td>
+                            <td>Color tinting for foliage and terrain</td>
+                        </tr>
+                        <tr>
+                            <td><code>environmentContainer</code></td>
+                            <td><span class="type">EnvironmentContainer</span></td>
+                            <td>Sky color, lighting conditions, weather per column</td>
+                        </tr>
+                        <tr>
+                            <td><code>waterContainer</code></td>
+                            <td><span class="type">WaterContainer</span></td>
+                            <td>Fluid type and level configuration</td>
+                        </tr>
+                        <tr>
+                            <td><code>fadeContainer</code></td>
+                            <td><span class="type">FadeContainer</span></td>
+                            <td>Terrain height fading at biome/zone edges for smooth transitions</td>
+                        </tr>
+                        <tr>
+                            <td><code>heightmapNoise</code></td>
+                            <td><span class="type">NoiseProperty</span></td>
+                            <td>Base heightmap noise function evaluated at (seed, x, z)</td>
+                        </tr>
+                        <tr>
+                            <td><code>mapColor</code></td>
+                            <td><span class="type">int</span></td>
+                            <td>RGB color for minimap/debug map rendering</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="biome-interpolation">BiomeInterpolation</h3>
+                <p>When the generator resolves biome data for a block column, it does not just use the single biome at that position. Instead, <span class="type">BiomeInterpolation</span> defines a radius around each column. All biomes within that radius are sampled and their heightmap noise values are weighted by distance, producing smooth terrain transitions.</p>
+
+                <pre><code><span class="comment">// Biome interpolation in ChunkGenerator.generateInterpolatedBiomeCountAt()</span>
+<span class="kw">int</span> <span class="field">radius</span> = <span class="field">center</span>.<span class="fn">getBiome</span>().<span class="fn">getInterpolation</span>().<span class="fn">getRadius</span>();
+<span class="kw">int</span> <span class="field">radius2</span> = <span class="field">radius</span> * <span class="field">radius</span>;
+
+<span class="kw">for</span> (<span class="kw">int</span> <span class="field">ix</span> = -<span class="field">radius</span>; <span class="field">ix</span> &lt;= <span class="field">radius</span>; <span class="field">ix</span>++) {
+    <span class="kw">for</span> (<span class="kw">int</span> <span class="field">iz</span> = -<span class="field">radius</span>; <span class="field">iz</span> &lt;= <span class="field">radius</span>; <span class="field">iz</span>++) {
+        <span class="kw">int</span> <span class="field">distance2</span> = <span class="field">ix</span> * <span class="field">ix</span> + <span class="field">iz</span> * <span class="field">iz</span>;
+        <span class="kw">if</span> (<span class="field">distance2</span> &lt;= <span class="field">radius2</span>) {
+            <span class="type">ZoneBiomeResult</span> <span class="field">biomeResult</span> = <span class="fn">getZoneBiomeResultAt</span>(<span class="field">seed</span>, <span class="field">x</span> + <span class="field">ix</span>, <span class="field">z</span> + <span class="field">iz</span>);
+            <span class="field">biomeCountList</span>.<span class="fn">add</span>(<span class="field">biomeResult</span>, <span class="field">distance2</span>);
+        }
+    }
+}</code></pre>
+
+                <h3 id="biome-height">Height Threshold Interpolation</h3>
+                <p>The terrain shape is determined by a threshold function. For each Y level, the generator computes an interpolated threshold across all nearby biomes. If the threshold exceeds the heightmap noise value, the block is solid:</p>
+
+                <pre><code><span class="comment">// Weighted threshold interpolation across biomes</span>
+<span class="kw">public static float</span> <span class="fn">generateInterpolatedThreshold</span>(
+    <span class="kw">int</span> <span class="field">seed</span>, <span class="kw">int</span> <span class="field">x</span>, <span class="kw">int</span> <span class="field">z</span>, <span class="kw">int</span> <span class="field">y</span>,
+    <span class="type">InterpolatedBiomeCountList</span> <span class="field">biomeCounts</span>
+) {
+    <span class="kw">float</span> <span class="field">threshold</span> = <span class="num">0.0F</span>;
+    <span class="kw">int</span> <span class="field">counter</span> = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="type">BiomeCountResult</span> <span class="field">r</span> : <span class="field">biomeCounts</span>) {
+        <span class="field">threshold</span> += <span class="field">r</span>.<span class="field">biome</span>.<span class="fn">getHeightmapInterpreter</span>()
+            .<span class="fn">getThreshold</span>(<span class="field">seed</span>, <span class="field">x</span>, <span class="field">z</span>, <span class="field">y</span>, <span class="field">r</span>.<span class="field">heightThresholdContext</span>) * <span class="field">r</span>.<span class="field">count</span>;
+        <span class="field">counter</span> += <span class="field">r</span>.<span class="field">count</span>;
+    }
+    <span class="kw">return</span> <span class="field">threshold</span> / <span class="field">counter</span>;
+}</code></pre>
+
+                <h3 id="biome-fade">Fade Container (Edge Transitions)</h3>
+                <p>The <span class="type">FadeContainer</span> handles terrain fading at zone and biome boundaries. When <code>shouldFade()</code> returns true, the heightmap noise is blended with a fade heightmap using a terrain factor derived from the zone result:</p>
+
+                <pre><code><span class="type">FadeContainer</span> <span class="field">fadeContainer</span> = <span class="field">biome</span>.<span class="fn">getFadeContainer</span>();
+<span class="kw">if</span> (<span class="field">fadeContainer</span>.<span class="fn">shouldFade</span>()) {
+    <span class="kw">double</span> <span class="field">factor</span> = <span class="field">fadeContainer</span>.<span class="fn">getTerrainFactor</span>(<span class="field">zoneResult</span>);
+    <span class="field">heightmapNoise</span> = <span class="field">heightmapNoise</span> * (<span class="num">1.0</span> - <span class="field">factor</span>)
+                    + <span class="field">fadeContainer</span>.<span class="fn">getFadeHeightmap</span>() * <span class="field">factor</span>;
+}</code></pre>
+
+                <h3 id="biome-implementations">Biome Implementations</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">TileBiome</span></td>
+                            <td>Standard biome defined by JSON/data configuration tiles</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CustomBiome</span></td>
+                            <td>Biome created by <span class="type">CustomBiomeGenerator</span> for procedural variation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Zone System -->
+            <section id="zone-system">
+                <h2 id="zone-heading">Zone System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.worldgen.zone</code></p>
+                <p>Zones are the top-level spatial regions in world generation. Each zone contains a <span class="type">BiomePatternGenerator</span> that resolves biomes within its boundaries, an optional <span class="type">CaveGenerator</span>, and a <span class="type">UniquePrefabContainer</span> for one-of-a-kind structures.</p>
+
+                <h3 id="zone-record">Zone Record</h3>
+                <p>The <span class="type">Zone</span> class is a Java record with these components:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>id</code></td>
+                            <td><span class="type">int</span></td>
+                            <td>Unique zone identifier</td>
+                        </tr>
+                        <tr>
+                            <td><code>name</code></td>
+                            <td><span class="type">String</span></td>
+                            <td>Zone name (e.g. "Zone 1", "Borea")</td>
+                        </tr>
+                        <tr>
+                            <td><code>discoveryConfig</code></td>
+                            <td><span class="type">ZoneDiscoveryConfig</span></td>
+                            <td>Discovery/progression configuration</td>
+                        </tr>
+                        <tr>
+                            <td><code>caveGenerator</code></td>
+                            <td><span class="type">CaveGenerator</span></td>
+                            <td>Cave generation rules for this zone. Nullable.</td>
+                        </tr>
+                        <tr>
+                            <td><code>biomePatternGenerator</code></td>
+                            <td><span class="type">BiomePatternGenerator</span></td>
+                            <td>Resolves biomes within this zone at any (x, z)</td>
+                        </tr>
+                        <tr>
+                            <td><code>uniquePrefabContainer</code></td>
+                            <td><span class="type">UniquePrefabContainer</span></td>
+                            <td>Generates unique structure placements for this zone</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="zone-provider">ZonePatternProvider</h3>
+                <p>The <span class="type">ZonePatternProvider</span> is the top-level configuration object that holds all zones and manages zone layout. It uses an <span class="type">IPointGenerator</span> for spatial point placement and a <span class="type">MaskProvider</span> for zone boundaries.</p>
+
+                <pre><code><span class="comment">// ZonePatternProvider fields</span>
+<span class="kw">protected final</span> <span class="type">IPointGenerator</span> <span class="field">pointGenerator</span>;   <span class="comment">// Voronoi/grid point layout</span>
+<span class="kw">protected final</span> <span class="type">Zone</span>[] <span class="field">zones</span>;                     <span class="comment">// All zone definitions</span>
+<span class="kw">protected final</span> <span class="type">Zone.UniqueCandidate</span>[] <span class="field">uniqueZones</span>; <span class="comment">// Unique zone placement candidates</span>
+<span class="kw">protected final</span> <span class="type">MaskProvider</span> <span class="field">maskProvider</span>;           <span class="comment">// Zone boundary masks</span>
+<span class="kw">protected final</span> <span class="type">ZoneColorMapping</span> <span class="field">zoneColorMapping</span>;   <span class="comment">// Color-to-zone mapping</span></code></pre>
+
+                <h3 id="zone-unique">Unique Zones</h3>
+                <p>Some zones are "unique" -- they appear exactly once per seed at a specific location. The <span class="type">Zone.Unique</span> record holds a zone reference and a <code>CompletableFuture&lt;Vector2i&gt;</code> for its position. Unique zones support parent color matching via <span class="type">Zone.UniqueEntry</span>, which constrains where unique zones can spawn relative to other zone colors.</p>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>The <code>maxExtent</code> field on <span class="type">ZonePatternProvider</span> is calculated by scanning all biomes' <span class="type">PrefabContainer</span> max sizes. This determines how far ahead the generator must look to ensure structures near chunk borders are placed correctly.</p>
+                </div>
+            </section>
+
+            <!-- Cave Generation -->
+            <section id="cave-generation">
+                <h2 id="cave-heading">Cave Generation</h2>
+                <p>Package: <code>com.hypixel.hytale.server.worldgen.cave</code></p>
+                <p>Cave generation follows a recursive node-based approach. Each zone optionally defines a <span class="type">CaveGenerator</span> containing an array of <span class="type">CaveType</span> definitions. When invoked, the generator creates a tree of <span class="type">CaveNode</span> objects that define the cave's 3D geometry.</p>
+
+                <h3 id="cave-classes">Core Cave Classes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">CaveGenerator</span></td>
+                            <td>Entry point. Holds <span class="type">CaveType[]</span>. Generates caves starting from a seed-hashed origin point.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveType</span></td>
+                            <td>Defines cave parameters: entry node type, start depth, yaw/pitch ranges, biome mask, fluid levels.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Cave</span></td>
+                            <td>Output container holding a list of <span class="type">CaveNode</span> objects. Compiled after generation for spatial queries.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveNode</span></td>
+                            <td>A single segment of a cave. Contains a <span class="type">CaveNodeShape</span>, yaw, pitch, and optional prefabs.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveNodeType</span></td>
+                            <td>Defines node geometry, child node entries, cover entries, height conditions, prefab containers.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveNodeShape</span></td>
+                            <td>Abstract shape of a node segment. Implementations include Ellipsoid, Cylinder, Pipe, Distorted, Tetrahedron, EmptyLine, and Prefab.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveBiomeMaskFlags</span></td>
+                            <td>Flags controlling whether a cave can generate, populate, or continue through a biome boundary.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="cave-algorithm">Generation Algorithm</h3>
+                <p>The cave generation algorithm is recursive with depth-limited branching:</p>
+                <ol>
+                    <li><strong>Start:</strong> Hash the seed with (x, y, z) coordinates. Check the biome mask at the origin. If the mask denies generation, abort.</li>
+                    <li><strong>Entry Node:</strong> Generate the entry node shape from the <span class="type">CaveType</span>'s entry node definition. Check the biome mask at the shape's endpoint.</li>
+                    <li><strong>Branch:</strong> For each child entry in the current node type, randomize order and attempt to generate child nodes. Each child:
+                        <ul>
+                            <li>Checks repeat count and generation chance</li>
+                            <li>Resolves child origin from parent endpoint or anchor offset</li>
+                            <li>Validates height conditions</li>
+                            <li>Generates a new <span class="type">CaveNodeShape</span></li>
+                            <li>Checks biome mask at the new endpoint</li>
+                            <li>Optionally generates prefabs within the node bounds</li>
+                        </ul>
+                    </li>
+                    <li><strong>Recurse:</strong> Continue with remaining depth, decrementing by 1 each level (or capped by <code>childrenLimit</code>).</li>
+                    <li><strong>Compile:</strong> After all nodes are generated, <code>cave.compile()</code> prepares spatial data for the populator.</li>
+                </ol>
+
+                <h3 id="cave-shapes">Node Shape Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Shape</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">EllipsoidCaveNodeShape</span></td><td>Standard ellipsoidal cavity</td></tr>
+                        <tr><td><span class="type">CylinderCaveNodeShape</span></td><td>Cylindrical tunnel segment</td></tr>
+                        <tr><td><span class="type">PipeCaveNodeShape</span></td><td>Narrow pipe-like passage</td></tr>
+                        <tr><td><span class="type">DistortedCaveNodeShape</span></td><td>Noise-distorted organic shape</td></tr>
+                        <tr><td><span class="type">TetrahedronCaveNodeShape</span></td><td>Tetrahedral cavity</td></tr>
+                        <tr><td><span class="type">EmptyLineCaveNodeShape</span></td><td>No geometry -- used as a connector between nodes</td></tr>
+                        <tr><td><span class="type">PrefabCaveNodeShape</span></td><td>Shape defined by a prefab structure (e.g. hand-built cave rooms)</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Biome Masking</div>
+                    <p>Cave generation respects biome boundaries through <span class="type">CaveBiomeMaskFlags</span>. Each biome can independently control three flags: <strong>canGenerate</strong> (allow cave entry), <strong>canPopulate</strong> (allow block carving), and <strong>canContinue</strong> (allow cave to pass through without carving). A cave encountering a deny-all biome will terminate that branch entirely.</p>
+                </div>
+            </section>
+
+            <!-- Structures & Prefabs -->
+            <section id="structures">
+                <h2 id="structures-heading">Structures &amp; Prefabs</h2>
+                <p>Structures in Hytale are placed via the prefab system during the Prefab Placement stage. There are two categories: <strong>biome prefabs</strong> (trees, boulders, surface features) managed by <span class="type">PrefabContainer</span>, and <strong>unique prefabs</strong> (dungeons, temples, one-per-world structures) managed by <span class="type">UniquePrefabContainer</span>.</p>
+
+                <h3 id="prefab-populator">PrefabPopulator</h3>
+                <p>Package: <code>com.hypixel.hytale.server.worldgen.chunk.populator</code></p>
+                <p>The <span class="type">PrefabPopulator</span> handles placing prefab structures into the generated chunk. It queries the biome's <span class="type">PrefabContainer</span> for structures that should spawn at each location, loads the prefab data via <span class="type">PrefabLoadingCache</span>, and pastes blocks using <span class="type">PrefabPasteUtil</span>.</p>
+
+                <h3 id="unique-prefabs">Unique Prefab System</h3>
+                <p>Unique prefabs are structures that appear at most once per world seed. They are defined in the zone's <span class="type">UniquePrefabContainer</span> and cached in <span class="type">UniquePrefabCache</span> (50 entries, 300s timeout). The generation process:</p>
+                <ol>
+                    <li>Iterate all unique zones first (they have fixed positions)</li>
+                    <li>Then iterate remaining zones for non-positional unique structures</li>
+                    <li>Each zone's <span class="type">UniquePrefabContainer.generate()</span> returns an array of <span class="type">UniquePrefabEntry</span></li>
+                    <li>Entries may be marked as spawn locations, contributing to the world's spawn point list</li>
+                </ol>
+
+                <pre><code><span class="comment">// Unique prefab generation in ChunkGenerator</span>
+<span class="kw">for</span> (<span class="type">Zone.Unique</span> <span class="field">uniqueZone</span> : <span class="field">zonePatternGenerator</span>.<span class="fn">getUniqueZones</span>()) {
+    <span class="type">Vector2i</span> <span class="field">position</span> = <span class="field">uniqueZone</span>.<span class="fn">getPosition</span>();
+    <span class="type">UniquePrefabEntry</span>[] <span class="field">entries</span> = <span class="field">uniqueZone</span>.<span class="fn">zone</span>()
+        .<span class="fn">uniquePrefabContainer</span>().<span class="fn">generate</span>(<span class="field">seed</span>, <span class="field">position</span>, <span class="kw">this</span>);
+    <span class="field">allEntries</span>.<span class="fn">addAll</span>(<span class="type">Arrays</span>.<span class="fn">asList</span>(<span class="field">entries</span>));
+}
+
+<span class="comment">// Spawn point extraction from unique prefabs</span>
+<span class="kw">for</span> (<span class="type">UniquePrefabEntry</span> <span class="field">entry</span> : <span class="fn">getUniquePrefabs</span>(<span class="field">seed</span>)) {
+    <span class="kw">if</span> (<span class="field">entry</span>.<span class="fn">isSpawnLocation</span>()) {
+        <span class="type">Vector3i</span> <span class="field">pos</span> = <span class="field">entry</span>.<span class="fn">getPosition</span>();
+        <span class="comment">// ... build Transform for spawn point</span>
+    }
+}</code></pre>
+
+                <h3 id="cave-prefabs">Cave Prefabs</h3>
+                <p>Caves can also contain prefabs via <span class="type">CavePrefabContainer</span>. During cave generation, each node's prefab container is sampled to place structures (treasure rooms, mushroom clusters, etc.) within the cave's bounding box. Cave prefab placement respects biome masks, noise density filters, and height conditions.</p>
+            </section>
+
+            <!-- Caching Architecture -->
+            <section id="caching">
+                <h2 id="caching-heading">Caching Architecture</h2>
+                <p>World generation uses an extensive caching layer built on <span class="type">ConcurrentSizedTimeoutCache</span> to avoid redundant computation. Since biome and height lookups are needed for overlapping regions (interpolation radii, structure placement), caching is critical for performance.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cache</th>
+                            <th>Max Size</th>
+                            <th>Timeout</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">ChunkGeneratorCache</span></td>
+                            <td>50,000</td>
+                            <td>20s</td>
+                            <td>Core data: zone/biome results, biome count lists, interpolated height noise, height values. Keyed by (seed, x, z).</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CaveGeneratorCache</span></td>
+                            <td>5,000</td>
+                            <td>30s</td>
+                            <td>Generated <span class="type">Cave</span> objects. Keyed by (CaveType, seed, x, z).</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">PrefabLoadingCache</span></td>
+                            <td>Unbounded</td>
+                            <td>Cleared on shutdown</td>
+                            <td>Async prefab data loading. Avoids redundant disk/asset reads for structure templates.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">UniquePrefabCache</span></td>
+                            <td>50</td>
+                            <td>300s</td>
+                            <td>Unique structure placements per seed. Expensive to compute (scans all zones).</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ZonePatternGeneratorCache</span></td>
+                            <td>Per-seed</td>
+                            <td>Permanent</td>
+                            <td>Caches <span class="type">ZonePatternGenerator</span> instances per seed. Includes unique zone position resolution.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="cache-lazy">Lazy Computation in ChunkGeneratorCache</h3>
+                <p>The <span class="type">ChunkGeneratorCache</span> stores <span class="type">CoreDataCacheEntry</span> objects that are lazily populated. On first access, only the <span class="type">ZoneBiomeResult</span> is computed. The biome count list, height noise, and height are computed on demand:</p>
+
+                <pre><code><span class="comment">// CoreDataCacheEntry fields (lazily populated)</span>
+<span class="type">ZoneBiomeResult</span> <span class="field">zoneBiomeResult</span>;     <span class="comment">// Computed on cache miss</span>
+<span class="type">InterpolatedBiomeCountList</span> <span class="field">biomeCountList</span>; <span class="comment">// Computed on first getBiomeCountResult()</span>
+<span class="kw">double</span> <span class="field">heightNoise</span> = <span class="type">Double</span>.NEGATIVE_INFINITY;  <span class="comment">// Computed on first ensureHeightNoise()</span>
+<span class="kw">int</span> <span class="field">height</span> = -<span class="num">1</span>;                    <span class="comment">// Computed on first getHeight()</span></code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Concurrency</div>
+                    <p>The cache concurrency level is <code>Math.max(1, POOL_SIZE / 2)</code>, matching half the worker thread count. This provides good concurrent read performance while limiting lock contention on writes.</p>
+                </div>
+            </section>
+
+            <!-- GeneratedChunk -->
+            <section id="generated-chunk">
+                <h2 id="generated-chunk-heading">GeneratedChunk Output</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.worldgen</code></p>
+                <p>The output of the generation pipeline is a <span class="type">GeneratedChunk</span> object containing three data containers and an array of chunk section holders:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>generatedBlockChunk</code></td>
+                            <td><span class="type">GeneratedBlockChunk</span></td>
+                            <td>Block type IDs, rotation, filler data, tint colors, and environment mappings for all 32&times;320&times;32 blocks</td>
+                        </tr>
+                        <tr>
+                            <td><code>generatedBlockStateChunk</code></td>
+                            <td><span class="type">GeneratedBlockStateChunk</span></td>
+                            <td>Per-block state holders (for blocks requiring persistent state like chests)</td>
+                        </tr>
+                        <tr>
+                            <td><code>generatedEntityChunk</code></td>
+                            <td><span class="type">GeneratedEntityChunk</span></td>
+                            <td>Entities to spawn in the chunk (mob spawners, NPCs, etc.) as <span class="type">EntityWrapperEntry</span> objects</td>
+                        </tr>
+                        <tr>
+                            <td><code>sections</code></td>
+                            <td><code>Holder&lt;ChunkStore&gt;[10]</code></td>
+                            <td>Pre-built ECS section holders containing block physics, fluid sections, and other per-section components</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="chunk-conversion">Conversion to WorldChunk</h3>
+                <p>Once generation completes, the <span class="type">GeneratedChunk</span> is converted to a live <span class="type">WorldChunk</span> via <code>toWorldChunk(world)</code>:</p>
+
+                <pre><code><span class="kw">public</span> <span class="type">Holder</span>&lt;<span class="type">ChunkStore</span>&gt; <span class="fn">toWorldChunk</span>(<span class="type">World</span> <span class="field">world</span>) {
+    <span class="type">BlockChunk</span> <span class="field">blockChunk</span> = <span class="field">generatedBlockChunk</span>.<span class="fn">toBlockChunk</span>(<span class="field">sections</span>);
+    <span class="type">BlockComponentChunk</span> <span class="field">blockComponentChunk</span> = <span class="field">generatedBlockStateChunk</span>.<span class="fn">toBlockComponentChunk</span>();
+    <span class="type">EntityChunk</span> <span class="field">entityChunk</span> = <span class="field">generatedEntityChunk</span>.<span class="fn">toEntityChunk</span>();
+
+    <span class="type">WorldChunk</span> <span class="field">worldChunk</span> = <span class="kw">new</span> <span class="type">WorldChunk</span>(
+        <span class="field">world</span>,
+        <span class="kw">new</span> <span class="type">Flags</span>(<span class="type">ChunkFlag</span>.NEWLY_GENERATED),
+        <span class="field">blockChunk</span>, <span class="field">blockComponentChunk</span>, <span class="field">entityChunk</span>
+    );
+
+    <span class="type">Holder</span>&lt;<span class="type">ChunkStore</span>&gt; <span class="field">holder</span> = <span class="field">worldChunk</span>.<span class="fn">toHolder</span>();
+    <span class="field">holder</span>.<span class="fn">putComponent</span>(<span class="type">ChunkColumn</span>.<span class="fn">getComponentType</span>(),
+        <span class="kw">new</span> <span class="type">ChunkColumn</span>(<span class="field">sections</span>));
+    <span class="kw">return</span> <span class="field">holder</span>;
+}</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Block Priority System</div>
+                    <p>During generation, blocks are placed using a priority system (<span class="type">BlockPriorityChunk</span>). Each block placement carries a priority byte. Higher-priority placements (like structure blocks) can overwrite lower-priority ones (like terrain fill), but not vice versa. This prevents cave carving from erasing structure blocks, for example.</p>
+                </div>
+            </section>
+
+            <!-- Performance -->
+            <section id="performance">
+                <h2 id="performance-heading">Performance &amp; Timings</h2>
+                <p>The generation system includes built-in performance monitoring via <span class="type">WorldGenTimingsCollector</span>. After a 100-chunk warmup period, the collector tracks average time per pipeline stage using atomic counters.</p>
+
+                <h3 id="timings-metrics">Tracked Metrics</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Chunks</code></td>
+                            <td>Total chunks generated (atomic counter)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ChunkTime</code></td>
+                            <td>Average total time per chunk (seconds)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ZoneBiomeResultTime</code></td>
+                            <td>Average time for zone/biome resolution</td>
+                        </tr>
+                        <tr>
+                            <td><code>PrepareTime</code></td>
+                            <td>Average time for <span class="type">HeightThresholdInterpolator</span> preparation</td>
+                        </tr>
+                        <tr>
+                            <td><code>BlocksTime</code></td>
+                            <td>Average time for <span class="type">BlockPopulator</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>CaveTime</code></td>
+                            <td>Average time for <span class="type">CavePopulator</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>PrefabTime</code></td>
+                            <td>Average time for <span class="type">PrefabPopulator</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>QueueLength</code></td>
+                            <td>Current number of pending generation requests in the thread pool queue</td>
+                        </tr>
+                        <tr>
+                            <td><code>GeneratingCount</code></td>
+                            <td>Number of chunks currently being generated (active threads)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="performance-techniques">Performance Techniques</h3>
+                <ul>
+                    <li><strong>Async generation:</strong> All chunk generation runs on a dedicated <span class="type">ChunkThreadPoolExecutor</span> returning <code>CompletableFuture&lt;GeneratedChunk&gt;</code>. The world tick thread never blocks on generation.</li>
+                    <li><strong>ThreadLocal resources:</strong> Each worker thread has a <span class="type">ChunkGeneratorResource</span> via <code>ThreadLocal</code>, containing pre-allocated scratch buffers, random instances, and cache keys to avoid allocation pressure.</li>
+                    <li><strong>Lazy cache population:</strong> <span class="type">CoreDataCacheEntry</span> fields are computed on demand, so simple lookups (zone/biome) don't pay the cost of height computation.</li>
+                    <li><strong>Tiered caching:</strong> Five distinct caches handle different lifetimes and access patterns, from long-lived zone patterns to short-lived cave geometry.</li>
+                    <li><strong>stillNeeded predicate:</strong> The <code>generate()</code> method accepts a <code>LongPredicate stillNeeded</code> that is checked before starting work. If a chunk is no longer needed (player moved away), the future returns null immediately.</li>
+                    <li><strong>Warmup period:</strong> The timings collector ignores the first 100 chunks to avoid skewing averages with cold-cache performance.</li>
+                </ul>
+
+                <h3 id="benchmark">Benchmarking</h3>
+                <p>The server includes a built-in benchmarking system accessible via the <code>/worldgen benchmark</code> command. The <span class="type">ChunkWorldgenBenchmark</span> class runs controlled generation tests and reports timing statistics. The <span class="type">IBenchmarkableWorldGen</span> interface is implemented by <span class="type">ChunkGenerator</span> to support this.</p>
+            </section>
+
+            <!-- WorldGen Providers -->
+            <section id="providers">
+                <h2 id="providers-heading">WorldGen Providers</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.worldgen.provider</code></p>
+                <p>The server supports multiple world generation backends through the <span class="type">IWorldGenProvider</span> interface. Each provider creates an <span class="type">IWorldGen</span> implementation for a given world configuration.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">HytaleWorldGenProvider</span></td>
+                            <td>Full procedural generation using <span class="type">ChunkGenerator</span>. This is the default for standard worlds.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">FlatWorldGenProvider</span></td>
+                            <td>Generates flat worlds with configurable layers. Each <span class="type">Layer</span> defines a block type and height range.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">VoidWorldGenProvider</span></td>
+                            <td>Generates completely empty (void) worlds. Used for instance worlds and testing.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">DummyWorldGenProvider</span></td>
+                            <td>No-op provider for internal testing.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Key Packages -->
+            <section id="packages">
+                <h2 id="packages-heading">Key Packages</h2>
+                <p>Reference table of source packages for the world generation system:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Contents</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.chunk</code></td>
+                            <td><span class="type">ChunkGenerator</span>, <span class="type">ChunkGeneratorExecution</span>, <span class="type">HeightThresholdInterpolator</span>, <span class="type">ZoneBiomeResult</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.chunk.populator</code></td>
+                            <td><span class="type">BlockPopulator</span>, <span class="type">CavePopulator</span>, <span class="type">PrefabPopulator</span>, <span class="type">WaterPopulator</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.biome</code></td>
+                            <td><span class="type">Biome</span>, <span class="type">BiomeInterpolation</span>, <span class="type">BiomePatternGenerator</span>, <span class="type">TileBiome</span>, <span class="type">CustomBiome</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.zone</code></td>
+                            <td><span class="type">Zone</span>, <span class="type">ZonePatternProvider</span>, <span class="type">ZonePatternGenerator</span>, <span class="type">ZonePatternGeneratorCache</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.cave</code></td>
+                            <td><span class="type">CaveGenerator</span>, <span class="type">Cave</span>, <span class="type">CaveType</span>, <span class="type">CaveNodeType</span>, <span class="type">CaveBiomeMaskFlags</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.cave.shape</code></td>
+                            <td><span class="type">CaveNodeShape</span> implementations: Ellipsoid, Cylinder, Pipe, Distorted, Tetrahedron, EmptyLine, Prefab</td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.cave.prefab</code></td>
+                            <td><span class="type">CavePrefabContainer</span>, <span class="type">CavePrefabPlacement</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.cache</code></td>
+                            <td><span class="type">ChunkGeneratorCache</span>, <span class="type">CaveGeneratorCache</span>, <span class="type">UniquePrefabCache</span>, <span class="type">CoordinateCache</span>, <span class="type">CoreDataCacheEntry</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.container</code></td>
+                            <td><span class="type">CoverContainer</span>, <span class="type">LayerContainer</span>, <span class="type">PrefabContainer</span>, <span class="type">TintContainer</span>, <span class="type">EnvironmentContainer</span>, <span class="type">WaterContainer</span>, <span class="type">FadeContainer</span>, <span class="type">UniquePrefabContainer</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.prefab</code></td>
+                            <td><span class="type">PrefabLoadingCache</span>, <span class="type">PrefabPasteUtil</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.util</code></td>
+                            <td><span class="type">ChunkThreadPoolExecutor</span>, <span class="type">ChunkWorkerThreadFactory</span>, <span class="type">BlockFluidEntry</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.worldgen.climate</code></td>
+                            <td><span class="type">ClimateMaskProvider</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.core.universe.world.worldgen</code></td>
+                            <td><span class="type">GeneratedChunk</span>, <span class="type">GeneratedBlockChunk</span>, <span class="type">GeneratedBlockStateChunk</span>, <span class="type">GeneratedEntityChunk</span>, <span class="type">IWorldGen</span>, <span class="type">WorldGenTimingsCollector</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>c.h.h.server.core.universe.world.worldgen.provider</code></td>
+                            <td><span class="type">IWorldGenProvider</span>, <span class="type">FlatWorldGenProvider</span>, <span class="type">VoidWorldGenProvider</span>, <span class="type">DummyWorldGenProvider</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

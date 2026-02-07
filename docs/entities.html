@@ -7,253 +7,989 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html" class="active">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>Entities &amp; NPCs</h1>
-            <p class="page-desc">Spawning custom entities, the NPC API, death detection, and damage sources.</p>
+            <p class="page-desc">The entity hierarchy, ECS representation, spawning and despawning, transform and physics, visibility tracking, models, bounding boxes, nameplates, and entity lifecycle.</p>
 
-            <h2>Minimum Components for Visible Entity</h2>
-            <p>To spawn an entity visible to clients, you need these components:</p>
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Entities are dynamic objects in the Hytale world &mdash; players, NPCs, projectiles, dropped blocks, and any other non-block object that exists at a position in the world. Unlike blocks (which are stored as integer IDs in chunk palettes), entities live in the <span class="type">EntityStore</span> as collections of ECS components, identified by <code>Ref&lt;EntityStore&gt;</code> references.</p>
+                <p>Hytale uses a <strong>hybrid entity model</strong>: legacy <span class="type">Entity</span> subclasses (which implement <code>Component&lt;EntityStore&gt;</code>) coexist with pure-ECS entities that are nothing more than a <span class="type">Holder</span> containing several independent components. The legacy hierarchy is being deprecated in favor of the pure-ECS approach, but both paths are fully functional in the current server.</p>
+            </section>
 
-            <table class="component-table">
-                <thead>
-                    <tr>
-                        <th>Component</th>
-                        <th>Purpose</th>
-                        <th>Required?</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>NetworkId</td>
-                        <td>Client synchronization</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td>TransformComponent</td>
-                        <td>Position and rotation</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td>ModelComponent</td>
-                        <td>3D model (entity tracker needs it)</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td>BoundingBox</td>
-                        <td>Collision and visibility</td>
-                        <td>Recommended</td>
-                    </tr>
-                    <tr>
-                        <td>Nameplate</td>
-                        <td>Floating text</td>
-                        <td>Optional</td>
-                    </tr>
-                    <tr>
-                        <td>UUIDComponent</td>
-                        <td>UUID for tracking</td>
-                        <td>Optional</td>
-                    </tr>
-                    <tr>
-                        <td>Intangible</td>
-                        <td>Non-collidable</td>
-                        <td>Optional</td>
-                    </tr>
-                </tbody>
-            </table>
+            <section id="entity-hierarchy">
+                <h2>Entity Hierarchy</h2>
+                <p>The legacy class hierarchy forms the backbone for entity types that need rich Java behavior. Every class in this tree implements <code>Component&lt;EntityStore&gt;</code> and can be stored as a component on a <span class="type">Holder&lt;EntityStore&gt;</span>.</p>
 
-            <div class="warning-box">
-                <strong>Warning:</strong> ModelComponent is REQUIRED even for 'invisible' entities like floating text. The entity tracker will not register entities without a model.
-            </div>
+<div class="diagram">Component&lt;EntityStore&gt;
+ ├─ Entity (abstract)
+ │    ├─ LivingEntity (abstract)
+ │    │    └─ Player
+ │    │         └─ CommandSender, PermissionHolder
+ │    └─ NPCEntity (see NPC &amp; AI page)
+ │
+ ├─ BlockEntity (dropped/falling blocks)
+ │
+ └─ ProjectileComponent (arrows, thrown items)
+</div>
 
-            <h2>Complete Spawn Pattern</h2>
-            <pre><code class="language-java"><span class="comment">// MUST be on world thread!</span>
-EntityStore entityStore = world.getEntityStore();
-Store&lt;EntityStore&gt; store = entityStore.getStore();
+                <h3>Entity (Abstract Base)</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity</code></p>
+                <p>The abstract root for all legacy entity types. Holds a reference to the world, a network ID for client synchronization, a legacy UUID, and a removal flag. Key characteristics:</p>
+                <ul>
+                    <li>Stores its own <code>Ref&lt;EntityStore&gt;</code> reference via <code>setReference()</code> / <code>getReference()</code>.</li>
+                    <li>The <code>networkId</code> field (default <code>-1</code>) is assigned when the entity enters a world via <code>loadIntoWorld()</code>.</li>
+                    <li>Uses an <span class="type">AtomicBoolean</span> (<code>wasRemoved</code>) to ensure <code>remove()</code> is idempotent and thread-safe.</li>
+                    <li>Implements <code>clone()</code> by round-tripping through BSON serialization via <span class="type">EntityModule</span> codecs.</li>
+                    <li>Can convert itself into a pure-ECS <span class="type">Holder</span> via <code>toHolder()</code>, copying all archetype components.</li>
+                </ul>
 
-<span class="comment">// Create holder</span>
-Holder&lt;EntityStore&gt; holder = EntityStore.REGISTRY.newHolder();
+                <h4>Key Fields</h4>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>networkId</code></td><td><span class="kw">int</span></td><td>Client-facing identifier (default <code>-1</code>, assigned on world entry)</td></tr>
+                        <tr><td><code>legacyUuid</code></td><td><span class="type">UUID</span></td><td>Persistent unique identifier (deprecated in favor of <span class="type">UUIDComponent</span>)</td></tr>
+                        <tr><td><code>world</code></td><td><span class="type">World</span></td><td>The world this entity belongs to (nullable)</td></tr>
+                        <tr><td><code>reference</code></td><td><code>Ref&lt;EntityStore&gt;</code></td><td>ECS reference into the store</td></tr>
+                        <tr><td><code>wasRemoved</code></td><td><span class="type">AtomicBoolean</span></td><td>Thread-safe removal guard</td></tr>
+                        <tr><td><code>transformComponent</code></td><td><span class="type">TransformComponent</span></td><td>Cached position component (deprecated)</td></tr>
+                    </tbody>
+                </table>
 
-<span class="comment">// Position</span>
-holder.addComponent(TransformComponent.getComponentType(),
-    <span class="keyword">new</span> TransformComponent(<span class="keyword">new</span> Vector3d(x, y, z), <span class="keyword">new</span> Vector3f(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)));
+                <h4>DefaultAnimations</h4>
+                <p>The nested <span class="type">Entity.DefaultAnimations</span> class defines standard animation IDs used across all entity types:</p>
+                <table>
+                    <thead>
+                        <tr><th>Constant</th><th>Value</th><th>Usage</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>DEATH</code></td><td><code>"Death"</code></td><td>Played on entity death</td></tr>
+                        <tr><td><code>HURT</code></td><td><code>"Hurt"</code></td><td>Played when entity takes damage</td></tr>
+                        <tr><td><code>DESPAWN</code></td><td><code>"Despawn"</code></td><td>Played before auto-removal</td></tr>
+                        <tr><td><code>SWIM_SUFFIX</code></td><td><code>"Swim"</code></td><td>Appended when swimming (e.g. <code>"HurtSwim"</code>)</td></tr>
+                        <tr><td><code>FLY_SUFFIX</code></td><td><code>"Fly"</code></td><td>Appended when flying (e.g. <code>"DeathFly"</code>)</td></tr>
+                    </tbody>
+                </table>
 
-<span class="comment">// Network ID (required for client visibility)</span>
-holder.addComponent(NetworkId.getComponentType(),
-    <span class="keyword">new</span> NetworkId(entityStore.takeNextNetworkId()));
+                <h3>LivingEntity</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity</code></p>
+                <p>Extends <span class="type">Entity</span> with inventory management, fall distance tracking, stat modifiers, and equipment network synchronization. All living entities (players, NPCs) inherit from this class.</p>
+                <ul>
+                    <li>Owns an <span class="type">Inventory</span> instance, created via the abstract <code>createDefaultInventory()</code> method.</li>
+                    <li>Tracks <code>currentFallDistance</code> in <code>moveTo()</code> &mdash; accumulated when not on the ground, reset on landing or when in fluid/climbing/flying/gliding.</li>
+                    <li>Manages a <span class="type">StatModifiersManager</span> for armor-based stat recalculations.</li>
+                    <li>Checks breathing via <code>canBreathe()</code> &mdash; entities are safe in <code>BlockMaterial.Empty</code> with no fluid, or when they have the <span class="type">Invulnerable</span> component.</li>
+                </ul>
 
-<span class="comment">// Model with large bounding box for LOD (CRITICAL)</span>
-Box lodBox = Box.horizontallyCentered(<span class="number">3.0</span>, <span class="number">3.0</span>, <span class="number">3.0</span>);
-Model model = Model.createScaledModel(
-    ModelAsset.DEBUG, <span class="number">0.001f</span>, Collections.emptyMap(), lodBox);
-holder.addComponent(ModelComponent.getComponentType(),
-    <span class="keyword">new</span> ModelComponent(model));
+                <h3>Player</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities</code></p>
+                <p>The most complex entity type. Extends <span class="type">LivingEntity</span> and implements <span class="type">CommandSender</span> and <span class="type">PermissionHolder</span>. Players manage UI (windows, pages, HUD), track chunk visibility, handle game modes, and process velocity samples from client input.</p>
+                <ul>
+                    <li>Default view radius: <strong>6 chunks</strong> (capped by server config <code>maxViewRadius</code>).</li>
+                    <li>Respawn invulnerability: <strong>3000ms</strong> after spawning.</li>
+                    <li>Velocity is computed from weighted samples of 2 recent position snapshots, not set directly by the client.</li>
+                    <li>Game mode changes fire a cancellable <span class="type">ChangeGameModeEvent</span> and automatically toggle <span class="type">Invulnerable</span> and <span class="type">RespondToHit</span> components.</li>
+                </ul>
+            </section>
 
-<span class="comment">// Bounding box (for collision)</span>
-holder.addComponent(BoundingBox.getComponentType(),
-    <span class="keyword">new</span> BoundingBox(lodBox));
+            <section id="ecs-representation">
+                <h2>Entities in the ECS</h2>
+                <p>In Hytale's ECS architecture, an entity is a <code>Ref&lt;EntityStore&gt;</code> &mdash; a lightweight reference into the <span class="type">Store&lt;EntityStore&gt;</span>. The <span class="type">Ref</span> holds the store and an integer index. Components are accessed through the store using the ref and a <span class="type">ComponentType</span>.</p>
 
-<span class="comment">// Optional: nameplate</span>
-holder.addComponent(Nameplate.getComponentType(),
-    <span class="keyword">new</span> Nameplate(<span class="string">"Hello World"</span>));
+                <h3>Ref&lt;EntityStore&gt;</h3>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>An entity reference is a thin wrapper around a store pointer and an integer index. References can become <strong>invalidated</strong> when an entity is removed &mdash; the index is set to <code>Integer.MIN_VALUE</code> and subsequent access throws <span class="type">IllegalStateException</span>.</p>
 
-<span class="comment">// Optional: non-collidable</span>
-holder.ensureComponent(Intangible.getComponentType());
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="fn">getStore</span>()</code></td>
+                            <td>Returns the backing store</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getIndex</span>()</code></td>
+                            <td>Returns the internal index (opaque)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">isValid</span>()</code></td>
+                            <td>Returns <code>true</code> if the entity has not been removed</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">validate</span>()</code></td>
+                            <td>Throws <span class="type">IllegalStateException</span> if invalid</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-<span class="comment">// Spawn</span>
-Ref&lt;EntityStore&gt; entityRef = store.addEntity(holder, AddReason.SPAWN);</code></pre>
+                <h3>Holder&lt;EntityStore&gt;</h3>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>A <span class="type">Holder</span> is a <strong>pre-assembled entity definition</strong> &mdash; a collection of components with an archetype, ready to be added to a store. It is the blueprint used when spawning entities. Holders are thread-safe via a <span class="type">StampedLock</span>.</p>
 
-            <h2>Spawning NPCs</h2>
-            <p>Use the <code>NPCPlugin</code> API:</p>
+                <pre><code><span class="comment">// Create a new empty holder from the EntityStore registry</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">EntityStore</span>.REGISTRY.<span class="fn">newHolder</span>();
 
-            <pre><code class="language-java"><span class="comment">// Get role index</span>
-<span class="keyword">int</span> roleIndex = NPCPlugin.get().getIndex(<span class="string">"Zombie"</span>);
+<span class="comment">// Add components to build up the entity</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">TransformComponent</span>(<span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>), <span class="type">Vector3f</span>.ZERO));
 
-<span class="comment">// Spawn</span>
-Store&lt;EntityStore&gt; store = world.getEntityStore().getStore();
-Pair&lt;Ref&lt;EntityStore&gt;, NPCEntity&gt; result = NPCPlugin.get().spawnEntity(
-    store,
-    roleIndex,
-    <span class="keyword">new</span> Vector3d(<span class="number">100</span>, <span class="number">70</span>, <span class="number">100</span>),  <span class="comment">// position</span>
-    <span class="keyword">new</span> Vector3f(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>),       <span class="comment">// rotation</span>
-    <span class="keyword">null</span>,                         <span class="comment">// model (null = use role default)</span>
-    <span class="keyword">null</span>                          <span class="comment">// post-spawn callback</span>
-);
+<span class="comment">// ensureComponent creates a default instance if not already present</span>
+<span class="field">holder</span>.<span class="fn">ensureComponent</span>(<span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>());
 
-Ref&lt;EntityStore&gt; npcRef = result.first();
-NPCEntity npc = result.second();</code></pre>
+<span class="comment">// putComponent adds or replaces</span>
+<span class="field">holder</span>.<span class="fn">putComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Custom Entity"</span>));
 
-            <p>The full version includes pre-add and post-add hooks:</p>
+<span class="comment">// Check if a component exists</span>
+<span class="type">Nameplate</span> <span class="field">np</span> = <span class="field">holder</span>.<span class="fn">getComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());</code></pre>
 
-            <pre><code class="language-java">NPCPlugin.get().spawnEntity(store, roleIndex, position, rotation, model,
-    (npc, holder, store) -&gt; { <span class="comment">/* pre-add to world */</span> },
-    (npc, ref, store) -&gt; { <span class="comment">/* post-spawn */</span> }
+                <h3>Accessing Components from a Ref</h3>
+                <p>Once an entity is in the store, you access its components through the <span class="type">Store</span> or a <span class="type">ComponentAccessor</span>:</p>
+
+                <pre><code><span class="comment">// Get the store from the world</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+
+<span class="comment">// Read a component</span>
+<span class="type">TransformComponent</span> <span class="field">transform</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">entityRef</span>, <span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Check the entity's archetype for a component type</span>
+<span class="type">Archetype</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">arch</span> = <span class="field">store</span>.<span class="fn">getArchetype</span>(<span class="field">entityRef</span>);
+<span class="kw">boolean</span> <span class="field">hasModel</span> = <span class="field">arch</span>.<span class="fn">contains</span>(<span class="type">ModelComponent</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// In an ECS system callback, use the ComponentAccessor</span>
+(<span class="field">ref</span>, <span class="field">event</span>, <span class="field">accessor</span>) -> {
+    <span class="type">Player</span> <span class="field">player</span> = <span class="field">accessor</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Player</span>.<span class="fn">getComponentType</span>());
+}</code></pre>
+            </section>
+
+            <section id="spawning-despawning">
+                <h2>Spawning &amp; Despawning</h2>
+                <p>Entities enter and leave the world through the <span class="type">Store</span>&rsquo;s <code>addEntity()</code> and <code>removeEntity()</code> methods. Each operation takes a reason enum that determines lifecycle behavior.</p>
+
+                <h3>AddReason</h3>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>Passed to <code>store.addEntity(holder, reason)</code> to indicate why the entity is being added:</p>
+                <table>
+                    <thead>
+                        <tr><th>Value</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>SPAWN</code></td><td>New entity being created for the first time</td></tr>
+                        <tr><td><code>LOAD</code></td><td>Entity being loaded from persistent storage (e.g. chunk load)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>RemoveReason</h3>
+                <p>Package: <code>com.hypixel.hytale.component</code></p>
+                <p>Passed to <code>store.removeEntity(ref, reason)</code> to indicate why the entity is being removed:</p>
+                <table>
+                    <thead>
+                        <tr><th>Value</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>REMOVE</code></td><td>Permanent removal (death, despawn, explicit delete)</td></tr>
+                        <tr><td><code>UNLOAD</code></td><td>Temporary removal (chunk unloading &mdash; entity may be reloaded later)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Spawning a Custom Entity</h3>
+                <p>To spawn an entity that is visible to clients, you need a minimum set of components. The entity tracker will not register entities without a <span class="type">ModelComponent</span>.</p>
+
+                <pre><code><span class="comment">// MUST be on the world's tick thread!</span>
+<span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Create a holder with the required components</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">EntityStore</span>.REGISTRY.<span class="fn">newHolder</span>();
+
+<span class="comment">// Position and rotation (required)</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">TransformComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">TransformComponent</span>(
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">100</span>),
+        <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)));
+
+<span class="comment">// Network ID for client synchronization (required)</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">NetworkId</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">NetworkId</span>(<span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>()));
+
+<span class="comment">// Model with LOD bounding box (required for visibility)</span>
+<span class="type">Box</span> <span class="field">lodBox</span> = <span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">3.0</span>, <span class="num">3.0</span>, <span class="num">3.0</span>);
+<span class="type">Model</span> <span class="field">model</span> = <span class="type">Model</span>.<span class="fn">createScaledModel</span>(
+    <span class="type">ModelAsset</span>.DEBUG, <span class="num">0.001f</span>, <span class="type">Collections</span>.<span class="fn">emptyMap</span>(), <span class="field">lodBox</span>);
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">ModelComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">ModelComponent</span>(<span class="field">model</span>));
+
+<span class="comment">// Collision bounding box (recommended)</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">BoundingBox</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">BoundingBox</span>(<span class="field">lodBox</span>));
+
+<span class="comment">// UUID for persistent tracking (optional)</span>
+<span class="field">holder</span>.<span class="fn">ensureComponent</span>(<span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Spawn into the world</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">entityRef</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);</code></pre>
+
+                <h3>Minimum Components for Visibility</h3>
+                <table>
+                    <thead>
+                        <tr><th>Component</th><th>Purpose</th><th>Required?</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">NetworkId</span></td><td>Client synchronization</td><td>Yes</td></tr>
+                        <tr><td><span class="type">TransformComponent</span></td><td>Position and rotation</td><td>Yes</td></tr>
+                        <tr><td><span class="type">ModelComponent</span></td><td>3D model (entity tracker depends on it)</td><td>Yes</td></tr>
+                        <tr><td><span class="type">BoundingBox</span></td><td>Collision and LOD culling</td><td>Recommended</td></tr>
+                        <tr><td><span class="type">Nameplate</span></td><td>Floating text above entity</td><td>Optional</td></tr>
+                        <tr><td><span class="type">UUIDComponent</span></td><td>Persistent unique identifier</td><td>Optional</td></tr>
+                        <tr><td><span class="type">Intangible</span></td><td>Disables collision response</td><td>Optional</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p><span class="type">ModelComponent</span> is <strong>required</strong> even for &ldquo;invisible&rdquo; entities like floating text. The entity tracker will not register entities without a model. Use <code>Model.createScaledModel(ModelAsset.DEBUG, 0.001f, ...)</code> for a model that is effectively invisible.</p>
+                </div>
+
+                <h3>Removing Entities</h3>
+                <pre><code><span class="comment">// Permanent removal</span>
+<span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">entityRef</span>, <span class="type">RemoveReason</span>.REMOVE);
+
+<span class="comment">// Legacy Entity.remove() dispatches EntityRemoveEvent first</span>
+<span class="field">entity</span>.<span class="fn">remove</span>();  <span class="comment">// sets wasRemoved, fires event, calls store.removeEntity()</span>
+
+<span class="comment">// Always check validity before operating on a ref</span>
+<span class="kw">if</span> (<span class="field">entityRef</span>.<span class="fn">isValid</span>()) {
+    <span class="field">store</span>.<span class="fn">removeEntity</span>(<span class="field">entityRef</span>, <span class="type">RemoveReason</span>.REMOVE);
+}</code></pre>
+
+                <h3>DespawnComponent &mdash; Timed Auto-Removal</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity</code></p>
+                <p>Attach a <span class="type">DespawnComponent</span> to schedule automatic removal after a duration. Used by dropped items, block entities, and temporary effects.</p>
+
+                <pre><code><span class="comment">// Despawn after 120 seconds (default for BlockEntity)</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">DespawnComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="type">DespawnComponent</span>.<span class="fn">despawnInSeconds</span>(<span class="field">timeResource</span>, <span class="num">120</span>));
+
+<span class="comment">// Despawn after 2.5 seconds (float overload)</span>
+<span class="type">DespawnComponent</span>.<span class="fn">despawnInSeconds</span>(<span class="field">timeResource</span>, <span class="num">2.5f</span>);
+
+<span class="comment">// Despawn after 500 milliseconds</span>
+<span class="type">DespawnComponent</span>.<span class="fn">despawnInMilliseconds</span>(<span class="field">timeResource</span>, <span class="num">500L</span>);
+
+<span class="comment">// Update or remove an existing despawn timer</span>
+<span class="type">DespawnComponent</span>.<span class="fn">trySetDespawn</span>(
+    <span class="field">commandBuffer</span>, <span class="field">timeResource</span>, <span class="field">ref</span>,
+    <span class="field">existingDespawn</span>,   <span class="comment">// nullable - current DespawnComponent</span>
+    <span class="num">30.0f</span>);            <span class="comment">// new lifetime in seconds (null to remove)</span></code></pre>
+            </section>
+
+            <section id="transform-component">
+                <h2>TransformComponent</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.component</code></p>
+                <p>The fundamental spatial component for every entity. Stores the entity's position in world space, its rotation (yaw, pitch, roll), and maintains the last-sent network transform for delta synchronization with clients.</p>
+
+                <h3>Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>position</code></td><td><span class="type">Vector3d</span></td><td>World-space position (x, y, z)</td></tr>
+                        <tr><td><code>rotation</code></td><td><span class="type">Vector3f</span></td><td>Euler rotation (yaw, pitch, roll)</td></tr>
+                        <tr><td><code>sentTransform</code></td><td><span class="type">ModelTransform</span></td><td>Last transform sent to clients (for delta encoding)</td></tr>
+                        <tr><td><code>chunkRef</code></td><td><code>Ref&lt;ChunkStore&gt;</code></td><td>Reference to the chunk this entity is in</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Vector3d</span> <span class="fn">getPosition</span>()</code></td>
+                            <td>Returns the mutable position vector</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setPosition</span>(<span class="type">Vector3d</span>)</code></td>
+                            <td>Assigns a new position (copies values)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">teleportPosition</span>(<span class="type">Vector3d</span>)</code></td>
+                            <td>Sets position, skipping NaN components (allows partial teleports)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Vector3f</span> <span class="fn">getRotation</span>()</code></td>
+                            <td>Returns the mutable rotation vector (yaw, pitch, roll)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">teleportRotation</span>(<span class="type">Vector3f</span>)</code></td>
+                            <td>Sets rotation, skipping NaN components</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Transform</span> <span class="fn">getTransform</span>()</code></td>
+                            <td>Returns a new <span class="type">Transform</span> combining position and rotation</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">markChunkDirty</span>(<span class="type">ComponentAccessor</span>)</code></td>
+                            <td>Marks the owning chunk as needing persistence</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Teleportation with NaN Passthrough</h3>
+                <p>The <code>teleportPosition()</code> and <code>teleportRotation()</code> methods support <strong>partial teleports</strong> by treating <code>NaN</code> as &ldquo;keep current value.&rdquo; This allows teleporting only one axis at a time:</p>
+
+                <pre><code><span class="comment">// Teleport only the Y coordinate (keep X and Z)</span>
+<span class="field">transform</span>.<span class="fn">teleportPosition</span>(<span class="kw">new</span> <span class="type">Vector3d</span>(
+    <span class="type">Double</span>.NaN,  <span class="comment">// keep current X</span>
+    <span class="num">100.0</span>,       <span class="comment">// set Y to 100</span>
+    <span class="type">Double</span>.NaN   <span class="comment">// keep current Z</span>
+));
+
+<span class="comment">// Teleport only the yaw (keep pitch and roll)</span>
+<span class="field">transform</span>.<span class="fn">teleportRotation</span>(<span class="kw">new</span> <span class="type">Vector3f</span>(
+    <span class="num">90.0f</span>,       <span class="comment">// set yaw to 90 degrees</span>
+    <span class="type">Float</span>.NaN,   <span class="comment">// keep current pitch</span>
+    <span class="type">Float</span>.NaN    <span class="comment">// keep current roll</span>
+));</code></pre>
+
+                <h3>Velocity Component</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.physics.component</code></p>
+                <p>The <span class="type">Velocity</span> component stores the entity's current velocity as a <span class="type">Vector3d</span>, plus a separate <code>clientVelocity</code> for client-side prediction and a queue of <span class="type">Instruction</span> objects for deferred velocity changes.</p>
+
+                <pre><code><span class="comment">// Get the velocity component</span>
+<span class="type">Velocity</span> <span class="field">velocity</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">Velocity</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Apply a force (additive)</span>
+<span class="field">velocity</span>.<span class="fn">addForce</span>(<span class="num">0.0</span>, <span class="num">10.0</span>, <span class="num">0.0</span>);  <span class="comment">// launch upward</span>
+<span class="field">velocity</span>.<span class="fn">addForce</span>(<span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">5</span>, <span class="num">0</span>, <span class="num">0</span>));  <span class="comment">// push east</span>
+
+<span class="comment">// Set velocity directly (replaces current)</span>
+<span class="field">velocity</span>.<span class="fn">set</span>(<span class="num">0.0</span>, <span class="num">0.0</span>, <span class="num">0.0</span>);
+<span class="field">velocity</span>.<span class="fn">setZero</span>();
+
+<span class="comment">// Read current speed</span>
+<span class="kw">double</span> <span class="field">speed</span> = <span class="field">velocity</span>.<span class="fn">getSpeed</span>();  <span class="comment">// magnitude of velocity vector</span></code></pre>
+            </section>
+
+            <section id="network-id-tracking">
+                <h2>NetworkId &amp; Entity Tracking</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.tracker</code></p>
+                <p>The <span class="type">NetworkId</span> component assigns a unique integer ID to each entity for client-server communication. Without it, the entity tracker cannot send spawn/despawn/update packets to connected players.</p>
+
+                <pre><code><span class="comment">// NetworkId is a simple immutable component wrapping an int</span>
+<span class="kw">int</span> <span class="field">nextId</span> = <span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>();
+<span class="type">NetworkId</span> <span class="field">networkId</span> = <span class="kw">new</span> <span class="type">NetworkId</span>(<span class="field">nextId</span>);
+
+<span class="comment">// Read the ID from an existing entity</span>
+<span class="type">NetworkId</span> <span class="field">nid</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">NetworkId</span>.<span class="fn">getComponentType</span>());
+<span class="kw">int</span> <span class="field">id</span> = <span class="field">nid</span>.<span class="fn">getId</span>();</code></pre>
+
+                <h3>Visibility Pipeline</h3>
+                <p>The entity tracker operates as a multi-phase ECS system pipeline within the <span class="type">EntityTrackerSystems</span> class. Each phase runs as a parallel <span class="type">EntityTickingSystem</span>:</p>
+
+                <ol>
+                    <li><strong>ClearPreviouslyVisible:</strong> Resets the <code>previousVisibleTo</code> and <code>newlyVisibleTo</code> maps on each <span class="type">Visible</span> component.</li>
+                    <li><strong>CollectVisible:</strong> For each player (entity with <span class="type">EntityViewer</span>), collects all entities within the player's view radius (<code>playerViewRadius &times; 32</code> blocks, default ~192 blocks).</li>
+                    <li><strong>LegacyLODCull:</strong> Removes entities that are too small to be visible at their current distance. Uses the formula: <code>maximumThickness &lt; ENTITY_LOD_RATIO &times; distanceSq</code> where <code>ENTITY_LOD_RATIO</code> defaults to <code>3.5e-5</code>.</li>
+                    <li><strong>LegacyHideFromEntity:</strong> Removes entities that are hidden from specific viewers (e.g. hidden players via <span class="type">HiddenPlayersManager</span>).</li>
+                    <li><strong>EnsureVisibleComponent:</strong> Adds the <span class="type">Visible</span> component to entities that appear in any viewer's visible set.</li>
+                    <li><strong>AddToVisible:</strong> Populates the <span class="type">Visible</span> component's <code>visibleTo</code> map with viewer references.</li>
+                    <li><strong>Queue Updates:</strong> Component-specific tracker systems (model, nameplate, block entity) queue network packets for newly visible or changed entities.</li>
+                    <li><strong>SendPackets:</strong> Flushes queued packets to each viewer's connection.</li>
+                    <li><strong>RemoveEmptyVisibleComponent:</strong> Removes the <span class="type">Visible</span> component from entities no longer seen by any player.</li>
+                </ol>
+
+                <h3>Visible Component</h3>
+                <p>The <span class="type">EntityTrackerSystems.Visible</span> component is automatically managed by the tracker. It maintains three maps of viewer references:</p>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>visibleTo</code></td><td><code>Map&lt;Ref, EntityViewer&gt;</code></td><td>All players currently seeing this entity</td></tr>
+                        <tr><td><code>previousVisibleTo</code></td><td><code>Map&lt;Ref, EntityViewer&gt;</code></td><td>Players who saw this entity last tick</td></tr>
+                        <tr><td><code>newlyVisibleTo</code></td><td><code>Map&lt;Ref, EntityViewer&gt;</code></td><td>Players who started seeing this entity this tick</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>LOD Culling Formula</h3>
+                <p>The Level-of-Detail culling system prevents the server from sending updates for entities that would be too small to render at their current distance. The default ratio of <code>3.5e-5</code> means an entity with a 1-block bounding box becomes invisible at approximately <strong>169 blocks</strong>. Larger entities remain visible at greater distances.</p>
+
+                <pre><code><span class="comment">// LOD culling check (from LegacyLODCull)</span>
+<span class="kw">double</span> <span class="field">distanceSq</span> = <span class="field">targetPosition</span>.<span class="fn">distanceSquaredTo</span>(<span class="field">viewerPosition</span>);
+<span class="kw">double</span> <span class="field">maxThickness</span> = <span class="field">boundingBox</span>.<span class="fn">getMaximumThickness</span>();
+
+<span class="kw">if</span> (<span class="field">maxThickness</span> &lt; <span class="num">3.5e-5</span> * <span class="field">distanceSq</span>) {
+    <span class="comment">// Entity is culled — too small at this distance</span>
+}</code></pre>
+            </section>
+
+            <section id="model-component">
+                <h2>ModelComponent</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.component</code></p>
+                <p>Wraps a <span class="type">Model</span> asset reference and tracks whether the model has changed since it was last sent to viewers. The model defines the entity's 3D appearance, animations, and the LOD bounding box used by the visibility system.</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Model</span> <span class="fn">getModel</span>()</code></td>
+                            <td>Returns the entity's <span class="type">Model</span> asset</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">consumeNetworkOutdated</span>()</code></td>
+                            <td>Returns and clears the dirty flag for network sync</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>The <span class="type">ModelComponent</span> is immutable with respect to its <span class="type">Model</span> reference &mdash; to change an entity's model, you must replace the entire component on the archetype. The <code>isNetworkOutdated</code> flag is set to <code>true</code> on construction so that the model is always sent to viewers on first visibility.</p>
+                </div>
+
+                <h3>EntityScaleComponent</h3>
+                <p>Entities can be scaled uniformly via the <span class="type">EntityScaleComponent</span>. The default scale is <code>1.0f</code>. Changes are synchronized to clients via the <code>isNetworkOutdated</code> flag.</p>
+
+                <pre><code><span class="comment">// Scale an entity to 2x size</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">EntityScaleComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">EntityScaleComponent</span>(<span class="num">2.0f</span>));
+
+<span class="comment">// Update scale at runtime</span>
+<span class="type">EntityScaleComponent</span> <span class="field">scale</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">EntityScaleComponent</span>.<span class="fn">getComponentType</span>());
+<span class="field">scale</span>.<span class="fn">setScale</span>(<span class="num">0.5f</span>);  <span class="comment">// automatically marks network outdated</span></code></pre>
+            </section>
+
+            <section id="block-entity">
+                <h2>BlockEntity</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities</code></p>
+                <p>Represents a block as a mobile entity in the world &mdash; used for dropped block items, falling blocks, and similar block-as-object scenarios. Unlike most entity types, <span class="type">BlockEntity</span> does <strong>not</strong> extend <span class="type">Entity</span>. It implements <code>Component&lt;EntityStore&gt;</code> directly and uses simple physics via <span class="type">SimplePhysicsProvider</span>.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>blockTypeKey</code></td><td><span class="type">String</span></td><td>Reference to the <span class="type">BlockType</span> asset (e.g. <code>"Dirt"</code>, <code>"Chest"</code>)</td></tr>
+                        <tr><td><code>simplePhysicsProvider</code></td><td><span class="type">SimplePhysicsProvider</span></td><td>Handles gravity, collision, and movement</td></tr>
+                        <tr><td><code>isBlockIdNetworkOutdated</code></td><td><span class="kw">boolean</span></td><td>Dirty flag for block type sync to clients</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Default Assembly</h3>
+                <p>The static method <code>assembleDefaultBlockEntity()</code> creates a complete entity holder with all required components:</p>
+
+                <pre><code><span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">BlockEntity</span>.<span class="fn">assembleDefaultBlockEntity</span>(
+    <span class="field">timeResource</span>,
+    <span class="str">"Dirt"</span>,                             <span class="comment">// block type key</span>
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>)              <span class="comment">// spawn position</span>
 );</code></pre>
 
-            <h2>Removing Entities</h2>
+                <p>This creates a holder with the following components:</p>
+                <table>
+                    <thead>
+                        <tr><th>Component</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">BlockEntity</span></td><td>Block type key and physics provider</td></tr>
+                        <tr><td><span class="type">DespawnComponent</span></td><td>Auto-removal after <strong>120 seconds</strong></td></tr>
+                        <tr><td><span class="type">TransformComponent</span></td><td>Position (cloned) with <code>Vector3f.FORWARD</code> rotation</td></tr>
+                        <tr><td><span class="type">Velocity</span></td><td>Physics velocity (ensured, default zero)</td></tr>
+                        <tr><td><span class="type">UUIDComponent</span></td><td>Unique identifier (ensured, auto-generated)</td></tr>
+                    </tbody>
+                </table>
 
-            <pre><code class="language-java">store.removeEntity(entityRef, RemoveReason.REMOVE);</code></pre>
+                <h3>BlockEntitySystems</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity</code></p>
+                <p>Three ECS systems manage the <span class="type">BlockEntity</span> lifecycle:</p>
+                <ul>
+                    <li><strong>BlockEntitySetupSystem</strong> (HolderSystem): On entity add, assigns a <span class="type">NetworkId</span> if missing, creates a <span class="type">BoundingBox</span> from the block type's hitbox definition, and initializes the <span class="type">SimplePhysicsProvider</span>. Falls back to a 1&times;1&times;1 box on error.</li>
+                    <li><strong>BlockEntityTrackerSystem</strong> (EntityTickingSystem): Queues <span class="type">ComponentUpdate</span> packets for visible block entities when the block type ID or entity scale changes. Only runs for entities with both <span class="type">Visible</span> and <span class="type">BlockEntity</span> components.</li>
+                    <li><strong>Ticking</strong> (EntityTickingSystem): Runs each frame for entities with <span class="type">TransformComponent</span>, <span class="type">BlockEntity</span>, and <span class="type">Velocity</span>. Calls <code>simplePhysicsProvider.tick()</code> to apply gravity and collision. If an exception occurs, the entity is removed with <code>RemoveReason.REMOVE</code>.</li>
+                </ul>
 
-            <p><code>RemoveReason</code> values:</p>
-            <ul>
-                <li><code>REMOVE</code> — permanent removal</li>
-                <li><code>UNLOAD</code> — temporary (chunk unloading)</li>
-            </ul>
+                <pre><code><span class="comment">// Create and spawn a dropped block with upward force</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">BlockEntity</span>.<span class="fn">assembleDefaultBlockEntity</span>(
+    <span class="field">timeResource</span>, <span class="str">"Dirt"</span>, <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>));
 
-            <h2>Death Detection</h2>
-            <p>Use <code>KillFeedEvent.Display</code> (an EcsEvent — must use <code>registerSystem</code>):</p>
+<span class="comment">// Add to world</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);
 
-            <pre><code class="language-java">plugin.getEventRegistry().registerSystem(
-    KillFeedEvent.Display.class,
-    (victimRef, event, accessor) -&gt; {
+<span class="comment">// Apply upward force</span>
+<span class="type">BlockEntity</span> <span class="field">blockEntity</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">BlockEntity</span>.<span class="fn">getComponentType</span>());
+<span class="field">blockEntity</span>.<span class="fn">addForce</span>(<span class="num">0f</span>, <span class="num">5f</span>, <span class="num">0f</span>);
+
+<span class="comment">// Change the block type at runtime</span>
+<span class="field">blockEntity</span>.<span class="fn">setBlockTypeKey</span>(<span class="str">"Stone"</span>, <span class="field">ref</span>, <span class="field">commandBuffer</span>);</code></pre>
+            </section>
+
+            <section id="bounding-box">
+                <h2>BoundingBox Component</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.component</code></p>
+                <p>Defines the collision volume for an entity using a <span class="type">Box</span> shape. The bounding box is used for physics collision, LOD culling (via <code>getMaximumThickness()</code>), and hit detection. Optionally supports named <span class="type">DetailBox</span> arrays for sub-hitbox precision (e.g. head, torso, legs).</p>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">Box</span> <span class="fn">getBoundingBox</span>()</code></td>
+                            <td>Returns the mutable collision box</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setBoundingBox</span>(<span class="type">Box</span>)</code></td>
+                            <td>Assigns a new collision box (copies values)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">DetailBox</span>[]&gt; <span class="fn">getDetailBoxes</span>()</code></td>
+                            <td>Returns named sub-hitboxes for precision hits</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setDetailBoxes</span>(<span class="type">Map</span>)</code></td>
+                            <td>Sets named sub-hitboxes</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Create a bounding box centered horizontally</span>
+<span class="type">Box</span> <span class="field">box</span> = <span class="type">Box</span>.<span class="fn">horizontallyCentered</span>(<span class="num">0.6</span>, <span class="num">1.8</span>, <span class="num">0.6</span>);
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">BoundingBox</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">BoundingBox</span>(<span class="field">box</span>));
+
+<span class="comment">// Make the entity non-collidable (intangible)</span>
+<span class="field">holder</span>.<span class="fn">ensureComponent</span>(<span class="type">Intangible</span>.<span class="fn">getComponentType</span>());</code></pre>
+
+                <h3>Intangible Component</h3>
+                <p>The <span class="type">Intangible</span> component is a singleton marker (<code>Intangible.INSTANCE</code>) that disables collision response for the entity. The entity still has a bounding box for LOD culling and visibility, but other entities pass through it. Commonly used for floating text, decorative effects, and holograms.</p>
+            </section>
+
+            <section id="nameplate">
+                <h2>Nameplate Component</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.nameplate</code></p>
+                <p>Displays floating text above an entity. The <span class="type">Nameplate</span> component holds a string and tracks whether it needs re-sending to clients. The <span class="type">NameplateSystems</span> ECS systems handle network synchronization.</p>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">String</span> <span class="fn">getText</span>()</code></td>
+                            <td>Returns the current nameplate text</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setText</span>(<span class="type">String</span>)</code></td>
+                            <td>Updates the text and marks network outdated (no-op if unchanged)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">consumeNetworkOutdated</span>()</code></td>
+                            <td>Returns and clears the dirty flag</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Add a nameplate to an entity</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Guard #1"</span>));
+
+<span class="comment">// Update nameplate text at runtime</span>
+<span class="type">Nameplate</span> <span class="field">nameplate</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">Nameplate</span>.<span class="fn">getComponentType</span>());
+<span class="field">nameplate</span>.<span class="fn">setText</span>(<span class="str">"Guard #1 [HP: 80]"</span>);</code></pre>
+
+                <h3>DisplayNameComponent</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.entity.component</code></p>
+                <p>A separate component for localized display names using the <span class="type">Message</span> system. Unlike <span class="type">Nameplate</span> (which is a raw string for floating text), <span class="type">DisplayNameComponent</span> stores a <span class="type">Message</span> that supports translation keys and parameters.</p>
+
+                <pre><code><span class="comment">// Set a translatable display name</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">DisplayNameComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">DisplayNameComponent</span>(
+        <span class="type">Message</span>.<span class="fn">translation</span>(<span class="str">"entity.zombie.name"</span>)));</code></pre>
+
+                <h3>NameplateSystems Pipeline</h3>
+                <p>Two ECS systems manage nameplate network synchronization:</p>
+                <ul>
+                    <li><strong>EntityTrackerUpdate:</strong> For entities with <span class="type">Visible</span> + <span class="type">Nameplate</span>, queues the nameplate text to <code>newlyVisibleTo</code> viewers, and to all <code>visibleTo</code> viewers when the text changes.</li>
+                    <li><strong>EntityTrackerRemove:</strong> When an entity leaves a viewer&rsquo;s visible set, sends a remove packet for the nameplate.</li>
+                </ul>
+            </section>
+
+            <section id="uuid-component">
+                <h2>UUIDComponent</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity</code></p>
+                <p>Provides a persistent <span class="type">UUID</span> for entity identification across sessions. This is the preferred way to identify entities (replacing the legacy <code>Entity.legacyUuid</code> field). The component auto-generates a version-3 UUID if none is provided during deserialization.</p>
+
+                <pre><code><span class="comment">// Ensure a UUID exists (generates one if needed)</span>
+<span class="field">holder</span>.<span class="fn">ensureComponent</span>(<span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>());
+
+<span class="comment">// Create with a specific UUID</span>
+<span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>(),
+    <span class="kw">new</span> <span class="type">UUIDComponent</span>(<span class="type">UUID</span>.<span class="fn">randomUUID</span>()));
+
+<span class="comment">// Read UUID from a live entity</span>
+<span class="type">UUIDComponent</span> <span class="field">uuidComp</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(
+    <span class="field">ref</span>, <span class="type">UUIDComponent</span>.<span class="fn">getComponentType</span>());
+<span class="type">UUID</span> <span class="field">uuid</span> = <span class="field">uuidComp</span>.<span class="fn">getUuid</span>();
+
+<span class="comment">// Generate static helpers</span>
+<span class="type">UUIDComponent</span> <span class="field">v3</span> = <span class="type">UUIDComponent</span>.<span class="fn">generateVersion3UUID</span>();
+<span class="type">UUIDComponent</span> <span class="field">v4</span> = <span class="type">UUIDComponent</span>.<span class="fn">randomUUID</span>();</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p><span class="type">NPCEntity</span> does NOT have a <code>getUuid()</code> method. Always use <span class="type">UUIDComponent</span> to get the UUID of any entity type.</p>
+                </div>
+            </section>
+
+            <section id="entity-lifecycle">
+                <h2>Entity Lifecycle &amp; Ticking</h2>
+                <p>Entities participate in the world's tick loop through ECS systems. The lifecycle follows a well-defined sequence from spawn to removal.</p>
+
+<div class="diagram">Entity Lifecycle
+ ┌──────────────────────────────────────────────────────────┐
+ │ 1. Holder Creation                                       │
+ │    EntityStore.REGISTRY.newHolder()                      │
+ │    + addComponent() for each required component          │
+ ├──────────────────────────────────────────────────────────┤
+ │ 2. Store Addition                                        │
+ │    store.addEntity(holder, AddReason.SPAWN)              │
+ │    &rarr; HolderSystem.onEntityAdd() callbacks fire         │
+ │    &rarr; NetworkId assigned (if BlockEntitySetupSystem)    │
+ │    &rarr; BoundingBox created from block type hitbox        │
+ │    &rarr; Returns Ref&lt;EntityStore&gt;                         │
+ ├──────────────────────────────────────────────────────────┤
+ │ 3. Active Phase (per-tick)                               │
+ │    &rarr; EntityTickingSystem.tick() for matching archetypes│
+ │    &rarr; Physics (Velocity + TransformComponent)           │
+ │    &rarr; Entity tracker visibility updates                 │
+ │    &rarr; Nameplate / model sync to viewers                │
+ │    &rarr; DespawnComponent timer check                     │
+ ├──────────────────────────────────────────────────────────┤
+ │ 4. Removal                                               │
+ │    store.removeEntity(ref, RemoveReason.REMOVE)          │
+ │    &rarr; HolderSystem.onEntityRemoved() callbacks fire    │
+ │    &rarr; Ref is invalidated (index = MIN_VALUE)           │
+ │    &rarr; EntityRemoveEvent dispatched (legacy)            │
+ └──────────────────────────────────────────────────────────┘
+</div>
+
+                <h3>Frozen Component</h3>
+                <p>The <span class="type">Frozen</span> singleton component (<code>Frozen.get()</code>) can be attached to any entity to suspend its ticking. Systems that respect this component will skip the entity in their tick loops. This is commonly used during cutscenes, dialogues, or server pauses.</p>
+
+                <pre><code><span class="comment">// Freeze an entity</span>
+<span class="field">commandBuffer</span>.<span class="fn">putComponent</span>(<span class="field">ref</span>,
+    <span class="type">Frozen</span>.<span class="fn">getComponentType</span>(), <span class="type">Frozen</span>.<span class="fn">get</span>());
+
+<span class="comment">// Unfreeze an entity</span>
+<span class="field">commandBuffer</span>.<span class="fn">tryRemoveComponent</span>(<span class="field">ref</span>,
+    <span class="type">Frozen</span>.<span class="fn">getComponentType</span>());</code></pre>
+
+                <h3>EntitySnapshot</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity</code></p>
+                <p>A lightweight data class storing a snapshot of an entity's position and body rotation at a point in time. Used by the snapshot buffer system for lag compensation and interpolation.</p>
+
+                <pre><code><span class="type">EntitySnapshot</span> <span class="field">snapshot</span> = <span class="kw">new</span> <span class="type">EntitySnapshot</span>(
+    <span class="field">position</span>,       <span class="comment">// Vector3d</span>
+    <span class="field">bodyRotation</span>    <span class="comment">// Vector3f</span>
+);
+<span class="type">Vector3d</span> <span class="field">pos</span> = <span class="field">snapshot</span>.<span class="fn">getPosition</span>();
+<span class="type">Vector3f</span> <span class="field">rot</span> = <span class="field">snapshot</span>.<span class="fn">getBodyRotation</span>();</code></pre>
+            </section>
+
+            <section id="additional-components">
+                <h2>Additional Entity Components</h2>
+                <p>Beyond the core components covered above, entities can be composed with many additional components. Here is a catalog of notable ones:</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Component</th><th>Package</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">Invulnerable</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Singleton marker preventing all damage. Auto-added in Creative mode.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">RespondToHit</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Singleton marker enabling hit response animations in Creative mode.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HeadRotation</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Separate head rotation independent of body rotation.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ActiveAnimationComponent</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Tracks currently playing animations.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">AudioComponent</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Spatial audio source attached to the entity.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">DynamicLight</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Light emission from the entity (e.g. torches, magic effects).</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">CollisionResultComponent</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Stores collision check results for physics processing.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">MovementStatesComponent</span></td>
+                            <td><code>entity.movement</code></td>
+                            <td>Tracks movement flags: onGround, swimming, flying, climbing, gliding.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">KnockbackComponent</span></td>
+                            <td><code>entity.knockback</code></td>
+                            <td>Stores pending knockback forces to be applied.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">EffectControllerComponent</span></td>
+                            <td><code>entity.effect</code></td>
+                            <td>Manages active status effects on the entity.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ProjectileComponent</span></td>
+                            <td><code>entity.entities</code></td>
+                            <td>Marks an entity as a projectile with flight physics.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">PropComponent</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Marks an entity as a static prop placed from world generation.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">FromWorldGen</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Tags entities that were spawned by the world generator.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HiddenFromAdventurePlayers</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Hides the entity from players in Adventure mode.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">SnapshotBuffer</span></td>
+                            <td><code>modules.entity.component</code></td>
+                            <td>Ring buffer of <span class="type">EntitySnapshot</span> for lag compensation.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="damage-death">
+                <h2>Damage Sources &amp; Death Detection</h2>
+                <p>For comprehensive damage handling, see the <a href="combat.html">Damage &amp; Combat</a> page. Here is a summary of how to detect entity death and identify the killer.</p>
+
+                <h3>Death Detection via KillFeedEvent</h3>
+                <pre><code><span class="field">plugin</span>.<span class="fn">getEventRegistry</span>().<span class="fn">registerSystem</span>(
+    <span class="type">KillFeedEvent</span>.<span class="type">Display</span>.<span class="kw">class</span>,
+    (<span class="field">victimRef</span>, <span class="field">event</span>, <span class="field">accessor</span>) -> {
         <span class="comment">// victimRef IS the entity that died</span>
 
-        <span class="comment">// Check if NPC</span>
-        NPCEntity npc = accessor.getComponent(victimRef, NPCEntity.getComponentType());
+        <span class="comment">// Check if it was an NPC</span>
+        <span class="type">NPCEntity</span> <span class="field">npc</span> = <span class="field">accessor</span>.<span class="fn">getComponent</span>(
+            <span class="field">victimRef</span>, <span class="type">NPCEntity</span>.<span class="fn">getComponentType</span>());
 
-        <span class="comment">// Get victim UUID</span>
-        UUIDComponent uuid = accessor.getComponent(victimRef, UUIDComponent.getComponentType());
+        <span class="comment">// Get the damage source to find the killer</span>
+        <span class="type">Damage</span> <span class="field">damage</span> = <span class="field">event</span>.<span class="fn">getDamage</span>();
+        <span class="type">Damage</span>.<span class="type">Source</span> <span class="field">source</span> = <span class="field">damage</span>.<span class="fn">getSource</span>();
 
-        <span class="comment">// Get killer</span>
-        Damage damage = event.getDamage();
-        Damage.Source source = damage.getSource();
-
-        <span class="keyword">if</span> (source <span class="keyword">instanceof</span> Damage.EntitySource entitySource) {
-            Ref&lt;EntityStore&gt; killerRef = entitySource.getRef();
-            PlayerRef killer = accessor.getComponent(killerRef, PlayerRef.getComponentType());
+        <span class="kw">if</span> (<span class="field">source</span> <span class="kw">instanceof</span> <span class="type">Damage</span>.<span class="type">EntitySource</span> <span class="field">entitySource</span>) {
+            <span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">killerRef</span> = <span class="field">entitySource</span>.<span class="fn">getRef</span>();
         }
     }
 );</code></pre>
 
-            <div class="danger-box">
-                <strong>Danger:</strong> KillFeedEvent.Display is an EcsEvent. Using registerGlobal() will compile but silently fail. Use registerSystem().
-            </div>
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p><span class="type">KillFeedEvent.Display</span> is an <strong>EcsEvent</strong>. You must register it with <code>registerSystem()</code>, not <code>registerGlobal()</code>. Using <code>registerGlobal()</code> will compile but silently fail to receive events.</p>
+                </div>
 
-            <h2>Damage Sources</h2>
-            <p>Different damage sources are represented by these types:</p>
+                <h3>Damage Source Types</h3>
+                <table>
+                    <thead>
+                        <tr><th>Source Type</th><th>Description</th><th>Key Method</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">Damage.EntitySource</span></td><td>Killed by another entity</td><td><code><span class="fn">getRef</span>()</code></td></tr>
+                        <tr><td><span class="type">Damage.ProjectileSource</span></td><td>Killed by projectile (extends EntitySource)</td><td><code><span class="fn">getProjectile</span>()</code></td></tr>
+                        <tr><td><span class="type">Damage.EnvironmentSource</span></td><td>Fall damage, fire, drowning, etc.</td><td>&mdash;</td></tr>
+                        <tr><td><span class="type">Damage.CommandSource</span></td><td>Killed via command (/kill)</td><td>&mdash;</td></tr>
+                        <tr><td><span class="type">Damage.NULL_SOURCE</span></td><td>Unknown or unspecified source</td><td>&mdash;</td></tr>
+                    </tbody>
+                </table>
+            </section>
 
-            <table class="component-table">
-                <thead>
-                    <tr>
-                        <th>Source Type</th>
-                        <th>Description</th>
-                        <th>Key Method</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Damage.EntitySource</td>
-                        <td>Killed by entity</td>
-                        <td>getRef()</td>
-                    </tr>
-                    <tr>
-                        <td>Damage.ProjectileSource</td>
-                        <td>Killed by projectile (extends EntitySource)</td>
-                        <td>getProjectile()</td>
-                    </tr>
-                    <tr>
-                        <td>Damage.EnvironmentSource</td>
-                        <td>Fall, fire, etc.</td>
-                        <td>—</td>
-                    </tr>
-                    <tr>
-                        <td>Damage.CommandSource</td>
-                        <td>Killed by command</td>
-                        <td>—</td>
-                    </tr>
-                    <tr>
-                        <td>Damage.NULL_SOURCE</td>
-                        <td>Unknown</td>
-                        <td>—</td>
-                    </tr>
-                </tbody>
-            </table>
+            <section id="spawning-npcs">
+                <h2>Spawning NPCs</h2>
+                <p>NPCs are spawned through the <span class="type">NPCPlugin</span> API, which handles model assignment, role-based configuration, and pre/post-spawn hooks. For detailed NPC AI and behavior, see the <a href="npc.html">NPC &amp; AI</a> page.</p>
 
-            <h2>Entity Visibility Flow</h2>
-            <ol>
-                <li>Entity needs <code>NetworkId</code> + <code>ModelComponent</code> → entity tracker registers it</li>
-                <li>Tracker auto-adds <code>Visible</code> component when players are nearby</li>
-                <li>View distance: <code>playerViewRadius * 32</code> blocks (default ~192 blocks)</li>
-                <li><code>NameplateSystems</code> sends floating text for entities with <code>Visible</code> + <code>Nameplate</code></li>
-                <li>LOD culler checks Model's bounding box → removes <code>Visible</code> if too small for distance</li>
-            </ol>
+                <pre><code><span class="comment">// Get the role index for a creature type</span>
+<span class="kw">int</span> <span class="field">roleIndex</span> = <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">getIndex</span>(<span class="str">"Zombie"</span>);
 
-            <h2>Getting UUID from Entity</h2>
+<span class="comment">// Spawn with default model</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>().<span class="fn">getStore</span>();
+<span class="type">Pair</span>&lt;<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt;, <span class="type">NPCEntity</span>&gt; <span class="field">result</span> =
+    <span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnEntity</span>(
+        <span class="field">store</span>,
+        <span class="field">roleIndex</span>,
+        <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="num">100</span>, <span class="num">70</span>, <span class="num">100</span>),  <span class="comment">// position</span>
+        <span class="kw">new</span> <span class="type">Vector3f</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>),       <span class="comment">// rotation</span>
+        <span class="kw">null</span>,                         <span class="comment">// model (null = role default)</span>
+        <span class="kw">null</span>                          <span class="comment">// post-spawn callback</span>
+    );
 
-            <pre><code class="language-java">UUIDComponent uuidComp = store.getComponent(entityRef, UUIDComponent.getComponentType());
-UUID uuid = uuidComp.getUuid();</code></pre>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">npcRef</span> = <span class="field">result</span>.<span class="fn">first</span>();
+<span class="type">NPCEntity</span> <span class="field">npc</span> = <span class="field">result</span>.<span class="fn">second</span>();
 
-            <div class="info-box">
-                <strong>Note:</strong> NPCEntity does NOT have a getUuid() method. Use UUIDComponent instead.
-            </div>
+<span class="comment">// Advanced: with pre-add and post-add hooks</span>
+<span class="type">NPCPlugin</span>.<span class="fn">get</span>().<span class="fn">spawnEntity</span>(<span class="field">store</span>, <span class="field">roleIndex</span>, <span class="field">position</span>, <span class="field">rotation</span>, <span class="field">model</span>,
+    (<span class="field">npc</span>, <span class="field">holder</span>, <span class="field">store</span>) -> {
+        <span class="comment">// Pre-add: modify holder before entity enters the world</span>
+        <span class="field">holder</span>.<span class="fn">addComponent</span>(<span class="type">Nameplate</span>.<span class="fn">getComponentType</span>(),
+            <span class="kw">new</span> <span class="type">Nameplate</span>(<span class="str">"Boss Zombie"</span>));
+    },
+    (<span class="field">npc</span>, <span class="field">ref</span>, <span class="field">store</span>) -> {
+        <span class="comment">// Post-spawn: entity is now in the world with a valid Ref</span>
+    }
+);</code></pre>
+            </section>
+
+            <section id="thread-safety">
+                <h2>Thread Safety</h2>
+                <p>Entity operations have strict threading requirements:</p>
+                <ul>
+                    <li><strong>Entity spawning and removal</strong> must be performed on the <strong>world's tick thread</strong>. Use <code>world.execute(() -&gt; { ... })</code> to queue operations from other threads.</li>
+                    <li><strong>Component reads</strong> via <code>store.getComponent()</code> are safe from any thread but may return stale data if not on the tick thread.</li>
+                    <li><strong>Component writes</strong> should use <span class="type">CommandBuffer</span> in ECS system callbacks for deferred, safe mutation.</li>
+                    <li>The legacy <code>Entity.getTransformComponent()</code> logs a warning if called off the tick thread and falls back to a cached value.</li>
+                    <li><span class="type">Holder</span> and <span class="type">Visible</span> use <span class="type">StampedLock</span> for thread-safe internal state.</li>
+                    <li><code>Entity.remove()</code> uses <span class="type">AtomicBoolean</span> to guarantee exactly-once removal semantics.</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Threading Rule</div>
+                    <p>Always spawn and remove entities on the world's tick thread. The <code>Entity.remove()</code> method includes <code>world.debugAssertInTickingThread()</code> which will throw in debug builds if called from the wrong thread. For player removal, <span class="type">Player.remove()</span> explicitly dispatches to the world thread when called asynchronously.</p>
+                </div>
+            </section>
+
+            <section id="entity-store">
+                <h2>EntityStore &amp; World Integration</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.storage</code></p>
+                <p>The <span class="type">EntityStore</span> is the world-scoped container for all entity data. It wraps a <code>Store&lt;EntityStore&gt;</code> (the ECS store) and provides utility methods for network ID allocation and world access.</p>
+
+                <pre><code><span class="comment">// Access the entity store from a world</span>
+<span class="type">EntityStore</span> <span class="field">entityStore</span> = <span class="field">world</span>.<span class="fn">getEntityStore</span>();
+
+<span class="comment">// The underlying ECS store</span>
+<span class="type">Store</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">store</span> = <span class="field">entityStore</span>.<span class="fn">getStore</span>();
+
+<span class="comment">// Allocate a unique network ID</span>
+<span class="kw">int</span> <span class="field">networkId</span> = <span class="field">entityStore</span>.<span class="fn">takeNextNetworkId</span>();
+
+<span class="comment">// The global component registry for entity types</span>
+<span class="type">ComponentRegistry</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">registry</span> = <span class="type">EntityStore</span>.REGISTRY;
+
+<span class="comment">// Get the world from inside an ECS system</span>
+<span class="type">World</span> <span class="field">world</span> = ((<span class="type">EntityStore</span>) <span class="field">componentAccessor</span>.<span class="fn">getExternalData</span>()).<span class="fn">getWorld</span>();</code></pre>
+
+                <div class="info-box note">
+                    <div class="label">Key Pattern</div>
+                    <p>Inside ECS system callbacks, the <code>ComponentAccessor</code>&rsquo;s external data is always the <span class="type">EntityStore</span> instance. Cast it to access the <span class="type">World</span>: <code>((EntityStore) accessor.getExternalData()).getWorld()</code>.</p>
+                </div>
+            </section>
+
         </div>
     </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

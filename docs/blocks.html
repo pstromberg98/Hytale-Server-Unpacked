@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blocks - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html" class="active">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <nav class="page-toc"></nav>
+        <div class="content">
+            <h1>Blocks</h1>
+            <p class="page-desc">How blocks work, their storage hierarchy, palette compression, ECS integration, events, and ticking.</p>
+
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Blocks are the fundamental building units of the Hytale world. They are stored as compressed integer IDs in a hierarchical chunk structure, participate in the Entity Component System (ECS), and support rotation, connected textures, multi-block structures, ticking, and block-specific state.</p>
+                <p>Most blocks exist purely as integer IDs with zero per-instance overhead. Only blocks requiring persistent state (chests, furnaces, etc.) get an ECS component attached. When a block becomes a mobile object (dropped item, falling block), it transitions into a full entity in the <span class="type">EntityStore</span>.</p>
+            </section>
+
+            <section id="storage-hierarchy">
+                <h2>Storage Hierarchy</h2>
+                <p>The world stores blocks in a layered structure. Each layer adds organization and compression:</p>
+
+<div class="diagram">World
+ └─ ChunkStore (ECS component registry for all chunk data)
+     └─ WorldChunk (32&times;256&times;32 block column, manages chunk lifecycle)
+         ├─ BlockChunk (raw block grid data)
+         │    └─ BlockSection[10] (each 32&times;32&times;32 = 32,768 blocks)
+         │         ├─ chunkSection   (ISectionPalette &mdash; block type IDs)
+         │         ├─ fillerSection   (ISectionPalette &mdash; filler offsets for multi-block structures)
+         │         └─ rotationSection (ISectionPalette &mdash; rotation indices)
+         ├─ BlockComponentChunk (block entity/component references by block index)
+         ├─ EntityChunk (mobile entities within the chunk)
+         └─ ChunkColumn (deprecated container for 10 section holders)
+</div>
+
+                <h3>Coordinate Mapping</h3>
+                <ul>
+                    <li>A chunk column covers <strong>32 blocks</strong> on X and Z, and <strong>320 blocks</strong> on Y (10 sections &times; 32).</li>
+                    <li>Global coordinates map to chunk-local via <code>x &amp; 0x1F</code> / <code>z &amp; 0x1F</code>.</li>
+                    <li>Chunks are indexed with <code>ChunkUtil.indexChunkFromBlock(x, z)</code>.</li>
+                    <li>Blocks within a section are indexed with <code>ChunkUtil.indexBlock(x, y, z)</code>.</li>
+                    <li>Blocks within a column are indexed with <code>ChunkUtil.indexBlockInColumn(x, y, z)</code>.</li>
+                </ul>
+            </section>
+
+            <section id="palette-storage">
+                <h2>Palette-Based Block Storage</h2>
+                <p>Each <span class="type">BlockSection</span> stores block IDs using <strong>palette compression</strong> through <code>ISectionPalette</code> implementations. The palette maps a small set of internal indices to external block type IDs, keeping memory proportional to the number of <em>unique</em> block types rather than total block count.</p>
+
+                <h3>Palette Implementations</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.chunk.section.palette</code></p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Implementation</th>
+                            <th>Bits/Block</th>
+                            <th>Max Unique</th>
+                            <th>Array Type</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">EmptySectionPalette</span></td>
+                            <td>0</td>
+                            <td>1 (air)</td>
+                            <td>None (singleton)</td>
+                            <td>Optimized for empty sections</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">HalfByteSectionPalette</span></td>
+                            <td>4</td>
+                            <td>16</td>
+                            <td><code>byte[16384]</code> (nibble-packed)</td>
+                            <td>Demotes to Empty when all air</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ByteSectionPalette</span></td>
+                            <td>8</td>
+                            <td>256</td>
+                            <td><code>byte[32768]</code></td>
+                            <td>Demotes to HalfByte when &le;14 unique types</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">ShortSectionPalette</span></td>
+                            <td>16</td>
+                            <td>65,536</td>
+                            <td><code>short[32768]</code></td>
+                            <td>Demotes to Byte when &le;251 unique types; max level</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Automatic Promotion &amp; Demotion</h3>
+                <p>Palettes automatically transition between sizes as unique block counts change:</p>
+                <ul>
+                    <li><strong>Promotion:</strong> When <code>set()</code> returns <code>SetResult.REQUIRES_PROMOTE</code>, the palette is replaced with the next larger implementation via <code>promote()</code>.</li>
+                    <li><strong>Demotion:</strong> After each <code>set()</code>, <code>shouldDemote()</code> is checked. If the unique type count dropped below the threshold, <code>demote()</code> transitions to a smaller palette.</li>
+                    <li><span class="type">ShortSectionPalette</span> cannot promote (max level). <span class="type">EmptySectionPalette</span> cannot demote (min level).</li>
+                </ul>
+
+                <h3>ISectionPalette Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">get</span>(<span class="kw">int</span> index)</code></td>
+                            <td>Returns the external block type ID at the given index</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">SetResult</span> <span class="fn">set</span>(<span class="kw">int</span> index, <span class="kw">int</span> id)</code></td>
+                            <td>Sets a block ID. Returns <code>UNCHANGED</code>, <code>ADDED_OR_REMOVED</code>, or <code>REQUIRES_PROMOTE</code></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">ISectionPalette</span> <span class="fn">promote</span>()</code></td>
+                            <td>Transitions to a larger palette implementation</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">ISectionPalette</span> <span class="fn">demote</span>()</code></td>
+                            <td>Transitions to a smaller palette implementation</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">shouldDemote</span>()</code></td>
+                            <td>Checks if unique count is below the demotion threshold</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">contains</span>(<span class="kw">int</span> id)</code></td>
+                            <td>Checks whether a block type exists in the section</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">count</span>()</code></td>
+                            <td>Returns the number of unique block types</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">isSolid</span>(<span class="kw">int</span> id)</code></td>
+                            <td>Checks if the entire section contains only one block type</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">serializeForPacket</span>(<span class="type">ByteBuf</span> buf)</code></td>
+                            <td>Serializes for network transmission</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="core-classes">
+                <h2>Core Block Classes</h2>
+
+                <h3>BlockType &mdash; Asset Definition</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.blocktype.config</code></p>
+                <p>The central <strong>asset definition</strong> for a block. Each block type in the game (dirt, stone, chest, etc.) has a <span class="type">BlockType</span> entry in the global asset map. It defines visual, physical, and gameplay properties. <span class="type">BlockType</span> instances are shared and read-only.</p>
+
+                <h4>Key Fields</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>id</code></td><td><span class="type">String</span></td><td>Unique asset identifier (e.g. <code>"Dirt"</code>, <code>"Chest"</code>)</td></tr>
+                        <tr><td><code>item</code></td><td><span class="type">String</span></td><td>Associated item ID for inventory</td></tr>
+                        <tr><td><code>drawType</code></td><td><span class="type">DrawType</span></td><td>Rendering mode (cube, model, etc.)</td></tr>
+                        <tr><td><code>material</code></td><td><span class="type">BlockMaterial</span></td><td>Material class (Empty, solid, liquid, etc.)</td></tr>
+                        <tr><td><code>opacity</code></td><td><span class="type">Opacity</span></td><td>Transparency level</td></tr>
+                        <tr><td><code>hitbox</code></td><td><span class="type">int</span></td><td>Index into <span class="type">BlockBoundingBoxes</span> asset map</td></tr>
+                        <tr><td><code>model</code></td><td><span class="type">String</span></td><td>Custom model ID</td></tr>
+                        <tr><td><code>light</code></td><td><span class="type">ColorLight</span></td><td>Light emission data</td></tr>
+                        <tr><td><code>flags</code></td><td><span class="type">BlockFlags</span></td><td>Behavioral flags</td></tr>
+                        <tr><td><code>gathering</code></td><td><span class="type">BlockGathering</span></td><td>Tool requirements and drop tables</td></tr>
+                        <tr><td><code>placementSettings</code></td><td><span class="type">BlockPlacementSettings</span></td><td>Placement rotation modes and preview visibility</td></tr>
+                        <tr><td><code>movementSettings</code></td><td><span class="type">BlockMovementSettings</span></td><td>Solid, liquid, passthrough flags</td></tr>
+                        <tr><td><code>connectedBlockRuleSet</code></td><td><span class="type">ConnectedBlockRuleSet</span></td><td>Connected texture rules</td></tr>
+                        <tr><td><code>interactions</code></td><td><code>Map&lt;InteractionType, String&gt;</code></td><td>Available player interactions</td></tr>
+                        <tr><td><code>states</code></td><td><code>Map&lt;String, Integer&gt;</code></td><td>Named state variants (e.g. open/closed door)</td></tr>
+                    </tbody>
+                </table>
+
+                <h4>Key Methods</h4>
+                <pre><code><span class="comment">// Get the global block type registry</span>
+<span class="type">BlockTypeAssetMap</span>&lt;<span class="type">String</span>, <span class="type">BlockType</span>&gt; <span class="field">map</span> = <span class="type">BlockType</span>.<span class="fn">getAssetMap</span>();
+
+<span class="comment">// Look up a block type by string key</span>
+<span class="type">BlockType</span> <span class="field">dirt</span> = (<span class="type">BlockType</span>) <span class="field">map</span>.<span class="fn">getAsset</span>(<span class="str">"Dirt"</span>);
+
+<span class="comment">// Look up a block type by integer index</span>
+<span class="type">BlockType</span> <span class="field">block</span> = (<span class="type">BlockType</span>) <span class="field">map</span>.<span class="fn">getAsset</span>(<span class="field">blockId</span>);
+
+<span class="comment">// Get the integer index for a key</span>
+<span class="kw">int</span> <span class="field">index</span> = <span class="field">map</span>.<span class="fn">getIndex</span>(<span class="str">"Dirt"</span>);
+
+<span class="comment">// Resolve a named state variant</span>
+<span class="type">BlockType</span> <span class="field">openDoor</span> = <span class="field">doorType</span>.<span class="fn">getBlockForState</span>(<span class="str">"Open"</span>);</code></pre>
+
+                <h3>BlockState &mdash; Persistent Per-Block Data (Deprecated)</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.meta</code></p>
+                <p>An abstract class representing <strong>persistent, per-block state data</strong> &mdash; for example, the inventory contents of a chest or the progress of a furnace. Implements <code>Component&lt;ChunkStore&gt;</code>, stored in the chunk's ECS store.</p>
+
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>Most blocks do NOT have a <span class="type">BlockState</span>. Only blocks whose <span class="type">BlockType</span> defines a <code>StateData</code> ID get one. This keeps the common case (plain blocks) extremely lightweight.</p>
+                </div>
+
+                <h4>Key Methods</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">initialize</span>(<span class="type">BlockType</span>)</code></td>
+                            <td>Called on creation/load. Return <code>false</code> to discard.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">onUnload</span>()</code></td>
+                            <td>Called when the owning chunk is unloaded.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getIndex</span>()</code></td>
+                            <td>Returns <code>ChunkUtil.indexBlockInColumn(x, y, z)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">BlockType</span> <span class="fn">getBlockType</span>()</code></td>
+                            <td>Resolves the block type at this position from the chunk.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">markNeedsSave</span>()</code></td>
+                            <td>Flags the chunk as dirty for persistence.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">BsonDocument</span> <span class="fn">saveToDocument</span>()</code></td>
+                            <td>Serializes to BSON via codec.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">BlockState</span> <span class="fn">load</span>(...)</code></td>
+                            <td>Deserializes and initializes a <span class="type">BlockState</span> from BSON.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">static</span> <span class="type">BlockState</span> <span class="fn">ensureState</span>(...)</code></td>
+                            <td>Creates a <span class="type">BlockState</span> if the block type defines one.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>BlockEntity &mdash; Block as Mobile Entity</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.entity.entities</code></p>
+                <p>Represents a block <strong>as a mobile entity</strong> in the world &mdash; for example, a dropped block item or a falling block. Implements <code>Component&lt;EntityStore&gt;</code> (stored in the <em>entity</em> store, not the chunk store).</p>
+
+                <h4>Default Assembly</h4>
+                <p><code>BlockEntity.assembleDefaultBlockEntity()</code> creates a complete entity holder with these components:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">BlockEntity</span></td><td>Block type key reference</td></tr>
+                        <tr><td><span class="type">DespawnComponent</span></td><td>Auto-removal after 120 seconds</td></tr>
+                        <tr><td><span class="type">TransformComponent</span></td><td>Position and facing direction</td></tr>
+                        <tr><td><span class="type">Velocity</span></td><td>Physics velocity</td></tr>
+                        <tr><td><span class="type">UUIDComponent</span></td><td>Unique identifier for tracking</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code><span class="comment">// Create a dropped block entity</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">holder</span> = <span class="type">BlockEntity</span>.<span class="fn">assembleDefaultBlockEntity</span>(
+    <span class="field">timeResource</span>,
+    <span class="str">"Dirt"</span>,
+    <span class="kw">new</span> <span class="type">Vector3d</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>)
+);
+
+<span class="comment">// Add to world</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; <span class="field">ref</span> = <span class="field">store</span>.<span class="fn">addEntity</span>(<span class="field">holder</span>, <span class="type">AddReason</span>.SPAWN);
+
+<span class="comment">// Apply force to the entity</span>
+<span class="type">BlockEntity</span> <span class="field">blockEntity</span> = <span class="field">store</span>.<span class="fn">getComponent</span>(<span class="field">ref</span>, <span class="type">BlockEntity</span>.<span class="fn">getComponentType</span>());
+<span class="field">blockEntity</span>.<span class="fn">addForce</span>(<span class="num">0f</span>, <span class="num">5f</span>, <span class="num">0f</span>);</code></pre>
+            </section>
+
+            <section id="ecs-relationship">
+                <h2>Blocks, Entities &amp; Components</h2>
+                <p>Hytale uses an ECS architecture with <strong>two distinct stores</strong> for block-related data:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Store</th>
+                            <th>Purpose</th>
+                            <th>Key Components</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">ChunkStore</span></td>
+                            <td>Chunk-scoped data (block grids, block states, sections)</td>
+                            <td><span class="type">BlockSection</span>, <span class="type">BlockState</span>, <span class="type">WorldChunk</span>, <span class="type">ChunkColumn</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">EntityStore</span></td>
+                            <td>World-scoped mobile entities</td>
+                            <td><span class="type">BlockEntity</span>, <span class="type">TransformComponent</span>, <span class="type">Velocity</span>, <span class="type">BoundingBox</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+<div class="diagram">┌───────────────────────────────────────────────────┐
+│                    BlockType                      │  Asset definition (shared, read-only)
+│    id, material, hitbox, gathering, etc.          │
+└──────────────┬─────────────────────┬──────────────┘
+               │                     │
+       ┌───────▼───────┐     ┌───────▼───────┐
+       │  Block Grid   │     │  BlockEntity  │
+       │  (ChunkStore) │     │ (EntityStore) │
+       ├───────────────┤     ├───────────────┤
+       │ BlockSection  │     │ blockTypeKey  │
+       │  palette ID   │     │ physics       │
+       │  rotation     │     │ velocity      │
+       │  filler       │     │ boundingBox   │
+       │               │     │ transform     │
+       │ BlockState?   │     │ despawn       │
+       │  (optional)   │     │ uuid          │
+       └───────────────┘     └───────────────┘
+</div>
+
+                <p><strong>Blocks as grid data (ChunkStore):</strong> Most blocks exist purely as integer IDs in the <span class="type">BlockSection</span> palette with zero per-instance component overhead. Only blocks requiring persistent state (chests, furnaces) get a <span class="type">BlockState</span> component via <span class="type">BlockComponentChunk</span>, which maps block indices to ECS <code>Holder&lt;ChunkStore&gt;</code> references.</p>
+
+                <p><strong>Blocks as entities (EntityStore):</strong> When a block becomes a mobile object (dropped item, falling block), a <span class="type">BlockEntity</span> component is created in the <span class="type">EntityStore</span> along with <span class="type">TransformComponent</span>, <span class="type">Velocity</span>, <span class="type">BoundingBox</span>, <span class="type">DespawnComponent</span>, and <span class="type">UUIDComponent</span>. This entity is fully independent of the chunk grid.</p>
+            </section>
+
+            <section id="block-section">
+                <h2>BlockSection</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.chunk.section</code></p>
+                <p>A <span class="type">BlockSection</span> is a <strong>32&times;32&times;32</strong> cube of blocks within a chunk. It implements <code>Component&lt;ChunkStore&gt;</code> and is the primary unit of block data storage. Each section maintains three separate palettes and its own lighting, ticking, and change-tracking data.</p>
+
+                <h3>Internal Data</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>chunkSection</code></td><td><span class="type">ISectionPalette</span></td><td>Block type IDs</td></tr>
+                        <tr><td><code>fillerSection</code></td><td><span class="type">ISectionPalette</span></td><td>Filler data for multi-block structures</td></tr>
+                        <tr><td><code>rotationSection</code></td><td><span class="type">ISectionPalette</span></td><td>Rotation indices</td></tr>
+                        <tr><td><code>localLight</code></td><td><span class="type">ChunkLightData</span></td><td>Block-emitted lighting</td></tr>
+                        <tr><td><code>globalLight</code></td><td><span class="type">ChunkLightData</span></td><td>Sky/global lighting</td></tr>
+                        <tr><td><code>tickingBlocks</code></td><td><span class="type">BitSet</span></td><td>Blocks requiring tick updates</td></tr>
+                        <tr><td><code>changedPositions</code></td><td><span class="type">IntOpenHashSet</span></td><td>Positions modified since last network sync</td></tr>
+                        <tr><td><code>chunkSectionLock</code></td><td><span class="type">StampedLock</span></td><td>Thread-safety lock</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">get</span>(<span class="kw">int</span> x, <span class="kw">int</span> y, <span class="kw">int</span> z)</code></td>
+                            <td>Returns the block type ID at a position</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">set</span>(<span class="kw">int</span> idx, <span class="kw">int</span> blockId, <span class="kw">int</span> rotation, <span class="kw">int</span> filler)</code></td>
+                            <td>Sets block data atomically, handles palette promotion/demotion</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getFiller</span>(<span class="kw">int</span> x, <span class="kw">int</span> y, <span class="kw">int</span> z)</code></td>
+                            <td>Returns the filler offset at a position</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">int</span> <span class="fn">getRotationIndex</span>(<span class="kw">int</span> x, <span class="kw">int</span> y, <span class="kw">int</span> z)</code></td>
+                            <td>Returns the rotation index at a position</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">setTicking</span>(<span class="kw">int</span> idx, <span class="kw">boolean</span> ticking)</code></td>
+                            <td>Marks a block for tick updates</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">scheduleTick</span>(<span class="kw">int</span> index, <span class="type">Instant</span> gameTime)</code></td>
+                            <td>Schedules a future tick via priority queue</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">IntOpenHashSet</span> <span class="fn">getAndClearChangedPositions</span>()</code></td>
+                            <td>Atomically returns and clears changed positions for network delta sync</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">boolean</span> <span class="fn">isSolidAir</span>()</code></td>
+                            <td>Returns true if the entire section is air (optimizes packet skipping)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="block-accessor">
+                <h2>BlockAccessor Interface</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.accessor</code></p>
+                <p>The primary interface for reading and writing block data. <span class="type">WorldChunk</span> implements this. All other <code>setBlock</code> overloads delegate to the core setter.</p>
+
+                <h3>Reading Blocks</h3>
+                <pre><code><span class="comment">// Get block type ID (integer)</span>
+<span class="kw">int</span> <span class="field">blockId</span> = <span class="field">chunk</span>.<span class="fn">getBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+
+<span class="comment">// Get BlockType asset from ID</span>
+<span class="type">BlockType</span> <span class="field">blockType</span> = <span class="field">chunk</span>.<span class="fn">getBlockType</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+
+<span class="comment">// Get rotation</span>
+<span class="kw">int</span> <span class="field">rotationIndex</span> = <span class="field">chunk</span>.<span class="fn">getRotationIndex</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+<span class="type">RotationTuple</span> <span class="field">rotation</span> = <span class="field">chunk</span>.<span class="fn">getRotation</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+
+<span class="comment">// Get filler offset for multi-block structures</span>
+<span class="kw">int</span> <span class="field">filler</span> = <span class="field">chunk</span>.<span class="fn">getFiller</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+
+<span class="comment">// Get block state (if any)</span>
+<span class="type">BlockState</span> <span class="field">state</span> = <span class="field">chunk</span>.<span class="fn">getState</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);</code></pre>
+
+                <h3>Writing Blocks</h3>
+                <pre><code><span class="comment">// Set by string key</span>
+<span class="field">chunk</span>.<span class="fn">setBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="str">"Dirt"</span>);
+
+<span class="comment">// Set by BlockType reference</span>
+<span class="field">chunk</span>.<span class="fn">setBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">dirtBlockType</span>);
+
+<span class="comment">// Set by integer ID</span>
+<span class="field">chunk</span>.<span class="fn">setBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">blockId</span>);
+
+<span class="comment">// Break a block (sets to air, handles filler offsets)</span>
+<span class="field">chunk</span>.<span class="fn">breakBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>);
+
+<span class="comment">// Place with rotation and validation</span>
+<span class="field">chunk</span>.<span class="fn">placeBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="str">"Door"</span>, <span class="type">Rotation</span>.Ninety, <span class="type">Rotation</span>.None, <span class="type">Rotation</span>.None);
+
+<span class="comment">// Test if a block can be placed</span>
+<span class="kw">boolean</span> <span class="field">canPlace</span> = <span class="field">chunk</span>.<span class="fn">testPlaceBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">blockType</span>, <span class="field">rotationIndex</span>);
+
+<span class="comment">// Transition block interaction state (e.g. open a door)</span>
+<span class="field">chunk</span>.<span class="fn">setBlockInteractionState</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="field">blockType</span>, <span class="str">"Open"</span>, <span class="kw">false</span>);</code></pre>
+
+                <h3>Settings Bitmask Flags</h3>
+                <p>The <code>settings</code> parameter on <code>setBlock</code> and <code>breakBlock</code> controls side effects:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bit</th>
+                            <th>Hex</th>
+                            <th>Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td><code>0x2</code></td><td>Silent placement (suppresses sound/particles)</td></tr>
+                        <tr><td>4</td><td><code>0x10</code></td><td>Filler override (skip filler offset adjustment on break)</td></tr>
+                        <tr><td>8</td><td><code>0x100</code></td><td>Network update suppression</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="block-events">
+                <h2>Block Events</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.event.events.ecs</code></p>
+                <p>Block interactions fire events through the <span class="type">EventBus</span>. All cancellable events extend <span class="type">CancellableEcsEvent</span>.</p>
+
+                <h3>PlaceBlockEvent</h3>
+                <p>Fired when a block is placed.</p>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">Vector3i</span> <span class="fn">getTargetBlock</span>()</code></td><td>Block position (mutable via setter)</td></tr>
+                        <tr><td><code><span class="type">RotationTuple</span> <span class="fn">getRotation</span>()</code></td><td>Placement rotation (mutable via setter)</td></tr>
+                        <tr><td><code><span class="type">ItemStack</span> <span class="fn">getItemInHand</span>()</code></td><td>Item used to place (nullable)</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span>)</code></td><td>Prevents placement</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>BreakBlockEvent</h3>
+                <p>Fired when a block is broken.</p>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">BlockType</span> <span class="fn">getBlockType</span>()</code></td><td>Block type being broken (immutable)</td></tr>
+                        <tr><td><code><span class="type">Vector3i</span> <span class="fn">getTargetBlock</span>()</code></td><td>Block position (mutable via setter)</td></tr>
+                        <tr><td><code><span class="type">ItemStack</span> <span class="fn">getItemInHand</span>()</code></td><td>Item used to break (nullable)</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span>)</code></td><td>Prevents breaking</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>DamageBlockEvent</h3>
+                <p>Fired each tick while a player is mining a block.</p>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">BlockType</span> <span class="fn">getBlockType</span>()</code></td><td>Block type being damaged (immutable)</td></tr>
+                        <tr><td><code><span class="kw">float</span> <span class="fn">getCurrentDamage</span>()</code></td><td>Cumulative damage before this tick</td></tr>
+                        <tr><td><code><span class="kw">float</span> <span class="fn">getDamage</span>()</code></td><td>Damage being applied this tick</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">setDamage</span>(<span class="kw">float</span>)</code></td><td>Modify the damage amount</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span>)</code></td><td>Prevents this tick's damage</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>UseBlockEvent.Pre / UseBlockEvent.Post</h3>
+                <p>Fired before and after a player interacts with a block (e.g. opening a chest).</p>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="type">InteractionType</span> <span class="fn">getInteractionType</span>()</code></td><td>Type of interaction</td></tr>
+                        <tr><td><code><span class="type">InteractionContext</span> <span class="fn">getContext</span>()</code></td><td>Interaction context</td></tr>
+                        <tr><td><code><span class="type">BlockType</span> <span class="fn">getBlockType</span>()</code></td><td>Block being used</td></tr>
+                        <tr><td><code><span class="type">Vector3i</span> <span class="fn">getTargetBlock</span>()</code></td><td>Block position</td></tr>
+                        <tr><td><code><span class="kw">void</span> <span class="fn">setCancelled</span>(<span class="kw">boolean</span>)</code></td><td>Pre only &mdash; prevents the interaction</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Block events are <strong>EcsEvents</strong>. You must register them with <code>registerSystem()</code>, not <code>registerGlobal()</code>. Using <code>registerGlobal()</code> will compile but silently fail.</p>
+                </div>
+            </section>
+
+            <section id="block-ticking">
+                <h2>Block Ticking</h2>
+                <p>Blocks that require periodic updates (crops, redstone, etc.) use the tick system managed by <span class="type">BlockSection</span>. The tick cycle operates in phases:</p>
+
+                <ol>
+                    <li><strong>Mark:</strong> <code>setTicking(index, true)</code> marks a block for the next tick cycle.</li>
+                    <li><strong>Schedule:</strong> <code>scheduleTick(index, gameTime)</code> queues a tick for a future time (priority queue sorted by <span class="type">Instant</span>).</li>
+                    <li><strong>Pre-tick:</strong> <code>preTick(gameTime)</code> dequeues scheduled ticks whose time has arrived and copies the ticking set for safe iteration.</li>
+                    <li><strong>Execute:</strong> <code>forEachTicking(...)</code> iterates over ticking blocks and executes a <span class="type">BlockTickStrategy</span> callback.</li>
+                </ol>
+
+                <h3>Tick Strategy Results</h3>
+                <table>
+                    <thead>
+                        <tr><th>Strategy</th><th>Effect</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>CONTINUE</code></td><td>Re-mark the block for the next tick cycle</td></tr>
+                        <tr><td><code>STOP</code></td><td>Done ticking, block is removed from the set</td></tr>
+                        <tr><td><code>WAIT_FOR_ADJACENT_CHUNK_LOAD</code></td><td>Defer until neighboring chunks are loaded, then re-tick</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="block-rotation">
+                <h2>Block Rotation</h2>
+                <p>Blocks support rotation via a <span class="type">RotationTuple</span> composed of yaw, pitch, and roll values, each being a <span class="type">Rotation</span> enum (<code>None</code>, <code>Ninety</code>, <code>OneEighty</code>, <code>TwoSeventy</code>). The tuple is stored as a single integer index in the <code>rotationSection</code> palette.</p>
+
+                <pre><code><span class="comment">// Create a rotation tuple</span>
+<span class="type">RotationTuple</span> <span class="field">rot</span> = <span class="type">RotationTuple</span>.<span class="fn">of</span>(<span class="type">Rotation</span>.Ninety, <span class="type">Rotation</span>.None, <span class="type">Rotation</span>.None);
+
+<span class="comment">// Get the integer index for storage</span>
+<span class="kw">int</span> <span class="field">index</span> = <span class="field">rot</span>.<span class="fn">index</span>();
+
+<span class="comment">// Resolve an index back to a tuple</span>
+<span class="type">RotationTuple</span> <span class="field">resolved</span> = <span class="type">RotationTuple</span>.<span class="fn">get</span>(<span class="field">index</span>);</code></pre>
+
+                <p><span class="type">BlockType</span> can define a <code>rotationYawPlacementOffset</code> that is automatically applied when the block is placed.</p>
+            </section>
+
+            <section id="filler-blocks">
+                <h2>Multi-Block Structures (Filler Blocks)</h2>
+                <p>Blocks larger than 1&times;1&times;1 (doors, beds, multi-tile furniture) use a <strong>filler system</strong>. The primary block occupies one position, and surrounding positions are filled with filler references that encode a 3D offset back to the primary block.</p>
+
+                <pre><code><span class="comment">// Pack a 3D offset into a single integer</span>
+<span class="kw">int</span> <span class="field">filler</span> = <span class="type">FillerBlockUtil</span>.<span class="fn">pack</span>(<span class="field">offsetX</span>, <span class="field">offsetY</span>, <span class="field">offsetZ</span>);
+
+<span class="comment">// Extract offset components</span>
+<span class="kw">int</span> <span class="field">dx</span> = <span class="type">FillerBlockUtil</span>.<span class="fn">unpackX</span>(<span class="field">filler</span>);
+<span class="kw">int</span> <span class="field">dy</span> = <span class="type">FillerBlockUtil</span>.<span class="fn">unpackY</span>(<span class="field">filler</span>);
+<span class="kw">int</span> <span class="field">dz</span> = <span class="type">FillerBlockUtil</span>.<span class="fn">unpackZ</span>(<span class="field">filler</span>);</code></pre>
+
+                <ul>
+                    <li>Filler data is stored in the <code>fillerSection</code> palette of <span class="type">BlockSection</span>.</li>
+                    <li>When breaking a filler block, the offset is subtracted from the position to find the primary block, which is then removed.</li>
+                    <li>The <code>0x10</code> settings flag skips filler offset adjustment on <code>breakBlock()</code>.</li>
+                </ul>
+            </section>
+
+            <section id="thread-safety">
+                <h2>Thread Safety</h2>
+                <p><span class="type">BlockSection</span> uses a <span class="type">StampedLock</span> to protect all palette access:</p>
+
+                <ul>
+                    <li><strong>Reads</strong> attempt an optimistic read first (<code>tryOptimisticRead</code>), falling back to a read lock if validation fails. This allows concurrent reads with zero contention in the common case.</li>
+                    <li><strong>Writes</strong> always acquire a write lock.</li>
+                    <li><strong>Changed positions</strong> are tracked in an <span class="type">IntOpenHashSet</span> that is atomically swapped via <code>getAndClearChangedPositions()</code> for network delta sync.</li>
+                    <li><span class="type">WorldChunk</span> uses a separate <span class="type">StampedLock</span> for its lifecycle flags.</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Threading Rule</div>
+                    <p>While <span class="type">BlockSection</span> read methods are thread-safe via optimistic locking, block <em>modifications</em> (setBlock, breakBlock, placeBlock) should be performed on the <strong>world's tick thread</strong>. Use <code>world.execute()</code> to queue block modifications from other threads.</p>
+                </div>
+            </section>
+
+            <section id="worldchunk">
+                <h2>WorldChunk</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.chunk</code></p>
+                <p>The top-level chunk class that implements both <span class="type">BlockAccessor</span> and <code>Component&lt;ChunkStore&gt;</code>. It ties together block storage, block components, entities, and chunk lifecycle.</p>
+
+                <h3>Key Fields</h3>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>world</code></td><td><span class="type">World</span></td><td>The owning world</td></tr>
+                        <tr><td><code>blockChunk</code></td><td><span class="type">BlockChunk</span></td><td>Raw block grid data</td></tr>
+                        <tr><td><code>blockComponentChunk</code></td><td><span class="type">BlockComponentChunk</span></td><td>Per-block component holders</td></tr>
+                        <tr><td><code>entityChunk</code></td><td><span class="type">EntityChunk</span></td><td>Mobile entities in this chunk</td></tr>
+                        <tr><td><code>flags</code></td><td><code>Flags&lt;ChunkFlag&gt;</code></td><td>Lifecycle flags (INIT, LOADED, DIRTY, etc.)</td></tr>
+                        <tr><td><code>keepAlive</code></td><td><span class="type">int</span></td><td>Timer before chunk can be unloaded (default 15)</td></tr>
+                        <tr><td><code>needsSaving</code></td><td><span class="type">boolean</span></td><td>Whether chunk has unsaved changes</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </div>
+    </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

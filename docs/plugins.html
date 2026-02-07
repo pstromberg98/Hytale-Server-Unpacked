@@ -3,304 +3,914 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plugin Development Guide - Hytale Server</title>
+    <title>Plugin Development - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html" class="active">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
-            <h1>Plugin Development Guide</h1>
-            <p class="page-desc">Everything you need to build, configure, and deploy Hytale server plugins.</p>
+            <h1>Plugin Development</h1>
+            <p class="page-desc">Complete guide to building Hytale server plugins: architecture, lifecycle, registries, class loading, and real-world patterns from the built-in plugins.</p>
 
-            <h2>Plugin Entry Point</h2>
-            <p>Every plugin extends <code>JavaPlugin</code>:</p>
-            <pre><code class="language-java">package com.example.myplugin;
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>Hytale's server is designed around a modular plugin architecture. Every gameplay feature &mdash; from farming and crafting to weather and camera effects &mdash; is implemented as a plugin that extends <span class="type">JavaPlugin</span>. External (third-party) plugins use the exact same API as the 40+ built-in plugins shipped with the server.</p>
+                <p>Plugins are loaded from JAR files, each containing a <code>manifest.json</code> that declares metadata, dependencies, and the entry point class. The server manages plugin lifecycle through a well-defined state machine, provides class isolation between plugins, and automatically cleans up all registrations (events, commands, components) when a plugin is unloaded.</p>
 
-import com.hypixel.hytale.plugin.JavaPlugin;
-import com.hypixel.hytale.plugin.JavaPluginInit;
-import javax.annotation.Nonnull;
+<div class="diagram">Plugin JAR
+ ├─ manifest.json                 (plugin metadata, dependencies, entry point)
+ ├─ com/example/MyPlugin.class    (extends JavaPlugin)
+ ├─ com/example/commands/...      (command classes)
+ ├─ com/example/events/...        (event handlers)
+ └─ com/example/components/...    (ECS components)
+</div>
+            </section>
 
-public class MyPlugin extends JavaPlugin {
-    public MyPlugin(@Nonnull JavaPluginInit init) {
-        super(init);
+            <section id="architecture">
+                <h2>Plugin Architecture</h2>
+                <p>The plugin system is built on a class hierarchy that separates concerns cleanly:</p>
+
+<div class="diagram">PluginBase (abstract)
+ │  ├─ logger, identifier, manifest, dataDirectory
+ │  ├─ state: PluginState (NONE → SETUP → START → ENABLED → DISABLED → SHUTDOWN)
+ │  ├─ eventRegistry, commandRegistry, blockStateRegistry
+ │  ├─ entityStoreRegistry, chunkStoreRegistry, assetRegistry
+ │  ├─ entityRegistry, taskRegistry, clientFeatureRegistry
+ │  ├─ setup(), start(), shutdown() &mdash; lifecycle hooks
+ │  └─ cleanup() &mdash; auto-unregisters everything on shutdown
+ │
+ └─ JavaPlugin (abstract, extends PluginBase)
+     ├─ file: Path (path to the JAR)
+     ├─ classLoader: PluginClassLoader
+     ├─ start0() &mdash; registers embedded asset packs
+     └─ getType() → PluginType.PLUGIN
+</div>
+
+                <h3>PluginBase &mdash; The Foundation</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.plugin</code></p>
+                <p><span class="type">PluginBase</span> is the abstract root for all plugins. It implements <code>CommandOwner</code> and manages the full set of plugin registries. Every registry is created with a reference to the plugin's <code>shutdownTasks</code> list, so all registrations are automatically reversed when the plugin shuts down.</p>
+
+                <h4>Key Registries on PluginBase</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Registry</th>
+                            <th>Accessor</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">EventRegistry</span></td><td><code>getEventRegistry()</code></td><td>Register event listeners (global, keyed, async)</td></tr>
+                        <tr><td><span class="type">CommandRegistry</span></td><td><code>getCommandRegistry()</code></td><td>Register slash commands</td></tr>
+                        <tr><td><span class="type">BlockStateRegistry</span></td><td><code>getBlockStateRegistry()</code></td><td>Register custom block states</td></tr>
+                        <tr><td><span class="type">EntityRegistry</span></td><td><code>getEntityRegistry()</code></td><td>Register entity types</td></tr>
+                        <tr><td><span class="type">TaskRegistry</span></td><td><code>getTaskRegistry()</code></td><td>Register scheduled tasks</td></tr>
+                        <tr><td><span class="type">ComponentRegistryProxy&lt;EntityStore&gt;</span></td><td><code>getEntityStoreRegistry()</code></td><td>Register ECS components and systems on entities</td></tr>
+                        <tr><td><span class="type">ComponentRegistryProxy&lt;ChunkStore&gt;</span></td><td><code>getChunkStoreRegistry()</code></td><td>Register ECS components and systems on chunks</td></tr>
+                        <tr><td><span class="type">AssetRegistry</span></td><td><code>getAssetRegistry()</code></td><td>Register asset stores (data-driven assets)</td></tr>
+                        <tr><td><span class="type">ClientFeatureRegistry</span></td><td><code>getClientFeatureRegistry()</code></td><td>Register client-side feature toggles</td></tr>
+                        <tr><td><span class="type">CodecMapRegistry</span></td><td><code>getCodecRegistry(codec)</code></td><td>Register polymorphic codec types (interactions, etc.)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>JavaPlugin &mdash; The Entry Point</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.plugin</code></p>
+                <p><span class="type">JavaPlugin</span> extends <span class="type">PluginBase</span> with JAR-specific functionality. It holds a reference to the plugin's JAR file path and its <span class="type">PluginClassLoader</span>. During <code>start0()</code>, it checks if the manifest declares <code>IncludesAssetPack: true</code> and, if so, registers the embedded asset pack with the <span class="type">AssetModule</span>.</p>
+
+                <pre><code><span class="kw">public abstract class</span> <span class="type">JavaPlugin</span> <span class="kw">extends</span> <span class="type">PluginBase</span> {
+
+    <span class="kw">public</span> <span class="type">JavaPlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(<span class="field">init</span>);
+        <span class="kw">this</span>.<span class="field">file</span> = <span class="field">init</span>.<span class="fn">getFile</span>();
+        <span class="kw">this</span>.<span class="field">classLoader</span> = <span class="field">init</span>.<span class="fn">getClassLoader</span>();
+        <span class="kw">this</span>.<span class="field">classLoader</span>.<span class="fn">setPlugin</span>(<span class="kw">this</span>);
     }
 
-    @Override
-    protected void setup() {
-        getLogger().info("MyPlugin loaded!");
+    <span class="anno">@Nonnull</span>
+    <span class="kw">public</span> <span class="type">Path</span> <span class="fn">getFile</span>() { <span class="kw">return this</span>.<span class="field">file</span>; }
 
-        // Register events
-        getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onConnect);
+    <span class="anno">@Nonnull</span>
+    <span class="kw">public</span> <span class="type">PluginClassLoader</span> <span class="fn">getClassLoader</span>() { <span class="kw">return this</span>.<span class="field">classLoader</span>; }
 
-        // Register commands
-        getCommandRegistry().register(new MyCommand());
-    }
+    <span class="anno">@Nonnull</span>
+    <span class="kw">public final</span> <span class="type">PluginType</span> <span class="fn">getType</span>() { <span class="kw">return</span> <span class="type">PluginType</span>.PLUGIN; }
+}</code></pre>
+            </section>
+
+            <section id="lifecycle">
+                <h2>Plugin Lifecycle</h2>
+                <p>Every plugin transitions through a strict state machine managed by <span class="type">PluginManager</span>. The state is tracked on each <span class="type">PluginBase</span> instance via the <code>state</code> field.</p>
+
+<div class="diagram">                    ┌──────────┐
+                    │   NONE   │  Initial state after construction
+                    └────┬─────┘
+                         │ setup0()
+                    ┌────▼─────┐
+                    │  SETUP   │  setup() called &mdash; register events, commands, components
+                    └────┬─────┘
+                         │ start0()
+                    ┌────▼─────┐
+                    │  START   │  start() called &mdash; load data, initialize state
+                    └────┬─────┘
+                         │ (success)
+                    ┌────▼─────┐
+                    │ ENABLED  │  Plugin fully operational
+                    └────┬─────┘
+                         │ shutdown0()
+                    ┌────▼─────┐
+                    │ SHUTDOWN │  shutdown() called &mdash; save data, release resources
+                    └────┬─────┘
+                         │ cleanup()
+                    ┌────▼─────┐
+                    │ DISABLED │  All registrations removed, plugin inactive
+                    └──────────┘
+</div>
+
+                <h3>Lifecycle Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>State Transition</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">setup</span>()</code></td>
+                            <td>NONE &rarr; SETUP</td>
+                            <td>Register events, commands, ECS components, asset stores, codec types. This is where most plugin initialization happens.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">start</span>()</code></td>
+                            <td>SETUP &rarr; ENABLED</td>
+                            <td>Load persistent data from disk, initialize runtime state. Called after all plugins have been set up, so cross-plugin references are safe.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="kw">void</span> <span class="fn">shutdown</span>()</code></td>
+                            <td>ENABLED &rarr; DISABLED</td>
+                            <td>Save data, release resources. Called in reverse load order during server shutdown or when a plugin is hot-unloaded.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Error Handling</div>
+                    <p>If <code>setup()</code> or <code>start()</code> throws an exception, the plugin state is set to <code>DISABLED</code> and <code>shutdown0()</code> is called to clean up. The exception is logged but does not crash the server. Always wrap risky initialization in try-catch blocks and log meaningful error messages.</p>
+                </div>
+
+                <h3>PluginManager Orchestration</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.plugin</code></p>
+                <p>The <span class="type">PluginManager</span> singleton controls the full plugin lifecycle. On server boot, it performs these steps in order:</p>
+                <ol>
+                    <li><strong>Discover</strong> &mdash; Scan core plugins, <code>builtin/</code> directory, classpath JARs, and <code>mods/</code> directory for JAR files containing <code>manifest.json</code>.</li>
+                    <li><strong>Validate dependencies</strong> &mdash; Check that all declared dependencies exist and satisfy semver ranges. Missing dependencies cause the plugin to be rejected with a <span class="type">MissingPluginDependencyException</span>.</li>
+                    <li><strong>Calculate load order</strong> &mdash; Topological sort based on <code>Dependencies</code>, <code>OptionalDependencies</code>, and <code>LoadBefore</code> declarations. Cyclic dependencies cause an <span class="type">IllegalArgumentException</span>.</li>
+                    <li><strong>Instantiate</strong> &mdash; For each plugin in load order, use reflection to call the <code>JavaPlugin(JavaPluginInit)</code> constructor.</li>
+                    <li><strong>PreLoad</strong> &mdash; Call <code>preLoad()</code> to asynchronously load config files. Wait for all futures to complete.</li>
+                    <li><strong>Setup</strong> &mdash; Call <code>setup0()</code> on each plugin in load order. Fire <span class="type">PluginSetupEvent</span> on success.</li>
+                    <li><strong>Start</strong> &mdash; Call <code>start0()</code> on each plugin in load order. Log "Enabled plugin" on success.</li>
+                </ol>
+
+                <h3>Hot Reload Support</h3>
+                <p><span class="type">PluginManager</span> supports runtime loading, unloading, and reloading of plugins via the built-in <code>/plugin</code> command:</p>
+                <pre><code><span class="comment">// Runtime plugin management (via PluginManager)</span>
+<span class="type">PluginManager</span>.<span class="fn">get</span>().<span class="fn">load</span>(<span class="field">identifier</span>);    <span class="comment">// Find, instantiate, setup, start</span>
+<span class="type">PluginManager</span>.<span class="fn">get</span>().<span class="fn">unload</span>(<span class="field">identifier</span>);  <span class="comment">// Shutdown, cleanup, close classloader</span>
+<span class="type">PluginManager</span>.<span class="fn">get</span>().<span class="fn">reload</span>(<span class="field">identifier</span>);  <span class="comment">// Unload then load</span></code></pre>
+
+                <p>When a <span class="type">JavaPlugin</span> is unloaded, its <span class="type">PluginClassLoader</span> is closed, ensuring classes can be garbage collected and reloaded from a fresh JAR.</p>
+            </section>
+
+            <section id="manifest">
+                <h2>PluginManifest</h2>
+                <p>Package: <code>com.hypixel.hytale.common.plugin</code></p>
+                <p>Every plugin JAR must contain a <code>manifest.json</code> at the root of the JAR. This file is deserialized into a <span class="type">PluginManifest</span> object using Hytale's codec system.</p>
+
+                <h3>Full Manifest Schema</h3>
+                <pre><code>{
+  <span class="str">"Group"</span>:              <span class="str">"com.example"</span>,
+  <span class="str">"Name"</span>:               <span class="str">"MyPlugin"</span>,
+  <span class="str">"Version"</span>:            <span class="str">"1.2.0"</span>,
+  <span class="str">"Description"</span>:        <span class="str">"A description of what this plugin does"</span>,
+  <span class="str">"Authors"</span>:            [{ <span class="str">"Name"</span>: <span class="str">"AuthorName"</span> }],
+  <span class="str">"Website"</span>:            <span class="str">"https://example.com"</span>,
+  <span class="str">"Main"</span>:               <span class="str">"com.example.myplugin.MyPlugin"</span>,
+  <span class="str">"ServerVersion"</span>:      <span class="str">">=1.0.0"</span>,
+  <span class="str">"Dependencies"</span>:       { <span class="str">"Hytale:WeatherPlugin"</span>: <span class="str">">=1.0.0"</span> },
+  <span class="str">"OptionalDependencies"</span>: { <span class="str">"Hytale:FarmingPlugin"</span>: <span class="str">"*"</span> },
+  <span class="str">"LoadBefore"</span>:         { <span class="str">"Hytale:CraftingPlugin"</span>: <span class="str">"*"</span> },
+  <span class="str">"DisabledByDefault"</span>:  <span class="kw">false</span>,
+  <span class="str">"IncludesAssetPack"</span>:  <span class="kw">true</span>,
+  <span class="str">"SubPlugins"</span>:         []
 }</code></pre>
 
-            <h2>Project Setup (Gradle)</h2>
-            <p><code>build.gradle.kts</code>:</p>
-            <pre><code class="language-kotlin">plugins { java }
-group = "com.example.myplugin"
-version = "1.0.0"
+                <h3>Manifest Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Group</code></td><td><span class="type">String</span></td><td>Yes</td><td>Organization/namespace identifier (e.g. <code>"com.example"</code> or <code>"Hytale"</code> for built-in)</td></tr>
+                        <tr><td><code>Name</code></td><td><span class="type">String</span></td><td>Yes</td><td>Plugin name. Combined with Group forms the <span class="type">PluginIdentifier</span> (<code>"Group:Name"</code>)</td></tr>
+                        <tr><td><code>Version</code></td><td><span class="type">Semver</span></td><td>No</td><td>Semantic version string (e.g. <code>"1.2.0"</code>). Used for dependency resolution</td></tr>
+                        <tr><td><code>Description</code></td><td><span class="type">String</span></td><td>No</td><td>Human-readable description</td></tr>
+                        <tr><td><code>Authors</code></td><td><span class="type">AuthorInfo[]</span></td><td>No</td><td>Array of author objects with <code>Name</code> field</td></tr>
+                        <tr><td><code>Website</code></td><td><span class="type">String</span></td><td>No</td><td>Plugin website URL</td></tr>
+                        <tr><td><code>Main</code></td><td><span class="type">String</span></td><td>Yes</td><td>Fully qualified class name of the <span class="type">JavaPlugin</span> subclass</td></tr>
+                        <tr><td><code>ServerVersion</code></td><td><span class="type">SemverRange</span></td><td>No</td><td>Required server version range. Plugin is rejected if server does not match</td></tr>
+                        <tr><td><code>Dependencies</code></td><td><code>Map&lt;PluginId, SemverRange&gt;</code></td><td>No</td><td>Required dependencies. Plugin fails to load if any are missing</td></tr>
+                        <tr><td><code>OptionalDependencies</code></td><td><code>Map&lt;PluginId, SemverRange&gt;</code></td><td>No</td><td>Optional dependencies. Affects load order but not required to be present</td></tr>
+                        <tr><td><code>LoadBefore</code></td><td><code>Map&lt;PluginId, SemverRange&gt;</code></td><td>No</td><td>Plugins that should load <em>after</em> this one (inverse dependency)</td></tr>
+                        <tr><td><code>DisabledByDefault</code></td><td><span class="kw">boolean</span></td><td>No</td><td>If <code>true</code>, the plugin must be explicitly enabled in server config</td></tr>
+                        <tr><td><code>IncludesAssetPack</code></td><td><span class="kw">boolean</span></td><td>No</td><td>If <code>true</code>, the JAR contains an embedded asset pack registered during <code>start0()</code></td></tr>
+                        <tr><td><code>SubPlugins</code></td><td><span class="type">PluginManifest[]</span></td><td>No</td><td>Nested plugin manifests. Sub-plugins inherit group, version, and authors from the parent</td></tr>
+                    </tbody>
+                </table>
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://maven.hytale.com/release") }
-}
+                <h3>Dependency Resolution</h3>
+                <p>Dependencies use <span class="type">PluginIdentifier</span> strings in the format <code>"Group:Name"</code> mapped to <span class="type">SemverRange</span> strings. The load order algorithm performs a topological sort:</p>
+                <ul>
+                    <li>All <code>Dependencies</code> create hard edges &mdash; plugin A depends on B means B loads first.</li>
+                    <li>All <code>OptionalDependencies</code> create soft edges &mdash; if present, they load first.</li>
+                    <li><code>LoadBefore</code> creates reverse edges &mdash; if target exists, target loads after this plugin.</li>
+                    <li>Third-party plugins (not in server classpath) automatically depend on all classpath plugins.</li>
+                    <li>Cyclic dependencies are detected and cause a fatal error with a diagnostic message.</li>
+                </ul>
 
-dependencies {
-    compileOnly("com.hypixel.hytale:Server:2026.01.24-6e2d4fc36")
-    implementation(project(":libraries:core"))
-}
+                <h3>Core Plugin Manifests</h3>
+                <p>Built-in plugins use a programmatic builder instead of a JSON file:</p>
+                <pre><code><span class="comment">// How built-in plugins declare their manifests</span>
+<span class="type">PluginManifest</span> <span class="field">manifest</span> = <span class="type">PluginManifest</span>.<span class="fn">corePlugin</span>(<span class="type">FarmingPlugin</span>.<span class="kw">class</span>)
+    .<span class="fn">description</span>(<span class="str">"Farming and crop growth system"</span>)
+    .<span class="fn">depends</span>(<span class="type">WeatherPlugin</span>.<span class="kw">class</span>)
+    .<span class="fn">optDepends</span>(<span class="type">CraftingPlugin</span>.<span class="kw">class</span>)
+    .<span class="fn">loadsBefore</span>(<span class="type">NPCObjectivesPlugin</span>.<span class="kw">class</span>)
+    .<span class="fn">build</span>();
 
-java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+<span class="comment">// Core plugins get group "Hytale" and version from server manifest</span>
+<span class="comment">// Identifier becomes "Hytale:FarmingPlugin"</span></code></pre>
+            </section>
 
-tasks.jar {
-    archiveBaseName.set("MyPlugin")
-    archiveVersion.set("")
-    from(configurations.runtimeClasspath.get().map {
-        if (it.isDirectory) it else zipTree(it)
-    })
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}</code></pre>
+            <section id="events">
+                <h2>Registering Events</h2>
+                <p>Package: <code>com.hypixel.hytale.event</code></p>
+                <p>The <span class="type">EventRegistry</span> obtained from <code>getEventRegistry()</code> delegates to the server's <span class="type">EventBus</span> while tracking all registrations for automatic cleanup. There are several registration methods for different event dispatch patterns.</p>
 
-            <p>Add to <code>settings.gradle.kts</code>:</p>
-            <pre><code class="language-kotlin">include("plugins:myplugin")</code></pre>
+                <h3>Registration Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="fn">register</span>(<span class="type">Class</span>, <span class="type">Consumer</span>)</code></td>
+                            <td>Register for events dispatched with <code>Void</code> key (type-specific events)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">register</span>(<span class="type">Class</span>, <span class="type">KeyType</span>, <span class="type">Consumer</span>)</code></td>
+                            <td>Register for events dispatched with a specific key (e.g. a specific asset class)</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">registerGlobal</span>(<span class="type">Class</span>, <span class="type">Consumer</span>)</code></td>
+                            <td>Register as a global listener &mdash; receives all dispatches regardless of key</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">registerAsync</span>(<span class="type">Class</span>, <span class="type">Function</span>)</code></td>
+                            <td>Register an async handler that operates on <span class="type">CompletableFuture</span></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">registerAsyncGlobal</span>(<span class="type">Class</span>, <span class="type">Function</span>)</code></td>
+                            <td>Register a global async handler</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="fn">registerUnhandled</span>(<span class="type">Class</span>, <span class="type">Consumer</span>)</code></td>
+                            <td>Register as fallback handler for events with no other listener</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-            <h2>Plugin Manifest</h2>
-            <p><code>src/main/resources/manifest.json</code>:</p>
-            <pre><code class="language-json">{
-  "Group": "com.example",
-  "Name": "MyPlugin",
-  "Main": "com.example.myplugin.MyPlugin",
-  "Version": "1.0.0"
-}</code></pre>
+                <h3>Event Priorities</h3>
+                <p>Every registration method has an overload accepting an <span class="type">EventPriority</span> or a raw <code>short</code> priority. The built-in priority constants are:</p>
+                <table>
+                    <thead>
+                        <tr><th>Priority</th><th>Usage</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>EventPriority.FIRST</code></td><td>Runs before all other listeners. Use for validation and pre-processing.</td></tr>
+                        <tr><td><code>EventPriority.EARLY</code></td><td>Runs early but after FIRST. Use for setup or discovery.</td></tr>
+                        <tr><td><code>(default)</code></td><td>Normal priority. Use for standard event handling.</td></tr>
+                        <tr><td><code>EventPriority.LAST</code></td><td>Runs after all other listeners. Use for cleanup or final processing.</td></tr>
+                    </tbody>
+                </table>
 
-            <h2>Core APIs</h2>
-            <table class="api-table">
-                <thead>
-                    <tr>
-                        <th>API</th>
-                        <th>Access</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Logger</td>
-                        <td><code>getLogger()</code></td>
-                        <td>HytaleLogger for plugin logging</td>
-                    </tr>
-                    <tr>
-                        <td>Event Registry</td>
-                        <td><code>getEventRegistry()</code></td>
-                        <td>Register event handlers</td>
-                    </tr>
-                    <tr>
-                        <td>Command Registry</td>
-                        <td><code>getCommandRegistry()</code></td>
-                        <td>Register commands</td>
-                    </tr>
-                    <tr>
-                        <td>Universe</td>
-                        <td><code>Universe.get()</code></td>
-                        <td>Access worlds and players</td>
-                    </tr>
-                    <tr>
-                        <td>Players</td>
-                        <td><code>Universe.get().getPlayers()</code></td>
-                        <td>List of online players</td>
-                    </tr>
-                    <tr>
-                        <td>Worlds</td>
-                        <td><code>Universe.get().getWorlds()</code></td>
-                        <td>Map of loaded worlds</td>
-                    </tr>
-                </tbody>
-            </table>
+                <h3>Examples from Built-in Plugins</h3>
+                <pre><code><span class="comment">// Global event listener (receives all dispatches of this event type)</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>,
+    <span class="kw">this</span>::<span class="fn">onPlayerConnect</span>
+);
 
-            <h2>Configuration System</h2>
-            <p>Extend <code>ConfigManager</code> from the core library:</p>
-            <pre><code class="language-java">public class MyConfig extends ConfigManager {
-    private String welcomeMessage = "Welcome!";
-    private int maxPlayers = 20;
+<span class="comment">// Global event with priority</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+    <span class="type">EventPriority</span>.LAST,
+    <span class="type">ChunkPreLoadProcessEvent</span>.<span class="kw">class</span>,
+    <span class="type">FarmingPlugin</span>::<span class="fn">preventSpreadOnNew</span>
+);
 
-    public MyConfig() {
-        super("myplugin");  // Creates config/myplugin/config.yml
-    }
+<span class="comment">// Keyed event (receives only when dispatched with Item.class key)</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+    <span class="type">LoadedAssetsEvent</span>.<span class="kw">class</span>,
+    <span class="type">Item</span>.<span class="kw">class</span>,
+    <span class="type">CraftingPlugin</span>::<span class="fn">onItemAssetLoad</span>
+);
 
-    @Override
-    protected ConfigEntry[] getDefaults() {
-        return new ConfigEntry[] {
-            new ConfigEntry("welcome_message", "Welcome!",
-                "Message shown to players on join."),
-            new ConfigEntry("max_players", 20,
-                "Maximum players allowed.")
-        };
-    }
+<span class="comment">// Type-specific event (Void key, matching by event class)</span>
+<span class="fn">getEventRegistry</span>().<span class="fn">register</span>(
+    <span class="type">AllNPCsLoadedEvent</span>.<span class="kw">class</span>,
+    <span class="field">event</span> -> <span class="fn">onAssetsLoad</span>()
+);</code></pre>
 
-    @Override
-    protected void applyConfig(Map&lt;String, Object&gt; config) {
-        this.welcomeMessage = getString("welcome_message", "Welcome!");
-        this.maxPlayers = getInt("max_players", 20);
-    }
+                <div class="info-box note">
+                    <div class="label">Global vs. Keyed Events</div>
+                    <p>Use <code>registerGlobal()</code> for events that broadcast to all listeners (player connect, chunk load). Use <code>register(Class, Key, Consumer)</code> for events dispatched with a specific key, such as <span class="type">LoadedAssetsEvent</span> keyed by the asset class. Using the wrong registration method will cause your handler to never fire.</p>
+                </div>
+            </section>
 
-    public String getWelcomeMessage() { return welcomeMessage; }
-    public int getMaxPlayers() { return maxPlayers; }
-}</code></pre>
+            <section id="commands">
+                <h2>Registering Commands</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.command.system</code></p>
+                <p>The <span class="type">CommandRegistry</span> provides a single registration method. Commands must extend <span class="type">AbstractCommand</span>. The registry automatically sets the plugin as the command's <code>CommandOwner</code>, associating the command with the plugin for permissions and lifecycle management.</p>
 
-            <p>Config files are stored in <code>config/&lt;pluginname&gt;/config.yml</code>. Runtime data goes in <code>data/&lt;pluginname&gt;/</code>.</p>
+                <pre><code><span class="comment">// In setup()</span>
+<span class="fn">getCommandRegistry</span>().<span class="fn">registerCommand</span>(<span class="kw">new</span> <span class="type">MyCommand</span>());
+<span class="fn">getCommandRegistry</span>().<span class="fn">registerCommand</span>(<span class="kw">new</span> <span class="type">AnotherCommand</span>());</code></pre>
 
-            <h2>Data Mods</h2>
-            <p>Plugins can include Hytale data mods (asset overrides) by adding <code>src/main/assets/</code>:</p>
-            <pre><code>plugins/myplugin/src/main/assets/
-├── manifest.json              # Data mod manifest
-└── Server/                    # Asset files (mirrors Assets.zip)
-    ├── Item/Items/...
-    ├── SoundEvent/...
-    └── Audio/...</code></pre>
+                <p>Commands registered through <code>getCommandRegistry()</code> are scoped to the plugin. When the plugin is unloaded, all its commands are automatically unregistered. For system-level commands that persist across plugin reloads, use <code>CommandManager.get().registerSystemCommand()</code> instead (as seen in the <span class="type">WeatherPlugin</span> and <span class="type">CraftingPlugin</span>).</p>
 
-            <p>Data mod manifest (<code>src/main/assets/manifest.json</code>):</p>
-            <pre><code class="language-json">{
-  "Group": "com.example",
-  "Name": "MyPluginMod",
-  "Version": "1.0.0"
-}</code></pre>
+                <pre><code><span class="comment">// Plugin-scoped command (auto-removed on unload)</span>
+<span class="fn">getCommandRegistry</span>().<span class="fn">registerCommand</span>(<span class="kw">new</span> <span class="type">CameraEffectCommand</span>());
 
-            <div class="info-box">
-                <strong>Note:</strong> The data mod manifest is separate from the plugin JAR manifest in <code>src/main/resources/</code>.
-            </div>
+<span class="comment">// System-scoped command (persists across plugin reloads)</span>
+<span class="type">CommandManager</span>.<span class="fn">get</span>().<span class="fn">registerSystemCommand</span>(<span class="kw">new</span> <span class="type">WeatherCommand</span>());</code></pre>
+            </section>
 
-            <h2>Build &amp; Deploy</h2>
-            <pre><code class="language-bash"># Build all plugins
-./gradlew build
+            <section id="ecs-components">
+                <h2>Registering ECS Components</h2>
+                <p>Plugins can register custom ECS components on both the <span class="type">EntityStore</span> (for entities) and the <span class="type">ChunkStore</span> (for chunk/block data). Components are registered through the proxy registries which ensure cleanup on plugin unload.</p>
 
-# Build specific plugin
-./gradlew plugins:myplugin:jar
+                <h3>Entity Components</h3>
+                <pre><code><span class="comment">// Register a component on the EntityStore</span>
+<span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">WeatherTracker</span>&gt; <span class="field">weatherType</span> =
+    <span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerComponent</span>(
+        <span class="type">WeatherTracker</span>.<span class="kw">class</span>,
+        <span class="type">WeatherTracker</span>::<span class="kw">new</span>
+    );
 
-# Deploy to server
-./scripts/remote-deploy.sh parker@cobalt.local
+<span class="comment">// Register a persistent component with a codec for serialization</span>
+<span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">PlayerMemories</span>&gt; <span class="field">memoriesType</span> =
+    <span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerComponent</span>(
+        <span class="type">PlayerMemories</span>.<span class="kw">class</span>,
+        <span class="str">"PlayerMemories"</span>,
+        <span class="type">PlayerMemories</span>.CODEC
+    );
 
-# Deploy without restart
-./scripts/remote-deploy.sh parker@cobalt.local --no-restart
+<span class="comment">// Register a resource (shared singleton data per store)</span>
+<span class="type">ResourceType</span>&lt;<span class="type">EntityStore</span>, <span class="type">WeatherResource</span>&gt; <span class="field">weatherRes</span> =
+    <span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerResource</span>(
+        <span class="type">WeatherResource</span>.<span class="kw">class</span>,
+        <span class="type">WeatherResource</span>::<span class="kw">new</span>
+    );</code></pre>
 
-# Run tests
-./gradlew test</code></pre>
+                <h3>Chunk/Block Components</h3>
+                <pre><code><span class="comment">// Register components on the ChunkStore</span>
+<span class="type">ComponentType</span>&lt;<span class="type">ChunkStore</span>, <span class="type">FarmingBlock</span>&gt; <span class="field">farmBlockType</span> =
+    <span class="fn">getChunkStoreRegistry</span>().<span class="fn">registerComponent</span>(
+        <span class="type">FarmingBlock</span>.<span class="kw">class</span>,
+        <span class="str">"FarmingBlock"</span>,
+        <span class="type">FarmingBlock</span>.CODEC
+    );
 
-            <p>Build output:</p>
-            <pre><code>plugins/myplugin/build/libs/MyPlugin.jar
-plugins/myplugin/build/datamod/    # Only if src/main/assets/ exists</code></pre>
+<span class="comment">// Register block states (persistent per-block data)</span>
+<span class="fn">getBlockStateRegistry</span>().<span class="fn">registerBlockState</span>(
+    <span class="type">BenchState</span>.<span class="kw">class</span>,
+    <span class="str">"crafting"</span>,
+    <span class="type">BenchState</span>.CODEC
+);</code></pre>
 
-            <h2>Common Patterns</h2>
+                <h3>ECS Systems</h3>
+                <p>Systems are registered on the store proxy and execute during the ECS tick cycle:</p>
+                <pre><code><span class="comment">// Entity systems (operate on EntityStore)</span>
+<span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerSystem</span>(<span class="kw">new</span> <span class="type">CameraEffectSystem</span>());
+<span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerSystem</span>(<span class="kw">new</span> <span class="type">WeatherSystem</span>.<span class="type">TickingSystem</span>());
 
-            <h3>Registering events and commands in setup()</h3>
-            <pre><code class="language-java">@Override
-protected void setup() {
-    // Events
-    getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onConnect);
-    getEventRegistry().registerSystem(KillFeedEvent.Display.class, this::onDeath);
+<span class="comment">// Chunk systems (operate on ChunkStore)</span>
+<span class="fn">getChunkStoreRegistry</span>().<span class="fn">registerSystem</span>(<span class="kw">new</span> <span class="type">FarmingSystems</span>.<span class="type">Ticking</span>());
+<span class="fn">getChunkStoreRegistry</span>().<span class="fn">registerSystem</span>(<span class="kw">new</span> <span class="type">FarmingSystems</span>.<span class="type">OnSoilAdded</span>());</code></pre>
+            </section>
 
-    // Commands
-    getCommandRegistry().register(new SpawnCommand());
-    getCommandRegistry().register(new TeleportCommand());
+            <section id="classloader">
+                <h2>PluginClassLoader</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.plugin</code></p>
+                <p><span class="type">PluginClassLoader</span> extends <span class="type">URLClassLoader</span> and provides class isolation between plugins while allowing controlled cross-plugin class access through the <span class="type">PluginBridgeClassLoader</span>.</p>
 
-    // Config
-    MyConfig config = new MyConfig();
-    config.load();
-}</code></pre>
+                <h3>Class Loading Order</h3>
+                <p>When a plugin class requests a class, the loader follows this resolution order:</p>
+                <ol>
+                    <li><strong>Server classpath</strong> &mdash; Try <code>PluginManager.class.getClassLoader()</code> first. This ensures all plugins see the same server API classes.</li>
+                    <li><strong>Plugin JAR</strong> &mdash; Try <code>super.loadClass()</code> to find the class in the plugin's own JAR.</li>
+                    <li><strong>Bridge classloader</strong> &mdash; Try the <span class="type">PluginBridgeClassLoader</span> which searches other loaded plugins:
+                        <ul>
+                            <li>If the plugin has a manifest, search declared <code>Dependencies</code> first, then <code>OptionalDependencies</code>, then all other plugins.</li>
+                            <li>If no manifest is set yet (during construction), search all plugins.</li>
+                        </ul>
+                    </li>
+                    <li><strong>ClassNotFoundException</strong> &mdash; Thrown if no loader can find the class.</li>
+                </ol>
 
-            <h3>Sending messages</h3>
-            <pre><code class="language-java">// To one player
-playerRef.sendMessage(Message.raw("Hello!").color(Color.GREEN));
+                <h3>Built-in vs. Third-Party Naming</h3>
+                <p>The class loader is named based on the plugin's origin:</p>
+                <table>
+                    <thead>
+                        <tr><th>Origin</th><th>Loader Name</th><th>Significance</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Server classpath / builtin</td>
+                            <td><code>"BuiltinPlugin"</code></td>
+                            <td>Trusted, Sentry errors propagate to parent</td>
+                        </tr>
+                        <tr>
+                            <td>External (mods/ directory)</td>
+                            <td><code>"ThirdPartyPlugin"</code></td>
+                            <td>Untrusted, Sentry errors isolated, stack traces marked</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-// Broadcast
-Universe.get().sendMessage(Message.raw("Server announcement"));</code></pre>
+                <p>The static method <code>PluginClassLoader.isFromThirdPartyPlugin(Throwable)</code> scans a stack trace for frames loaded by <code>"ThirdPartyPlugin"</code> to identify whether an error originated from a third-party plugin.</p>
 
-            <h3>Scheduling on world thread</h3>
-            <pre><code class="language-java">World world = Universe.get().getWorld("overworld");
-world.execute(() -> {
-    // Entity operations here
+                <div class="info-box warning">
+                    <div class="label">Class Isolation</div>
+                    <p>Each external plugin gets its own <span class="type">PluginClassLoader</span> instance. Classes from plugin A are not directly visible to plugin B unless B declares A as a dependency. This prevents classpath pollution and version conflicts between plugins.</p>
+                </div>
+            </section>
+
+            <section id="early-plugins">
+                <h2>Early Plugins (Class Transformers)</h2>
+                <p>Package: <code>com.hypixel.hytale.plugin.early</code></p>
+                <p>Hytale supports an advanced "early plugin" system that runs <em>before</em> the normal plugin system. Early plugins are loaded from the <code>earlyplugins/</code> directory and can register <span class="type">ClassTransformer</span> implementations via Java's <span class="type">ServiceLoader</span> mechanism.</p>
+
+                <pre><code><span class="comment">// Early plugins are discovered and loaded before the server fully starts</span>
+<span class="type">EarlyPluginLoader</span>.<span class="fn">loadEarlyPlugins</span>(<span class="field">args</span>);
+
+<span class="comment">// Transformers are sorted by priority (highest first)</span>
+<span class="type">List</span>&lt;<span class="type">ClassTransformer</span>&gt; <span class="field">transformers</span> = <span class="type">EarlyPluginLoader</span>.<span class="fn">getTransformers</span>();</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">Warning</div>
+                    <p>Early plugins are explicitly marked as <strong>unsupported</strong>. The server prints a warning banner and requires either interactive confirmation or the <code>--accept-early-plugins</code> flag. Use only for development and debugging. Early plugins loaded via <span class="type">TransformingClassLoader</span> can modify classes at load time, which may cause stability issues.</p>
+                </div>
+            </section>
+
+            <section id="builtin-plugins">
+                <h2>Built-in Plugins</h2>
+                <p>Package: <code>com.hypixel.hytale.builtin</code></p>
+                <p>The Hytale server ships with over 40 built-in plugins in the <code>builtin/</code> directory. These are first-party plugins that use the same <span class="type">JavaPlugin</span> API as third-party plugins. Studying them is the best way to learn the plugin patterns.</p>
+
+                <h3>Complete Built-in Plugin List</h3>
+                <table>
+                    <thead>
+                        <tr><th>Plugin</th><th>Package</th><th>Responsibility</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="type">CameraPlugin</span></td><td><code>builtin.adventure.camera</code></td><td>Camera shake effects, view bobbing, camera effect systems</td></tr>
+                        <tr><td><span class="type">FarmingPlugin</span></td><td><code>builtin.adventure.farming</code></td><td>Crop growth, soil tilling, watering, coops, farming stages</td></tr>
+                        <tr><td><span class="type">MemoriesPlugin</span></td><td><code>builtin.adventure.memories</code></td><td>Collectible memories system, NPC memories, memory pages</td></tr>
+                        <tr><td><span class="type">NPCObjectivesPlugin</span></td><td><code>builtin.adventure.npcobjectives</code></td><td>NPC quest objectives, kill tracking, bounty tasks</td></tr>
+                        <tr><td><span class="type">NPCReputationPlugin</span></td><td><code>builtin.adventure.npcreputation</code></td><td>NPC reputation integration with objectives</td></tr>
+                        <tr><td><span class="type">NPCShopPlugin</span></td><td><code>builtin.adventure.npcshop</code></td><td>NPC-based shop interactions</td></tr>
+                        <tr><td><span class="type">ObjectivePlugin</span></td><td><code>builtin.adventure.objectives</code></td><td>Core objective/quest system</td></tr>
+                        <tr><td><span class="type">ObjectiveReputationPlugin</span></td><td><code>builtin.adventure.objectivereputation</code></td><td>Reputation rewards for objective completion</td></tr>
+                        <tr><td><span class="type">ObjectiveShopPlugin</span></td><td><code>builtin.adventure.objectiveshop</code></td><td>Shop integration with objective system</td></tr>
+                        <tr><td><span class="type">ReputationPlugin</span></td><td><code>builtin.adventure.reputation</code></td><td>Player reputation system</td></tr>
+                        <tr><td><span class="type">ShopPlugin</span></td><td><code>builtin.adventure.shop</code></td><td>Core shop/merchant system</td></tr>
+                        <tr><td><span class="type">ShopReputationPlugin</span></td><td><code>builtin.adventure.shopreputation</code></td><td>Reputation-gated shop features</td></tr>
+                        <tr><td><span class="type">StashPlugin</span></td><td><code>builtin.adventure.stash</code></td><td>Player stash/storage system</td></tr>
+                        <tr><td><span class="type">TeleporterPlugin</span></td><td><code>builtin.adventure.teleporter</code></td><td>Teleporter block interactions</td></tr>
+                        <tr><td><span class="type">WorldLocationConditionPlugin</span></td><td><code>builtin.adventure.worldlocationcondition</code></td><td>Location-based condition checks</td></tr>
+                        <tr><td><span class="type">AmbiencePlugin</span></td><td><code>builtin.ambience</code></td><td>Ambient sound and atmosphere</td></tr>
+                        <tr><td><span class="type">AssetEditorPlugin</span></td><td><code>builtin.asseteditor</code></td><td>Runtime asset editing tools</td></tr>
+                        <tr><td><span class="type">BedsPlugin</span></td><td><code>builtin.beds</code></td><td>Bed sleeping and spawn point mechanics</td></tr>
+                        <tr><td><span class="type">BlockPhysicsPlugin</span></td><td><code>builtin.blockphysics</code></td><td>Falling blocks, block physics simulation</td></tr>
+                        <tr><td><span class="type">BlockSpawnerPlugin</span></td><td><code>builtin.blockspawner</code></td><td>Block-based mob spawning</td></tr>
+                        <tr><td><span class="type">BlockTickPlugin</span></td><td><code>builtin.blocktick</code></td><td>Block tick discovery and scheduling</td></tr>
+                        <tr><td><span class="type">BuilderToolsPlugin</span></td><td><code>builtin.buildertools</code></td><td>World editing and builder tools</td></tr>
+                        <tr><td><span class="type">MacroCommandPlugin</span></td><td><code>builtin.commandmacro</code></td><td>Command macros and scripting</td></tr>
+                        <tr><td><span class="type">CraftingPlugin</span></td><td><code>builtin.crafting</code></td><td>Crafting benches, recipes, player crafting manager</td></tr>
+                        <tr><td><span class="type">CreativeHubPlugin</span></td><td><code>builtin.creativehub</code></td><td>Creative mode hub world</td></tr>
+                        <tr><td><span class="type">CrouchSlidePlugin</span></td><td><code>builtin.crouchslide</code></td><td>Crouch-slide movement mechanic</td></tr>
+                        <tr><td><span class="type">DeployablesPlugin</span></td><td><code>builtin.deployables</code></td><td>Deployable objects (tents, etc.)</td></tr>
+                        <tr><td><span class="type">FluidPlugin</span></td><td><code>builtin.fluid</code></td><td>Fluid simulation and water flow</td></tr>
+                        <tr><td><span class="type">InstancesPlugin</span></td><td><code>builtin.instances</code></td><td>Instanced world management</td></tr>
+                        <tr><td><span class="type">LANDiscoveryPlugin</span></td><td><code>builtin.landiscovery</code></td><td>LAN server discovery</td></tr>
+                        <tr><td><span class="type">MantlingPlugin</span></td><td><code>builtin.mantling</code></td><td>Ledge mantling/climbing mechanic</td></tr>
+                        <tr><td><span class="type">ModelPlugin</span></td><td><code>builtin.model</code></td><td>Custom model rendering</td></tr>
+                        <tr><td><span class="type">MountPlugin</span></td><td><code>builtin.mounts</code></td><td>Mountable entities</td></tr>
+                        <tr><td><span class="type">NPCEditorPlugin</span></td><td><code>builtin.npceditor</code></td><td>NPC editing tools</td></tr>
+                        <tr><td><span class="type">ParkourPlugin</span></td><td><code>builtin.parkour</code></td><td>Parkour movement mechanics</td></tr>
+                        <tr><td><span class="type">PathPlugin</span></td><td><code>builtin.path</code></td><td>NPC pathfinding</td></tr>
+                        <tr><td><span class="type">PortalsPlugin</span></td><td><code>builtin.portals</code></td><td>Portal block teleportation</td></tr>
+                        <tr><td><span class="type">SafetyRollPlugin</span></td><td><code>builtin.safetyroll</code></td><td>Fall damage safety roll mechanic</td></tr>
+                        <tr><td><span class="type">SprintForcePlugin</span></td><td><code>builtin.sprintforce</code></td><td>Sprint force movement modifiers</td></tr>
+                        <tr><td><span class="type">TagSetPlugin</span></td><td><code>builtin.tagset</code></td><td>NPC group tags and categorization</td></tr>
+                        <tr><td><span class="type">TeleportPlugin</span></td><td><code>builtin.teleport</code></td><td>Player teleportation commands</td></tr>
+                        <tr><td><span class="type">WeatherPlugin</span></td><td><code>builtin.weather</code></td><td>Weather system, weather tracking, weather commands</td></tr>
+                        <tr><td><span class="type">WorldGenPlugin</span></td><td><code>builtin.worldgen</code></td><td>World generation pipeline</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="plugin-access">
+                <h2>Accessing Server APIs</h2>
+                <p>Plugins have full access to the server's core systems through static accessors and the registries provided by <span class="type">PluginBase</span>.</p>
+
+                <h3>Universe, Worlds, and Players</h3>
+                <pre><code><span class="comment">// Access the Universe singleton</span>
+<span class="type">Universe</span> <span class="field">universe</span> = <span class="type">Universe</span>.<span class="fn">get</span>();
+
+<span class="comment">// Get a specific world by name</span>
+<span class="type">World</span> <span class="field">world</span> = <span class="field">universe</span>.<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+
+<span class="comment">// Get all loaded worlds</span>
+<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">World</span>&gt; <span class="field">worlds</span> = <span class="field">universe</span>.<span class="fn">getWorlds</span>();
+
+<span class="comment">// Get a player by UUID</span>
+<span class="type">PlayerRef</span> <span class="field">playerRef</span> = <span class="field">universe</span>.<span class="fn">getPlayer</span>(<span class="field">uuid</span>);
+
+<span class="comment">// Get all online players</span>
+<span class="type">List</span>&lt;<span class="type">PlayerRef</span>&gt; <span class="field">players</span> = <span class="field">universe</span>.<span class="fn">getPlayers</span>();
+
+<span class="comment">// Broadcast a message to all players</span>
+<span class="field">universe</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Server announcement"</span>));
+
+<span class="comment">// Send a message to one player</span>
+<span class="field">playerRef</span>.<span class="fn">sendMessage</span>(<span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Hello!"</span>).<span class="fn">color</span>(<span class="type">Color</span>.GREEN));</code></pre>
+
+                <h3>Threading and World Execution</h3>
+                <p>Entity and block operations must run on the world's tick thread. Use <code>world.execute()</code> to safely schedule work:</p>
+                <pre><code><span class="comment">// Schedule work on the world's tick thread</span>
+<span class="type">World</span> <span class="field">world</span> = <span class="type">Universe</span>.<span class="fn">get</span>().<span class="fn">getWorld</span>(<span class="str">"overworld"</span>);
+<span class="field">world</span>.<span class="fn">execute</span>(() -> {
+    <span class="comment">// Safe to modify entities and blocks here</span>
+    <span class="field">chunk</span>.<span class="fn">setBlock</span>(<span class="field">x</span>, <span class="field">y</span>, <span class="field">z</span>, <span class="str">"Dirt"</span>);
 });</code></pre>
 
-            <h2>Quick Reference</h2>
-            <table class="reference-table">
-                <thead>
-                    <tr>
-                        <th>Task</th>
-                        <th>How</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Get player by UUID</td>
-                        <td><code>Universe.get().getPlayer(uuid)</code></td>
-                    </tr>
-                    <tr>
-                        <td>Get all players</td>
-                        <td><code>Universe.get().getPlayers()</code></td>
-                    </tr>
-                    <tr>
-                        <td>Get world</td>
-                        <td><code>Universe.get().getWorld("name")</code></td>
-                    </tr>
-                    <tr>
-                        <td>Send message</td>
-                        <td><code>playerRef.sendMessage(Message.raw("text"))</code></td>
-                    </tr>
-                    <tr>
-                        <td>Broadcast</td>
-                        <td><code>Universe.get().sendMessage(msg)</code></td>
-                    </tr>
-                    <tr>
-                        <td>Show title</td>
-                        <td><code>EventTitleUtil.showEventTitleToPlayer(...)</code></td>
-                    </tr>
-                    <tr>
-                        <td>Send notification</td>
-                        <td><code>NotificationUtil.sendNotification(...)</code></td>
-                    </tr>
-                    <tr>
-                        <td>Play sound</td>
-                        <td><code>SoundUtil.playSoundEvent3d(...)</code></td>
-                    </tr>
-                    <tr>
-                        <td>Check permission</td>
-                        <td><code>sender.hasPermission("perm")</code></td>
-                    </tr>
-                    <tr>
-                        <td>Schedule on world thread</td>
-                        <td><code>world.execute(() -> { ... })</code></td>
-                    </tr>
-                </tbody>
-            </table>
+                <h3>Plugin Data Directory</h3>
+                <pre><code><span class="comment">// Get the plugin's data directory</span>
+<span class="type">Path</span> <span class="field">dataDir</span> = <span class="fn">getDataDirectory</span>();
+<span class="comment">// Resolves to: mods/Group_Name/</span>
+
+<span class="comment">// Plugin logging</span>
+<span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Plugin initialized!"</span>);
+<span class="fn">getLogger</span>().<span class="fn">at</span>(<span class="type">Level</span>.WARNING).<span class="fn">log</span>(<span class="str">"Something went wrong: %s"</span>, <span class="field">error</span>);</code></pre>
+
+                <h3>Plugin Configuration (Config System)</h3>
+                <p>Plugins can declare typed configuration using the <code>withConfig()</code> method, which must be called <em>before</em> <code>setup()</code>:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">MyPlugin</span> <span class="kw">extends</span> <span class="type">JavaPlugin</span> {
+
+    <span class="comment">// Declare config before setup (during construction or field init)</span>
+    <span class="kw">private final</span> <span class="type">Config</span>&lt;<span class="type">MyConfig</span>&gt; <span class="field">config</span> = <span class="fn">withConfig</span>(<span class="type">MyConfig</span>.CODEC);
+
+    <span class="kw">public</span> <span class="type">MyPlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(<span class="field">init</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">setup</span>() {
+        <span class="comment">// Config is loaded asynchronously during preLoad()</span>
+        <span class="comment">// and available by the time setup() runs</span>
+        <span class="type">MyConfig</span> <span class="field">cfg</span> = <span class="field">config</span>.<span class="fn">get</span>();
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"Loaded config: "</span> + <span class="field">cfg</span>);
+    }
+}</code></pre>
+            </section>
+
+            <section id="codec-registries">
+                <h2>Codec Registries (Polymorphic Types)</h2>
+                <p>Many Hytale systems use polymorphic JSON types &mdash; for example, the <span class="type">Interaction</span> system can have different concrete implementations (<code>"HarvestCrop"</code>, <code>"FertilizeSoil"</code>, <code>"CameraShake"</code>). Plugins register these types via <code>getCodecRegistry()</code>:</p>
+
+                <pre><code><span class="comment">// Register new interaction types</span>
+<span class="fn">getCodecRegistry</span>(<span class="type">Interaction</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"HarvestCrop"</span>, <span class="type">HarvestCropInteraction</span>.<span class="kw">class</span>, <span class="type">HarvestCropInteraction</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"FertilizeSoil"</span>, <span class="type">FertilizeSoilInteraction</span>.<span class="kw">class</span>, <span class="type">FertilizeSoilInteraction</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"UseWateringCan"</span>, <span class="type">UseWateringCanInteraction</span>.<span class="kw">class</span>, <span class="type">UseWateringCanInteraction</span>.CODEC);
+
+<span class="comment">// Register new camera effect types</span>
+<span class="fn">getCodecRegistry</span>(<span class="type">CameraEffect</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"CameraShake"</span>, <span class="type">CameraShakeEffect</span>.<span class="kw">class</span>, <span class="type">CameraShakeEffect</span>.CODEC);
+
+<span class="comment">// Register new growth modifier types</span>
+<span class="fn">getCodecRegistry</span>(<span class="type">GrowthModifierAsset</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"Fertilizer"</span>, <span class="type">FertilizerGrowthModifierAsset</span>.<span class="kw">class</span>, <span class="type">FertilizerGrowthModifierAsset</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"LightLevel"</span>, <span class="type">LightLevelGrowthModifierAsset</span>.<span class="kw">class</span>, <span class="type">LightLevelGrowthModifierAsset</span>.CODEC)
+    .<span class="fn">register</span>(<span class="str">"Water"</span>, <span class="type">WaterGrowthModifierAsset</span>.<span class="kw">class</span>, <span class="type">WaterGrowthModifierAsset</span>.CODEC);
+
+<span class="comment">// Register gameplay config plugin types</span>
+<span class="fn">getCodecRegistry</span>(<span class="type">GameplayConfig</span>.PLUGIN_CODEC)
+    .<span class="fn">register</span>(<span class="type">MemoriesGameplayConfig</span>.<span class="kw">class</span>, <span class="str">"Memories"</span>, <span class="type">MemoriesGameplayConfig</span>.CODEC);</code></pre>
+
+                <p>These registrations extend the server's data-driven asset system, allowing your plugin's custom types to appear in JSON asset files and be deserialized automatically.</p>
+            </section>
+
+            <section id="asset-registry">
+                <h2>Asset Stores</h2>
+                <p>Plugins can register entirely new asset stores for data-driven configuration:</p>
+                <pre><code><span class="comment">// Register a new asset store for farming coops</span>
+<span class="fn">getAssetRegistry</span>().<span class="fn">register</span>(
+    <span class="type">HytaleAssetStore</span>.<span class="fn">builder</span>(<span class="type">FarmingCoopAsset</span>.<span class="kw">class</span>, <span class="kw">new</span> <span class="type">DefaultAssetMap</span>&lt;&gt;())
+        .<span class="fn">setPath</span>(<span class="str">"Farming/Coops"</span>)
+        .<span class="fn">setCodec</span>(<span class="type">FarmingCoopAsset</span>.CODEC)
+        .<span class="fn">loadsAfter</span>(<span class="type">ItemDropList</span>.<span class="kw">class</span>, <span class="type">NPCGroup</span>.<span class="kw">class</span>)
+        .<span class="fn">setKeyFunction</span>(<span class="type">FarmingCoopAsset</span>::<span class="fn">getId</span>)
+        .<span class="fn">build</span>()
+);
+
+<span class="comment">// Register with packet generator for client sync</span>
+<span class="fn">getAssetRegistry</span>().<span class="fn">register</span>(
+    <span class="type">HytaleAssetStore</span>.<span class="fn">builder</span>(<span class="type">String</span>.<span class="kw">class</span>, <span class="type">CameraShake</span>.<span class="kw">class</span>,
+            <span class="kw">new</span> <span class="type">IndexedAssetMap</span>&lt;&gt;())
+        .<span class="fn">loadsBefore</span>(<span class="type">CameraEffect</span>.<span class="kw">class</span>)
+        .<span class="fn">setCodec</span>(<span class="type">CameraShake</span>.CODEC)
+        .<span class="fn">setPath</span>(<span class="str">"Camera/CameraShake"</span>)
+        .<span class="fn">setKeyFunction</span>(<span class="type">CameraShake</span>::<span class="fn">getId</span>)
+        .<span class="fn">setReplaceOnRemove</span>(<span class="type">CameraShake</span>::<span class="kw">new</span>)
+        .<span class="fn">setPacketGenerator</span>(<span class="kw">new</span> <span class="type">CameraShakePacketGenerator</span>())
+        .<span class="fn">build</span>()
+);</code></pre>
+            </section>
+
+            <section id="best-practices">
+                <h2>Best Practices</h2>
+
+                <h3>Plugin Structure</h3>
+                <ul>
+                    <li><strong>Register everything in <code>setup()</code></strong> &mdash; Events, commands, components, systems, asset stores, and codec types should all be registered during <code>setup()</code>. This is the only lifecycle phase where registration is safe and expected.</li>
+                    <li><strong>Use <code>start()</code> for data loading</strong> &mdash; Load persistent data, read files, and initialize runtime state in <code>start()</code>. By this point, all plugins have completed <code>setup()</code> and their registries are populated.</li>
+                    <li><strong>Save data in <code>shutdown()</code></strong> &mdash; Persist any data that needs to survive server restarts. The <span class="type">MemoriesPlugin</span> demonstrates this pattern by saving recorded memories to JSON in <code>shutdown()</code>.</li>
+                    <li><strong>Do not call <code>withConfig()</code> after NONE state</strong> &mdash; Config declarations must happen before <code>setup()</code>. Calling <code>withConfig()</code> after setup throws <span class="type">IllegalStateException</span>.</li>
+                </ul>
+
+                <h3>Singleton Pattern</h3>
+                <p>Most built-in plugins use a static singleton pattern for cross-plugin access:</p>
+                <pre><code><span class="kw">public class</span> <span class="type">FarmingPlugin</span> <span class="kw">extends</span> <span class="type">JavaPlugin</span> {
+    <span class="kw">private static</span> <span class="type">FarmingPlugin</span> <span class="field">instance</span>;
+
+    <span class="kw">public static</span> <span class="type">FarmingPlugin</span> <span class="fn">get</span>() { <span class="kw">return</span> <span class="field">instance</span>; }
+
+    <span class="kw">public</span> <span class="type">FarmingPlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(<span class="field">init</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">setup</span>() {
+        <span class="field">instance</span> = <span class="kw">this</span>;
+        <span class="comment">// ... register everything ...</span>
+    }
+}</code></pre>
+
+                <h3>ComponentType References</h3>
+                <p>Store <span class="type">ComponentType</span> references as instance fields for efficient lookup:</p>
+                <pre><code><span class="kw">private</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">WeatherTracker</span>&gt; <span class="field">weatherTrackerType</span>;
+<span class="kw">private</span> <span class="type">ResourceType</span>&lt;<span class="type">EntityStore</span>, <span class="type">WeatherResource</span>&gt; <span class="field">weatherResourceType</span>;
+
+<span class="anno">@Override</span>
+<span class="kw">protected void</span> <span class="fn">setup</span>() {
+    <span class="field">weatherTrackerType</span> = <span class="fn">getEntityStoreRegistry</span>()
+        .<span class="fn">registerComponent</span>(<span class="type">WeatherTracker</span>.<span class="kw">class</span>, <span class="type">WeatherTracker</span>::<span class="kw">new</span>);
+    <span class="field">weatherResourceType</span> = <span class="fn">getEntityStoreRegistry</span>()
+        .<span class="fn">registerResource</span>(<span class="type">WeatherResource</span>.<span class="kw">class</span>, <span class="type">WeatherResource</span>::<span class="kw">new</span>);
+}
+
+<span class="comment">// Expose via getter for other plugins</span>
+<span class="kw">public</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">WeatherTracker</span>&gt; <span class="fn">getWeatherTrackerType</span>() {
+    <span class="kw">return</span> <span class="field">weatherTrackerType</span>;
+}</code></pre>
+
+                <h3>Error Isolation</h3>
+                <ul>
+                    <li>Third-party plugin errors are automatically isolated &mdash; Sentry logging does not propagate to the parent logger for plugins loaded from the <code>mods/</code> directory.</li>
+                    <li>Stack traces from third-party plugins are detectable via <code>PluginClassLoader.isFromThirdPartyPlugin(throwable)</code>.</li>
+                    <li>Failed plugins are set to <code>DISABLED</code> state without crashing the server.</li>
+                </ul>
+            </section>
+
+            <section id="example-plugin">
+                <h2>Complete Example Plugin</h2>
+                <p>This example demonstrates a plugin that registers an event listener, a command, an ECS component, and uses the config system:</p>
+
+                <h3>manifest.json</h3>
+                <pre><code>{
+  <span class="str">"Group"</span>:    <span class="str">"com.example"</span>,
+  <span class="str">"Name"</span>:     <span class="str">"WelcomePlugin"</span>,
+  <span class="str">"Version"</span>:  <span class="str">"1.0.0"</span>,
+  <span class="str">"Main"</span>:     <span class="str">"com.example.welcome.WelcomePlugin"</span>,
+  <span class="str">"Description"</span>: <span class="str">"Welcomes players and tracks visit counts"</span>,
+  <span class="str">"Authors"</span>:  [{ <span class="str">"Name"</span>: <span class="str">"ExampleDev"</span> }]
+}</code></pre>
+
+                <h3>WelcomePlugin.java</h3>
+                <pre><code><span class="kw">package</span> com.example.welcome;
+
+<span class="kw">import</span> com.hypixel.hytale.server.core.plugin.<span class="type">JavaPlugin</span>;
+<span class="kw">import</span> com.hypixel.hytale.server.core.plugin.<span class="type">JavaPluginInit</span>;
+<span class="kw">import</span> com.hypixel.hytale.component.<span class="type">ComponentType</span>;
+<span class="kw">import</span> com.hypixel.hytale.component.system.<span class="type">ISystem</span>;
+<span class="kw">import</span> com.hypixel.hytale.server.core.universe.world.storage.<span class="type">EntityStore</span>;
+<span class="kw">import</span> javax.annotation.<span class="type">Nonnull</span>;
+
+<span class="kw">public class</span> <span class="type">WelcomePlugin</span> <span class="kw">extends</span> <span class="type">JavaPlugin</span> {
+
+    <span class="kw">private static</span> <span class="type">WelcomePlugin</span> <span class="field">instance</span>;
+    <span class="kw">private</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">VisitCounter</span>&gt; <span class="field">visitCounterType</span>;
+
+    <span class="kw">public static</span> <span class="type">WelcomePlugin</span> <span class="fn">get</span>() { <span class="kw">return</span> <span class="field">instance</span>; }
+
+    <span class="kw">public</span> <span class="type">WelcomePlugin</span>(<span class="anno">@Nonnull</span> <span class="type">JavaPluginInit</span> <span class="field">init</span>) {
+        <span class="kw">super</span>(<span class="field">init</span>);
+        <span class="field">instance</span> = <span class="kw">this</span>;
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">setup</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"WelcomePlugin setting up!"</span>);
+
+        <span class="comment">// Register event handlers</span>
+        <span class="fn">getEventRegistry</span>().<span class="fn">registerGlobal</span>(
+            <span class="type">PlayerConnectEvent</span>.<span class="kw">class</span>,
+            <span class="kw">this</span>::<span class="fn">onPlayerConnect</span>
+        );
+
+        <span class="comment">// Register commands</span>
+        <span class="fn">getCommandRegistry</span>().<span class="fn">registerCommand</span>(
+            <span class="kw">new</span> <span class="type">VisitCountCommand</span>()
+        );
+
+        <span class="comment">// Register ECS component on EntityStore</span>
+        <span class="field">visitCounterType</span> = <span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerComponent</span>(
+            <span class="type">VisitCounter</span>.<span class="kw">class</span>,
+            <span class="str">"VisitCounter"</span>,
+            <span class="type">VisitCounter</span>.CODEC
+        );
+
+        <span class="comment">// Register a system that runs when players are added</span>
+        <span class="fn">getEntityStoreRegistry</span>().<span class="fn">registerSystem</span>(
+            (<span class="type">ISystem</span>) <span class="kw">new</span> <span class="type">WelcomeSystem</span>(<span class="field">visitCounterType</span>)
+        );
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">start</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"WelcomePlugin started!"</span>);
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">shutdown</span>() {
+        <span class="fn">getLogger</span>().<span class="fn">info</span>(<span class="str">"WelcomePlugin shutting down."</span>);
+    }
+
+    <span class="kw">private void</span> <span class="fn">onPlayerConnect</span>(<span class="type">PlayerConnectEvent</span> <span class="field">event</span>) {
+        <span class="field">event</span>.<span class="fn">getPlayer</span>().<span class="fn">sendMessage</span>(
+            <span class="type">Message</span>.<span class="fn">raw</span>(<span class="str">"Welcome to the server!"</span>)
+        );
+    }
+
+    <span class="kw">public</span> <span class="type">ComponentType</span>&lt;<span class="type">EntityStore</span>, <span class="type">VisitCounter</span>&gt; <span class="fn">getVisitCounterType</span>() {
+        <span class="kw">return</span> <span class="field">visitCounterType</span>;
+    }
+}</code></pre>
+
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>The constructor takes <span class="type">JavaPluginInit</span> and passes it to <code>super(init)</code>.</li>
+                    <li>All registration happens in <code>setup()</code> &mdash; events, commands, components, and systems.</li>
+                    <li>The singleton pattern makes cross-plugin access straightforward.</li>
+                    <li><span class="type">ComponentType</span> references are stored as fields for later use.</li>
+                    <li><code>start()</code> and <code>shutdown()</code> handle data lifecycle.</li>
+                    <li>Everything registered via the plugin's registries is automatically cleaned up on unload.</li>
+                </ul>
+            </section>
+
+            <section id="quick-reference">
+                <h2>Quick Reference</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>How</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Get plugin logger</td><td><code>getLogger()</code></td></tr>
+                        <tr><td>Get plugin identifier</td><td><code>getIdentifier()</code> &rarr; <code>"Group:Name"</code></td></tr>
+                        <tr><td>Get data directory</td><td><code>getDataDirectory()</code></td></tr>
+                        <tr><td>Get plugin manifest</td><td><code>getManifest()</code></td></tr>
+                        <tr><td>Check if plugin is enabled</td><td><code>isEnabled()</code></td></tr>
+                        <tr><td>Register event handler</td><td><code>getEventRegistry().registerGlobal(Class, Consumer)</code></td></tr>
+                        <tr><td>Register keyed event</td><td><code>getEventRegistry().register(Class, Key, Consumer)</code></td></tr>
+                        <tr><td>Register async event</td><td><code>getEventRegistry().registerAsync(Class, Function)</code></td></tr>
+                        <tr><td>Register command</td><td><code>getCommandRegistry().registerCommand(AbstractCommand)</code></td></tr>
+                        <tr><td>Register entity component</td><td><code>getEntityStoreRegistry().registerComponent(Class, ...)</code></td></tr>
+                        <tr><td>Register chunk component</td><td><code>getChunkStoreRegistry().registerComponent(Class, ...)</code></td></tr>
+                        <tr><td>Register entity system</td><td><code>getEntityStoreRegistry().registerSystem(ISystem)</code></td></tr>
+                        <tr><td>Register block state</td><td><code>getBlockStateRegistry().registerBlockState(Class, String, Codec)</code></td></tr>
+                        <tr><td>Register asset store</td><td><code>getAssetRegistry().register(AssetStore)</code></td></tr>
+                        <tr><td>Register codec type</td><td><code>getCodecRegistry(codec).register(String, Class, Codec)</code></td></tr>
+                        <tr><td>Declare config</td><td><code>withConfig(BuilderCodec)</code> (before setup)</td></tr>
+                        <tr><td>Get PluginManager</td><td><code>PluginManager.get()</code></td></tr>
+                        <tr><td>Get Universe</td><td><code>Universe.get()</code></td></tr>
+                        <tr><td>Get world</td><td><code>Universe.get().getWorld("name")</code></td></tr>
+                        <tr><td>Get all players</td><td><code>Universe.get().getPlayers()</code></td></tr>
+                        <tr><td>Schedule on world thread</td><td><code>world.execute(() -> { ... })</code></td></tr>
+                        <tr><td>Broadcast message</td><td><code>Universe.get().sendMessage(Message.raw("text"))</code></td></tr>
+                        <tr><td>Base permission string</td><td><code>getBasePermission()</code> &rarr; <code>"group.group"</code></td></tr>
+                    </tbody>
+                </table>
+            </section>
+
         </div>
     </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>

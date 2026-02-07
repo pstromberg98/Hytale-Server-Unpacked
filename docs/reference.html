@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECS Reference - Hytale Server Documentation</title>
+    <title>ECS Reference Catalog - Hytale Server Docs</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .ref-nav { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 32px; }
@@ -14,44 +14,74 @@
         .pkg { font-size: 12px; color: var(--text-muted); font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace; margin-bottom: 4px; }
         td code { font-size: 12px; }
         h3 { scroll-margin-top: 20px; }
+        .sig { font-size: 13px; font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin: 8px 0 16px; overflow-x: auto; }
+        .sig .kw { color: #ff7b72; }
+        .sig .type { color: #79c0ff; }
+        .sig .param { color: #d2a8ff; }
+        .sig .anno { color: #ffa657; }
     </style>
 </head>
 <body>
-    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
     <aside class="sidebar">
-        <div class="sidebar-header"><h1>Hytale Server</h1><div class="subtitle">Internal Documentation</div></div>
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
         <nav>
+            <div class="nav-section">Start</div>
             <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
             <div class="nav-section">Architecture</div>
             <a href="ecs.html">ECS Architecture</a>
             <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
             <a href="worlds.html">Worlds &amp; Universe</a>
             <div class="nav-section">Systems</div>
-            <a href="players.html">Players &amp; Persistence</a>
             <a href="events.html">Event System</a>
             <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
             <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="worldgen.html">World Generation</a>
             <div class="nav-section">Client</div>
             <a href="ui.html">UI &amp; HUD</a>
             <a href="sound.html">Sound &amp; Audio</a>
             <div class="nav-section">Entities</div>
             <a href="entities.html">Entities &amp; NPCs</a>
-            <a href="permissions.html">Permissions</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
             <div class="nav-section">Development</div>
             <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
             <div class="nav-section">Reference</div>
             <a href="reference.html" class="active">ECS Catalog</a>
         </nav>
     </aside>
 
     <main class="main">
+        <nav class="page-toc"></nav>
         <div class="content">
             <h1>ECS Reference Catalog</h1>
-            <p class="page-desc">Complete catalog of all Components, Entity classes, and Systems in the Hytale server (version 2026.01.24).</p>
+            <p class="page-desc">Complete catalog of all Components, Entity classes, Systems, Store API, Query types, and ECS primitives in the Hytale server.</p>
 
             <div class="ref-nav">
                 <h4>Jump to</h4>
                 <div class="ref-nav-links">
+                    <a href="#store-api">Store API</a>
+                    <a href="#query-types">Queries</a>
+                    <a href="#lifecycle">Lifecycle</a>
                     <a href="#components">Components</a>
                     <a href="#comp-core">Core</a>
                     <a href="#comp-tracker">Tracker</a>
@@ -64,284 +94,478 @@
                     <a href="#comp-teleport">Teleport</a>
                     <a href="#comp-npc">NPC</a>
                     <a href="#comp-spawning">Spawning</a>
+                    <a href="#comp-chunk">Chunk</a>
                     <a href="#comp-misc">Misc</a>
                     <a href="#entities">Entities</a>
                     <a href="#systems">Systems</a>
-                    <a href="#sys-tracker">Tracker Systems</a>
-                    <a href="#sys-entity">Entity Systems</a>
-                    <a href="#sys-nameplate">Nameplate Systems</a>
-                    <a href="#sys-farming">Farming Systems</a>
-                    <a href="#sys-adventure">Adventure Systems</a>
-                    <a href="#sys-spawning">Spawning Systems</a>
+                    <a href="#events-ref">Events</a>
+                    <a href="#packets">Packets</a>
                 </div>
             </div>
 
             <!-- ============================================ -->
-            <h2 id="components">Components</h2>
-            <p>Components are pure data attached to entities. Access via <code>store.getComponent(ref, ComponentClass.getComponentType())</code>.</p>
+            <section id="store-api">
+            <h2>Store API Reference</h2>
+            <p>The <code>Store&lt;ECS_TYPE&gt;</code> class is the ECS database. Every world has an <code>EntityStore</code> (which is <code>Store&lt;EntityStore&gt;</code>) and a <code>ChunkStore</code> (which is <code>Store&lt;ChunkStore&gt;</code>). All mutating methods call <code>assertThread()</code> internally &mdash; they <strong>must</strong> be called from the owning world's ticking thread.</p>
+
+            <h3>Entity Management</h3>
+            <div class="sig"><span class="kw">public</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <strong>addEntity</strong>(<span class="anno">@Nonnull</span> <span class="type">Archetype</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">archetype</span>, <span class="anno">@Nonnull</span> <span class="type">AddReason</span> <span class="param">reason</span>)</div>
+            <p>Creates a new entity from an archetype template. Returns a <code>Ref</code> handle to the new entity.</p>
+
+            <div class="sig"><span class="kw">public</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <strong>addEntity</strong>(<span class="anno">@Nonnull</span> <span class="type">Holder</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">holder</span>, <span class="anno">@Nonnull</span> <span class="type">AddReason</span> <span class="param">reason</span>)</div>
+            <p>Adds a pre-constructed entity (from a Holder) into the store. Used for world transfers.</p>
+
+            <div class="sig"><span class="kw">public</span> <span class="type">Holder</span>&lt;<span class="type">ECS_TYPE</span>&gt; <strong>removeEntity</strong>(<span class="anno">@Nonnull</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">ref</span>, <span class="anno">@Nonnull</span> <span class="type">RemoveReason</span> <span class="param">reason</span>)</div>
+            <p>Removes an entity from the store. Returns a <code>Holder</code> containing the entity's components (can be re-added to another store).</p>
+
+            <h3>Component Operations</h3>
+            <div class="sig"><span class="kw">public</span> &lt;<span class="type">T</span> <span class="kw">extends</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt;&gt; <span class="type">T</span> <strong>getComponent</strong>(<span class="anno">@Nonnull</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">ref</span>, <span class="anno">@Nonnull</span> <span class="type">ComponentType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">T</span>&gt; <span class="param">componentType</span>)</div>
+            <p>Returns the component instance for the entity, or <code>null</code> if the entity doesn't have it.</p>
+
+            <div class="sig"><span class="kw">public</span> &lt;<span class="type">T</span> <span class="kw">extends</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt;&gt; <span class="type">T</span> <strong>addComponent</strong>(<span class="anno">@Nonnull</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">ref</span>, <span class="anno">@Nonnull</span> <span class="type">ComponentType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">T</span>&gt; <span class="param">componentType</span>)</div>
+            <p>Adds a new default-constructed component to the entity. Returns the new component instance.</p>
+
+            <div class="sig"><span class="kw">public</span> &lt;<span class="type">T</span> <span class="kw">extends</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt;&gt; <span class="kw">void</span> <strong>addComponent</strong>(<span class="anno">@Nonnull</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">ref</span>, <span class="anno">@Nonnull</span> <span class="type">ComponentType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">T</span>&gt; <span class="param">componentType</span>, <span class="anno">@Nonnull</span> <span class="type">T</span> <span class="param">component</span>)</div>
+            <p>Adds a pre-constructed component instance to the entity.</p>
+
+            <div class="sig"><span class="kw">public</span> &lt;<span class="type">T</span> <span class="kw">extends</span> <span class="type">Component</span>&lt;<span class="type">ECS_TYPE</span>&gt;&gt; <span class="kw">void</span> <strong>removeComponent</strong>(<span class="anno">@Nonnull</span> <span class="type">Ref</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">ref</span>, <span class="anno">@Nonnull</span> <span class="type">ComponentType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">T</span>&gt; <span class="param">componentType</span>)</div>
+            <p>Removes a component from the entity. The entity's archetype changes accordingly.</p>
+
+            <h3>Resources</h3>
+            <div class="sig"><span class="kw">public</span> &lt;<span class="type">T</span> <span class="kw">extends</span> <span class="type">Resource</span>&lt;<span class="type">ECS_TYPE</span>&gt;&gt; <span class="type">T</span> <strong>getResource</strong>(<span class="anno">@Nonnull</span> <span class="type">ResourceType</span>&lt;<span class="type">ECS_TYPE</span>, <span class="type">T</span>&gt; <span class="param">resourceType</span>)</div>
+            <p>Returns a store-wide resource (singleton data not tied to a specific entity).</p>
+
+            <h3>Thread Safety</h3>
+            <div class="sig"><span class="kw">public</span> <span class="kw">void</span> <strong>assertThread</strong>()</div>
+            <p>Asserts that the current thread is the store's owning thread. Throws if called from the wrong thread. Called internally by nearly every Store method.</p>
+
+            <div class="sig"><span class="kw">public</span> <span class="kw">boolean</span> <strong>isInThread</strong>()</div>
+            <p>Returns <code>true</code> if the caller is on the store's owning thread.</p>
+
+            <div class="sig"><span class="kw">public</span> <span class="type">ECS_TYPE</span> <strong>getExternalData</strong>()</div>
+            <p>Returns the store's external data (e.g., the <code>EntityStore</code> or <code>ChunkStore</code> instance itself).</p>
+
+            <h3>Ticking</h3>
+            <div class="sig"><span class="kw">public</span> <span class="kw">void</span> <strong>tick</strong>(<span class="kw">float</span> <span class="param">dt</span>)</div>
+            <p>Ticks all registered systems in the store. Called once per world tick (30 TPS).</p>
+
+            <div class="sig"><span class="kw">public</span> <span class="kw">void</span> <strong>tick</strong>(<span class="type">ArchetypeTickingSystem</span>&lt;<span class="type">ECS_TYPE</span>&gt; <span class="param">system</span>, <span class="kw">float</span> <span class="param">dt</span>, <span class="kw">int</span> <span class="param">systemIndex</span>)</div>
+            <p>Ticks a single specific system. Used for fine-grained system scheduling.</p>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="query-types">
+            <h2>Query Types</h2>
+            <p>Queries filter entities by their component composition. Used in system registration to declare which entities a system processes.</p>
+            <p class="pkg">com.hypixel.hytale.component.query</p>
+
+            <table>
+                <thead><tr><th>Query</th><th>Factory</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>AnyQuery&lt;ECS_TYPE&gt;</code></td><td><code>Query.any()</code></td><td>Matches <strong>all</strong> entities regardless of components. Singleton: <code>AnyQuery.INSTANCE</code>.</td></tr>
+                    <tr><td><code>NotQuery&lt;ECS_TYPE&gt;</code></td><td><code>Query.not(query)</code></td><td>Inverts a query &mdash; matches entities that do <em>not</em> match the inner query.</td></tr>
+                    <tr><td><code>AndQuery&lt;ECS_TYPE&gt;</code></td><td><code>Query.and(q1, q2, ...)</code></td><td>Matches entities that satisfy <strong>all</strong> provided queries (intersection).</td></tr>
+                    <tr><td><code>OrQuery&lt;ECS_TYPE&gt;</code></td><td><code>Query.or(q1, q2, ...)</code></td><td>Matches entities that satisfy <strong>any</strong> of the provided queries (union).</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Query Interface</h3>
+            <table>
+                <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>boolean test(Archetype&lt;ECS_TYPE&gt;)</code></td><td>Tests whether an archetype matches this query.</td></tr>
+                    <tr><td><code>boolean requiresComponentType(ComponentType&lt;ECS_TYPE, ?&gt;)</code></td><td>Returns true if this query requires a specific component type.</td></tr>
+                    <tr><td><code>void validateRegistry(ComponentRegistry&lt;ECS_TYPE&gt;)</code></td><td>Validates that all referenced component types are registered.</td></tr>
+                    <tr><td><code>void validate()</code></td><td>Validates internal query consistency.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Usage Example</h3>
+<pre><code><span class="comment">// Match entities with Transform AND Model but NOT Frozen</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; query = <span class="type">Query</span>.and(
+    <span class="type">TransformComponent</span>.getComponentType(),
+    <span class="type">ModelComponent</span>.getComponentType(),
+    <span class="type">Query</span>.not(<span class="type">Frozen</span>.getComponentType())
+);
+
+<span class="comment">// Match any entity (for global systems)</span>
+<span class="type">Query</span>&lt;<span class="type">EntityStore</span>&gt; all = <span class="type">Query</span>.any();</code></pre>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="lifecycle">
+            <h2>Entity Lifecycle</h2>
+            <p>Entities are created and destroyed using reason enums that describe <em>why</em> the operation occurred.</p>
+
+            <h3>AddReason</h3>
+            <p class="pkg">com.hypixel.hytale.component.AddReason</p>
+            <table>
+                <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>CREATION</code></td><td>Entity newly created (spawned for the first time).</td></tr>
+                    <tr><td><code>WORLD_TRANSFER</code></td><td>Entity transferred from another world.</td></tr>
+                    <tr><td><code>LOAD</code></td><td>Entity loaded from persistent storage (chunk load).</td></tr>
+                    <tr><td><code>ARCHETYPE_CHANGE</code></td><td>Internal: entity moved between archetypes due to component add/remove.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>RemoveReason</h3>
+            <p class="pkg">com.hypixel.hytale.component.RemoveReason</p>
+            <table>
+                <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>DESTRUCTION</code></td><td>Entity permanently destroyed (despawn, death).</td></tr>
+                    <tr><td><code>WORLD_TRANSFER</code></td><td>Entity being transferred to another world (will be re-added).</td></tr>
+                    <tr><td><code>UNLOAD</code></td><td>Entity unloaded to persistent storage (chunk unload).</td></tr>
+                    <tr><td><code>ARCHETYPE_CHANGE</code></td><td>Internal: entity moved between archetypes.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>ECS Primitives</h3>
+            <table>
+                <thead><tr><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Ref&lt;ECS_TYPE&gt;</code></td><td>Lightweight entity reference (index into the store). Only valid while the entity exists in the store. <strong>Do not cache across ticks</strong> unless you handle invalidation.</td></tr>
+                    <tr><td><code>Holder&lt;ECS_TYPE&gt;</code></td><td>Portable entity container. Holds an entity's complete component data outside of any store. Used for world transfers and serialization.</td></tr>
+                    <tr><td><code>Archetype&lt;ECS_TYPE&gt;</code></td><td>A unique combination of component types. Entities with the same set of components share an archetype. Used for efficient iteration.</td></tr>
+                    <tr><td><code>ComponentType&lt;ECS_TYPE, T&gt;</code></td><td>Type descriptor for a component. Each component class has a static <code>getComponentType()</code> method returning its descriptor.</td></tr>
+                    <tr><td><code>Component&lt;ECS_TYPE&gt;</code></td><td>Base interface for all ECS components. Components are pure data &mdash; no behavior.</td></tr>
+                    <tr><td><code>Resource&lt;ECS_TYPE&gt;</code></td><td>Store-wide singleton data. Not attached to any entity. Accessed via <code>store.getResource()</code>.</td></tr>
+                    <tr><td><code>ResourceType&lt;ECS_TYPE, T&gt;</code></td><td>Type descriptor for a resource. Similar to ComponentType but for resources.</td></tr>
+                    <tr><td><code>ComponentRegistry&lt;ECS_TYPE&gt;</code></td><td>Registry of all component types for a store. Used for validation and serialization.</td></tr>
+                    <tr><td><code>CommandBuffer&lt;ECS_TYPE&gt;</code></td><td>Deferred mutation buffer. Collects component add/remove operations to be applied after iteration completes. Prevents concurrent modification.</td></tr>
+                    <tr><td><code>ArchetypeTickingSystem&lt;ECS_TYPE&gt;</code></td><td>Base class for ECS systems. Registered on a store and ticked each frame. Declares a query to select which entities it processes.</td></tr>
+                </tbody>
+            </table>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="components">
+            <h2>Components</h2>
+            <p>Components are pure data attached to entities. Access via <code>store.getComponent(ref, SomeComponent.getComponentType())</code>. Components have no behavior &mdash; systems process them.</p>
+            </section>
 
             <!-- Core Entity Components -->
-            <h3 id="comp-core">Core Entity Components</h3>
+            <section id="comp-core">
+            <h3>Core Entity Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.entity.component</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
                     <tr><td><code>TransformComponent</code></td><td>Position (<code>Vector3d</code>) and rotation (<code>Vector3f</code>). Required for all positioned entities.</td></tr>
                     <tr><td><code>ModelComponent</code></td><td>3D model reference. <strong>Required</strong> by entity tracker for network visibility, even for "invisible" entities.</td></tr>
-                    <tr><td><code>BoundingBox</code></td><td>Collision box. Also has <code>DetailBoxes</code> map for complex hitboxes.</td></tr>
+                    <tr><td><code>BoundingBox</code></td><td>Collision box with <code>DetailBoxes</code> map for complex hitboxes.</td></tr>
                     <tr><td><code>Intangible</code></td><td>Marker: entity has no collision. Singleton: <code>Intangible.INSTANCE</code>.</td></tr>
                     <tr><td><code>Invulnerable</code></td><td>Marker: entity cannot take damage.</td></tr>
                     <tr><td><code>EntityScaleComponent</code></td><td>Scale multiplier for entity rendering.</td></tr>
                     <tr><td><code>PersistentModel</code></td><td>Model that persists to disk (survives chunk unload/reload).</td></tr>
-                    <tr><td><code>DynamicLight</code></td><td>Entity emits dynamic light.</td></tr>
+                    <tr><td><code>DynamicLight</code></td><td>Entity emits dynamic light with configurable radius and color.</td></tr>
                     <tr><td><code>PersistentDynamicLight</code></td><td>Dynamic light that persists to disk.</td></tr>
                     <tr><td><code>DisplayNameComponent</code></td><td>Display name override for entities.</td></tr>
-                    <tr><td><code>HeadRotation</code></td><td>Separate head rotation (pitch, yaw) for entities.</td></tr>
-                    <tr><td><code>ActiveAnimationComponent</code></td><td>Currently playing animations on entity.</td></tr>
+                    <tr><td><code>HeadRotation</code></td><td>Separate head rotation (pitch, yaw) for entities with head bones.</td></tr>
+                    <tr><td><code>ActiveAnimationComponent</code></td><td>Currently playing animations on entity model.</td></tr>
                     <tr><td><code>AudioComponent</code></td><td>Audio playback state for entity-attached sounds.</td></tr>
-                    <tr><td><code>MovementAudioComponent</code></td><td>Footstep and movement sounds configuration.</td></tr>
+                    <tr><td><code>MovementAudioComponent</code></td><td>Footstep and movement sound configuration.</td></tr>
                     <tr><td><code>Interactable</code></td><td>Entity can be interacted with. Contains <code>Interactions</code> list.</td></tr>
-                    <tr><td><code>RespondToHit</code></td><td>Hit response config (knockback, damage feedback).</td></tr>
-                    <tr><td><code>RotateObjectComponent</code></td><td>Continuous rotation animation.</td></tr>
-                    <tr><td><code>CollisionResultComponent</code></td><td>Results of collision detection (grounded state, collision normals).</td></tr>
+                    <tr><td><code>RespondToHit</code></td><td>Hit response config (knockback, damage feedback, animation).</td></tr>
+                    <tr><td><code>RotateObjectComponent</code></td><td>Continuous rotation animation (decorative spinning).</td></tr>
+                    <tr><td><code>CollisionResultComponent</code></td><td>Results of collision detection: grounded state, collision normals, contact points.</td></tr>
                     <tr><td><code>PositionDataComponent</code></td><td>Position interpolation/extrapolation data for smooth network movement.</td></tr>
-                    <tr><td><code>SnapshotBuffer</code></td><td>Historical position/rotation snapshots for interpolation.</td></tr>
-                    <tr><td><code>PropComponent</code></td><td>Decorative prop entity (non-interactive).</td></tr>
-                    <tr><td><code>WorldGenId</code></td><td>Unique ID for world-generated entities (persistence across chunks).</td></tr>
+                    <tr><td><code>SnapshotBuffer</code></td><td>Historical position/rotation snapshots for interpolation and rollback.</td></tr>
+                    <tr><td><code>PropComponent</code></td><td>Decorative prop entity (non-interactive world decoration).</td></tr>
+                    <tr><td><code>WorldGenId</code></td><td>Unique ID for world-generated entities (persistence across chunk loads).</td></tr>
                     <tr><td><code>HiddenFromAdventurePlayers</code></td><td>Marker: invisible to non-builder players.</td></tr>
                     <tr><td><code>NewSpawnComponent</code></td><td>Marker: entity just spawned this tick. Removed after first tick.</td></tr>
-                    <tr><td><code>FromPrefab</code></td><td>Marker: entity was spawned from a prefab.</td></tr>
+                    <tr><td><code>FromPrefab</code></td><td>Marker: entity was spawned from a prefab template.</td></tr>
                     <tr><td><code>FromWorldGen</code></td><td>Marker: entity was generated during world generation.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Entity Tracker Components -->
-            <h3 id="comp-tracker">Entity Tracker Components</h3>
+            <section id="comp-tracker">
+            <h3>Entity Tracker Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.entity.tracker</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>NetworkId</code></td><td>Network ID for client synchronization. <strong>Required</strong> for all networked entities. Get from <code>EntityStore.takeNextNetworkId()</code>.</td></tr>
-                    <tr><td><code>EntityTrackerSystems.Visible</code></td><td>Marker: entity is visible to at least one player (managed by tracker).</td></tr>
-                    <tr><td><code>EntityTrackerSystems.EntityViewer</code></td><td>Tracks which players can see this entity.</td></tr>
+                    <tr><td><code>NetworkId</code></td><td>Network ID for client synchronization. <strong>Required</strong> for all networked entities. Obtained from <code>EntityStore.takeNextNetworkId()</code>.</td></tr>
+                    <tr><td><code>EntityTrackerSystems.Visible</code></td><td>Marker: entity is visible to at least one player. Managed automatically by the tracker system.</td></tr>
+                    <tr><td><code>EntityTrackerSystems.EntityViewer</code></td><td>Tracks which players can currently see this entity. Used for targeted packet sending.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Physics Components -->
-            <h3 id="comp-physics">Physics Components</h3>
+            <section id="comp-physics">
+            <h3>Physics Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.physics.component</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>Velocity</code></td><td>Current velocity vector, client velocity, and velocity instructions queue.</td></tr>
-                    <tr><td><code>PhysicsValues</code></td><td>Physics parameters: gravity, drag, friction, mass, bounciness.</td></tr>
+                    <tr><td><code>Velocity</code></td><td>Current velocity vector, client velocity, and velocity instructions queue. Fields: <code>velocity</code>, <code>clientVelocity</code>, <code>instructions</code>.</td></tr>
+                    <tr><td><code>PhysicsValues</code></td><td>Physics parameters: gravity multiplier, drag coefficient, friction, mass, bounciness. Configurable per-entity.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Projectile Components -->
-            <h3 id="comp-projectile">Projectile Components</h3>
+            <section id="comp-projectile">
+            <h3>Projectile Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.projectile.component</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>Projectile</code></td><td>Projectile data: owner, source position, damage, lifetime.</td></tr>
-                    <tr><td><code>PredictedProjectile</code></td><td>Client-side predicted projectile (matches client simulation).</td></tr>
+                    <tr><td><code>Projectile</code></td><td>Projectile data: owner entity ref, source position, damage value, max lifetime, hit callback.</td></tr>
+                    <tr><td><code>PredictedProjectile</code></td><td>Client-side predicted projectile with matching prediction ID for reconciliation.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Item Components -->
-            <h3 id="comp-item">Item Components</h3>
+            <section id="comp-item">
+            <h3>Item Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.entity.item</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>ItemComponent</code></td><td>Dropped item entity with <code>ItemStack</code> data.</td></tr>
-                    <tr><td><code>PickupItemComponent</code></td><td>Item can be picked up by players (with delay timer).</td></tr>
-                    <tr><td><code>PreventPickup</code></td><td>Marker: item cannot be picked up.</td></tr>
-                    <tr><td><code>PreventItemMerging</code></td><td>Marker: item won't merge with nearby identical items.</td></tr>
-                    <tr><td><code>ItemPhysicsComponent</code></td><td>Custom physics behavior for item entities.</td></tr>
+                    <tr><td><code>ItemComponent</code></td><td>Dropped item entity with <code>ItemStack</code> data (type, count, durability).</td></tr>
+                    <tr><td><code>PickupItemComponent</code></td><td>Item can be picked up by players. Includes delay timer before pickup is allowed.</td></tr>
+                    <tr><td><code>PreventPickup</code></td><td>Marker: item cannot be picked up by any player.</td></tr>
+                    <tr><td><code>PreventItemMerging</code></td><td>Marker: item won't merge with nearby identical dropped items.</td></tr>
+                    <tr><td><code>ItemPhysicsComponent</code></td><td>Custom physics behavior for item entities (bounce, slide, float).</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Damage Components -->
-            <h3 id="comp-damage">Damage &amp; Death Components</h3>
-            <p class="pkg">com.hypixel.hytale.server.core.modules.entity.damage / ...core.entity.damage</p>
+            <section id="comp-damage">
+            <h3>Damage &amp; Death Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.core.modules.entity.damage</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>DeathComponent</code></td><td>Entity is dead. Tracks death time and cause.</td></tr>
-                    <tr><td><code>DeferredCorpseRemoval</code></td><td>Corpse removal delayed for death animation.</td></tr>
-                    <tr><td><code>DamageDataComponent</code></td><td>Damage history, last damage source, immunity frames.</td></tr>
-                    <tr><td><code>KnockbackComponent</code></td><td>Knockback force to apply next tick. (<code>...entity.knockback</code>)</td></tr>
+                    <tr><td><code>DeathComponent</code></td><td>Entity is dead. Tracks death timestamp, cause of death, and killer reference.</td></tr>
+                    <tr><td><code>DeferredCorpseRemoval</code></td><td>Corpse removal delayed to allow death animation to play.</td></tr>
+                    <tr><td><code>DamageDataComponent</code></td><td>Damage history, last damage source, immunity frame tracking, total damage taken.</td></tr>
+                    <tr><td><code>KnockbackComponent</code></td><td>Knockback force to apply on next physics tick. Package: <code>...entity.knockback</code>.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Player Components -->
-            <h3 id="comp-player">Player Components</h3>
-            <p class="pkg">com.hypixel.hytale.server.core.modules.entity.player / ...entity.entities.player</p>
+            <section id="comp-player">
+            <h3>Player Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.core.modules.entity.player</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>PlayerRef</code></td><td>Thread-safe player handle. Network connection, UUID, username, world reference. (<code>...universe.PlayerRef</code>)</td></tr>
-                    <tr><td><code>Player</code></td><td>Full player entity: inventory, HUD, game mode, permissions. (<code>...entity.entities.Player</code>)</td></tr>
-                    <tr><td><code>PlayerInput</code></td><td>Current input state (keys, mouse, movement direction).</td></tr>
-                    <tr><td><code>PlayerSkinComponent</code></td><td>Player skin asset reference.</td></tr>
-                    <tr><td><code>PlayerSettings</code></td><td>Client settings (render distance, UI preferences).</td></tr>
-                    <tr><td><code>ChunkTracker</code></td><td>Tracks which chunks the player has loaded.</td></tr>
-                    <tr><td><code>MovementManager</code></td><td>Movement state machine, speed modifiers, anti-cheat. (<code>...player.movement</code>)</td></tr>
-                    <tr><td><code>MovementStatesComponent</code></td><td>Movement flags: sprinting, crouching, swimming, flying, gliding. (<code>...entity.movement</code>)</td></tr>
-                    <tr><td><code>CameraManager</code></td><td>Camera effects: shake, zoom, FOV changes.</td></tr>
-                    <tr><td><code>HiddenPlayersManager</code></td><td>Tracks which players are hidden from this player.</td></tr>
-                    <tr><td><code>KnockbackSimulation</code></td><td>Client-side knockback prediction state.</td></tr>
-                    <tr><td><code>UniqueItemUsagesComponent</code></td><td>Tracks unique items used (for achievements).</td></tr>
+                    <tr><td><code>PlayerRef</code></td><td>Thread-safe player handle. Contains network connection, UUID, username, current world reference. Package: <code>...universe.PlayerRef</code>.</td></tr>
+                    <tr><td><code>Player</code></td><td>Full player entity (~51K lines). Inventory, HUD managers, game mode, permissions, recipes. Package: <code>...entity.entities.Player</code>.</td></tr>
+                    <tr><td><code>PlayerInput</code></td><td>Current input state: pressed keys, mouse buttons, movement direction, look angles.</td></tr>
+                    <tr><td><code>PlayerSkinComponent</code></td><td>Player skin asset reference and customization data.</td></tr>
+                    <tr><td><code>PlayerSettings</code></td><td>Client-side settings synced to server: render distance, language, UI preferences.</td></tr>
+                    <tr><td><code>ChunkTracker</code></td><td>Tracks which chunks the player has loaded/pending. Drives chunk streaming.</td></tr>
+                    <tr><td><code>MovementManager</code></td><td>Movement state machine: speed modifiers, anti-cheat validation, movement modes. Package: <code>...player.movement</code>.</td></tr>
+                    <tr><td><code>MovementStatesComponent</code></td><td>Movement flags: sprinting, crouching, swimming, flying, gliding, climbing. Package: <code>...entity.movement</code>.</td></tr>
+                    <tr><td><code>CameraManager</code></td><td>Camera effects: screen shake, zoom, FOV changes, third-person toggles.</td></tr>
+                    <tr><td><code>HiddenPlayersManager</code></td><td>Tracks which other players are hidden from this player's view.</td></tr>
+                    <tr><td><code>KnockbackSimulation</code></td><td>Client-side knockback prediction state for latency compensation.</td></tr>
+                    <tr><td><code>UniqueItemUsagesComponent</code></td><td>Tracks unique items used for achievements and statistics.</td></tr>
                 </tbody>
             </table>
+            </section>
 
-            <!-- Nameplate -->
-            <h3 id="comp-nameplate">Nameplate &amp; Identity Components</h3>
-            <p class="pkg">com.hypixel.hytale.server.core.entity.nameplate / ...core.entity</p>
+            <!-- Nameplate & Identity -->
+            <section id="comp-nameplate">
+            <h3>Nameplate &amp; Identity Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.core.entity.nameplate</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>Nameplate</code></td><td>Floating text above entity. Network dirty-tracked for efficient sync.</td></tr>
-                    <tr><td><code>UUIDComponent</code></td><td>UUID for entity persistence and tracking.</td></tr>
-                    <tr><td><code>Frozen</code></td><td>Marker: entity is frozen (no movement, no AI).</td></tr>
-                    <tr><td><code>InteractionManager</code></td><td>Manages interaction state for entity.</td></tr>
-                    <tr><td><code>EntityGroup</code></td><td>Entity belongs to a group (coordinated behavior). (<code>...entity.group</code>)</td></tr>
+                    <tr><td><code>Nameplate</code></td><td>Floating text above entity. Network dirty-tracked: only re-sent when text changes.</td></tr>
+                    <tr><td><code>UUIDComponent</code></td><td>UUID for entity persistence, tracking, and cross-reference across chunks/worlds.</td></tr>
+                    <tr><td><code>Frozen</code></td><td>Marker: entity is frozen (no movement, no AI ticking, no physics).</td></tr>
+                    <tr><td><code>InteractionManager</code></td><td>Manages current interaction state and available interactions.</td></tr>
+                    <tr><td><code>EntityGroup</code></td><td>Entity belongs to a named group for coordinated behavior. Package: <code>...entity.group</code>.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Teleport Components -->
-            <h3 id="comp-teleport">Teleport Components</h3>
+            <section id="comp-teleport">
+            <h3>Teleport Components</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.entity.teleport</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>Teleport</code></td><td>Pending teleport request. Destination world, position, rotation. Processed by ECS system.</td></tr>
-                    <tr><td><code>TeleportRecord</code></td><td>Teleport history and cooldown tracking.</td></tr>
+                    <tr><td><code>Teleport</code></td><td>Pending teleport request. Fields: <code>world</code>, <code>position</code>, <code>rotation</code>, <code>velocity</code>, <code>keepVelocity</code>. Processed by <code>TeleportSystems</code>. See <a href="teleportation.html">Teleportation</a>.</td></tr>
+                    <tr><td><code>TeleportRecord</code></td><td>Teleport history tracking: last teleport time (for cooldowns), origin position. Linked to <code>TeleportHistory</code> for back/forward navigation.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- NPC Components -->
-            <h3 id="comp-npc">NPC Components</h3>
-            <p class="pkg">com.hypixel.hytale.server.npc.entities / ...npc.components</p>
+            <section id="comp-npc">
+            <h3>NPC Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.npc.entities</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>NPCEntity</code></td><td>NPC behavior and role data. Access via <code>NPCEntity.getComponentType()</code>.</td></tr>
-                    <tr><td><code>StepComponent</code></td><td>NPC behavior tree step execution state.</td></tr>
-                    <tr><td><code>Timers</code></td><td>NPC timers for behavior delays/cooldowns.</td></tr>
-                    <tr><td><code>SpawnReference</code></td><td>Reference to NPC's spawn location/marker.</td></tr>
-                    <tr><td><code>FailedSpawnComponent</code></td><td>Marker: NPC spawn failed (debugging aid).</td></tr>
-                    <tr><td><code>MessageSupport</code></td><td>NPC can send/receive messages. (<code>...components.messaging</code>)</td></tr>
-                    <tr><td><code>BeaconSupport</code></td><td>NPC interacts with spawn beacons. (<code>...components.messaging</code>)</td></tr>
-                    <tr><td><code>PlayerEntityEventSupport</code></td><td>NPC responds to player entity events. (<code>...components.messaging</code>)</td></tr>
-                    <tr><td><code>NPCEntityEventSupport</code></td><td>NPC responds to other NPC events. (<code>...components.messaging</code>)</td></tr>
-                    <tr><td><code>CombatViewSystems.CombatData</code></td><td>Combat perception data for NPC AI. (<code>...blackboard.view.combat</code>)</td></tr>
+                    <tr><td><code>NPCEntity</code></td><td>Core NPC component. Behavior tree, role, blackboard data, decision maker. Access via <code>NPCEntity.getComponentType()</code>.</td></tr>
+                    <tr><td><code>StepComponent</code></td><td>NPC behavior tree step execution state and progress tracking.</td></tr>
+                    <tr><td><code>Timers</code></td><td>NPC timers for behavior delays, cooldowns, and scheduled actions.</td></tr>
+                    <tr><td><code>SpawnReference</code></td><td>Reference to NPC's spawn location/beacon marker.</td></tr>
+                    <tr><td><code>FailedSpawnComponent</code></td><td>Marker: NPC spawn attempt failed (debugging aid). Includes failure reason.</td></tr>
+                    <tr><td><code>MessageSupport</code></td><td>NPC can send/receive inter-entity messages. Package: <code>...components.messaging</code>.</td></tr>
+                    <tr><td><code>BeaconSupport</code></td><td>NPC interacts with spawn beacons for territory control. Package: <code>...components.messaging</code>.</td></tr>
+                    <tr><td><code>PlayerEntityEventSupport</code></td><td>NPC responds to player-entity events (approach, attack, etc.).</td></tr>
+                    <tr><td><code>NPCEntityEventSupport</code></td><td>NPC responds to other NPC events (group coordination, alerts).</td></tr>
+                    <tr><td><code>CombatViewSystems.CombatData</code></td><td>Combat perception blackboard: visible threats, attack targets, flee vectors. Package: <code>...blackboard.view.combat</code>.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- Spawning Components -->
-            <h3 id="comp-spawning">Spawning Components</h3>
-            <p class="pkg">com.hypixel.hytale.server.spawning.*</p>
+            <section id="comp-spawning">
+            <h3>Spawning Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.spawning</p>
             <table>
                 <thead><tr><th>Component</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>SpawnSuppressionComponent</code></td><td>Entity suppresses mob spawning in nearby area.</td></tr>
-                    <tr><td><code>LocalSpawnBeacon</code></td><td>Local spawn beacon controller.</td></tr>
-                    <tr><td><code>LocalSpawnController</code></td><td>Controls local spawning behavior.</td></tr>
-                    <tr><td><code>SpawnMarkerBlockReference</code></td><td>Reference to spawn marker block.</td></tr>
-                    <tr><td><code>InitialBeaconDelay</code></td><td>Delay before spawn beacon activates.</td></tr>
+                    <tr><td><code>SpawnSuppressionComponent</code></td><td>Entity suppresses mob spawning in a configurable radius around it.</td></tr>
+                    <tr><td><code>LocalSpawnBeacon</code></td><td>Local spawn beacon controller that manages NPC spawn points.</td></tr>
+                    <tr><td><code>LocalSpawnController</code></td><td>Controls local spawning behavior: rate, cap, conditions.</td></tr>
+                    <tr><td><code>SpawnMarkerBlockReference</code></td><td>Reference to the spawn marker block that created this spawner.</td></tr>
+                    <tr><td><code>InitialBeaconDelay</code></td><td>Delay timer before spawn beacon activates after placement.</td></tr>
+                </tbody>
+            </table>
+            </section>
+
+            <!-- Chunk Components -->
+            <section id="comp-chunk">
+            <h3>Chunk &amp; Block Components</h3>
+            <p class="pkg">com.hypixel.hytale.server.core.universe.world</p>
+            <table>
+                <thead><tr><th>Component</th><th>Store</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>WorldChunk</code></td><td><code>ChunkStore</code></td><td>Top-level chunk component. 32&times;256&times;32 blocks. Implements <code>BlockAccessor</code>. Contains block sections, block entities, and lifecycle flags.</td></tr>
+                    <tr><td><code>BlockSection</code></td><td>&mdash;</td><td>32&times;32&times;32 sub-chunk section. Uses <code>ISectionPalette</code> for block storage compression.</td></tr>
+                    <tr><td><code>ChunkLoadState</code></td><td><code>ChunkStore</code></td><td>Async chunk loading pipeline state: NONE &rarr; LOADING &rarr; GENERATING &rarr; LOADED. Exponential backoff on failure.</td></tr>
+                    <tr><td><code>ChunkBlockTickState</code></td><td><code>ChunkStore</code></td><td>Scheduled block tick data (crop growth, liquid flow, redstone). Package: <code>...builtin.blocktick</code>.</td></tr>
+                    <tr><td><code>FarmBlockComponent</code></td><td><code>ChunkStore</code></td><td>Farm block data per chunk: soil moisture, crop growth stage. Package: <code>...adventure.farming</code>.</td></tr>
                 </tbody>
             </table>
 
+            <h3>Palette Types</h3>
+            <p>Block sections use palette compression to minimize memory usage:</p>
+            <table>
+                <thead><tr><th>Palette</th><th>Bits/Block</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>EmptySectionPalette</code></td><td>0</td><td>Section contains a single block type (air or uniform fill). Zero storage cost.</td></tr>
+                    <tr><td><code>HalfBytePalette</code></td><td>4</td><td>Up to 16 unique block types per section.</td></tr>
+                    <tr><td><code>BytePalette</code></td><td>8</td><td>Up to 256 unique block types per section.</td></tr>
+                    <tr><td><code>ShortPalette</code></td><td>16</td><td>Up to 65,536 unique block types. Used for highly varied sections.</td></tr>
+                </tbody>
+            </table>
+            </section>
+
             <!-- Misc Components -->
-            <h3 id="comp-misc">Other Components</h3>
+            <section id="comp-misc">
+            <h3>Other Components</h3>
             <table>
                 <thead><tr><th>Component</th><th>Package</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>EffectControllerComponent</code></td><td><code>...entity.effect</code></td><td>Active entity effects (buffs/debuffs) manager.</td></tr>
-                    <tr><td><code>Repulsion</code></td><td><code>...entity.repulsion</code></td><td>Entity repels other entities (force field).</td></tr>
-                    <tr><td><code>HitboxCollision</code></td><td><code>...entity.hitboxcollision</code></td><td>Complex hitbox collision configuration.</td></tr>
-                    <tr><td><code>DespawnComponent</code></td><td><code>...modules.entity</code></td><td>Despawn timer and conditions.</td></tr>
-                    <tr><td><code>Interactions</code></td><td><code>...modules.interaction</code></td><td>List of available interactions for entity.</td></tr>
-                    <tr><td><code>UIComponentList</code></td><td><code>...modules.entityui</code></td><td>UI elements attached to entity (health bars, etc.).</td></tr>
-                    <tr><td><code>PersistentFlockData</code></td><td><code>...server.flock</code></td><td>Flock membership and state (persisted).</td></tr>
-                    <tr><td><code>NPCMountComponent</code></td><td><code>...builtin.mounts</code></td><td>Entity can be mounted by NPCs.</td></tr>
-                    <tr><td><code>MountedByComponent</code></td><td><code>...builtin.mounts</code></td><td>Tracks what is mounted on this entity.</td></tr>
-                    <tr><td><code>MinecartComponent</code></td><td><code>...mounts.minecart</code></td><td>Minecart behavior: rails, speed, momentum.</td></tr>
-                    <tr><td><code>BuilderToolsUserData</code></td><td><code>...builtin.buildertools</code></td><td>Player's builder tools settings and state.</td></tr>
-                    <tr><td><code>PrefabAnchor</code></td><td><code>...buildertools.prefabeditor</code></td><td>Anchor point for prefab editing.</td></tr>
-                    <tr><td><code>PersistentRefCount</code></td><td><code>...entity.reference</code></td><td>Reference counting for persistent entity references.</td></tr>
+                    <tr><td><code>EffectControllerComponent</code></td><td><code>...entity.effect</code></td><td>Active entity effects (buffs/debuffs) manager with duration tracking.</td></tr>
+                    <tr><td><code>Repulsion</code></td><td><code>...entity.repulsion</code></td><td>Entity repels other entities within a configurable radius (force field).</td></tr>
+                    <tr><td><code>HitboxCollision</code></td><td><code>...entity.hitboxcollision</code></td><td>Complex multi-part hitbox collision configuration.</td></tr>
+                    <tr><td><code>DespawnComponent</code></td><td><code>...modules.entity</code></td><td>Despawn timer and conditions (distance, time, player proximity).</td></tr>
+                    <tr><td><code>Interactions</code></td><td><code>...modules.interaction</code></td><td>List of available interactions for an entity (talk, trade, open).</td></tr>
+                    <tr><td><code>UIComponentList</code></td><td><code>...modules.entityui</code></td><td>UI elements attached to entity (health bars, progress indicators).</td></tr>
+                    <tr><td><code>PersistentFlockData</code></td><td><code>...server.flock</code></td><td>Flock membership, leader reference, and formation state (persisted).</td></tr>
+                    <tr><td><code>NPCMountComponent</code></td><td><code>...builtin.mounts</code></td><td>Entity can be mounted by NPCs. Mount points and rider slots.</td></tr>
+                    <tr><td><code>MountedByComponent</code></td><td><code>...builtin.mounts</code></td><td>Tracks what entities are currently mounted on this entity.</td></tr>
+                    <tr><td><code>MinecartComponent</code></td><td><code>...mounts.minecart</code></td><td>Minecart behavior: rail following, speed, momentum, braking.</td></tr>
+                    <tr><td><code>BuilderToolsUserData</code></td><td><code>...builtin.buildertools</code></td><td>Player's builder tools settings: selected tool, brush size, materials.</td></tr>
+                    <tr><td><code>PrefabAnchor</code></td><td><code>...buildertools.prefabeditor</code></td><td>Anchor point for prefab editing: origin, bounds, rotation.</td></tr>
+                    <tr><td><code>PersistentRefCount</code></td><td><code>...entity.reference</code></td><td>Reference counting for persistent entity cross-references.</td></tr>
+                    <tr><td><code>EntitySnapshot</code></td><td><code>...core.entity</code></td><td>Complete point-in-time snapshot of entity state for rollback/replay.</td></tr>
                 </tbody>
             </table>
+            </section>
 
             <!-- ============================================ -->
-            <h2 id="entities">Entity Classes</h2>
-            <p>Entity classes form the inheritance hierarchy. Most game objects are pure-component entities, but these classes provide base functionality.</p>
+            <section id="entities">
+            <h2>Entity Classes</h2>
+            <p>Entity classes form the inheritance hierarchy. Most game objects are pure-component entities, but these classes provide base functionality for special entity types.</p>
 
             <table>
                 <thead><tr><th>Class</th><th>Extends</th><th>Package</th><th>Description</th></tr></thead>
                 <tbody>
                     <tr><td><code>Entity</code></td><td>&mdash;</td><td><code>...core.entity</code></td><td>Abstract base. Has TransformComponent, network ID, UUID, display name.</td></tr>
-                    <tr><td><code>LivingEntity</code></td><td><code>Entity</code></td><td><code>...core.entity</code></td><td>Abstract. Adds Inventory, fall damage, stat modifiers, equipment.</td></tr>
-                    <tr><td><code>Player</code></td><td><code>LivingEntity</code></td><td><code>...entity.entities</code></td><td>Playable character. Input, camera, HUD, permissions, game mode.</td></tr>
-                    <tr><td><code>BlockEntity</code></td><td><code>Entity</code></td><td><code>...entity.entities</code></td><td>Block-based entities: chests, furnaces, doors, interactive blocks.</td></tr>
+                    <tr><td><code>LivingEntity</code></td><td><code>Entity</code></td><td><code>...core.entity</code></td><td>Abstract. Adds health, inventory, fall damage, stat modifiers, equipment.</td></tr>
+                    <tr><td><code>Player</code></td><td><code>LivingEntity</code></td><td><code>...entity.entities</code></td><td>Playable character. ~51K lines. Input, camera, HUD, permissions, game mode, hotbar, crafting.</td></tr>
+                    <tr><td><code>BlockEntity</code></td><td><code>Entity</code></td><td><code>...entity.entities</code></td><td>Block-based entities: chests, furnaces, doors, signs, interactive blocks.</td></tr>
                 </tbody>
             </table>
 
             <div class="info-box note">
                 <div class="label">Note</div>
-                <p>Most game objects (NPCs, projectiles, items, props) are <strong>not</strong> Entity subclasses. They are pure component entities created via <code>Holder</code> + <code>Store.addEntity()</code>. NPCs use the <code>NPCEntity</code> component, not an Entity subclass.</p>
+                <p>Most game objects (NPCs, projectiles, items, props, mounts) are <strong>not</strong> Entity subclasses. They are pure-component entities created via <code>Holder</code> + <code>Store.addEntity()</code>. NPCs use the <code>NPCEntity</code> <em>component</em>, not an Entity subclass. This is fundamental to the ECS architecture.</p>
             </div>
+            </section>
 
             <!-- ============================================ -->
-            <h2 id="systems">Systems</h2>
-            <p>Systems contain the logic that processes entities with specific component combinations each tick. Components are data; systems are behavior.</p>
+            <section id="systems">
+            <h2>Systems</h2>
+            <p>Systems contain the logic that processes entities with specific component combinations each tick. Components are data; systems are behavior. Systems are registered on a <code>Store</code> and automatically ticked.</p>
 
-            <h3 id="sys-tracker">Entity Tracker Systems</h3>
+            <h3>Entity Tracker Systems</h3>
             <p class="pkg">com.hypixel.hytale.server.core.modules.entity.tracker</p>
             <table>
                 <thead><tr><th>System</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>EntityTrackerSystems</code></td><td>Main entity tracker. Handles network visibility, LOD culling, packet sync. Adds/removes <code>Visible</code> component.</td></tr>
-                    <tr><td><code>LegacyEntityTrackerSystems</code></td><td>Legacy tracker with <code>LegacyLODCull</code> &mdash; the LOD culler that uses Model bounding box.</td></tr>
+                    <tr><td><code>EntityTrackerSystems</code></td><td>Main entity tracker. Handles network visibility, LOD culling, packet sync. Manages <code>Visible</code> and <code>EntityViewer</code> components.</td></tr>
+                    <tr><td><code>LegacyEntityTrackerSystems</code></td><td>Legacy tracker with <code>LegacyLODCull</code> &mdash; LOD culler using Model bounding box for distance checks.</td></tr>
                 </tbody>
             </table>
 
-            <h3 id="sys-entity">Entity &amp; Item Systems</h3>
+            <h3>Entity &amp; Item Systems</h3>
             <table>
                 <thead><tr><th>System</th><th>Package</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>BlockEntitySystems</code></td><td><code>...modules.entity</code></td><td>Block entity ticking and updates.</td></tr>
-                    <tr><td><code>DespawnSystem</code></td><td><code>...modules.entity</code></td><td>Despawns entities based on <code>DespawnComponent</code> timer/conditions.</td></tr>
-                    <tr><td><code>AudioSystems</code></td><td><code>...entity.system</code></td><td>Entity audio: footsteps, ambient sounds, movement audio.</td></tr>
-                    <tr><td><code>StaminaSystems</code></td><td><code>...entity.stamina</code></td><td>Stamina consumption and regeneration.</td></tr>
-                    <tr><td><code>StaminaSystems.SprintStaminaEffectSystem</code></td><td><code>...entity.stamina</code></td><td>Sprint stamina drain.</td></tr>
-                    <tr><td><code>LivingEntityEffectSystem</code></td><td><code>...entity.livingentity</code></td><td>Applies buffs/debuffs to living entities.</td></tr>
-                    <tr><td><code>ItemPhysicsSystem</code></td><td><code>...entity.item</code></td><td>Physics simulation for dropped items.</td></tr>
-                    <tr><td><code>ItemPrePhysicsSystem</code></td><td><code>...entity.item</code></td><td>Pre-physics: pickup timers, item merging.</td></tr>
-                    <tr><td><code>PlayerConnectionFlushSystem</code></td><td><code>...entity.player</code></td><td>Flushes queued network packets to players.</td></tr>
-                    <tr><td><code>CameraEffectSystem</code></td><td><code>...adventure.camera.system</code></td><td>Camera effects: shake, zoom, transitions.</td></tr>
+                    <tr><td><code>BlockEntitySystems</code></td><td><code>...modules.entity</code></td><td>Block entity ticking, state updates, and interaction handling.</td></tr>
+                    <tr><td><code>DespawnSystem</code></td><td><code>...modules.entity</code></td><td>Despawns entities when <code>DespawnComponent</code> timer expires or conditions are met.</td></tr>
+                    <tr><td><code>AudioSystems</code></td><td><code>...entity.system</code></td><td>Entity audio processing: footsteps, ambient sounds, movement audio triggers.</td></tr>
+                    <tr><td><code>StaminaSystems</code></td><td><code>...entity.stamina</code></td><td>Stamina consumption (sprinting, jumping, attacking) and regeneration.</td></tr>
+                    <tr><td><code>StaminaSystems.SprintStaminaEffectSystem</code></td><td><code>...entity.stamina</code></td><td>Sprint-specific stamina drain with configurable drain rate.</td></tr>
+                    <tr><td><code>LivingEntityEffectSystem</code></td><td><code>...entity.livingentity</code></td><td>Applies and ticks active buffs/debuffs on living entities.</td></tr>
+                    <tr><td><code>ItemPhysicsSystem</code></td><td><code>...entity.item</code></td><td>Physics simulation for dropped items: gravity, bounce, water float.</td></tr>
+                    <tr><td><code>ItemPrePhysicsSystem</code></td><td><code>...entity.item</code></td><td>Pre-physics: pickup timer countdown, item stack merging checks.</td></tr>
+                    <tr><td><code>PlayerConnectionFlushSystem</code></td><td><code>...entity.player</code></td><td>Flushes queued network packets to connected players at end of tick.</td></tr>
+                    <tr><td><code>CameraEffectSystem</code></td><td><code>...adventure.camera</code></td><td>Camera effects processing: screen shake, zoom transitions, FOV changes.</td></tr>
+                    <tr><td><code>TeleportSystems</code></td><td><code>...entity.teleport</code></td><td>Processes <code>Teleport</code> components: same-world moves and cross-world transfers.</td></tr>
+                    <tr><td><code>EntityTickingSystem</code></td><td><code>...core.entity</code></td><td>Parallel entity ticking via <code>ForkJoinPool</code>. Calls <code>Entity.tick(dt)</code> on all living entities.</td></tr>
                 </tbody>
             </table>
 
-            <h3 id="sys-nameplate">Nameplate Systems</h3>
+            <h3>Nameplate Systems</h3>
             <p class="pkg">com.hypixel.hytale.server.core.entity.nameplate</p>
             <table>
                 <thead><tr><th>System</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>NameplateSystems.EntityTrackerUpdate</code></td><td>Sends nameplate text to players when entity becomes <code>Visible</code>.</td></tr>
-                    <tr><td><code>NameplateSystems.EntityTrackerRemove</code></td><td>Cleans up nameplates when entities are untracked from a player.</td></tr>
+                    <tr><td><code>NameplateSystems.EntityTrackerUpdate</code></td><td>Sends nameplate text to players when entity enters their visibility range.</td></tr>
+                    <tr><td><code>NameplateSystems.EntityTrackerRemove</code></td><td>Cleans up nameplate data when entities leave player visibility.</td></tr>
                 </tbody>
             </table>
 
-            <h3>Projectile Systems</h3>
-            <p class="pkg">com.hypixel.hytale.server.core.modules.projectile.system</p>
+            <h3>Physics &amp; Projectile Systems</h3>
             <table>
-                <thead><tr><th>System</th><th>Description</th></tr></thead>
+                <thead><tr><th>System</th><th>Package</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>StandardPhysicsTickSystem</code></td><td>Projectile movement, gravity, and collision detection per tick.</td></tr>
+                    <tr><td><code>StandardPhysicsTickSystem</code></td><td><code>...projectile.system</code></td><td>Projectile physics: movement, gravity, drag, collision detection per tick.</td></tr>
+                    <tr><td><code>PhysicsSystem</code></td><td><code>...modules.physics</code></td><td>General entity physics: velocity integration, ground detection, friction.</td></tr>
+                    <tr><td><code>CollisionSystem</code></td><td><code>...modules.physics</code></td><td>Entity-vs-world and entity-vs-entity collision resolution.</td></tr>
                 </tbody>
             </table>
 
@@ -350,60 +574,216 @@
             <table>
                 <thead><tr><th>System</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>ChunkStore.LoadFuturePacketDataQuerySystem</code></td><td>Handles future packet data queries for loading chunks.</td></tr>
-                    <tr><td><code>ChunkStore.LoadPacketDataQuerySystem</code></td><td>Handles packet data queries for loaded chunks.</td></tr>
-                    <tr><td><code>ChunkStore.UnloadPacketDataQuerySystem</code></td><td>Cleans up packet data for unloading chunks.</td></tr>
-                    <tr><td><code>ChunkBlockTickSystem</code></td><td>Scheduled block ticks: crop growth, liquid flow, etc. (<code>...builtin.blocktick.system</code>)</td></tr>
+                    <tr><td><code>ChunkStore.LoadFuturePacketDataQuerySystem</code></td><td>Processes future packet data queries for chunks being loaded asynchronously.</td></tr>
+                    <tr><td><code>ChunkStore.LoadPacketDataQuerySystem</code></td><td>Processes packet data queries for fully loaded chunks.</td></tr>
+                    <tr><td><code>ChunkStore.UnloadPacketDataQuerySystem</code></td><td>Cleans up packet data for chunks being unloaded from memory.</td></tr>
+                    <tr><td><code>ChunkBlockTickSystem</code></td><td>Scheduled block ticks: crop growth, liquid flow, random ticks. Package: <code>...builtin.blocktick.system</code>.</td></tr>
                 </tbody>
             </table>
 
-            <h3 id="sys-farming">Farming Systems</h3>
+            <h3>Farming Systems</h3>
             <p class="pkg">com.hypixel.hytale.builtin.adventure.farming</p>
             <table>
                 <thead><tr><th>System</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>FarmingSystems</code></td><td>Main farming systems container.</td></tr>
-                    <tr><td><code>FarmingSystems.Ticking</code></td><td>Main farming tick (crop growth, harvest checks).</td></tr>
-                    <tr><td><code>FarmingSystems.OnFarmBlockAdded</code></td><td>Handles farm block placement.</td></tr>
-                    <tr><td><code>FarmingSystems.OnSoilAdded</code></td><td>Handles soil block placement.</td></tr>
-                    <tr><td><code>FarmingSystems.OnCoopAdded</code></td><td>Handles coop block placement.</td></tr>
-                    <tr><td><code>FarmingSystems.CoopResidentEntitySystem</code></td><td>Manages entities living in coops.</td></tr>
-                    <tr><td><code>FarmingSystems.CoopResidentTicking</code></td><td>Ticks coop resident entities.</td></tr>
-                    <tr><td><code>FarmingSystems.MigrateFarming</code></td><td>Migrates old farming data formats.</td></tr>
+                    <tr><td><code>FarmingSystems.Ticking</code></td><td>Main farming tick: crop growth stages, harvest readiness, irrigation checks.</td></tr>
+                    <tr><td><code>FarmingSystems.OnFarmBlockAdded</code></td><td>Handles farm block placement: initializes growth data, validates soil.</td></tr>
+                    <tr><td><code>FarmingSystems.OnSoilAdded</code></td><td>Handles soil block placement: moisture tracking, fertility data.</td></tr>
+                    <tr><td><code>FarmingSystems.OnCoopAdded</code></td><td>Handles coop block placement: animal housing initialization.</td></tr>
+                    <tr><td><code>FarmingSystems.CoopResidentEntitySystem</code></td><td>Manages entities living in coops: feeding, egg production, health.</td></tr>
+                    <tr><td><code>FarmingSystems.CoopResidentTicking</code></td><td>Ticks coop resident entities: AI behavior, animation, needs.</td></tr>
+                    <tr><td><code>FarmingSystems.MigrateFarming</code></td><td>Migrates legacy farming data formats to current version.</td></tr>
                 </tbody>
             </table>
 
-            <h3 id="sys-adventure">Adventure &amp; NPC Systems</h3>
+            <h3>Adventure &amp; NPC Systems</h3>
             <table>
                 <thead><tr><th>System</th><th>Package</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>CombatViewSystems</code></td><td><code>...npc.blackboard.view.combat</code></td><td>NPC combat perception and targeting.</td></tr>
-                    <tr><td><code>NPCMemory.GatherMemoriesSystem</code></td><td><code>...adventure.memories.memories.npc</code></td><td>Gathers NPC memories for event system.</td></tr>
-                    <tr><td><code>MemoriesPlugin.PlayerAddedSystem</code></td><td><code>...adventure.memories</code></td><td>Handles player addition to memories system.</td></tr>
-                    <tr><td><code>TempleRespawnPlayersSystem</code></td><td><code>...adventure.memories.temple</code></td><td>Player respawning in temple instances.</td></tr>
-                    <tr><td><code>KillTrackerSystem</code></td><td><code>...adventure.npcobjectives.systems</code></td><td>Tracks NPC kills for quest objectives.</td></tr>
-                    <tr><td><code>SpawnBeaconCheckRemovalSystem</code></td><td><code>...adventure.npcobjectives.systems</code></td><td>Checks and removes stale spawn beacons.</td></tr>
-                    <tr><td><code>ReachLocationMarkerSystems</code></td><td><code>...adventure.objectives.markers</code></td><td>Reach-location objective marker tracking.</td></tr>
+                    <tr><td><code>CombatViewSystems</code></td><td><code>...npc.blackboard.view.combat</code></td><td>NPC combat perception: threat detection, target selection, attack range checks.</td></tr>
+                    <tr><td><code>NPCMemory.GatherMemoriesSystem</code></td><td><code>...adventure.memories.npc</code></td><td>Gathers NPC memories: player interactions, combat events, location visits.</td></tr>
+                    <tr><td><code>MemoriesPlugin.PlayerAddedSystem</code></td><td><code>...adventure.memories</code></td><td>Initializes memory tracking when a player enters a world.</td></tr>
+                    <tr><td><code>TempleRespawnPlayersSystem</code></td><td><code>...adventure.memories.temple</code></td><td>Handles player respawning at temple checkpoints in adventure instances.</td></tr>
+                    <tr><td><code>KillTrackerSystem</code></td><td><code>...adventure.npcobjectives</code></td><td>Tracks NPC kills for quest objectives and progression.</td></tr>
+                    <tr><td><code>SpawnBeaconCheckRemovalSystem</code></td><td><code>...adventure.npcobjectives</code></td><td>Checks and removes stale spawn beacons that are no longer valid.</td></tr>
+                    <tr><td><code>ReachLocationMarkerSystems</code></td><td><code>...adventure.objectives.markers</code></td><td>Reach-location objective tracking: proximity checks, marker updates.</td></tr>
                 </tbody>
             </table>
 
-            <h3 id="sys-spawning">Spawning Systems</h3>
-            <p class="pkg">com.hypixel.hytale.server.spawning.*</p>
+            <h3>Spawning Systems</h3>
+            <p class="pkg">com.hypixel.hytale.server.spawning</p>
             <table>
                 <thead><tr><th>System</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>spawning.systems.*</code></td><td>Core mob spawning systems (density checks, spawn rules, biome constraints).</td></tr>
-                    <tr><td><code>spawning.world.system.*</code></td><td>World-specific spawning systems (day/night cycles, weather-based spawning).</td></tr>
-                    <tr><td><code>spawning.suppression.system.*</code></td><td>Spawn suppression systems (players suppress spawns in area).</td></tr>
+                    <tr><td><code>spawning.systems.*</code></td><td>Core mob spawning: density checks, spawn rules, biome constraints, cap enforcement.</td></tr>
+                    <tr><td><code>spawning.world.system.*</code></td><td>World-specific spawning: day/night cycle, weather-based, event-triggered.</td></tr>
+                    <tr><td><code>spawning.suppression.system.*</code></td><td>Spawn suppression: player proximity suppression, structure suppression zones.</td></tr>
                 </tbody>
             </table>
 
             <div class="info-box tip">
-                <div class="label">Tip</div>
-                <p>Systems are where behavior lives. If components are the "nouns", systems are the "verbs". When you add a <code>Teleport</code> component to an entity, a system picks it up and performs the teleport. When you add <code>DespawnComponent</code>, the <code>DespawnSystem</code> handles the countdown and removal.</p>
+                <div class="label">Design Pattern</div>
+                <p>Systems are where behavior lives. If components are <em>nouns</em>, systems are <em>verbs</em>. Adding a <code>Teleport</code> component to an entity causes the <code>TeleportSystems</code> to process it. Adding <code>DespawnComponent</code> starts the <code>DespawnSystem</code> countdown. This declarative pattern avoids imperative method calls and makes behavior composable.</p>
             </div>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="events-ref">
+            <h2>Event Types Reference</h2>
+            <p>Events are dispatched via <code>EventBus</code>. See <a href="events.html">Event System</a> for registration patterns. Below is a categorized catalog of key event types.</p>
+
+            <h3>Player Events</h3>
+            <p class="pkg">com.hypixel.hytale.server.core.modules.entity.player.event</p>
+            <table>
+                <thead><tr><th>Event</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>PlayerConnectEvent</code></td><td>Sync</td><td>Player connected to server. Access <code>PlayerRef</code> and connection info.</td></tr>
+                    <tr><td><code>PlayerDisconnectEvent</code></td><td>Sync</td><td>Player disconnected. Includes disconnect reason.</td></tr>
+                    <tr><td><code>PlayerSpawnEvent</code></td><td>Sync</td><td>Player entity spawned in a world.</td></tr>
+                    <tr><td><code>PlayerDespawnEvent</code></td><td>Sync</td><td>Player entity removed from a world.</td></tr>
+                    <tr><td><code>PlayerChatEvent</code></td><td>Sync, Cancellable</td><td>Player sent a chat message. Modify or cancel.</td></tr>
+                    <tr><td><code>PlayerPermissionChangeEvent</code></td><td>Sync</td><td>Player's permissions changed (group add/remove).</td></tr>
+                    <tr><td><code>PlayerGroupEvent</code></td><td>Sync</td><td>Player added to or removed from a permission group.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>World Events</h3>
+            <table>
+                <thead><tr><th>Event</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>BlockBreakEvent</code></td><td>Sync, Cancellable</td><td>Block being broken by a player. Cancel to prevent. Access block type and position.</td></tr>
+                    <tr><td><code>BlockPlaceEvent</code></td><td>Sync, Cancellable</td><td>Block being placed. Cancel to prevent. Access placed type and target position.</td></tr>
+                    <tr><td><code>ChunkLoadEvent</code></td><td>Sync</td><td>Chunk finished loading into the world.</td></tr>
+                    <tr><td><code>ChunkUnloadEvent</code></td><td>Sync</td><td>Chunk being unloaded from the world.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Entity &amp; Combat Events</h3>
+            <table>
+                <thead><tr><th>Event</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>KillFeedEvent</code></td><td>Sync</td><td>Entity killed. Contains victim ref, killer ref (nullable), damage cause, death message.</td></tr>
+                    <tr><td><code>EntityDamageEvent</code></td><td>Sync, Cancellable</td><td>Entity taking damage. Modify damage amount or cancel entirely.</td></tr>
+                    <tr><td><code>EntityInteractEvent</code></td><td>Sync, Cancellable</td><td>Player interacting with an entity. Cancel to prevent.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Server Lifecycle Events</h3>
+            <table>
+                <thead><tr><th>Event</th><th>Type</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ShutdownEvent</code></td><td>Sync</td><td>Server shutting down. Priority-ordered: cleanup in reverse registration order.</td></tr>
+                    <tr><td><code>TickEvent</code></td><td>Sync</td><td>Fired each server tick (30 TPS). Use for periodic tasks.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Event Interfaces</h3>
+            <p class="pkg">com.hypixel.hytale.event</p>
+            <table>
+                <thead><tr><th>Interface</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>IBaseEvent</code></td><td>Base interface for synchronous events. Dispatched on the calling thread.</td></tr>
+                    <tr><td><code>IAsyncEvent</code></td><td>Marker for events that may be dispatched on any thread. Listeners must be thread-safe.</td></tr>
+                    <tr><td><code>ICancellable</code></td><td>Mixin interface. Events implementing this can be cancelled via <code>setCancelled(true)</code>.</td></tr>
+                    <tr><td><code>IProcessedEvent</code></td><td>Event that tracks whether it was processed by any listener.</td></tr>
+                    <tr><td><code>IEvent</code></td><td>Root event marker interface. Extended by <code>IBaseEvent</code> and <code>IAsyncEvent</code>.</td></tr>
+                    <tr><td><code>IEventBus</code></td><td>Event bus interface with <code>dispatch()</code>, <code>register()</code>, and <code>unregister()</code> methods.</td></tr>
+                    <tr><td><code>IEventRegistry</code></td><td>Registry for event listeners. Separate registries for sync/async events.</td></tr>
+                </tbody>
+            </table>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="packets">
+            <h2>Network Packet Categories</h2>
+            <p>Packets are organized by functional area. All implement the <code>Packet</code> interface. See <a href="networking.html">Networking</a> for protocol details.</p>
+            <p class="pkg">com.hypixel.hytale.protocol.packets</p>
+
+            <table>
+                <thead><tr><th>Category</th><th>Package</th><th>Examples</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Assets</strong></td><td><code>assets/</code></td><td><code>UpdateItems</code>, <code>UpdateRecipes</code>, <code>UpdateBlockGroups</code>, <code>UpdateParticleSystems</code>, <code>UpdateResourceTypes</code>, <code>UpdateBlockBreakingDecals</code></td></tr>
+                    <tr><td><strong>Auth</strong></td><td><code>auth/</code></td><td><code>PasswordRejected</code>, authentication handshake packets</td></tr>
+                    <tr><td><strong>Builder Tools</strong></td><td><code>buildertools/</code></td><td><code>BuilderToolSelectionUpdate</code>, <code>BuilderToolLineAction</code>, <code>BuilderToolExtrudeAction</code>, <code>BuilderToolArgUpdate</code></td></tr>
+                    <tr><td><strong>Camera</strong></td><td><code>camera/</code></td><td>Camera position, zoom, shake, and transition packets</td></tr>
+                    <tr><td><strong>Connection</strong></td><td><code>connection/</code></td><td><code>Disconnect</code>, keep-alive, handshake packets</td></tr>
+                    <tr><td><strong>Entities</strong></td><td><code>entities/</code></td><td><code>SpawnModelParticles</code>, <code>ApplyKnockback</code>, entity state sync</td></tr>
+                    <tr><td><strong>Interaction</strong></td><td><code>interaction/</code></td><td>Entity interaction request/response packets</td></tr>
+                    <tr><td><strong>Interface</strong></td><td><code>interface_/</code></td><td><code>ChatMessage</code>, <code>CustomHud</code>, <code>UpdateLanguage</code>, <code>OpenChatWithCommand</code>, <code>RemoveFromServerPlayerList</code></td></tr>
+                    <tr><td><strong>Inventory</strong></td><td><code>inventory/</code></td><td>Inventory slot updates, item transfers, crafting packets</td></tr>
+                    <tr><td><strong>Machinima</strong></td><td><code>machinima/</code></td><td>In-game cinematic/cutscene control packets</td></tr>
+                    <tr><td><strong>Player</strong></td><td><code>player/</code></td><td><code>ClientTeleport</code>, <code>ClientPlaceBlock</code>, <code>DamageInfo</code>, <code>RemoveMapMarker</code></td></tr>
+                    <tr><td><strong>Server Access</strong></td><td><code>serveraccess/</code></td><td>Server access control and permission sync packets</td></tr>
+                    <tr><td><strong>Setup</strong></td><td><code>setup/</code></td><td><code>RequestAssets</code>, <code>RemoveAssets</code>, <code>UpdateFeatures</code></td></tr>
+                    <tr><td><strong>Window</strong></td><td><code>window/</code></td><td><code>OpenWindow</code>, window close, slot click packets</td></tr>
+                    <tr><td><strong>World</strong></td><td><code>world/</code></td><td><code>ServerSetBlock</code>, <code>UpdateSleepState</code>, <code>SetChunkHeightmap</code>, chunk data packets</td></tr>
+                    <tr><td><strong>World Map</strong></td><td><code>worldmap/</code></td><td>Map marker, map data, and exploration packets</td></tr>
+                    <tr><td><strong>Asset Editor</strong></td><td><code>asseteditor/</code></td><td>Runtime asset editing packets (dev/builder mode)</td></tr>
+                </tbody>
+            </table>
+            </section>
+
+            <!-- ============================================ -->
+            <section id="quick-ref">
+            <h2>Quick Reference</h2>
+
+            <h3>Common Patterns</h3>
+<pre><code><span class="comment">// Get a component from an entity</span>
+<span class="type">TransformComponent</span> transform = store.getComponent(ref, <span class="type">TransformComponent</span>.getComponentType());
+
+<span class="comment">// Add a component to trigger behavior</span>
+<span class="type">Teleport</span> tp = <span class="type">Teleport</span>.position(targetWorld, x, y, z);
+store.addComponent(ref, <span class="type">Teleport</span>.getComponentType(), tp);
+
+<span class="comment">// Remove a component</span>
+store.removeComponent(ref, <span class="type">Frozen</span>.getComponentType());
+
+<span class="comment">// Create entity from archetype</span>
+<span class="type">Ref</span>&lt;<span class="type">EntityStore</span>&gt; entity = store.addEntity(archetype, <span class="type">AddReason</span>.CREATION);
+
+<span class="comment">// Remove entity (get Holder for transfer)</span>
+<span class="type">Holder</span>&lt;<span class="type">EntityStore</span>&gt; holder = store.removeEntity(ref, <span class="type">RemoveReason</span>.WORLD_TRANSFER);
+targetWorld.getEntityStore().addEntity(holder, <span class="type">AddReason</span>.WORLD_TRANSFER);
+
+<span class="comment">// Check component existence</span>
+<span class="kw">if</span> (store.getComponent(ref, <span class="type">Frozen</span>.getComponentType()) != <span class="kw">null</span>) {
+    <span class="comment">// Entity is frozen</span>
+}
+
+<span class="comment">// Access store-wide resource</span>
+<span class="type">SomeResource</span> res = store.getResource(<span class="type">SomeResource</span>.getResourceType());
+
+<span class="comment">// Thread safety check</span>
+<span class="kw">assert</span> store.isInThread() : <span class="str">"Must be on world thread"</span>;</code></pre>
+
+            <h3>Key Imports</h3>
+<pre><code><span class="kw">import</span> com.hypixel.hytale.component.*;           <span class="comment">// Store, Ref, Holder, Component, Query</span>
+<span class="kw">import</span> com.hypixel.hytale.component.query.*;     <span class="comment">// AnyQuery, AndQuery, OrQuery, NotQuery</span>
+<span class="kw">import</span> com.hypixel.hytale.server.core.entity.*;   <span class="comment">// Entity, LivingEntity, Nameplate, Frozen</span>
+<span class="kw">import</span> com.hypixel.hytale.server.core.modules.entity.component.*; <span class="comment">// TransformComponent, ModelComponent, etc.</span>
+<span class="kw">import</span> com.hypixel.hytale.server.core.universe.*;  <span class="comment">// Universe, World, PlayerRef</span>
+<span class="kw">import</span> com.hypixel.hytale.server.core.universe.world.storage.*; <span class="comment">// EntityStore, ChunkStore</span>
+<span class="kw">import</span> com.hypixel.hytale.event.*;                <span class="comment">// IBaseEvent, IAsyncEvent, ICancellable, EventBus</span></code></pre>
+            </section>
 
         </div>
     </main>
+
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
