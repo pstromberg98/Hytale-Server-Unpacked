@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match System Design - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="block-interactions.html">Block Interactions</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <a href="data-packs.html">Data Packs</a>
+            <div class="nav-section">Design</div>
+            <a href="match-system-design.html" class="active">Match System</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <nav class="page-toc"></nav>
+        <div class="content">
+            <h1>Match System Design</h1>
+            <p class="page-desc">A generalized, extensible match system for competitive PvP game modes. Manages match lifecycle, matchmaking, player assignment, and state transitions while remaining agnostic to specific game rules.</p>
+
+            <!-- Overview -->
+            <section id="overview">
+                <h2>Overview</h2>
+                <p>The match system provides the core infrastructure for running competitive matches. It owns the lifecycle state machine, player tracking, condition evaluation, and matchmaking orchestration. Game-specific logic &mdash; teams, scoring, sub-phases, win conditions &mdash; is layered on top by game mode developers through handlers, conditions, and custom state.</p>
+
+                <div class="info-box note">
+                    <div class="label">Design Principle</div>
+                    <p>The system is intentionally minimal at its core. It answers <strong>when</strong> transitions happen (conditions) and notifies <strong>what</strong> should happen (handlers/events), but never dictates game-specific rules.</p>
+                </div>
+            </section>
+
+            <!-- Match States -->
+            <section id="match-states">
+                <h2>Match States</h2>
+                <p>A match progresses through three states:</p>
+
+<div class="diagram">  PENDING ────────→ ACTIVE ────────→ ENDED
+     │                  │                 │
+     │  Accepting       │  Game in        │  Cleanup &amp;
+     │  players,        │  progress,      │  disposal,
+     │  evaluating      │  evaluating     │  players
+     │  start condition │  end condition  │  returned
+     ▼                  ▼                 ▼</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>State</th>
+                            <th>Description</th>
+                            <th>Condition Evaluated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>PENDING</code></td>
+                            <td>Match exists and is accepting players from matchmaking</td>
+                            <td>Start condition (each tick)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ACTIVE</code></td>
+                            <td>Match is in progress, game mode logic is running</td>
+                            <td>End condition (each tick)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ENDED</code></td>
+                            <td>Match is over, cleanup hooks fire, instance is disposed</td>
+                            <td>None</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>There are no intermediate states at the system level. Game modes that need sub-phases (countdown, sudden death, post-game ceremony) manage those internally within the <strong>Active</strong> state.</p>
+                </div>
+            </section>
+
+            <!-- Player States -->
+            <section id="player-states">
+                <h2>Player States</h2>
+                <p>Each player within a match has one of two statuses tracked by the system:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Policy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>CONNECTED</code></td>
+                            <td>Player is actively participating in the match</td>
+                            <td>Managed by system</td>
+                        </tr>
+                        <tr>
+                            <td><code>DISCONNECTED</code></td>
+                            <td>Player has lost connection or left</td>
+                            <td>Game mode decides: remove, allow reconnect, replace with NPC, etc.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>The system tracks the status; the game mode decides the <strong>policy</strong> for what happens when a player disconnects. This is handled through the match handler's <code>onPlayerDisconnected</code> method.</p>
+            </section>
+
+            <!-- Match State Object -->
+            <section id="match-state-object">
+                <h2>Match State Object</h2>
+                <p>Every match holds a state object that serves as the single source of truth for condition evaluation. It has two layers:</p>
+
+                <h3>Built-in Fields</h3>
+                <p>Managed automatically by the system &mdash; the developer never writes to these:</p>
+                <ul>
+                    <li>Current player list</li>
+                    <li>Player count</li>
+                    <li>Player statuses (connected / disconnected)</li>
+                    <li>Match creation timestamp</li>
+                    <li>Current match state (pending / active / ended)</li>
+                </ul>
+
+                <h3>Custom Fields</h3>
+                <p>Managed by the developer and external systems:</p>
+                <ul>
+                    <li>Arbitrary key-value pairs defined by the developer</li>
+                    <li>Written to by external systems (timers, voting systems, score trackers, etc.)</li>
+                    <li>Examples: <code>isTimerElapsed</code>, <code>voteCount</code>, <code>roundsPlayed</code>, <code>lastPlayerStanding</code></li>
+                </ul>
+
+                <div class="info-box note">
+                    <div class="label">Key Point</div>
+                    <p>The match system <strong>never</strong> writes to custom fields. It only reads the full state object when evaluating conditions. External systems are responsible for updating custom state.</p>
+                </div>
+            </section>
+
+            <!-- Transition Conditions -->
+            <section id="transition-conditions">
+                <h2>Transition Conditions</h2>
+                <p>A condition is a <strong>predicate function</strong> over the match state object. The match system evaluates the appropriate condition once per tick:</p>
+                <ul>
+                    <li>While <strong>Pending</strong>: evaluate the <strong>start condition</strong></li>
+                    <li>While <strong>Active</strong>: evaluate the <strong>end condition</strong></li>
+                </ul>
+                <p>When a condition returns <code>true</code>, the transition fires immediately.</p>
+
+                <h3>Developer Responsibility</h3>
+                <p>The developer defines one function per transition. All composition (AND/OR logic, multiple checks) is the developer's responsibility within that function. This keeps the system simple while allowing arbitrary complexity.</p>
+
+                <h3>Start Condition Examples</h3>
+                <ul>
+                    <li>Player count &gt;= minimum threshold</li>
+                    <li>Player count &gt;= minimum AND a ready timer has elapsed</li>
+                    <li>All players have voted to start</li>
+                    <li>Any combination of the above</li>
+                </ul>
+
+                <h3>End Condition Examples</h3>
+                <ul>
+                    <li>Only one player remains connected</li>
+                    <li>A score threshold has been reached</li>
+                    <li>A match duration timer has expired</li>
+                    <li>A custom game-over flag has been set</li>
+                </ul>
+
+                <div class="info-box warning">
+                    <div class="label">Performance</div>
+                    <p>Conditions are evaluated every tick (30 TPS), so they should be lightweight. The condition receives a <strong>read-only</strong> view of the match state and must not mutate it.</p>
+                </div>
+            </section>
+
+            <!-- Match Type Definition -->
+            <section id="match-type-definition">
+                <h2>Match Type Definition</h2>
+                <p>A match type bundles all configuration needed to create and run matches of a particular game mode. A developer registers a match type with:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Description</th>
+                            <th>Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Player limits</strong></td>
+                            <td>Minimum and maximum player count for the match</td>
+                            <td>Yes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Start condition</strong></td>
+                            <td>Predicate over match state that triggers pending &rarr; active</td>
+                            <td>Yes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>End condition</strong></td>
+                            <td>Predicate over match state that triggers active &rarr; ended</td>
+                            <td>Yes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Match handler</strong></td>
+                            <td>Lifecycle hook implementation for game-specific behavior</td>
+                            <td>Yes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Custom state initializer</strong></td>
+                            <td>Sets up initial custom fields on the match state</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pending timeout</strong></td>
+                            <td>Max time a match can stay in pending before auto-disposal</td>
+                            <td>No</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Match Handler -->
+            <section id="match-handler">
+                <h2>Match Handler</h2>
+                <p>The match handler is an interface the developer implements to define game-specific behavior. It has a <strong>one-to-one</strong> relationship with the match &mdash; it is the authority for that match's game logic.</p>
+
+                <h3>Lifecycle Methods</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>When Called</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>onPlayerAdded</code></td>
+                            <td>A player is assigned to the match</td>
+                            <td>Spawn player, set up inventory, assign position</td>
+                        </tr>
+                        <tr>
+                            <td><code>onPlayerRemoved</code></td>
+                            <td>A player leaves or is removed</td>
+                            <td>Clean up player-specific game state</td>
+                        </tr>
+                        <tr>
+                            <td><code>onPlayerDisconnected</code></td>
+                            <td>A player's connection is lost</td>
+                            <td>Decide policy: grace period, remove, replace with NPC</td>
+                        </tr>
+                        <tr>
+                            <td><code>onPlayerReconnected</code></td>
+                            <td>A previously disconnected player returns</td>
+                            <td>Restore player state, resume participation</td>
+                        </tr>
+                        <tr>
+                            <td><code>onMatchStart</code></td>
+                            <td>Start condition met, match &rarr; active</td>
+                            <td>Initialize game world, teleport players, start timers</td>
+                        </tr>
+                        <tr>
+                            <td><code>onMatchEnd</code></td>
+                            <td>End condition met, match &rarr; ended</td>
+                            <td>Determine winners, distribute rewards, announce results</td>
+                        </tr>
+                        <tr>
+                            <td><code>onCleanup</code></td>
+                            <td>Match is being disposed</td>
+                            <td>Clean up game-specific resources (arenas, entities, scoreboards)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Key Principles</h3>
+                <ul>
+                    <li>The handler is called <strong>synchronously</strong> during transitions, before events are broadcast</li>
+                    <li>The handler can read and write to custom match state fields</li>
+                    <li>The handler does <strong>not</strong> control transitions &mdash; that's the condition system's job</li>
+                    <li><code>onCleanup</code> fires <strong>before</strong> match state is torn down, so the handler still has access to all data</li>
+                </ul>
+            </section>
+
+            <!-- Event Bus Integration -->
+            <section id="event-bus">
+                <h2>Event Bus Integration</h2>
+                <p>After the match handler processes a transition, events are fired on the server's event bus. These are for <strong>cross-cutting observers</strong> &mdash; systems that want to react to match activity without being the game mode itself.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Fired When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>MatchCreatedEvent</code></td>
+                            <td>A new match instance is created</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchStartedEvent</code></td>
+                            <td>Match transitions from pending to active</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchEndedEvent</code></td>
+                            <td>Match transitions from active to ended</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchDisposedEvent</code></td>
+                            <td>Match instance is cleaned up and removed</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchPlayerAddedEvent</code></td>
+                            <td>A player is added to a match</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchPlayerRemovedEvent</code></td>
+                            <td>A player is removed from a match</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchPlayerDisconnectedEvent</code></td>
+                            <td>A player disconnects during a match</td>
+                        </tr>
+                        <tr>
+                            <td><code>MatchPlayerReconnectedEvent</code></td>
+                            <td>A player reconnects to a match</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Execution Order</h3>
+                <p>For any transition, the ordering is guaranteed:</p>
+                <ol class="flow-list">
+                    <li>Match state is updated</li>
+                    <li>Match handler method is called</li>
+                    <li>Event is fired on the bus</li>
+                </ol>
+                <p>This guarantees the handler (the authority) processes the transition before any observers react.</p>
+            </section>
+
+            <!-- Matchmaking System -->
+            <section id="matchmaking">
+                <h2>Matchmaking System</h2>
+                <p>The matchmaking system is responsible for three things:</p>
+                <ul>
+                    <li><strong>Tracking ready players</strong> &mdash; maintains a pool of players who have marked themselves as ready</li>
+                    <li><strong>Creating matches</strong> &mdash; instantiates new pending matches from a match type definition when needed</li>
+                    <li><strong>Assigning players</strong> &mdash; places ready players into pending matches using a pluggable strategy</li>
+                </ul>
+
+                <h3>Matchmaking Strategy</h3>
+                <p>The strategy is a pluggable component that determines how ready players are assigned to matches.</p>
+
+                <h4>Default Strategy (Simple Fill)</h4>
+                <ul>
+                    <li>Iterate through pending matches with available slots</li>
+                    <li>Assign ready players to the first match with room</li>
+                    <li>If no pending matches have room, create a new one</li>
+                    <li>No sorting, no skill rating, no preference matching</li>
+                </ul>
+
+                <h4>Custom Strategy Examples</h4>
+                <ul>
+                    <li><strong>Skill-based</strong> &mdash; rank/MMR grouping</li>
+                    <li><strong>Party-aware</strong> &mdash; keep friends together</li>
+                    <li><strong>Region-based</strong> &mdash; latency optimization</li>
+                    <li><strong>Mode preference</strong> &mdash; routing when multiple match types are active</li>
+                </ul>
+
+                <h3>Player Readiness</h3>
+                <ul>
+                    <li>A player can <strong>ready up</strong> to enter the matchmaking pool</li>
+                    <li>A player can <strong>unready</strong> to leave the pool before being assigned</li>
+                    <li>Once assigned to a match, they are removed from the ready pool</li>
+                    <li>A player can only be in <strong>one match at a time</strong> (enforced by the system)</li>
+                </ul>
+            </section>
+
+            <!-- End-to-End Lifecycle -->
+            <section id="lifecycle">
+                <h2>End-to-End Lifecycle</h2>
+
+<div class="diagram">1. Player readies up
+        │
+        ▼
+2. Matchmaking strategy assigns player to a pending match
+   (or creates a new pending match first)
+        │
+        ▼
+3. Match is PENDING
+   ├─ Accepting players
+   ├─ Start condition evaluated each tick
+   └─ Players can leave / unready → match keeps waiting
+        │
+        ▼  (start condition returns true)
+4. Match transitions to ACTIVE
+   ├─ Handler.onMatchStart() fires
+   ├─ MatchStartedEvent broadcast
+   ├─ End condition now evaluated each tick
+   └─ Players play the game
+        │
+        ▼  (end condition returns true)
+5. Match transitions to ENDED
+   ├─ Handler.onMatchEnd() fires
+   ├─ MatchEndedEvent broadcast
+   └─ Players handled (typically sent to lobby)
+        │
+        ▼
+6. Cleanup
+   ├─ Handler.onCleanup() fires (match state still accessible)
+   ├─ Match state torn down
+   ├─ MatchDisposedEvent broadcast
+   └─ Match instance removed from the system</div>
+            </section>
+
+            <!-- Cleanup Ordering -->
+            <section id="cleanup-ordering">
+                <h2>Cleanup Ordering</h2>
+                <p>When a match ends, the following sequence is guaranteed:</p>
+
+                <ol class="flow-list">
+                    <li><code>Handler.onMatchEnd()</code> &mdash; game logic finalization (winners, rewards)</li>
+                    <li>Players are processed (sent to lobby, returned to unready state)</li>
+                    <li><code>Handler.onCleanup()</code> &mdash; game-specific resource teardown</li>
+                    <li>Match state is torn down</li>
+                    <li>Match instance is removed from the system</li>
+                </ol>
+
+                <div class="info-box tip">
+                    <div class="label">Tip</div>
+                    <p>The handler has access to the full match state (including player list and custom fields) during both <code>onMatchEnd</code> and <code>onCleanup</code>. This allows referencing final game data during teardown.</p>
+                </div>
+            </section>
+
+            <!-- Edge Cases -->
+            <section id="edge-cases">
+                <h2>Edge Cases &amp; Considerations</h2>
+
+                <h3>Empty Pending Matches</h3>
+                <p>If all players leave a pending match before it starts, the system <strong>automatically disposes</strong> the match. There is no reason to keep an empty pending match alive. The matchmaking system will create a new one when players are available.</p>
+
+                <h3>Stale Pending Matches</h3>
+                <p>A pending match that never reaches its start condition could linger indefinitely. The match type definition supports an <strong>optional pending timeout</strong>. If set, the system disposes the match after the timeout elapses without the start condition being met, returning any remaining players to the ready pool.</p>
+
+                <h3>Player Uniqueness</h3>
+                <p>The system <strong>enforces</strong> that a player can only be in one match at a time. Attempting to add a player who is already in a match is rejected. A player must leave or be removed from their current match before joining another.</p>
+
+                <h3>Disconnection During Pending</h3>
+                <p>If a player disconnects while in a pending match (before it starts), the system <strong>removes them from the match</strong> and returns them to an unready state. This is distinct from mid-match disconnection, where the game mode might want to preserve their slot.</p>
+
+                <div class="info-box warning">
+                    <div class="label">Important</div>
+                    <p>Pending-state disconnection is handled automatically by the system. Active-state disconnection is delegated to the game mode's <code>onPlayerDisconnected</code> handler.</p>
+                </div>
+
+                <h3>Condition Evaluation Timing</h3>
+                <p>Since conditions are evaluated every tick, there is a potential for state to change during the tick. The system evaluates conditions at a <strong>fixed point</strong> in the tick cycle, reading a consistent snapshot of the match state.</p>
+
+                <h3>Rapid Transitions</h3>
+                <p>If a start condition is met and the end condition is <em>also</em> immediately true on the first active tick, the match will transition from pending &rarr; active &rarr; ended within two ticks. This is valid behavior &mdash; handler methods still fire in order. Game mode developers should be aware that their end condition could technically be satisfied immediately.</p>
+            </section>
+
+            <!-- System Boundaries -->
+            <section id="system-boundaries">
+                <h2>System Boundaries</h2>
+
+                <h3>The Match System Owns</h3>
+                <ul>
+                    <li>Match lifecycle state machine (pending / active / ended)</li>
+                    <li>Player tracking within matches (add / remove / status)</li>
+                    <li>Condition evaluation loop</li>
+                    <li>Match creation and disposal</li>
+                    <li>Player uniqueness enforcement</li>
+                    <li>Ready pool management</li>
+                    <li>Matchmaking orchestration</li>
+                </ul>
+
+                <h3>The Match System Does Not Own</h3>
+                <ul>
+                    <li>Team composition or team logic</li>
+                    <li>Game-specific rules, scoring, or win conditions (beyond the end predicate)</li>
+                    <li>World / arena management</li>
+                    <li>Player spawning, teleportation, or inventory</li>
+                    <li>Sub-phases within the active state</li>
+                    <li>What constitutes a "ready" player beyond the flag (e.g., level requirements)</li>
+                </ul>
+            </section>
+
+            <!-- Design Patterns -->
+            <section id="design-patterns">
+                <h2>Java Design Patterns</h2>
+                <p>Recommended patterns for implementing this system as a Java plugin, with trade-offs for each decision.</p>
+
+                <h3>1. Match Handler: Abstract Class with Defaults</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>Pros</th>
+                            <th>Cons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Interface</strong></td>
+                            <td>Clean contract, multiple inheritance</td>
+                            <td>Forces devs to stub every method even if unused</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Abstract class with defaults</strong></td>
+                            <td>Devs override only what they need</td>
+                            <td>Single inheritance limitation</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="info-box tip">
+                    <div class="label">Recommendation</div>
+                    <p><strong>Abstract class.</strong> Most game modes won't use every lifecycle hook (e.g., <code>onPlayerReconnected</code> may be irrelevant for simple modes). Default no-op implementations keep game mode classes clean and focused.</p>
+                </div>
+
+                <h3>2. Match State: Typed Generic</h3>
+                <p>The custom fields on the match state object can be implemented two ways:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>Pros</th>
+                            <th>Cons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong><code>MatchState&lt;T&gt;</code></strong> with typed custom state</td>
+                            <td>Type-safe, IDE autocomplete, compile-time checks</td>
+                            <td>Generics ripple through conditions, handlers, match references</td>
+                        </tr>
+                        <tr>
+                            <td><strong><code>Map&lt;String, Object&gt;</code></strong> attribute bag</td>
+                            <td>Flexible, no generics complexity</td>
+                            <td>Casting everywhere, runtime errors, easy to misspell keys</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="info-box tip">
+                    <div class="label">Recommendation</div>
+                    <p><strong>Typed generic.</strong> The developer defines a POJO like <code>SkywarState</code> with their fields, and the system carries it as <code>Match&lt;SkywarState&gt;</code>. This is significantly more ergonomic than an untyped map.</p>
+                </div>
+                <pre><code><span class="comment">// Developer defines their custom state</span>
+<span class="kw">public class</span> <span class="type">SkywarState</span> {
+    <span class="kw">private boolean</span> <span class="field">timerElapsed</span>;
+    <span class="kw">private int</span> <span class="field">voteCount</span>;
+    <span class="kw">private boolean</span> <span class="field">gameOver</span>;
+    <span class="comment">// getters, setters...</span>
+}
+
+<span class="comment">// The match carries it with full type safety</span>
+<span class="type">Match</span>&lt;<span class="type">SkywarState</span>&gt; match = ...;
+match.<span class="fn">getCustomState</span>().<span class="fn">isTimerElapsed</span>();  <span class="comment">// no casting</span></code></pre>
+
+                <h3>3. Match Type Definition: Builder Pattern</h3>
+                <p>Composing a match type involves several required and optional pieces. A builder validates at build time and keeps construction readable:</p>
+                <pre><code><span class="type">MatchType</span>&lt;<span class="type">SkywarState</span>&gt; skywar = <span class="type">MatchType</span>.&lt;<span class="type">SkywarState</span>&gt;<span class="fn">builder</span>()
+    .<span class="fn">minPlayers</span>(<span class="num">2</span>)
+    .<span class="fn">maxPlayers</span>(<span class="num">8</span>)
+    .<span class="fn">stateInitializer</span>(<span class="type">SkywarState</span>::<span class="kw">new</span>)
+    .<span class="fn">startCondition</span>(state -> state.<span class="fn">getPlayerCount</span>() >= <span class="num">4</span>
+        && state.<span class="fn">custom</span>().<span class="fn">isTimerElapsed</span>())
+    .<span class="fn">endCondition</span>(state -> state.<span class="fn">custom</span>().<span class="fn">isGameOver</span>())
+    .<span class="fn">handler</span>(<span class="kw">new</span> <span class="type">SkywarHandler</span>())
+    .<span class="fn">pendingTimeout</span>(<span class="type">Duration</span>.<span class="fn">ofMinutes</span>(<span class="num">5</span>))
+    .<span class="fn">build</span>();</code></pre>
+                <div class="info-box note">
+                    <div class="label">Note</div>
+                    <p>This mirrors how the Hytale server already constructs complex objects via codecs and builders. The <code>build()</code> call can validate that all required fields (limits, conditions, handler) are set.</p>
+                </div>
+
+                <h3>4. Conditions: Functional Interface</h3>
+                <p>A dedicated <code>MatchCondition&lt;T&gt;</code> functional interface rather than raw <code>Predicate&lt;MatchState&lt;T&gt;&gt;</code>:</p>
+                <pre><code><span class="anno">@FunctionalInterface</span>
+<span class="kw">public interface</span> <span class="type">MatchCondition</span>&lt;<span class="type">T</span>&gt; {
+    <span class="kw">boolean</span> <span class="fn">test</span>(<span class="type">MatchState</span>&lt;<span class="type">T</span>&gt; <span class="field">state</span>);
+}</code></pre>
+                <p>Same simplicity as <code>Predicate</code> but with a domain-specific name. The <code>@FunctionalInterface</code> annotation lets developers use lambdas for simple cases and full classes for complex ones. Since the developer writes one function with all their composed logic inside, no specification pattern is needed.</p>
+
+                <h3>5. Matchmaking Strategy: Strategy Pattern</h3>
+                <p>Classic strategy pattern &mdash; a <code>MatchmakingStrategy</code> interface with a <code>SimpleFillStrategy</code> default:</p>
+                <pre><code><span class="kw">public interface</span> <span class="type">MatchmakingStrategy</span> {
+    <span class="type">MatchAssignment</span> <span class="fn">assign</span>(<span class="type">List</span>&lt;<span class="type">Player</span>&gt; <span class="field">readyPlayers</span>,
+                           <span class="type">List</span>&lt;<span class="type">Match</span>&lt;?&gt;&gt; <span class="field">pendingMatches</span>);
+}</code></pre>
+                <p>The matchmaking system holds a reference to the strategy and delegates assignment decisions. Developers swap strategies without touching the matchmaking system itself.</p>
+
+                <h3>6. Match Manager: Registry / Service</h3>
+                <p>A central <code>MatchManager</code> that serves as the entry point for the entire system:</p>
+                <ul>
+                    <li>Holds match type registrations and all active match instances</li>
+                    <li>Runs the per-tick condition evaluation across all pending/active matches</li>
+                    <li>Provides player-to-match resolution (lookup which match a player is in)</li>
+                    <li>Orchestrates the matchmaking loop</li>
+                </ul>
+                <p>This follows the Hytale server's existing patterns where singleton services (Universe, etc.) act as central registries.</p>
+
+                <h3>7. Match Lifecycle: Enum, Not State Pattern</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>Pros</th>
+                            <th>Cons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>State pattern</strong> (state objects per phase)</td>
+                            <td>Clean separation of behavior per state</td>
+                            <td>Heavy abstraction for only three states</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Enum + transition methods</strong></td>
+                            <td>Simple, easy to reason about, less indirection</td>
+                            <td>Switch statements in transition logic</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="info-box tip">
+                    <div class="label">Recommendation</div>
+                    <p><strong>Enum approach.</strong> Three states don't justify a formal state machine. A <code>MatchPhase</code> enum with straightforward transition logic (check condition, call handler, fire event, update enum) is easier to understand and debug.</p>
+                </div>
+                <pre><code><span class="kw">public enum</span> <span class="type">MatchPhase</span> {
+    <span class="field">PENDING</span>,
+    <span class="field">ACTIVE</span>,
+    <span class="field">ENDED</span>
+}</code></pre>
+
+                <h3>Impact of Typed Generics</h3>
+                <div class="info-box warning">
+                    <div class="label">Important</div>
+                    <p>Choosing typed generic state (<code>Match&lt;T&gt;</code>) ripples through the entire system. Conditions become <code>MatchCondition&lt;T&gt;</code>, handlers become <code>AbstractMatchHandler&lt;T&gt;</code>, and match references are parameterized. This is more upfront wiring but pays off immediately in usability &mdash; no casting, full IDE support, compile-time safety.</p>
+                </div>
+
+                <h3>8. Player Ownership: Ensuring Single-Location Exclusivity</h3>
+                <p>A <code>MatchPlayer</code> must exist in exactly one location at any time &mdash; the ready pool, a pending match, an active match, or nowhere (lobby). The data structures should make duplicates structurally impossible, not just logically checked. Two approaches:</p>
+
+                <h4>Option A: Central Registry (Coordinator)</h4>
+                <p>A single <code>PlayerRegistry</code> is the source of truth for where every <code>MatchPlayer</code> is. All movement goes through the registry. Containers have no public mutation methods &mdash; only the registry can modify them.</p>
+
+<div class="diagram">                    PlayerRegistry
+                   ┌──────────────────────┐
+                   │ Player → Location    │
+                   │ ──────────────────── │
+                   │ Alice  → ReadyPool   │
+                   │ Bob    → Match #3    │
+                   │ Carol  → Match #7    │
+                   └──────┬───────────────┘
+                          │
+            transfer(player, destination)
+                          │
+              ┌───────────┼───────────────┐
+              ▼           ▼               ▼
+         ReadyPool   PendingMatch    ActiveMatch
+         (package-   (package-       (package-
+          private     private         private
+          add/remove) add/remove)     add/remove)</div>
+
+                <p><strong>How it works:</strong></p>
+                <ul>
+                    <li>The registry maps each player to a discriminated location (enum + reference)</li>
+                    <li><code>registry.transfer(player, destination)</code> atomically removes from old container and adds to new</li>
+                    <li>Containers expose <code>add</code>/<code>remove</code> as package-private &mdash; only the registry (same package) can call them</li>
+                    <li>O(1) lookup for "where is player X?" which is needed constantly</li>
+                </ul>
+
+                <p><strong>The interface &mdash;</strong> any place a player can live implements this:</p>
+                <pre><code><span class="comment">// Package-private methods — only the registry can call these</span>
+<span class="kw">interface</span> <span class="type">PlayerContainer</span> {
+    <span class="kw">void</span> <span class="fn">add</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>);
+    <span class="kw">void</span> <span class="fn">remove</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>);
+}</code></pre>
+
+                <p><strong>The ready pool</strong> is a container:</p>
+                <pre><code><span class="kw">class</span> <span class="type">ReadyPool</span> <span class="kw">implements</span> <span class="type">PlayerContainer</span> {
+    <span class="kw">private final</span> <span class="type">Set</span>&lt;<span class="type">MatchPlayer</span>&gt; <span class="field">players</span> = <span class="kw">new</span> <span class="type">LinkedHashSet</span>&lt;&gt;();
+
+    <span class="kw">void</span> <span class="fn">add</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>)    { <span class="field">players</span>.<span class="fn">add</span>(player); }
+    <span class="kw">void</span> <span class="fn">remove</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>) { <span class="field">players</span>.<span class="fn">remove</span>(player); }
+
+    <span class="comment">// Public read-only access is fine</span>
+    <span class="kw">public</span> <span class="type">Set</span>&lt;<span class="type">MatchPlayer</span>&gt; <span class="fn">getPlayers</span>() {
+        <span class="kw">return</span> <span class="type">Collections</span>.<span class="fn">unmodifiableSet</span>(<span class="field">players</span>);
+    }
+}</code></pre>
+
+                <p><strong>A match</strong> is also a container:</p>
+                <pre><code><span class="kw">class</span> <span class="type">Match</span>&lt;<span class="type">T</span>&gt; <span class="kw">implements</span> <span class="type">PlayerContainer</span> {
+    <span class="kw">private final</span> <span class="type">Set</span>&lt;<span class="type">MatchPlayer</span>&gt; <span class="field">players</span> = <span class="kw">new</span> <span class="type">LinkedHashSet</span>&lt;&gt;();
+    <span class="kw">private final</span> <span class="type">MatchType</span>&lt;<span class="type">T</span>&gt; <span class="field">type</span>;
+    <span class="kw">private</span> <span class="type">MatchPhase</span> <span class="field">phase</span> = <span class="type">MatchPhase</span>.<span class="field">PENDING</span>;
+
+    <span class="kw">void</span> <span class="fn">add</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>)    { <span class="field">players</span>.<span class="fn">add</span>(player); }
+    <span class="kw">void</span> <span class="fn">remove</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>) { <span class="field">players</span>.<span class="fn">remove</span>(player); }
+
+    <span class="kw">public</span> <span class="type">Set</span>&lt;<span class="type">MatchPlayer</span>&gt; <span class="fn">getPlayers</span>() {
+        <span class="kw">return</span> <span class="type">Collections</span>.<span class="fn">unmodifiableSet</span>(<span class="field">players</span>);
+    }
+
+    <span class="kw">public boolean</span> <span class="fn">isFull</span>() {
+        <span class="kw">return</span> <span class="field">players</span>.<span class="fn">size</span>() >= <span class="field">type</span>.<span class="fn">maxPlayers</span>();
+    }
+}</code></pre>
+
+                <p><strong>The registry &mdash;</strong> the only way to move players:</p>
+                <pre><code><span class="kw">class</span> <span class="type">PlayerRegistry</span> {
+    <span class="kw">private final</span> <span class="type">Map</span>&lt;<span class="type">Player</span>, <span class="type">MatchPlayer</span>&gt; <span class="field">matchPlayers</span> = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+    <span class="kw">private final</span> <span class="type">Map</span>&lt;<span class="type">MatchPlayer</span>, <span class="type">PlayerContainer</span>&gt; <span class="field">locations</span> = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+
+    <span class="comment">// Player enters the match system</span>
+    <span class="kw">public</span> <span class="type">MatchPlayer</span> <span class="fn">register</span>(<span class="type">Player</span> <span class="field">player</span>) {
+        <span class="type">MatchPlayer</span> mp = <span class="kw">new</span> <span class="type">MatchPlayer</span>(player);
+        <span class="field">matchPlayers</span>.<span class="fn">put</span>(player, mp);
+        <span class="kw">return</span> mp;
+    }
+
+    <span class="comment">// Player leaves the match system entirely</span>
+    <span class="kw">public void</span> <span class="fn">unregister</span>(<span class="type">Player</span> <span class="field">player</span>) {
+        <span class="type">MatchPlayer</span> mp = <span class="field">matchPlayers</span>.<span class="fn">remove</span>(player);
+        <span class="kw">if</span> (mp == <span class="kw">null</span>) <span class="kw">return</span>;
+        <span class="type">PlayerContainer</span> current = <span class="field">locations</span>.<span class="fn">remove</span>(mp);
+        <span class="kw">if</span> (current != <span class="kw">null</span>) {
+            current.<span class="fn">remove</span>(mp);
+        }
+    }
+
+    <span class="comment">// Move a player from wherever they are to a new container</span>
+    <span class="kw">public void</span> <span class="fn">transfer</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>, <span class="type">PlayerContainer</span> <span class="field">destination</span>) {
+        <span class="type">PlayerContainer</span> current = <span class="field">locations</span>.<span class="fn">get</span>(player);
+        <span class="kw">if</span> (current != <span class="kw">null</span>) {
+            current.<span class="fn">remove</span>(player);   <span class="comment">// package-private</span>
+        }
+        destination.<span class="fn">add</span>(player);      <span class="comment">// package-private</span>
+        <span class="field">locations</span>.<span class="fn">put</span>(player, destination);
+    }
+
+    <span class="comment">// Where is this player right now?</span>
+    <span class="kw">public</span> <span class="type">PlayerContainer</span> <span class="fn">locate</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>) {
+        <span class="kw">return</span> <span class="field">locations</span>.<span class="fn">get</span>(player);
+    }
+
+    <span class="comment">// Is this player in a match?</span>
+    <span class="kw">public boolean</span> <span class="fn">isInMatch</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>) {
+        <span class="kw">return</span> <span class="field">locations</span>.<span class="fn">get</span>(player) <span class="kw">instanceof</span> <span class="type">Match</span>;
+    }
+}</code></pre>
+
+                <p><strong>Usage &mdash;</strong> how the matchmaking system drives it:</p>
+                <pre><code><span class="comment">// Player clicks "ready"</span>
+<span class="type">MatchPlayer</span> mp = registry.<span class="fn">register</span>(serverPlayer);
+registry.<span class="fn">transfer</span>(mp, readyPool);
+
+<span class="comment">// Matchmaking runs, finds a match with room</span>
+<span class="type">Match</span>&lt;?&gt; match = <span class="fn">findPendingMatchWithRoom</span>();
+registry.<span class="fn">transfer</span>(mp, match);
+<span class="comment">// player is now OUT of readyPool and IN the match</span>
+<span class="comment">// no duplication possible</span>
+
+<span class="comment">// Match ends, send player back to queue</span>
+registry.<span class="fn">transfer</span>(mp, readyPool);
+
+<span class="comment">// Or if they're leaving entirely:</span>
+registry.<span class="fn">unregister</span>(serverPlayer);</code></pre>
+
+                <table>
+                    <thead>
+                        <tr><th>Pros</th><th>Cons</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <ul style="margin:0;padding-left:16px;">
+                                    <li>Single point of enforcement &mdash; impossible to bypass</li>
+                                    <li>O(1) player location lookup</li>
+                                    <li>Single place to log/trace all player movement</li>
+                                    <li>Maps naturally to <code>MatchManager</code></li>
+                                    <li>Easy to add validation rules (e.g., "can't transfer to a full match")</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul style="margin:0;padding-left:16px;">
+                                    <li>All operations funneled through one object</li>
+                                    <li>Containers can't manage themselves &mdash; always need registry reference</li>
+                                    <li>Slight indirection for every add/remove</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Option B: Linked Containers (Self-Enforcing)</h4>
+                <p>Each <code>MatchPlayer</code> holds a back-reference to its current container. Containers implement a shared <code>PlayerContainer</code> interface. Moving a player automatically ejects them from their previous location.</p>
+
+<div class="diagram">  MatchPlayer                    PlayerContainer (interface)
+ ┌──────────────────┐           ┌────────────────────────┐
+ │ player: Player   │           │ claim(player)          │
+ │ container: ───────────────►  │ release(player)        │
+ │                  │           │ getPlayers()           │
+ └──────────────────┘           └────────────────────────┘
+                                      ▲         ▲
+                                      │         │
+                                 ReadyPool   Match</div>
+
+                <p><strong>How it works:</strong></p>
+                <ul>
+                    <li>Each <code>MatchPlayer</code> holds a reference to its current <code>PlayerContainer</code></li>
+                    <li><code>destination.claim(player)</code> checks the player's current container, calls <code>release()</code> on it, then adds the player</li>
+                    <li>The player's container reference is updated atomically during the claim</li>
+                    <li>No central coordinator &mdash; the containers and players manage it themselves</li>
+                </ul>
+
+                <pre><code><span class="kw">public interface</span> <span class="type">PlayerContainer</span> {
+    <span class="kw">void</span> <span class="fn">claim</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>);
+    <span class="kw">void</span> <span class="fn">release</span>(<span class="type">MatchPlayer</span> <span class="field">player</span>);
+}
+
+<span class="kw">public class</span> <span class="type">MatchPlayer</span> {
+    <span class="kw">private final</span> <span class="type">Player</span> <span class="field">player</span>;
+    <span class="kw">private</span> <span class="type">PlayerContainer</span> <span class="field">container</span>;  <span class="comment">// current location</span>
+
+    <span class="kw">synchronized void</span> <span class="fn">moveTo</span>(<span class="type">PlayerContainer</span> <span class="field">destination</span>) {
+        <span class="kw">if</span> (<span class="field">container</span> != <span class="kw">null</span>) {
+            <span class="field">container</span>.<span class="fn">release</span>(<span class="kw">this</span>);
+        }
+        destination.<span class="fn">claim</span>(<span class="kw">this</span>);
+        <span class="field">container</span> = destination;
+    }
+}</code></pre>
+
+                <table>
+                    <thead>
+                        <tr><th>Pros</th><th>Cons</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <ul style="margin:0;padding-left:16px;">
+                                    <li>No central bottleneck</li>
+                                    <li>Containers are self-sufficient</li>
+                                    <li>Simpler dependency graph &mdash; no registry to inject</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul style="margin:0;padding-left:16px;">
+                                    <li>Circular dependency between players and containers</li>
+                                    <li>"Where is player X?" requires iterating containers or querying the player object</li>
+                                    <li>Enforcement logic is distributed &mdash; harder to audit</li>
+                                    <li>Easier to accidentally bypass via direct container mutation</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Evaluation Pending</div>
+                    <p><strong>Option A (Central Registry)</strong> provides stronger guarantees and simpler debugging at the cost of funneling all operations through one object. <strong>Option B (Linked Containers)</strong> is more decentralized but distributes enforcement logic and makes global queries harder. The right choice depends on how much centralized control vs. container autonomy is preferred.</p>
+                </div>
+            </section>
+
+            <!-- Extension Summary -->
+            <section id="extension-summary">
+                <h2>Extension Summary</h2>
+                <p>A developer building a game mode on this system provides:</p>
+
+                <ol class="flow-list">
+                    <li><strong>Match type registration</strong> &mdash; player limits, custom state initializer, optional pending timeout</li>
+                    <li><strong>Start condition predicate</strong> &mdash; when should the match begin?</li>
+                    <li><strong>End condition predicate</strong> &mdash; when should the match end?</li>
+                    <li><strong>Match handler implementation</strong> &mdash; what happens at each lifecycle event?</li>
+                    <li><strong>(Optional) Custom matchmaking strategy</strong> &mdash; how should players be grouped?</li>
+                    <li><strong>(Optional) External systems</strong> &mdash; timers, voting, scoring that write to custom match state fields</li>
+                </ol>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Search overlay -->
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation...">
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+                <span><kbd>↵</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

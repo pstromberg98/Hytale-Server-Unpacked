@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Interactions &amp; State - Hytale Server Docs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">&#9776;</button>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Hytale Server</h1>
+            <div class="subtitle">Internal Documentation</div>
+            <div class="sidebar-controls">
+                <button class="search-trigger" onclick="openSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    Search...
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+            </div>
+        </div>
+        <nav>
+            <div class="nav-section">Start</div>
+            <a href="index.html">Overview</a>
+            <a href="getting-started.html">Getting Started</a>
+            <div class="nav-section">Architecture</div>
+            <a href="ecs.html">ECS Architecture</a>
+            <a href="threading.html">Threading Model</a>
+            <a href="networking.html">Networking</a>
+            <a href="worlds.html">Worlds &amp; Universe</a>
+            <div class="nav-section">Systems</div>
+            <a href="events.html">Event System</a>
+            <a href="commands.html">Command System</a>
+            <a href="permissions.html">Permissions</a>
+            <a href="teleportation.html">Teleportation</a>
+            <div class="nav-section">World</div>
+            <a href="blocks.html">Blocks</a>
+            <a href="block-interactions.html" class="active">Block Interactions</a>
+            <a href="worldgen.html">World Generation</a>
+            <div class="nav-section">Client</div>
+            <a href="ui.html">UI &amp; HUD</a>
+            <a href="sound.html">Sound &amp; Audio</a>
+            <div class="nav-section">Entities</div>
+            <a href="entities.html">Entities &amp; NPCs</a>
+            <a href="npc.html">NPC &amp; AI</a>
+            <a href="players.html">Players</a>
+            <a href="items.html">Items &amp; Inventory</a>
+            <a href="combat.html">Damage &amp; Combat</a>
+            <div class="nav-section">Development</div>
+            <a href="plugins.html">Plugin Development</a>
+            <a href="configuration.html">Configuration</a>
+            <a href="data-packs.html">Data Packs</a>
+            <div class="nav-section">Reference</div>
+            <a href="reference.html">ECS Catalog</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <nav class="page-toc"></nav>
+        <div class="content">
+            <h1>Block Interactions &amp; State</h1>
+            <p class="page-desc">How blocks gain behavior, change appearance, store persistent data, and respond to player interaction. Companion to the <a href="blocks.html">Blocks</a> page which covers storage and palettes.</p>
+
+            <section id="mental-model">
+                <h2>The Three Layers of Block "State"</h2>
+                <p>When you hear "block state" in Hytale, it can mean three very different things. Understanding which layer is in play is the key to understanding the whole system.</p>
+
+<div class="diagram">
+Layer 1 &mdash; PALETTE DATA (every block has this)
+&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;
+  BlockSection palette stores 3 integers per block:
+  &#9484; Block ID &#9472; index into BlockType asset map
+  &#9484; Rotation &#9472; 0&ndash;3 (yaw/pitch/roll packed)
+  &#9484; Filler   &#9472; offset for multi-block structures
+  Cost: ~0 bytes per block (palette compressed)
+
+Layer 2 &mdash; CONNECTED BLOCKS (fences, stairs, roofs)
+&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;
+  NOT extra state &mdash; just a different Block ID!
+  "oak_fence" + neighbor fence &#8594; becomes "oak_fence_corner_nw"
+  Rules evaluated on place/update, result is a block swap.
+  Cost: 0 extra bytes (encoded in the Block ID itself)
+
+Layer 3 &mdash; BLOCKSTATE (chests, beds, teleporters)
+&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;
+  ECS Component in ChunkStore with custom data:
+  &#9484; ItemContainerState &#8594; inventory contents
+  &#9484; RespawnBlock        &#8594; owner UUID
+  &#9484; LaunchPad           &#8594; velocity vector
+  &#9484; Teleporter          &#8594; destination coords
+  Cost: full ECS entity per block (only when needed)
+</div>
+
+                <div class="info-box note">
+                    <div class="label">Key Insight</div>
+                    <p>Hytale avoids per-block property maps entirely. There is no <code>connected_north=true</code> flag. Instead, dozens of pre-baked <span class="type">BlockType</span> variants exist for each visual configuration. The "state" is encoded in <em>which</em> block type is placed, not in metadata attached to it. This keeps the common case (plain blocks) at zero per-instance overhead.</p>
+                </div>
+            </section>
+
+            <section id="state-data">
+                <h2>StateData &mdash; Variant Mapping</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.asset.type.blocktype.config</code></p>
+                <p><span class="type">StateData</span> is the bridge between named states and block type variants. It lives on a <span class="type">BlockType</span> asset and maps state names to other <span class="type">BlockType</span> keys.</p>
+
+                <h3>How It Works</h3>
+<div class="diagram">BlockType "chest" has StateData:
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  id: "ItemContainerState"                         &#9474;
+&#9474;                                                    &#9474;
+&#9474;  stateToBlock: {                                   &#9474;
+&#9474;    "OpenWindow"  &#8594; "chest_open"                   &#9474;
+&#9474;    "CloseWindow" &#8594; "chest_closed"                 &#9474;
+&#9474;  }                                                 &#9474;
+&#9474;                                                    &#9474;
+&#9474;  blockToState: {      (auto-generated reverse map) &#9474;
+&#9474;    "chest_open"   &#8594; "OpenWindow"                  &#9474;
+&#9474;    "chest_closed" &#8594; "CloseWindow"                 &#9474;
+&#9474;  }                                                 &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Key Methods</h3>
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code><span class="type">String</span> <span class="fn">getId</span>()</code></td>
+                            <td>State type identifier (e.g. <code>"ItemContainerState"</code>). Used by <span class="type">BlockStateModule</span> to pick the right <span class="type">BlockState</span> subclass.</td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">String</span> <span class="fn">getBlockForState</span>(<span class="type">String</span> state)</code></td>
+                            <td>Given a state name, returns the <span class="type">BlockType</span> key. <code>"OpenWindow"</code> &rarr; <code>"chest_open"</code></td>
+                        </tr>
+                        <tr>
+                            <td><code><span class="type">String</span> <span class="fn">getStateForBlock</span>(<span class="type">String</span> blockTypeKey)</code></td>
+                            <td>Reverse lookup. <code>"chest_open"</code> &rarr; <code>"OpenWindow"</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Dual Purpose</div>
+                    <p><span class="type">StateData</span> serves two roles: the <code>id</code> field determines which <span class="type">BlockState</span> subclass to instantiate (e.g. <code>"ItemContainerState"</code> creates an <span class="type">ItemContainerState</span>), while the <code>stateToBlock</code> map enables visual state transitions without changing the underlying state data.</p>
+                </div>
+            </section>
+
+            <section id="connected-blocks">
+                <h2>Connected Blocks (Fences, Stairs, Roofs)</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.connectedblocks</code></p>
+                <p>Connected blocks are blocks that change their visual appearance based on neighboring blocks. Think fences connecting to adjacent fences, stairs forming corners, or roof tiles matching slopes.</p>
+
+                <h3>Architecture</h3>
+<div class="diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  BlockType "oak_fence"                                              &#9474;
+&#9474;  &#9492;&#9472; connectedBlockRuleSet: CustomTemplateConnectedBlockRuleSet      &#9474;
+&#9474;       &#9492;&#9472; shapeTemplateAsset: CustomConnectedBlockTemplateAsset       &#9474;
+&#9474;            &#9492;&#9472; connectedBlockShapes: {                                &#9474;
+&#9474;                  "straight"   &#8594; shape with N/S face tags               &#9474;
+&#9474;                  "corner"     &#8594; shape with N/E face tags               &#9474;
+&#9474;                  "t_junction" &#8594; shape with N/E/S face tags             &#9474;
+&#9474;                  "cross"      &#8594; shape with N/E/S/W face tags           &#9474;
+&#9474;                  "post"       &#8594; shape with no connection tags           &#9474;
+&#9474;               }                                                       &#9474;
+&#9474;            &#9492;&#9472; patterns: [CustomConnectedBlockPattern...]               &#9474;
+&#9474;                  each pattern has:                                     &#9474;
+&#9474;                    &#9484; rulesToMatch[] &#8594; check neighbors at offsets          &#9474;
+&#9474;                    &#9484; patternRotationDefinition &#8594; rotations/mirrors      &#9474;
+&#9474;                    &#9484; transformRulesToOrientation &#8594; respect placement     &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+
+                <h3>Evaluation Flow</h3>
+                <p>When a connected block is placed or a neighbor changes, <span class="type">ConnectedBlocksUtil</span> runs this process:</p>
+
+                <ol>
+                    <li><strong>Get ruleset</strong> &mdash; Read the <code>connectedBlockRuleSet</code> from the block's <span class="type">BlockType</span>.</li>
+                    <li><strong>Iterate patterns</strong> &mdash; For each <span class="type">CustomConnectedBlockPattern</span> in the shape template:</li>
+                    <li style="list-style: none;">
+                        <ol type="a">
+                            <li><strong>Iterate rotations</strong> &mdash; Try each rotation/mirror from <code>patternRotationDefinition</code>.</li>
+                            <li><strong>Check rules</strong> &mdash; For each <span class="type">ConnectedBlockPatternRule</span>:
+                                <ul>
+                                    <li>Compute neighbor coordinate from <code>relativePosition</code> + rotation</li>
+                                    <li>Read the neighbor block from the chunk</li>
+                                    <li>Check: does the neighbor match face tags, shape keys, block types, or block type lists?</li>
+                                </ul>
+                            </li>
+                            <li><strong>All rules match?</strong> &mdash; Return the result block type key + rotation.</li>
+                        </ol>
+                    </li>
+                    <li><strong>Apply result</strong> &mdash; Replace the block ID in the palette with the matched variant.</li>
+                    <li><strong>Notify neighbors</strong> &mdash; BFS update: neighbors re-evaluate up to depth 3.</li>
+                </ol>
+
+                <h3>Example: Fence Placement</h3>
+<div class="diagram">BEFORE: Place fence at (5, 10, 5)
+  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474;fence&#9474; &#9474; air &#9474; &#9474;fence&#9474;    existing fence at (4,10,5)
+  &#9474;post &#9474; &#9474;     &#9474; &#9474;post &#9474;    and (6,10,5)
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+
+AFTER: New fence placed, all three re-evaluate
+  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474; fence &#9474; &#9474;  fence   &#9474; &#9474; fence &#9474;
+  &#9474;east  &#9474;&#9472;&#9474;east+west&#9474;&#9472;&#9474; west  &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+
+  Each is now a DIFFERENT BlockType ID in the palette.
+  No extra state stored &mdash; just the block ID changed.
+</div>
+
+                <h3>Pattern Rule Matching</h3>
+                <p>Each <span class="type">ConnectedBlockPatternRule</span> can match neighbors via three criteria (checked in order):</p>
+                <table>
+                    <thead>
+                        <tr><th>Criteria</th><th>What It Checks</th><th>Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Face Tags</strong></td>
+                            <td>Directional connection points on the neighbor's shape</td>
+                            <td>Does the neighbor have a <code>"connect"</code> tag on its south face?</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Shape Keys</strong></td>
+                            <td>Named shape + rotation + filler of the neighbor</td>
+                            <td>Is the neighbor the <code>"straight"</code> shape at rotation 0?</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Block Types</strong></td>
+                            <td>Exact block type key or block type list membership</td>
+                            <td>Is the neighbor <code>"oak_fence"</code> or any block in the <code>"fences"</code> list?</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Each rule has an <code>include</code>/<code>exclude</code> flag. Include means "match if found", exclude means "match if NOT found".</p>
+
+                <h3>Built-in Rule Set Templates</h3>
+                <p>The <span class="type">ConnectedBlocksModule</span> registers three built-in templates:</p>
+                <table>
+                    <thead>
+                        <tr><th>Template</th><th>Used By</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Stair</strong></td>
+                            <td>Stair blocks</td>
+                            <td>Handles inner/outer corner formation</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Roof</strong></td>
+                            <td>Roof tiles</td>
+                            <td>Slope matching with adjacent roof blocks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Custom</strong></td>
+                            <td>Fences, walls, etc.</td>
+                            <td>Fully configurable pattern matching</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="interactions">
+                <h2>Block Interaction System</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.interaction</code></p>
+                <p>This is how a block "knows" it can be interacted with and what happens when a player does so.</p>
+
+                <h3>Defining Interactions on a BlockType</h3>
+                <p>Every <span class="type">BlockType</span> asset can include an <code>interactions</code> map:</p>
+
+                <pre><code><span class="comment">// On the BlockType asset definition</span>
+<span class="type">Map</span>&lt;<span class="type">InteractionType</span>, <span class="type">String</span>&gt; <span class="field">interactions</span>;
+
+<span class="comment">// Example mapping:</span>
+<span class="comment">//   UNARMED  &rarr; "open_chest"     (right-click with empty hand)</span>
+<span class="comment">//   WIELDING &rarr; "use_on_block"   (right-click while holding item)</span></code></pre>
+
+                <p>The <span class="type">InteractionType</span> determines when the interaction triggers, and the string value is an <strong>interaction asset ID</strong> that resolves to a concrete interaction class.</p>
+
+                <h3>Interaction Class Hierarchy</h3>
+<div class="diagram">SimpleBlockInteraction (abstract base)
+&#9474;
+&#9474;  tick0()  &#8594; validates target block still exists
+&#9474;  interactWithBlock()  &#8594; abstract, subclass implements
+&#9474;
+&#9500;&#9472;&#9472; ChangeStateInteraction      &#8592; toggle between state variants
+&#9474;     "default" &#8594; "activated" &#8594; "default"
+&#9474;
+&#9500;&#9472;&#9472; ChangeBlockInteraction      &#8592; swap to a completely different block
+&#9474;     "log_oak" &#8594; "log_oak_stripped"
+&#9474;
+&#9500;&#9472;&#9472; UseBlockInteraction         &#8592; dispatch UseBlockEvent, run block's own interaction
+&#9474;
+&#9500;&#9472;&#9472; CycleBlockGroupInteraction  &#8592; cycle through a BlockGroup
+&#9474;     "wool_red" &#8594; "wool_blue" &#8594; "wool_green" &#8594; ...
+&#9474;
+&#9500;&#9472;&#9472; OpenContainerInteraction    &#8592; open inventory UI (server-side)
+&#9474;     Gets ItemContainerState, creates ContainerBlockWindow
+&#9474;
+&#9500;&#9472;&#9472; BedInteraction              &#8592; mount + set respawn (built-in plugin)
+&#9474;
+&#9500;&#9472;&#9472; TeleporterInteraction       &#8592; teleport entity (built-in plugin)
+&#9474;
+&#9492;&#9472;&#9472; LaunchPadInteraction        &#8592; apply velocity (built-in plugin)
+</div>
+
+                <h3>Interaction Types</h3>
+                <table>
+                    <thead>
+                        <tr><th>InteractionType</th><th>Trigger</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>UNARMED</code></td><td>Right-click with empty hand</td></tr>
+                        <tr><td><code>WIELDING</code></td><td>Right-click while holding an item</td></tr>
+                        <tr><td><code>USING_BENCH</code></td><td>Right-click on a crafting/workbench block</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="change-state">
+                <h2>ChangeStateInteraction &mdash; Deep Dive</h2>
+                <p>This is the most common way interactive blocks work. It toggles a block between visual states defined in its <span class="type">StateData</span>.</p>
+
+                <h3>Configuration</h3>
+                <pre><code><span class="comment">// Asset definition for the interaction</span>
+<span class="type">ChangeStateInteraction</span> {
+    <span class="str">"Changes"</span>: {
+        <span class="str">"default"</span>:   <span class="str">"activated"</span>,    <span class="comment">// default &rarr; activated</span>
+        <span class="str">"activated"</span>: <span class="str">"default"</span>      <span class="comment">// activated &rarr; default</span>
+    },
+    <span class="str">"UpdateBlockState"</span>: <span class="kw">false</span>       <span class="comment">// keep existing BlockState data</span>
+}</code></pre>
+
+                <h3>Execution Flow</h3>
+<div class="diagram">Player right-clicks block
+&#9474;
+&#9660;
+SimpleBlockInteraction.tick0()
+&#9474;  Validate: chunk loaded? block exists? not air?
+&#9474;
+&#9660;
+ChangeStateInteraction.interactWithBlock()
+&#9474;
+&#9500;&#9472; 1. Get current BlockType from chunk palette
+&#9474;      chunk.getBlockType(targetBlock) &#8594; "orbis_statue"
+&#9474;
+&#9500;&#9472; 2. Look up current state name via StateData
+&#9474;      current.getStateForBlock(current) &#8594; null &#8594; "default"
+&#9474;
+&#9500;&#9472; 3. Map to new state via Changes map
+&#9474;      stateKeys.get("default") &#8594; "activated"
+&#9474;
+&#9500;&#9472; 4. Resolve new state to a BlockType key
+&#9474;      current.getBlockKeyForState("activated")
+&#9474;      &#8594; "orbis_statue_activated"
+&#9474;
+&#9500;&#9472; 5. Look up the integer ID for that key
+&#9474;      BlockType.getAssetMap().getIndex("orbis_statue_activated")
+&#9474;      &#8594; 1847
+&#9474;
+&#9500;&#9472; 6. Write to chunk palette (same rotation, new ID)
+&#9474;      chunk.setBlock(x, y, z, 1847, newBlockType, rotation, 0, 260)
+&#9474;
+&#9492;&#9472; 7. Play interaction sound
+       SoundUtil.playSoundEvent3d(...)
+</div>
+
+                <div class="info-box note">
+                    <div class="label">Settings Bitmask: 260 (0x104)</div>
+                    <p><code>0x100</code> = network update enabled. <code>0x4</code> = state transition mode. If <code>updateBlockState</code> is false, <code>0x2</code> is also set, telling <code>setBlock</code> to preserve the existing <span class="type">BlockState</span> ECS component rather than creating a new one.</p>
+                </div>
+            </section>
+
+            <section id="change-block">
+                <h2>ChangeBlockInteraction</h2>
+                <p>Unlike <span class="type">ChangeStateInteraction</span> (which works within one block's state variants), <span class="type">ChangeBlockInteraction</span> maps <strong>one block type to an entirely different block type</strong>.</p>
+
+                <pre><code><span class="comment">// Example: stripping logs with an axe</span>
+<span class="type">ChangeBlockInteraction</span> {
+    <span class="str">"Changes"</span>: {
+        <span class="str">"log_oak"</span>:    <span class="str">"log_oak_stripped"</span>,
+        <span class="str">"log_birch"</span>:  <span class="str">"log_birch_stripped"</span>,
+        <span class="str">"log_spruce"</span>: <span class="str">"log_spruce_stripped"</span>
+    },
+    <span class="str">"WorldSoundEventId"</span>: <span class="str">"strip_wood"</span>,
+    <span class="str">"RequireNotBroken"</span>: <span class="kw">true</span>
+}</code></pre>
+
+                <p>Key differences from <span class="type">ChangeStateInteraction</span>:</p>
+                <ul>
+                    <li>Maps are <strong>block key &rarr; block key</strong>, not state name &rarr; state name</li>
+                    <li>Change map IDs are lazily compiled to an <code>Int2IntMap</code> for fast lookups</li>
+                    <li>Can require the held item to not be broken (<code>RequireNotBroken</code>)</li>
+                    <li>Can play a world sound event at the block location</li>
+                </ul>
+            </section>
+
+            <section id="block-state-persistence">
+                <h2>BlockState Persistence</h2>
+                <p>Package: <code>com.hypixel.hytale.server.core.universe.world.meta</code></p>
+
+                <h3>Lifecycle</h3>
+<div class="diagram">Block Placed (or chunk loaded from disk)
+&#9474;
+&#9500;&#9472; Does BlockType have StateData with non-null id?
+&#9474;     NO  &#8594; No BlockState created. Block is just a palette ID. Done.
+&#9474;     YES &#8595;
+&#9474;
+&#9500;&#9472; BlockStateModule.createBlockState(stateData.id, chunk, pos, blockType)
+&#9474;     Maps id string to concrete class:
+&#9474;       "ItemContainerState" &#8594; new ItemContainerState()
+&#9474;       "RespawnBlock"       &#8594; new RespawnBlock()
+&#9474;       "LaunchPad"          &#8594; new LaunchPad()
+&#9474;       "Teleporter"         &#8594; new Teleporter()
+&#9474;
+&#9500;&#9472; blockState.setPosition(chunk, position)
+&#9474;     Stores chunk-local coordinates (x &amp; 0x1F, y, z &amp; 0x1F)
+&#9474;
+&#9500;&#9472; blockState.initialize(blockType)
+&#9474;     Subclass sets up its data (e.g., ItemContainerState creates inventory)
+&#9474;
+&#9500;&#9472; blockState.toHolder() &#8594; Holder&lt;ChunkStore&gt;
+&#9474;     Wraps the BlockState as an ECS component holder
+&#9474;
+&#9492;&#9472; chunk.setState(x, y, z, blockState)
+       Stores the holder in BlockComponentChunk at the block index
+</div>
+
+                <h3>Saving &amp; Loading</h3>
+                <table>
+                    <thead>
+                        <tr><th>Operation</th><th>Method</th><th>Format</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Save</td>
+                            <td><code>blockState.<span class="fn">saveToDocument</span>()</code></td>
+                            <td>BSON via <span class="type">CodecMapCodec</span></td>
+                        </tr>
+                        <tr>
+                            <td>Load</td>
+                            <td><code><span class="type">BlockState</span>.<span class="fn">load</span>(doc, chunk, pos)</code></td>
+                            <td>Deserializes BSON, calls <code>setPosition</code> + <code>initialize</code></td>
+                        </tr>
+                        <tr>
+                            <td>Clone</td>
+                            <td><code>blockState.<span class="fn">clone</span>()</code></td>
+                            <td>Round-trip: encode to BSON, decode back</td>
+                        </tr>
+                        <tr>
+                            <td>Mark dirty</td>
+                            <td><code>blockState.<span class="fn">markNeedsSave</span>()</code></td>
+                            <td>Calls <code>chunk.markNeedsSaving()</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box warning">
+                    <div class="label">Deprecated but Core</div>
+                    <p><span class="type">BlockState</span> is marked <code>@Deprecated(forRemoval = true)</code>, suggesting a migration toward a pure ECS approach where block state data would be stored as regular <span class="type">ChunkStore</span> components without the <span class="type">BlockState</span> base class. However, the entire system currently depends on it.</p>
+                </div>
+            </section>
+
+            <section id="concrete-states">
+                <h2>BlockState Implementations</h2>
+
+                <h3>ItemContainerState (Chests, Barrels)</h3>
+                <p>The most complex built-in state. Manages an inventory, player viewing windows, and item drops on destroy.</p>
+                <table>
+                    <thead>
+                        <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>itemContainer</code></td><td><span class="type">SimpleItemContainer</span></td><td>The inventory contents (serialized via codec)</td></tr>
+                        <tr><td><code>windows</code></td><td><code>Map&lt;UUID, ContainerBlockWindow&gt;</code></td><td>Currently viewing players</td></tr>
+                        <tr><td><code>custom</code></td><td><span class="kw">boolean</span></td><td>If true, skip default capacity initialization</td></tr>
+                        <tr><td><code>allowViewing</code></td><td><span class="kw">boolean</span></td><td>Can players open this container?</td></tr>
+                        <tr><td><code>droplist</code></td><td><span class="type">String</span></td><td>Drop table ID for randomized loot</td></tr>
+                        <tr><td><code>marker</code></td><td><span class="type">MarkerReference</span></td><td>World map marker (e.g. treasure icon)</td></tr>
+                    </tbody>
+                </table>
+
+                <p>Key behaviors:</p>
+                <ul>
+                    <li><strong>Capacity</strong> &mdash; Determined by <span class="type">ItemContainerStateData</span> on the <span class="type">StateData</span> (default: 20 slots). Excess items on load are dropped as entities.</li>
+                    <li><strong>Change tracking</strong> &mdash; <code>onItemChange()</code> calls <code>markNeedsSave()</code>, so any inventory modification triggers a chunk save.</li>
+                    <li><strong>Destruction</strong> &mdash; <code>onDestroy()</code> closes all viewer windows and spawns item drop entities for every stack.</li>
+                </ul>
+
+                <h3>Other Implementations</h3>
+                <table>
+                    <thead>
+                        <tr><th>Class</th><th>State Data</th><th>Used By</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="type">RespawnBlock</span></td>
+                            <td><code>ownerUUID</code> &mdash; player who owns this respawn point</td>
+                            <td>Beds, custom respawn markers</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">LaunchPad</span></td>
+                            <td>Velocity vector to apply to entities</td>
+                            <td>Jump pads, bounce blocks</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">Teleporter</span></td>
+                            <td>Destination coordinates</td>
+                            <td>Portal blocks, teleport pads</td>
+                        </tr>
+                        <tr>
+                            <td><span class="type">BlockMapMarker</span></td>
+                            <td>World map marker reference</td>
+                            <td>Map-visible landmarks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="interaction-flow">
+                <h2>Full Interaction Flow</h2>
+                <p>Putting it all together: what happens from player click to chunk save.</p>
+
+<div class="diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  1. PLAYER INPUT                                                    &#9474;
+&#9474;     Player right-clicks block                                       &#9474;
+&#9474;     Client sends interaction packet to server                       &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                               &#9474;
+                               &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  2. INTERACTION LOOKUP                                              &#9474;
+&#9474;     BlockType.interactions.get(UNARMED) &#8594; "toggle_statue"           &#9474;
+&#9474;     Resolves to ChangeStateInteraction asset                        &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                               &#9474;
+                               &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  3. VALIDATION                                                      &#9474;
+&#9474;     SimpleBlockInteraction.tick0()                                  &#9474;
+&#9474;     &#9484; Is chunk loaded?                                              &#9474;
+&#9474;     &#9484; Is block still there (not air)?                               &#9474;
+&#9474;     &#9484; Is target position valid?                                     &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                               &#9474;
+                               &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  4. EVENT DISPATCH                                                  &#9474;
+&#9474;     UseBlockEvent.Pre fired (cancellable)                           &#9474;
+&#9474;     If cancelled &#8594; interaction aborted                              &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                               &#9474;
+                               &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  5. STATE CHANGE                                                    &#9474;
+&#9474;     interactWithBlock() executes                                    &#9474;
+&#9474;     &#9484; Resolves new block ID from StateData / Changes map            &#9474;
+&#9474;     &#9484; chunk.setBlock() writes new ID to palette                     &#9474;
+&#9474;     &#9484; If block has ConnectedBlockRuleSet &#8594; BFS neighbor update     &#9474;
+&#9474;     &#9484; If block has StateData.id &#8594; create/preserve BlockState       &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                               &#9474;
+                               &#9660;
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;  6. NETWORK + PERSISTENCE                                           &#9474;
+&#9474;     &#9484; WorldNotificationHandler sends block update to clients        &#9474;
+&#9474;     &#9484; Play interaction sound via SoundUtil                          &#9474;
+&#9474;     &#9484; chunk.markNeedsSaving() &#8594; queued for next save cycle          &#9474;
+&#9474;     &#9484; UseBlockEvent.Post fired (informational)                      &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+</div>
+            </section>
+
+            <section id="open-container">
+                <h2>Opening a Container (Chest Example)</h2>
+                <p>A chest combines <span class="type">ChangeStateInteraction</span> (visual open/close) with <span class="type">OpenContainerInteraction</span> (inventory UI). Here is how all the pieces fit:</p>
+
+<div class="diagram">BlockType "chest"
+&#9474;
+&#9500;&#9472; StateData:
+&#9474;    id: "ItemContainerState"   &#8592; tells BlockStateModule which class
+&#9474;    stateToBlock: {
+&#9474;      "OpenWindow"  &#8594; "chest_open"
+&#9474;      "CloseWindow" &#8594; "chest_closed"
+&#9474;    }
+&#9474;
+&#9500;&#9472; interactions:
+&#9474;    UNARMED &#8594; "open_chest"      &#8592; OpenContainerInteraction asset
+&#9474;
+&#9492;&#9472; blockEntity:
+     Holder&lt;ChunkStore&gt; with ItemContainerState component
+</div>
+
+                <h3>What Happens When You Open a Chest</h3>
+                <ol>
+                    <li>Player right-clicks &rarr; <span class="type">OpenContainerInteraction</span> fires</li>
+                    <li>Gets the <span class="type">ItemContainerState</span> from the block position</li>
+                    <li>Checks <code>allowViewing</code> &mdash; is the container locked?</li>
+                    <li>Creates a <span class="type">ContainerBlockWindow</span> for the player, tracked by UUID in <code>windows</code> map</li>
+                    <li>Calls <code>chunk.setBlockInteractionState(x, y, z, blockType, "OpenWindow", false)</code></li>
+                    <li>This triggers the <span class="type">StateData</span> lookup: <code>"OpenWindow"</code> &rarr; <code>"chest_open"</code></li>
+                    <li>The block ID in the palette changes to <code>"chest_open"</code> (lid opens visually)</li>
+                    <li>When player closes the window, state changes back to <code>"CloseWindow"</code> &rarr; <code>"chest_closed"</code></li>
+                </ol>
+
+                <div class="info-box note">
+                    <div class="label">Multiple Viewers</div>
+                    <p>The <code>windows</code> map tracks all players currently viewing the container by UUID. The visual state only transitions to "CloseWindow" when the <em>last</em> viewer closes their window.</p>
+                </div>
+            </section>
+
+            <section id="built-in-interactions">
+                <h2>Built-in Plugin Interactions</h2>
+                <p>Some interactions live in built-in plugins rather than the core engine. These extend <span class="type">SimpleBlockInteraction</span> with specialized behavior.</p>
+
+                <h3>BedInteraction</h3>
+                <p>Package: <code>com.hypixel.hytale.builtin.beds.interactions</code></p>
+                <ul>
+                    <li>Mounts the player on the bed block</li>
+                    <li>Sets the player's respawn point (creates/updates <span class="type">RespawnBlock</span> state)</li>
+                    <li>Checks for nearby existing respawn points owned by the player</li>
+                    <li>Can open a custom UI page for naming the respawn point</li>
+                    <li>Respawn ownership tracked by UUID</li>
+                </ul>
+
+                <h3>TeleporterInteraction</h3>
+                <p>Package: <code>com.hypixel.hytale.builtin.adventure.teleporter</code></p>
+                <ul>
+                    <li>Reads destination from the <span class="type">Teleporter</span> block state</li>
+                    <li>Teleports the entity to the configured position</li>
+                    <li>Global cooldown of 250ms prevents rapid re-triggering</li>
+                    <li>Plays a configurable particle effect</li>
+                </ul>
+
+                <h3>LaunchPadInteraction</h3>
+                <p>Package: <code>com.hypixel.hytale.server.core.modules.interaction</code></p>
+                <ul>
+                    <li>Reads velocity from the <span class="type">LaunchPad</span> block state</li>
+                    <li>Applies the velocity vector to the entity</li>
+                    <li>Can filter to players only</li>
+                    <li>Spawns particle effects in a radius</li>
+                </ul>
+            </section>
+
+            <section id="events-summary">
+                <h2>Block Interaction Events</h2>
+                <p>All block interaction events are <strong>EcsEvents</strong> dispatched through the world's event bus.</p>
+
+<div class="diagram">Player interacts with block
+&#9474;
+&#9500;&#9472; UseBlockEvent.Pre    (cancellable)
+&#9474;    &#9492;&#9472; setCancelled(true) prevents the interaction entirely
+&#9474;
+&#9500;&#9472; [interaction executes]
+&#9474;
+&#9500;&#9472; UseBlockEvent.Post   (informational, not cancellable)
+&#9474;
+&#9474;  If the interaction modifies blocks:
+&#9500;&#9472; PlaceBlockEvent      (if a new block is placed, cancellable)
+&#9492;&#9472; BreakBlockEvent      (if a block is removed, cancellable)
+</div>
+
+                <pre><code><span class="comment">// Listen for block interactions in a plugin</span>
+<span class="field">eventBus</span>.<span class="fn">registerSystem</span>(<span class="type">UseBlockEvent</span>.<span class="type">Pre</span>.<span class="kw">class</span>, <span class="field">event</span> -> {
+    <span class="type">BlockType</span> <span class="field">blockType</span> = <span class="field">event</span>.<span class="fn">getBlockType</span>();
+    <span class="type">Vector3i</span> <span class="field">pos</span> = <span class="field">event</span>.<span class="fn">getTargetBlock</span>();
+    <span class="type">InteractionType</span> <span class="field">type</span> = <span class="field">event</span>.<span class="fn">getInteractionType</span>();
+
+    <span class="comment">// Cancel interaction for specific blocks</span>
+    <span class="kw">if</span> (<span class="field">blockType</span>.<span class="fn">getId</span>().<span class="fn">equals</span>(<span class="str">"locked_chest"</span>)) {
+        <span class="field">event</span>.<span class="fn">setCancelled</span>(<span class="kw">true</span>);
+    }
+});</code></pre>
+
+                <div class="info-box warning">
+                    <div class="label">registerSystem, not registerGlobal</div>
+                    <p>Block events are EcsEvents. You must use <code>registerSystem()</code> to subscribe. Using <code>registerGlobal()</code> will compile but silently fail to receive events. See <a href="events.html">Event System</a> for details.</p>
+                </div>
+            </section>
+
+            <section id="plugin-registration">
+                <h2>Plugin Registration &mdash; Custom Interactions &amp; Block States</h2>
+                <p>Both interaction types and block state types use a polymorphic codec registry. Plugins register new Java-backed types at startup, which data packs can then reference by name.</p>
+
+                <h3>Registering a Custom Interaction Type</h3>
+                <p>The <span class="type">Interaction</span> codec (<code>Interaction.CODEC</code>) is an <span class="type">AssetCodecMapCodec</span> that dispatches to different Java classes based on a <code>"Type"</code> string in the JSON asset. To add a new type:</p>
+
+                <pre><code><span class="comment">// 1. In your plugin's setup(), register the type</span>
+<span class="type">Interaction</span>.<span class="field">CODEC</span>.<span class="fn">register</span>(
+    <span class="str">"MyCustomInteraction"</span>,          <span class="comment">// Type string used in JSON</span>
+    <span class="type">MyCustomInteraction</span>.<span class="kw">class</span>,     <span class="comment">// Java class</span>
+    <span class="type">MyCustomInteraction</span>.<span class="field">CODEC</span>     <span class="comment">// Codec for JSON deserialization</span>
+);</code></pre>
+
+                <p>Then in your data pack, create an <strong>Interaction asset</strong> JSON:</p>
+                <pre><code><span class="comment">// Interaction asset: "my_interaction"</span>
+{
+    <span class="str">"Type"</span>: <span class="str">"MyCustomInteraction"</span>,
+    <span class="str">"RunTime"</span>: <span class="num">0.5</span>,
+    <span class="comment">// ... any fields your CODEC reads</span>
+}</code></pre>
+
+                <p>Then a <strong>RootInteraction asset</strong> that chains it:</p>
+                <pre><code><span class="comment">// RootInteraction asset: "my_root_interaction"</span>
+{
+    <span class="str">"Interactions"</span>: [<span class="str">"my_interaction"</span>],
+    <span class="str">"Cooldown"</span>: { <span class="str">"Id"</span>: <span class="str">"my_cooldown"</span>, <span class="str">"Cooldown"</span>: <span class="num">1.0</span> }
+}</code></pre>
+
+                <p>Then reference it from a <strong>BlockType asset</strong>:</p>
+                <pre><code><span class="comment">// BlockType asset: "my_block"</span>
+{
+    <span class="str">"Interactions"</span>: {
+        <span class="str">"Use"</span>: <span class="str">"my_root_interaction"</span>
+    }
+}</code></pre>
+
+                <h4>Interaction Types (Triggers)</h4>
+                <p>The <span class="type">InteractionType</span> enum key in the <code>Interactions</code> map determines what triggers the chain. There are <strong>24 interaction types</strong>:</p>
+                <table>
+                    <thead>
+                        <tr><th>Category</th><th>Types</th><th>Trigger</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Player input</strong></td><td><code>Primary</code>, <code>Secondary</code>, <code>Use</code>, <code>Pick</code></td><td>Left click, right click, interact key (F), middle click</td></tr>
+                        <tr><td><strong>Abilities</strong></td><td><code>Ability1</code>, <code>Ability2</code>, <code>Ability3</code></td><td>Ability hotkeys</td></tr>
+                        <tr><td><strong>Collision</strong></td><td><code>CollisionEnter</code>, <code>Collision</code>, <code>CollisionLeave</code></td><td>Entity walks into/through/out of block</td></tr>
+                        <tr><td><strong>Held item</strong></td><td><code>Wielding</code>, <code>Held</code>, <code>HeldOffhand</code>, <code>Equipped</code></td><td>Passive while item is held/equipped</td></tr>
+                        <tr><td><strong>Item swap</strong></td><td><code>SwapTo</code>, <code>SwapFrom</code></td><td>Switching to/from item in hotbar</td></tr>
+                        <tr><td><strong>Projectile</strong></td><td><code>ProjectileSpawn</code>, <code>ProjectileBounce</code>, <code>ProjectileMiss</code>, <code>ProjectileHit</code></td><td>Projectile lifecycle events</td></tr>
+                        <tr><td><strong>Other</strong></td><td><code>Pickup</code>, <code>Death</code>, <code>EntityStatEffect</code></td><td>Auto-pickup, entity death, stat effect applied</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box note">
+                    <div class="label">Collision = No Click Required</div>
+                    <p>The <code>CollisionEnter</code>, <code>Collision</code>, and <code>CollisionLeave</code> types fire automatically when an entity enters a block's hitbox. This is how launch pads and teleporters trigger without the player pressing anything.</p>
+                </div>
+
+                <h4>Built-in Interaction Types (75 Total)</h4>
+                <p>The engine registers <strong>63 core types</strong> in <span class="type">InteractionModule</span> and built-in plugins add <strong>12 more</strong>. Many core types are flow-control primitives that form a <strong>mini scripting language</strong> composable in JSON:</p>
+                <table>
+                    <thead>
+                        <tr><th>Category</th><th>Types</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Block</strong></td><td><code>PlaceBlock</code>, <code>BreakBlock</code>, <code>DestroyBlock</code>, <code>PickBlock</code>, <code>UseBlock</code>, <code>ChangeBlock</code>, <code>ChangeState</code>, <code>CycleBlockGroup</code>, <code>PlaceFluid</code>, <code>BlockCondition</code>, <code>Door</code></td></tr>
+                        <tr><td><strong>Entity</strong></td><td><code>UseEntity</code>, <code>DamageEntity</code>, <code>LaunchProjectile</code>, <code>Explode</code>, <code>SpawnPrefab</code></td></tr>
+                        <tr><td><strong>Inventory</strong></td><td><code>ModifyInventory</code>, <code>EquipItem</code>, <code>RefillContainer</code>, <code>IncreaseBackpackCapacity</code>, <code>ChangeActiveSlot</code></td></tr>
+                        <tr><td><strong>Flow control</strong></td><td><code>Condition</code>, <code>Parallel</code>, <code>Serial</code>, <code>Repeat</code>, <code>Selector</code>, <code>Chaining</code>, <code>ChainFlag</code>, <code>CancelChain</code>, <code>FirstClick</code>, <code>Replace</code></td></tr>
+                        <tr><td><strong>Other</strong></td><td><code>Simple</code>, <code>Charging</code>, <code>Wielding</code>, <code>StatsCondition</code>, <code>StatsConditionWithModifier</code>, <code>SendMessage</code>, <code>BuilderTool</code></td></tr>
+                        <tr><td><strong>Plugin-added</strong></td><td><code>Bed</code>, <code>LearnRecipe</code>, <code>Mount</code>, <code>Seating</code>, <code>SpawnMinecart</code>, <code>SpawnDeployableAtHitLocation</code>, <code>SpawnDeployableFromRaycast</code>, <code>UseNPC</code>, <code>ContextualUseNPC</code>, <code>SpawnNPC</code>, <code>TriggerSpawnMarkers</code>, <code>StartObjective</code></td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Registering a Custom Block State</h3>
+                <p>To add persistent per-block data to a custom block type, register a <span class="type">BlockState</span> subclass via <span class="type">BlockStateRegistry</span>:</p>
+
+                <pre><code><span class="comment">// 1. In your plugin's setup(), register the state type</span>
+<span class="fn">getBlockStateRegistry</span>().<span class="fn">registerBlockState</span>(
+    <span class="type">MyBlockState</span>.<span class="kw">class</span>,    <span class="comment">// your BlockState subclass</span>
+    <span class="str">"myBlockState"</span>,        <span class="comment">// key string (matches StateData.id in JSON)</span>
+    <span class="type">MyBlockState</span>.<span class="field">CODEC</span>    <span class="comment">// codec for BSON serialization</span>
+);</code></pre>
+
+                <p>Then in your BlockType data pack JSON, set the <code>StateData</code> id to match:</p>
+                <pre><code><span class="comment">// BlockType asset: "my_stateful_block"</span>
+{
+    <span class="str">"State"</span>: {
+        <span class="str">"Id"</span>: <span class="str">"myBlockState"</span>
+    }
+}</code></pre>
+
+                <p>When this block is placed, the engine calls <code>BlockStateModule.createBlockState("myBlockState", ...)</code>, which instantiates your class and stores it as an ECS component in <span class="type">ChunkStore</span>.</p>
+
+                <h4>With Custom StateData</h4>
+                <p>If your block state needs configuration from the BlockType asset (like <span class="type">ItemContainerState</span> reads a <code>Capacity</code> field), use the overloaded registration:</p>
+
+                <pre><code><span class="comment">// Register with a custom StateData subclass</span>
+<span class="fn">getBlockStateRegistry</span>().<span class="fn">registerBlockState</span>(
+    <span class="type">MyBlockState</span>.<span class="kw">class</span>,
+    <span class="str">"myBlockState"</span>,
+    <span class="type">MyBlockState</span>.<span class="field">CODEC</span>,
+    <span class="type">MyStateData</span>.<span class="kw">class</span>,     <span class="comment">// custom StateData subclass</span>
+    <span class="type">MyStateData</span>.<span class="field">CODEC</span>     <span class="comment">// its codec</span>
+);</code></pre>
+
+                <p>Your <span class="type">MyStateData</span> extends <span class="type">StateData</span> and can define additional fields that are read from the BlockType JSON and passed to <code>blockState.initialize(blockType)</code>.</p>
+
+                <h4>Real Examples from Built-in Plugins</h4>
+                <table>
+                    <thead>
+                        <tr><th>Plugin</th><th>State Class</th><th>Key</th><th>Custom StateData?</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Crafting</td><td><span class="type">BenchState</span></td><td><code>"crafting"</code></td><td>No</td></tr>
+                        <tr><td>Crafting</td><td><span class="type">ProcessingBenchState</span></td><td><code>"processingBench"</code></td><td>No</td></tr>
+                        <tr><td>Objectives</td><td><span class="type">TreasureChestState</span></td><td><code>"TreasureChest"</code></td><td>No</td></tr>
+                        <tr><td>Spawning</td><td><span class="type">SpawnMarkerBlockState</span></td><td><code>"SpawnMarkerBlock"</code></td><td>Yes (<span class="type">SpawnMarkerBlockState.Data</span>)</td></tr>
+                        <tr><td>PrefabSpawner</td><td><span class="type">PrefabSpawnerState</span></td><td><code>"prefabspawner"</code></td><td>No</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Putting It All Together</h3>
+                <p>A fully custom interactive block with persistent state requires:</p>
+
+<div class="diagram">JAVA PLUGIN (setup)
+&#9474;
+&#9500;&#9472; Interaction.CODEC.register("MyInteraction", MyInteraction.class, ...)
+&#9474;     Adds a new behavior type the engine can deserialize from JSON
+&#9474;
+&#9492;&#9472; getBlockStateRegistry().registerBlockState(MyState.class, "myState", ...)
+      Adds a new persistent state type for blocks
+
+DATA PACK (3 JSON assets)
+&#9474;
+&#9500;&#9472; Interaction asset: "my_interaction"
+&#9474;     { "Type": "MyInteraction", ... }
+&#9474;
+&#9500;&#9472; RootInteraction asset: "my_root"
+&#9474;     { "Interactions": ["my_interaction"], "Cooldown": { ... } }
+&#9474;
+&#9492;&#9472; BlockType asset: "my_block"
+      {
+        "Interactions": { "Use": "my_root" },
+        "State": { "Id": "myState" }
+      }
+</div>
+
+                <div class="info-box note">
+                    <div class="label">JSON-Only Option</div>
+                    <p>If the 75 built-in interaction types and existing block state types cover your needs, <strong>no Java code is required</strong>. You can compose complex behavior entirely in data pack JSON using flow-control types like <code>Condition</code>, <code>Parallel</code>, <code>Serial</code>, and <code>Repeat</code>.</p>
+                </div>
+            </section>
+
+            <section id="key-files">
+                <h2>Key Source Files</h2>
+                <table>
+                    <thead>
+                        <tr><th>File</th><th>Role</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>...asset/type/blocktype/config/BlockType.java</code></td>
+                            <td>Block asset definition with interactions, state, connected block rules</td>
+                        </tr>
+                        <tr>
+                            <td><code>...asset/type/blocktype/config/StateData.java</code></td>
+                            <td>State name &harr; block type variant mapping</td>
+                        </tr>
+                        <tr>
+                            <td><code>...universe/world/meta/BlockState.java</code></td>
+                            <td>Abstract base for persistent per-block data (ECS component)</td>
+                        </tr>
+                        <tr>
+                            <td><code>...universe/world/meta/BlockStateModule.java</code></td>
+                            <td>Factory: maps state ID strings to BlockState subclasses</td>
+                        </tr>
+                        <tr>
+                            <td><code>...universe/world/meta/state/ItemContainerState.java</code></td>
+                            <td>Inventory container block state (chests, barrels)</td>
+                        </tr>
+                        <tr>
+                            <td><code>...interaction/config/client/SimpleBlockInteraction.java</code></td>
+                            <td>Abstract base for all block interactions</td>
+                        </tr>
+                        <tr>
+                            <td><code>...interaction/config/client/ChangeStateInteraction.java</code></td>
+                            <td>Toggle between block state variants</td>
+                        </tr>
+                        <tr>
+                            <td><code>...interaction/config/client/ChangeBlockInteraction.java</code></td>
+                            <td>Replace block with a different block type</td>
+                        </tr>
+                        <tr>
+                            <td><code>...interaction/config/server/OpenContainerInteraction.java</code></td>
+                            <td>Open inventory UI for container blocks</td>
+                        </tr>
+                        <tr>
+                            <td><code>...connectedblocks/CustomConnectedBlockPattern.java</code></td>
+                            <td>Pattern matching for fence/stair/roof connections</td>
+                        </tr>
+                        <tr>
+                            <td><code>...connectedblocks/ConnectedBlocksUtil.java</code></td>
+                            <td>BFS neighbor update logic for connected blocks</td>
+                        </tr>
+                        <tr>
+                            <td><code>...connectedblocks/ConnectedBlocksModule.java</code></td>
+                            <td>Plugin that registers built-in connected block templates</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+    <div class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" placeholder="Search documentation..." autofocus>
+            </div>
+            <div class="search-results"></div>
+            <div class="search-footer">
+                <span><kbd>&#8593;&#8595;</kbd> Navigate</span>
+                <span><kbd>&#9166;</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

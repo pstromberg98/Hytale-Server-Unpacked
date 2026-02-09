@@ -26,6 +26,7 @@ const searchIndex = [
     { title: "Configuration", url: "configuration.html", keywords: "config server port auth backup transport maxplayers settings" },
     { title: "Data Packs", url: "data-packs.html", keywords: "data pack resource asset assetstore codec json hot reload mod content block item sound" },
     { title: "ECS Catalog", url: "reference.html", keywords: "reference catalog component list type all tracker physics projectile nameplate" },
+    { title: "Match System Design", url: "match-system-design.html", keywords: "match matchmaking pvp competitive lobby ready queue pending active ended condition handler lifecycle transition player state" },
 ];
 
 function openSearch() {
